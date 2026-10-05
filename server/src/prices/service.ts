@@ -1,18 +1,21 @@
 import { and, eq, inArray, lt, desc, ne } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { assets, priceHistory, pricesLatest, settings } from "../db/schema.js";
-import { D, str } from "../lib/decimal.js";
+import { D, type Decimal, str } from "../lib/decimal.js";
 import type { FetchFn } from "../lib/http.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { FxService } from "./fx.js";
 import { metalsProvider } from "./metals.js";
 import type { PriceProvider, Quote } from "./types.js";
+import { bitvavoFallback, type Fallback, plausible, tradegateFallback, yahooCryptoFallback } from "./fallbacks.js";
 import { yahooProvider } from "./yahoo.js";
 
 export interface RefreshResult {
   at: string;
   updated: number;
   failed: { assetId: number; symbol: string; error: string }[];
+  // Assets priced by a second source because the main one had no quote.
+  fallbacks?: { symbol: string; source: string }[];
   fxDate?: string;
   fxError?: string;
 }
@@ -25,10 +28,13 @@ export class PriceService {
   readonly fx: FxService;
   private providers: Record<string, PriceProvider>;
 
+  private fallbacks: Fallback[];
+
   constructor(
     private db: DB,
     // Shared with other lookups (asset matching for imports), so tests can stub the network.
     readonly fetchFn?: FetchFn,
+    sleep?: (ms: number) => Promise<void>,
   ) {
     this.fx = new FxService(db, fetchFn);
     this.providers = {
@@ -36,6 +42,12 @@ export class PriceService {
       coingecko: coingeckoProvider(fetchFn),
       metal: metalsProvider(fetchFn),
     };
+    // Tried in this order for assets the main provider gave no quote for.
+    this.fallbacks = [
+      bitvavoFallback(fetchFn),
+      yahooCryptoFallback(fetchFn),
+      tradegateFallback(this.fx, fetchFn, sleep),
+    ];
   }
 
   /** Refreshes FX rates and latest quotes for every visible asset; records today's close. */
@@ -66,6 +78,7 @@ export class PriceService {
       bySource.set(a.priceSource, list);
     }
 
+    const missed: { asset: (typeof rows)[number]; error: string }[] = [];
     for (const [source, list] of bySource) {
       const provider = this.providers[source];
       if (!provider) continue;
@@ -79,7 +92,7 @@ export class PriceService {
       for (const a of list) {
         const q = quotes.get(a.priceRef!);
         if (!q) {
-          result.failed.push({ assetId: a.id, symbol: a.symbol, error: providerError ?? `no quote from ${source}` });
+          missed.push({ asset: a, error: providerError ?? `no quote from ${source}` });
           continue;
         }
         try {
@@ -91,6 +104,33 @@ export class PriceService {
       }
     }
 
+    // Second sources for what the main ones missed; a quote far from the last known price is ignored.
+    for (const fb of this.fallbacks) {
+      const todo = missed.filter((m) => m.asset.priceSource === fb.covers && fb.applies(m.asset));
+      if (!todo.length) continue;
+      let quotes: Map<number, Quote>;
+      try {
+        quotes = await fb.quotes(todo.map((m) => m.asset));
+      } catch {
+        continue;
+      }
+      for (const m of todo) {
+        const q = quotes.get(m.asset.id);
+        if (!q) continue;
+        try {
+          const eur = q.price.mul(await this.fx.eurPerUnit(q.currency));
+          if (!plausible(m.asset, eur, await this.lastKnownEur(m.asset.id))) continue;
+          await this.store(m.asset.id, q);
+          result.updated++;
+          (result.fallbacks ??= []).push({ symbol: m.asset.symbol, source: fb.name });
+          missed.splice(missed.indexOf(m), 1);
+        } catch {
+          // try the next fallback
+        }
+      }
+    }
+    for (const m of missed) result.failed.push({ assetId: m.asset.id, symbol: m.asset.symbol, error: m.error });
+
     if (!assetIds) {
       await this.db
         .insert(settings)
@@ -98,6 +138,21 @@ export class PriceService {
         .onConflictDoUpdate({ target: settings.key, set: { value: result } });
     }
     return result;
+  }
+
+  private async lastKnownEur(assetId: number): Promise<Decimal | null> {
+    const [latest] = await this.db
+      .select({ v: pricesLatest.priceEur })
+      .from(pricesLatest)
+      .where(eq(pricesLatest.assetId, assetId));
+    if (latest) return D(latest.v);
+    const [hist] = await this.db
+      .select({ v: priceHistory.closeEur })
+      .from(priceHistory)
+      .where(eq(priceHistory.assetId, assetId))
+      .orderBy(desc(priceHistory.day))
+      .limit(1);
+    return hist ? D(hist.v) : null;
   }
 
   /** Cash assets: price is 1 unit of the currency, in EUR. */

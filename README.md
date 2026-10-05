@@ -230,14 +230,14 @@ It's an estimate, not tax advice: check the values against your banks' and broke
 
 ### Price sources (free, no keys)
 
-| Asset         | Source                                                     | Fallback                                |
-| ------------- | ---------------------------------------------------------- | --------------------------------------- |
-| Stocks / ETFs | Yahoo Finance chart API (quotes in GBp/ZAc are normalised) | —                                       |
-| Crypto        | CoinGecko `simple/price` (EUR)                             | —                                       |
-| Metals        | gold-api.com spot (USD/oz → EUR/g)                         | Yahoo COMEX futures (`GC=F`, `SI=F`, …) |
-| FX            | ECB reference rates via Frankfurter                        | last cached rate                        |
+| Asset         | Source                                                     | Fallback                                                   |
+| ------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
+| Stocks / ETFs | Yahoo Finance chart API (quotes in GBp/ZAc are normalised) | Tradegate by ISIN (EUR, converted to the listing currency) |
+| Crypto        | CoinGecko `simple/price` (EUR)                             | Bitvavo public ticker, then Yahoo `SYM-EUR`                |
+| Metals        | gold-api.com spot (USD/oz → EUR/g)                         | Yahoo COMEX futures (`GC=F`, `SI=F`, …)                    |
+| FX            | ECB reference rates via Frankfurter                        | last cached rate                                           |
 
-Every refresh stores the latest quote, today's close in `price_history`, and a net-worth snapshot.
+A fallback is only used when the main source gives no price, and only if its price is between half and double the last known one (a token without a known price is never priced by symbol, which could be a different coin). _Settings → Prices_ shows when it happened. Every refresh stores the latest quote, today's close in `price_history`, and a net-worth snapshot.
 
 **Price history backfill** loads daily EUR closes for every asset from its first transaction until today. It covers Yahoo (stocks, ETFs, `SYM-EUR` crypto pairs), CoinGecko (crypto, last 365 days, as a fallback), Yahoo futures for metals, and ECB rates for foreign cash. It runs 30 seconds after startup, daily, and a few seconds after transactions change or a sync finishes. Each asset is loaded in full once, then topped up incrementally. `POST /api/prices/backfill` forces a full re-check. One failing asset does not block the others; failures appear on the Overview and Settings pages.
 

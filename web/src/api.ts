@@ -188,6 +188,7 @@ export interface RefreshStatus {
   at: string;
   updated: number;
   failed: { assetId: number; symbol: string; error: string }[];
+  fallbacks?: { symbol: string; source: string }[];
   fxDate?: string;
   fxError?: string;
 }

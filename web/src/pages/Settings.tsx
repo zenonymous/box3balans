@@ -135,9 +135,16 @@ export function SettingsPage() {
               </Alert>
             </div>
           )}
+          {s?.fallbacks && s.fallbacks.length > 0 && (
+            <p className="mt-3 text-xs text-ink-2">
+              Main source unavailable, priced by the second source:{" "}
+              {s.fallbacks.map((f) => `${f.symbol} (${FALLBACK_LABEL[f.source] ?? f.source})`).join(", ")}.
+            </p>
+          )}
           <p className="mt-3 text-xs text-muted">
             Sources: Yahoo Finance (stocks/ETFs), CoinGecko (crypto), gold-api.com with Yahoo futures fallback (metals),
-            ECB via Frankfurter (FX). Free feeds can lag ~15 minutes.
+            ECB via Frankfurter (FX). When the main source has no price, crypto falls back to Bitvavo and Yahoo, stocks
+            and ETFs to Tradegate (by ISIN). Free feeds can lag ~15 minutes.
           </p>
         </Card>
 
@@ -281,6 +288,8 @@ interface BackupList {
   status: { lastSuccessAt?: string; lastErrorAt?: string; lastError?: string };
   backups: BackupInfo[];
 }
+
+const FALLBACK_LABEL: Record<string, string> = { bitvavo: "Bitvavo", yahoo: "Yahoo", tradegate: "Tradegate" };
 
 /** Backups (gzipped JSON of all data) in the server's backup folder, plus CSV exports. */
 function BackupsCard() {
