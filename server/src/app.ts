@@ -29,6 +29,7 @@ import { box3Routes } from "./routes/box3.js";
 import { backupRoutes } from "./routes/backups.js";
 import { exportRoutes } from "./routes/exports.js";
 import { importRoutes } from "./routes/imports.js";
+import { activityRoutes } from "./routes/activity.js";
 
 export interface AppDeps {
   db: DB;
@@ -167,6 +168,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(backupRoutes, { prefix: "/api/backups" });
   await app.register(exportRoutes, { prefix: "/api/export" });
   await app.register(importRoutes, { prefix: "/api" });
+  await app.register(activityRoutes, { prefix: "/api/activity" });
 
   // Serve the built frontend (single-page app) when present.
   const webDist = path.resolve(deps.config.WEB_DIST);

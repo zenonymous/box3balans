@@ -31,6 +31,7 @@ import {
   toInputNumber,
 } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
+import { ActivityList } from "./Activity";
 
 const PAGE = 50;
 const ENTRY_TYPES: TxType[] = ["buy", "sell", "deposit", "withdrawal", "dividend", "reward", "fee", "split"];
@@ -631,9 +632,26 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
           </div>
         )}
       </form>
+      {tx && (
+        <details className="mt-4 border-t border-line pt-3">
+          <summary className="cursor-pointer text-sm font-medium text-ink-2">
+            History{tx.source !== "manual" && ` · came from ${SOURCE_LABEL[tx.source]}`}
+          </summary>
+          <div className="mt-2">
+            <ActivityList entity="transaction" entityId={tx.id} compact />
+          </div>
+        </details>
+      )}
     </Modal>
   );
 }
+
+const SOURCE_LABEL: Record<Transaction["source"], string> = {
+  manual: "manual entry",
+  csv: "a CSV import",
+  api: "an exchange sync",
+  chain: "a wallet sync",
+};
 
 function TransferModal({ onClose }: { onClose: () => void }) {
   const accounts = useAccounts();

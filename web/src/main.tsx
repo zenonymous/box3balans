@@ -12,6 +12,7 @@ const OverviewPage = lazy(() => import("./pages/Overview").then((m) => ({ defaul
 const HoldingsPage = lazy(() => import("./pages/Holdings").then((m) => ({ default: m.HoldingsPage })));
 const TransactionsPage = lazy(() => import("./pages/Transactions").then((m) => ({ default: m.TransactionsPage })));
 const ImportPage = lazy(() => import("./pages/Import").then((m) => ({ default: m.ImportPage })));
+const ActivityPage = lazy(() => import("./pages/Activity").then((m) => ({ default: m.ActivityPage })));
 const MetalsPage = lazy(() => import("./pages/Metals").then((m) => ({ default: m.MetalsPage })));
 const AccountsPage = lazy(() => import("./pages/Accounts").then((m) => ({ default: m.AccountsPage })));
 const ConnectionsPage = lazy(() => import("./pages/Connections").then((m) => ({ default: m.ConnectionsPage })));
@@ -63,6 +64,7 @@ function AuthGate() {
         <Route path="wallets" element={<WalletsPage />} />
         <Route path="assets" element={<AssetsPage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="activity" element={<ActivityPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

@@ -66,6 +66,9 @@ export function SettingsPage() {
             <Link to="/assets" className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
               ◇ Assets — instruments and price sources
             </Link>
+            <Link to="/activity" className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
+              ↺ History — every change, and restoring deleted transactions
+            </Link>
           </div>
         </Card>
 

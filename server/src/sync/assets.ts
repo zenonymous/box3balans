@@ -91,7 +91,7 @@ export class AssetResolver {
     private throttleMs = 0,
     private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
     // Look everything up but create nothing: new assets get negative ids (for import previews).
-    private opts: { dryRun?: boolean } = {},
+    private opts: { dryRun?: boolean; via?: "sync" | "import" } = {},
   ) {}
 
   private fakeId = 0;
@@ -149,7 +149,7 @@ export class AssetResolver {
     }
     const [row] = await this.db.insert(assets).values(values).onConflictDoNothing().returning();
     if (row) {
-      await audit(this.db, "asset", row.id, "create", null, { ...row, via: "sync" });
+      await audit(this.db, "asset", row.id, "create", null, { ...row, via: this.opts.via ?? "sync" });
       this.created.push(row);
       return row;
     }

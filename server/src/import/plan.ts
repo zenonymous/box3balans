@@ -606,7 +606,7 @@ export async function commitImport(
   const { decimal, dateOrder } = detect(data, m);
   const { parsed } = parseRows(data, m, account.kind, decimal, dateOrder);
 
-  const resolver = new AssetResolver(db, deps.fetchFn);
+  const resolver = new AssetResolver(db, deps.fetchFn, 0, undefined, { via: "import" });
   // Classify against existing assets first, so new assets can't hide a duplicate.
   const preview = new AssetResolver(db, deps.fetchFn, 0, undefined, { dryRun: true });
   const status = await classify(db, accountId, parsed, await resolveAssets(db, parsed, m, preview, true));
