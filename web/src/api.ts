@@ -468,7 +468,17 @@ export interface Box3Config {
     accountOverrides: Record<string, Box3Category>;
   };
   rates: Record<string, Box3Rates>;
-  years: Record<string, { partner: boolean; debtsEur: string; extraOtherEur: string; extraBankEur: string }>;
+  years: Record<
+    string,
+    {
+      partner: boolean;
+      debtsEur: string;
+      extraOtherEur: string;
+      extraBankEur: string;
+      debtInterestEur?: string;
+      extraReturnEur?: string;
+    }
+  >;
 }
 
 export interface Box3Overview {
@@ -525,5 +535,37 @@ export interface Box3Year {
   } | null;
   rows: Box3Row[];
   warnings: string[];
-  actual: { resultEur: string; complete: boolean } | null;
+  actualReturn: ActualReturn;
+}
+
+export interface ReturnPart {
+  startEur: number;
+  endEur: number;
+  inEur: number;
+  outEur: number;
+  valueChangeEur: number;
+  directEur: number;
+  returnEur: number;
+}
+
+export interface ActualReturn {
+  year: number;
+  complete: boolean;
+  endDay: string;
+  parts: Record<"bank" | "investments" | "crypto" | "metals" | "cash" | "other", ReturnPart>;
+  costsEur: number;
+  dividendTaxEur: number;
+  leftOut: { category: "exempt" | "excluded"; returnEur: number }[];
+  extraReturnEur: number;
+  debtInterestEur: number;
+  totalEur: number;
+  comparison: {
+    deemedBenefitEur: number;
+    deemedTaxEur: number;
+    actualTaxableEur: number;
+    actualTaxEur: number;
+    lowerTaxEur: number;
+    savingEur: number;
+    worthFiling: boolean;
+  } | null;
 }

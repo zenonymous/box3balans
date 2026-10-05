@@ -2,6 +2,7 @@ import { Fragment, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, put, type Box3Category, type Box3Config, type Box3Overview, type Box3Rates, type Box3Year } from "../api";
 import { downloadCsv } from "../csv";
+import { ActualReturnCard, FuturePreviewCard } from "./Box3Actual";
 import {
   Alert,
   AmountInput,
@@ -104,6 +105,9 @@ export function Box3Page() {
       ) : (
         <YearView y={detail.data!} overview={o} />
       )}
+      <div className="mt-4">
+        <FuturePreviewCard />
+      </div>
       <RulesCard overview={o} />
     </>
   );
@@ -287,7 +291,7 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
         </Card>
       )}
 
-      {c && y.actual && <Tegenbewijs y={y} />}
+      <ActualReturnCard y={y} />
 
       <Card title={`Per account on ${date(y.peildatum)}`} padded={false}>
         {y.rows.length === 0 ? (
@@ -379,31 +383,6 @@ function CalcRow({
   );
 }
 
-function Tegenbewijs({ y }: { y: Box3Year }) {
-  const actual = Number(y.actual!.resultEur);
-  const deemed = Number(y.calculation!.deemedReturnEur);
-  const lower = actual < deemed;
-  return (
-    <Card title="Actual return vs. deemed return" className="print:hidden">
-      <dl className="tabular grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 text-sm">
-        <dt className="text-ink-2">Deemed return (forfaitair rendement)</dt>
-        <dd className="text-right">{eur(deemed)}</dd>
-        <dt className="text-ink-2">
-          Your actual result in {y.year} {!y.actual!.complete && "so far"} (from Performance)
-        </dt>
-        <dd className="text-right">{eur(actual)}</dd>
-      </dl>
-      <p className="mt-3 text-xs text-ink-2">
-        {y.actual!.complete && lower
-          ? "Your actual result was lower than the deemed return. You may be able to pay tax on your actual return instead with the tegenbewijsregeling (opgaaf werkelijk rendement). "
-          : "The tegenbewijsregeling lets you be taxed on your actual return when it is lower than the deemed return. "}
-        This is only an indication: the official actual return includes all box 3 assets and debts, and costs are not
-        deductible.
-      </p>
-    </Card>
-  );
-}
-
 function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
   const qc = useQueryClient();
   const current = overview.config.years[String(y.year)];
@@ -412,6 +391,8 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
     debtsEur: toInputNumber(current?.debtsEur ?? "0"),
     extraOtherEur: toInputNumber(current?.extraOtherEur ?? "0"),
     extraBankEur: toInputNumber(current?.extraBankEur ?? "0"),
+    debtInterestEur: toInputNumber(current?.debtInterestEur ?? "0"),
+    extraReturnEur: toInputNumber(current?.extraReturnEur ?? "0"),
   });
   const [error, setError] = useState<string>();
   const [saved, setSaved] = useState(false);
@@ -425,6 +406,8 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
         debtsEur: toApiNumber(f.debtsEur, "Debts") || "0",
         extraOtherEur: toApiNumber(f.extraOtherEur, "Other assets") || "0",
         extraBankEur: toApiNumber(f.extraBankEur, "Bank balances") || "0",
+        debtInterestEur: toApiNumber(f.debtInterestEur, "Interest paid") || "0",
+        extraReturnEur: toApiNumber(f.extraReturnEur, "Return on other assets") || "0",
       };
       await put("/api/box3/config", {
         ...overview.config,
@@ -472,6 +455,28 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
 
               value={f.extraBankEur}
               onChange={(e) => setF({ ...f, extraBankEur: e.target.value })}
+            />
+          )}
+        </Field>
+        <p className="pt-2 text-xs font-medium text-ink-2 sm:col-span-2">During {y.year}, for the actual return</p>
+        <Field label="Interest paid on these debts" hint="deducted from the actual return">
+          {(id) => (
+            <AmountInput
+              id={id}
+              value={f.debtInterestEur}
+              onChange={(e) => setF({ ...f, debtInterestEur: e.target.value })}
+            />
+          )}
+        </Field>
+        <Field
+          label="Return on assets not tracked here"
+          hint="income plus value change, e.g. interest on money lent out; negative for a loss"
+        >
+          {(id) => (
+            <AmountInput
+              id={id}
+              value={f.extraReturnEur}
+              onChange={(e) => setF({ ...f, extraReturnEur: e.target.value })}
             />
           )}
         </Field>

@@ -115,6 +115,10 @@ export const configSchema = z.object({
       debtsEur: decimalStr,
       extraOtherEur: decimalStr,
       extraBankEur: decimalStr,
+      // For the actual return: interest paid on box 3 debts, and the return (income and value change)
+      // on assets the app doesn't track. Added later, so older saved configs lack them.
+      debtInterestEur: decimalStr.default("0"),
+      extraReturnEur: decimalStr.default("0"),
     }),
   ),
 });
