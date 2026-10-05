@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { LogController, type FastifyInstance } from "fastify";
 import { sql } from "drizzle-orm";
 import cookie from "@fastify/cookie";
 import rateLimit from "@fastify/rate-limit";
@@ -9,6 +9,7 @@ import { ZodError } from "zod";
 import type { Config } from "./config.js";
 import type { DB } from "./db/client.js";
 import { HttpError, pgErrorCode } from "./lib/errors.js";
+import { APP_VERSION } from "./lib/version.js";
 import type { PriceService } from "./prices/service.js";
 import type { SecretBox } from "./lib/secrets.js";
 import type { SyncService } from "./sync/service.js";
@@ -61,7 +62,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       redact: ["req.headers.cookie", "req.headers.authorization", "req.body.password", "req.body.credentials"],
     },
     // Per-request logs (including healthchecks) only when debugging.
-    disableRequestLogging: deps.config.LOG_LEVEL !== "debug" && deps.config.LOG_LEVEL !== "trace",
+    logController: new LogController({
+      disableRequestLogging: deps.config.LOG_LEVEL !== "debug" && deps.config.LOG_LEVEL !== "trace",
+    }),
     // Trusting X-Forwarded-For without a proxy would let anyone fake their IP and dodge the
     // login rate limit, so it's opt-in.
     trustProxy:
@@ -146,6 +149,9 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       return reply.code(503).send({ ok: false, error: "Database unavailable" });
     }
   });
+
+  // Signed-in only: which build is running (shown in the sidebar).
+  app.get("/api/version", async () => ({ version: APP_VERSION }));
 
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(accountRoutes, { prefix: "/api/accounts" });

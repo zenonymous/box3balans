@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",
+    "dev:live": "PGLITE_DIR=./.data/live BACKUP_DIR=./.data/live-backups PORT=8081 tsx watch --env-file=.env src/index.ts",
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "test": "vitest run",

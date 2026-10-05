@@ -19,24 +19,63 @@ The work follows the 8 milestones in [`docs/PROMPT.md`](docs/PROMPT.md).
 | 7   | Dutch Box 3 overview & exports                                          | ✅ done                                                 |
 | 8   | Backups, polish                                                         | ✅ done                                                 |
 
-## Quick start (Docker)
+## Install on your NAS
 
-```bash
-cp .env.example .env
-# fill in POSTGRES_PASSWORD and APP_SECRET, e.g. with: openssl rand -hex 32
-docker compose up -d
-```
+You need an x86-64 machine with Docker and Docker Compose v2 (`docker compose version` works), and SSH access to it from the computer that has this repository.
 
-Open `http://<server>:8080`. On first visit you create your user (password of 12 or more characters).
+1. **Copy the code** (on your computer, in this repository):
+
+   ```bash
+   scripts/deploy.sh you@nas
+   ```
+
+   This sends the last commit to `~/kluishuis` on the NAS. Give a second argument for another folder, e.g. `scripts/deploy.sh you@nas /volume1/docker/kluishuis`. If `docker` needs `sudo` there (as on Synology), use `DOCKER="sudo docker" scripts/deploy.sh you@nas`. Only committed files are sent: never `.env`, data or backups.
+
+2. **Configure** (on the NAS):
+
+   ```bash
+   cd ~/kluishuis
+   cp .env.example .env
+   chmod 600 .env
+   # fill in POSTGRES_PASSWORD and APP_SECRET, each e.g. with: openssl rand -hex 32
+   ```
+
+   Also store `APP_SECRET` in your password manager: backups need it to decrypt exchange API keys (see [Backups](#backups-and-restore)).
+
+3. **Start** with `docker compose up -d --build`. The first build takes a few minutes. After about 30 seconds `docker compose ps` should show both containers as `healthy`.
+
+4. **Open** `http://<nas>:8080` and create your user (a password of 12 or more characters). The sidebar shows the version you're running.
+
+No SSH? Run `git archive -o kluishuis.tar HEAD`, copy the file over (e.g. with the NAS's file manager), unpack it into the folder, and continue with step 2.
+
+**Checking on it:** `docker compose logs app --tail 50`. The first lines show `Kluishuis starting` with the version, followed by `price refresh done`. After a NAS reboot you may see `Database not reachable yet…, waiting for it` once: the app waits for PostgreSQL to come up.
 
 ### Updating
 
+Commit your changes, then run the same command:
+
 ```bash
-docker compose exec app node dist/cli.js backup   # optional: a backup before updating
-docker compose build --pull && docker compose up -d
+scripts/deploy.sh you@nas
 ```
 
-Database migrations run automatically on startup.
+It copies the new code and runs `docker compose up -d --build` on the NAS. Your `.env`, database and backups stay as they are, and database migrations run automatically on startup. For a backup first: `docker compose exec app node dist/cli.js backup`.
+
+To also pick up security updates of the Node and PostgreSQL base images, run on the NAS: `docker compose pull db && docker compose build --pull && docker compose up -d`.
+
+### Access away from home (VPN)
+
+Keep Kluishuis off the internet: don't forward port 8080 on your router. To reach it from your phone or laptop elsewhere, use a VPN:
+
+- **WireGuard or Tailscale, plain:** open `http://<nas-vpn-address>:8080`. The VPN already encrypts the traffic. Keep `COOKIE_SECURE=false`.
+- **Tailscale with HTTPS** (a proper `https://` address): turn on MagicDNS and HTTPS certificates in the Tailscale admin console, then run on the NAS (with `sudo` if needed):
+
+  ```bash
+  tailscale serve --bg 8080
+  ```
+
+  Kluishuis is now at `https://<nas-name>.<tailnet>.ts.net`. Set `COOKIE_SECURE=true` in `.env` and run `docker compose up -d`. From then on, use only the https address: the plain `http://` one won't keep you signed in. Leave `TRUST_PROXY=false`. All requests then share one login rate limit, which is fine for a single user.
+
+  To make the https address the only way in, publish the port on the NAS itself only: in `docker-compose.yml`, change the `ports` line to `"127.0.0.1:${HTTP_PORT:-8080}:8080"`.
 
 ## Backups and restore
 
@@ -191,13 +230,15 @@ npm run dev:server            # API on :8080 (also serves web/dist if built)
 npm run dev:web               # Vite on :5173, proxies /api to :8080
 ```
 
-| Command                           | What it does                                                                                        |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `npm test`                        | Server unit tests (ledger maths) and API integration tests (in-memory Postgres, stubbed price APIs) |
-| `npm run typecheck`               | TypeScript, server and web                                                                          |
-| `npm run lint` / `npm run format` | ESLint / Prettier                                                                                   |
-| `npm run build`                   | Compile server to `server/dist`, bundle web to `web/dist`                                           |
-| `npm run db:generate -w server`   | Generate a migration after editing `server/src/db/schema.ts`                                        |
+| Command                                           | What it does                                                                                                                                                                              |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                                        | Server unit tests (ledger maths) and API integration tests (in-memory Postgres, stubbed price APIs)                                                                                       |
+| `npm run typecheck`                               | TypeScript, server and web                                                                                                                                                                |
+| `npm run lint` / `npm run format`                 | ESLint / Prettier                                                                                                                                                                         |
+| `npm run build`                                   | Compile server to `server/dist`, bundle web to `web/dist`                                                                                                                                 |
+| `npm run db:generate -w server`                   | Generate a migration after editing `server/src/db/schema.ts`                                                                                                                              |
+| `npm run dev:live -w server`                      | A second instance on `http://127.0.0.1:8081` with its own empty database, to try real exchange keys and wallets without mixing them with demo data. Delete `server/.data/live` afterwards |
+| `npx tsx scripts/bench.ts [scale]` (in `server/`) | Times the main pages against a large synthetic history (scale 1 ≈ 20,000 transactions)                                                                                                    |
 
 Demo data: after creating a user, run `SESSION=<pd_session cookie> npx tsx server/scripts/sample-data.ts`.
 
@@ -217,7 +258,7 @@ Demo data: after creating a user, run `SESSION=<pd_session cookie> npx tsx serve
 - Every create, update and delete is written to `audit_log` with before/after snapshots.
 - Responses carry a strict Content-Security-Policy (same-origin scripts only, no framing), `nosniff`, `no-referrer` and a restrictive Permissions-Policy. HSTS is added when `COOKIE_SECURE=true`.
 - The container runs as an unprivileged user. Backups are written owner-readable only, and backup file names are validated so requests can't reach outside the backup folder.
-- Exposing the dashboard to the internet isn't recommended. If you do, put it behind a reverse proxy with HTTPS (set `COOKIE_SECURE=true`) or a VPN such as Tailscale.
+- Exposing the dashboard to the internet isn't recommended; use a VPN (see [Access away from home](#access-away-from-home-vpn)). If you do expose it, put it behind a reverse proxy with HTTPS and set `COOKIE_SECURE=true`.
 - Exchange credentials are encrypted at rest (AES-256-GCM, HKDF from `APP_SECRET`) and never returned or logged. Changing `APP_SECRET` means re-entering keys.
 
 ## Troubleshooting
@@ -230,4 +271,5 @@ Demo data: after creating a user, run `SESSION=<pd_session cookie> npx tsx serve
 | A connection or wallet shows balance mismatches | History the API doesn't expose (very old trades, staking moves). Fix the history, or use _Adjust_ to record a correcting deposit or withdrawal.                                                                                       |
 | "Stored credentials cannot be decrypted"        | `APP_SECRET` changed. Restore the old value, or re-enter the API keys.                                                                                                                                                                |
 | The container is unhealthy                      | `docker compose logs app`. The health check (`/api/health`) also fails when the database is unreachable.                                                                                                                              |
+| Pages feel slow                                 | Set `LOG_LEVEL=debug` and `docker compose up -d`; every request then logs its `responseTime` in milliseconds (`docker compose logs app \| grep responseTime`). Set it back to `info` afterwards.                                      |
 | Locked out                                      | There is one user and no reset by e-mail. Restore a backup, or reset the password from the database: `docker compose exec db psql -U kluishuis -c "delete from users"`, then open the app to run first-time setup again (data stays). |

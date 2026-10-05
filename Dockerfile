@@ -22,6 +22,8 @@ RUN npm ci --omit=dev --workspace server --no-audit --no-fund && npm cache clean
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/server/drizzle server/drizzle
 COPY --from=build /app/web/dist web/dist
+# Commit and date, filled in by `git archive` (scripts/deploy.sh); "dev" otherwise.
+COPY VERSION ./
 
 # Backups go to a volume; create it owned by the app user so a fresh named volume is writable.
 RUN mkdir -p /backups && chown node:node /backups

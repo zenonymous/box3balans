@@ -1,6 +1,7 @@
 import { Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router";
-import type { User } from "../api";
+import { get, type User } from "../api";
 import { Spinner, cx } from "./ui";
 
 const NAV = [
@@ -22,6 +23,11 @@ const NAV = [
 const MOBILE_NAV = ["/", "/holdings", "/transactions", "/metals", "/settings"];
 
 export function Layout({ user }: { user: User }) {
+  const version = useQuery({
+    queryKey: ["version"],
+    queryFn: () => get<{ version: string }>("/api/version"),
+    staleTime: Infinity,
+  });
   return (
     <div className="min-h-dvh md:flex">
       <aside className="print:hidden sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface px-3 py-5 md:flex">
@@ -52,7 +58,10 @@ export function Layout({ user }: { user: User }) {
             </NavLink>
           ))}
         </nav>
-        <div className="mt-auto px-2.5 text-xs text-muted">Signed in as {user.username}</div>
+        <div className="mt-auto px-2.5 text-xs text-muted">
+          Signed in as {user.username}
+          {version.data && <div className="mt-0.5 tabular-nums">Version {version.data.version}</div>}
+        </div>
       </aside>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-5 sm:px-6 md:pb-10 md:pt-8">

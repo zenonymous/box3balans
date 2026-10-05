@@ -48,6 +48,8 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(`Error: ${(err as Error).message}`);
+  // Database errors arrive wrapped ("Failed query: …"); the reason is in the cause.
+  const cause = (err as Error).cause;
+  console.error(`Error: ${(err as Error).message}${cause instanceof Error ? `\nCause: ${cause.message}` : ""}`);
   process.exitCode = 1;
 });

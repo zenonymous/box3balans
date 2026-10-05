@@ -9,6 +9,7 @@ import { SecretBox } from "./lib/secrets.js";
 import { SyncService } from "./sync/service.js";
 import { WalletService } from "./wallets/service.js";
 import { BackfillService } from "./jobs/backfill.js";
+import { APP_VERSION } from "./lib/version.js";
 
 const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
@@ -37,4 +38,5 @@ const shutdown = async (signal: string) => {
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));
 
+app.log.info({ version: APP_VERSION }, "Kluishuis starting");
 await app.listen({ port: config.PORT, host: config.HOST });

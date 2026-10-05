@@ -27,6 +27,7 @@ const migrationsFolder = path.resolve(path.dirname(fileURLToPath(import.meta.url
 export async function openDatabase(opts: { url?: string; pgEnv?: boolean; pgliteDir?: string }): Promise<Database> {
   if (opts.url || opts.pgEnv) {
     const pool = new pg.Pool({ ...(opts.url ? { connectionString: opts.url } : {}), max: 10 });
+    await waitForPostgres(pool);
     const db = drizzlePg(pool, { schema });
     await migratePg(db, { migrationsFolder });
     return { db, close: () => pool.end() };
@@ -37,4 +38,26 @@ export async function openDatabase(opts: { url?: string; pgEnv?: boolean; pglite
   const db = drizzlePglite(client, { schema });
   await migratePglite(db, { migrationsFolder });
   return { db: db as unknown as DB, close: () => client.close() };
+}
+
+// Errors that mean "Postgres isn't up yet" rather than a configuration mistake.
+const NOT_READY = new Set(["ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "ECONNRESET", "57P03"]);
+
+/**
+ * After a host reboot Docker starts the app and the database together (restart policies ignore
+ * `depends_on`), so wait up to `timeoutMs` for Postgres instead of crash-looping.
+ */
+export async function waitForPostgres(pool: pg.Pool, timeoutMs = 90_000, stepMs = 2_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      await pool.query("select 1");
+      return;
+    } catch (err) {
+      const code = (err as { code?: string }).code ?? "";
+      if (!NOT_READY.has(code) || Date.now() + stepMs > deadline) throw err;
+      if (attempt === 1) console.warn(`Database not reachable yet (${code}), waiting for it…`);
+      await new Promise((r) => setTimeout(r, stepMs));
+    }
+  }
 }
