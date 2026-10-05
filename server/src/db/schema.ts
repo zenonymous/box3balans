@@ -194,6 +194,23 @@ export const metalItems = pgTable("metal_items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// Photos of physical metal items (e.g. for insurance), resized in the browser before upload.
+export const metalPhotos = pgTable(
+  "metal_photos",
+  {
+    id: serial("id").primaryKey(),
+    itemId: integer("item_id")
+      .notNull()
+      .references(() => metalItems.id, { onDelete: "cascade" }),
+    mime: text("mime").notNull(),
+    // Base64, so JSON backups carry photos as they are.
+    data: text("data").notNull(),
+    bytes: integer("bytes").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("metal_photos_item_idx").on(t.itemId)],
+);
+
 export const pricesLatest = pgTable("prices_latest", {
   assetId: integer("asset_id")
     .primaryKey()

@@ -13,6 +13,7 @@ const HoldingsPage = lazy(() => import("./pages/Holdings").then((m) => ({ defaul
 const TransactionsPage = lazy(() => import("./pages/Transactions").then((m) => ({ default: m.TransactionsPage })));
 const ImportPage = lazy(() => import("./pages/Import").then((m) => ({ default: m.ImportPage })));
 const ActivityPage = lazy(() => import("./pages/Activity").then((m) => ({ default: m.ActivityPage })));
+const InventoryPage = lazy(() => import("./pages/Inventory").then((m) => ({ default: m.InventoryPage })));
 const MetalsPage = lazy(() => import("./pages/Metals").then((m) => ({ default: m.MetalsPage })));
 const AccountsPage = lazy(() => import("./pages/Accounts").then((m) => ({ default: m.AccountsPage })));
 const ConnectionsPage = lazy(() => import("./pages/Connections").then((m) => ({ default: m.ConnectionsPage })));
@@ -59,6 +60,7 @@ function AuthGate() {
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="transactions/import" element={<ImportPage />} />
         <Route path="metals" element={<MetalsPage />} />
+        <Route path="metals/inventory" element={<InventoryPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="connections" element={<ConnectionsPage />} />
         <Route path="wallets" element={<WalletsPage />} />

@@ -2,7 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { z } from "zod";
 import type { DB } from "../db/client.js";
-import { accounts, assets, metalItems, priceHistory, pricesLatest } from "../db/schema.js";
+import { accounts, assets, metalItems, metalPhotos, priceHistory, pricesLatest } from "../db/schema.js";
 import { METAL_CODES } from "../db/seed.js";
 import { METAL_PRODUCTS } from "../domain/metal-products.js";
 import { loadLedger } from "../domain/portfolio.js";
@@ -29,6 +29,30 @@ const itemBody = z.object({
   soldDate: isoDay.nullish(),
   salePriceEur: decimalString.nullish(),
 });
+
+const MAX_PHOTOS = 8;
+const MAX_PHOTO_BYTES = 4 * 1024 * 1024;
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+
+const photoBody = z.object({
+  mime: z.enum(PHOTO_TYPES),
+  data: z
+    .string()
+    .max(Math.ceil((MAX_PHOTO_BYTES * 4) / 3) + 8)
+    .regex(/^[A-Za-z0-9+/]+={0,2}$/, "Not base64"),
+});
+
+/** The image type by its first bytes, whatever the upload claims. */
+function sniffImage(b: Buffer): (typeof PHOTO_TYPES)[number] | null {
+  if (b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return "image/jpeg";
+  if (b.length > 8 && b.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) {
+    return "image/png";
+  }
+  if (b.length > 12 && b.toString("latin1", 0, 4) === "RIFF" && b.toString("latin1", 8, 12) === "WEBP") {
+    return "image/webp";
+  }
+  return null;
+}
 
 async function metalAssetIds(db: DB): Promise<Map<MetalName, number>> {
   const rows = await db
@@ -81,11 +105,12 @@ export async function metalRoutes(app: FastifyInstance) {
   // Everything the metals page needs: per-metal totals, physical items valued at spot, vaulted holdings.
   app.get("/overview", async () => {
     const ids = await metalAssetIds(db);
-    const [items, prices, accountRows, ledger] = await Promise.all([
+    const [items, prices, accountRows, ledger, photos] = await Promise.all([
       db.select().from(metalItems).orderBy(asc(metalItems.purchaseDate), asc(metalItems.id)),
       db.select().from(pricesLatest),
       db.select().from(accounts),
       loadLedger(db),
+      db.select({ id: metalPhotos.id, itemId: metalPhotos.itemId }).from(metalPhotos).orderBy(asc(metalPhotos.id)),
     ]);
     const spot = new Map<MetalName, Decimal | null>(
       METALS.map((m) => {
@@ -147,6 +172,7 @@ export async function metalRoutes(app: FastifyInstance) {
       return {
         ...i,
         accountName: accName(i.accountId),
+        photoIds: photos.filter((p) => p.itemId === i.id).map((p) => p.id),
         fineWeightG: fine.toFixed(4),
         fineWeightOz: fine.div(TROY_OUNCE_G).toFixed(4),
         valueEur: sold ? null : value ? money2(value) : null,
@@ -267,6 +293,48 @@ export async function metalRoutes(app: FastifyInstance) {
       .returning();
     await audit(db, "metal_item", id, "update", before, row);
     return row;
+  });
+
+  // ---- Photos ----
+
+  app.post("/items/:id/photos", { bodyLimit: 6 * 1024 * 1024 }, async (req) => {
+    const { id } = idParam.parse(req.params);
+    const { mime, data } = photoBody.parse(req.body);
+    const [item] = await db.select().from(metalItems).where(eq(metalItems.id, id));
+    if (!item) throw notFound("Item");
+    const buf = Buffer.from(data, "base64");
+    if (buf.length > MAX_PHOTO_BYTES) throw new HttpError(413, "Photo is too large (max 4 MB)");
+    if (sniffImage(buf) !== mime) throw new HttpError(400, "That isn't a JPEG, PNG or WebP image");
+    const existing = await db.select({ id: metalPhotos.id }).from(metalPhotos).where(eq(metalPhotos.itemId, id));
+    if (existing.length >= MAX_PHOTOS) throw new HttpError(400, `At most ${MAX_PHOTOS} photos per item`);
+    const [row] = await db
+      .insert(metalPhotos)
+      .values({ itemId: id, mime, data: buf.toString("base64"), bytes: buf.length })
+      .returning({ id: metalPhotos.id });
+    await audit(db, "metal_photo", row!.id, "create", null, { itemId: id, product: item.product });
+    return { id: row!.id };
+  });
+
+  app.get("/photos/:id", async (req, reply) => {
+    const { id } = idParam.parse(req.params);
+    const [p] = await db.select().from(metalPhotos).where(eq(metalPhotos.id, id));
+    if (!p) throw notFound("Photo");
+    // A photo never changes under its id.
+    reply.header("content-type", p.mime).header("cache-control", "private, max-age=31536000, immutable");
+    return Buffer.from(p.data, "base64");
+  });
+
+  app.delete("/photos/:id", async (req) => {
+    const { id } = idParam.parse(req.params);
+    const [p] = await db
+      .select({ id: metalPhotos.id, itemId: metalPhotos.itemId, product: metalItems.product })
+      .from(metalPhotos)
+      .innerJoin(metalItems, eq(metalItems.id, metalPhotos.itemId))
+      .where(eq(metalPhotos.id, id));
+    if (!p) throw notFound("Photo");
+    await db.delete(metalPhotos).where(eq(metalPhotos.id, id));
+    await audit(db, "metal_photo", id, "delete", { itemId: p.itemId, product: p.product }, null);
+    return { ok: true };
   });
 
   app.delete("/items/:id", async (req) => {

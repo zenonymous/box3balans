@@ -36,6 +36,13 @@
       "when": 1791227364026,
       "tag": "0004_csv_imports",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791228499013,
+      "tag": "0005_metal_photos",
+      "breakpoints": true
     }
   ]
 }

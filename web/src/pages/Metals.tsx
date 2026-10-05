@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { del, get, post, put, type MetalItem, type MetalName, type MetalProduct } from "../api";
+import { PhotoStrip, photoUrl } from "../components/Photos";
 import { RefreshButton } from "../components/RefreshButton";
 import {
   Alert,
@@ -42,6 +43,14 @@ export function MetalsPage() {
         actions={
           <>
             <RefreshButton />
+            {m.items.some((i) => !i.soldDate) && (
+              <Link
+                to="/metals/inventory"
+                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
+              >
+                Inventory
+              </Link>
+            )}
             <Button variant="primary" onClick={() => setEditing("new")}>
               + Add coin / bar
             </Button>
@@ -137,6 +146,16 @@ export function MetalsPage() {
                   onClick={() => setEditing(i)}
                   className="flex w-full items-center gap-3 px-4 py-3 text-left text-sm hover:bg-surface-2"
                 >
+                  {i.photoIds.length > 0 ? (
+                    <img
+                      src={photoUrl(i.photoIds[0]!)}
+                      alt=""
+                      loading="lazy"
+                      className="size-10 shrink-0 rounded-md border border-line object-cover"
+                    />
+                  ) : (
+                    <span aria-hidden className="size-10 shrink-0 rounded-md border border-dashed border-line" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium text-ink">
                       {i.quantity > 1 && <span className="text-ink-2">{i.quantity}× </span>}
@@ -210,6 +229,9 @@ const strip = (v: string | null | undefined) =>
 function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => void }) {
   const accounts = useAccounts();
   const invalidate = useInvalidateAll();
+  const metals = useMetals();
+  // Photos change while the dialog is open; read them from the live list.
+  const photoIds = metals.data?.items.find((i) => i.id === item?.id)?.photoIds ?? item?.photoIds ?? [];
   const products = useQuery({
     queryKey: ["metal-products"],
     queryFn: () => get<MetalProduct[]>("/api/metals/products"),
@@ -286,7 +308,10 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
   };
 
   const remove = async () => {
-    if (!confirm("Delete this item? If you sold it, mark it as sold instead to keep the realized result.")) return;
+    if (
+      !confirm("Delete this item and its photos? If you sold it, mark it as sold instead to keep the realized result.")
+    )
+      return;
     try {
       await del(`/api/metals/items/${item!.id}`);
       await invalidate();
@@ -494,6 +519,14 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
           </div>
         )}
       </form>
+      <div className="mt-4 border-t border-line pt-3">
+        <h3 className="mb-2 text-xs font-medium text-ink-2">Photos</h3>
+        {item ? (
+          <PhotoStrip itemId={item.id} photoIds={photoIds} onChange={() => void metals.refetch()} />
+        ) : (
+          <p className="text-xs text-muted">Save the item first, then add photos (e.g. for your insurance).</p>
+        )}
+      </div>
     </Modal>
   );
 }

@@ -222,6 +222,7 @@ export interface MetalItem {
   premiumPct: string | null;
   pnlEur: string | null;
   pnlPct: string | null;
+  photoIds: number[];
 }
 
 export interface MetalsOverview {

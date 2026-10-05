@@ -137,7 +137,7 @@ docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.
 1. **Accounts**: add one per place you hold assets: brokers (DEGIRO), exchanges (Bitvavo), wallets (Ledger), vaults (Goldrepublic), physical storage (Home safe).
 2. **Assets**: search Yahoo Finance by name, ticker or ISIN, or CoinGecko by coin. Pick the listing you actually trade (e.g. `IWDA.AS` rather than `IWDA.L`). Gold, silver, platinum, palladium and EUR cash exist already.
 3. **Transactions**: buy, sell, deposit, withdrawal, dividend (gross plus tax withheld), staking reward, fee paid in the asset, split, and **transfers** between accounts, which carry the cost basis along. Foreign-currency trades get the ECB rate for that date automatically; you can override it.
-4. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset.
+4. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset. Each item can have up to 8 **photos** (resized in the browser; location data is removed). _Inventory_ prints or saves as PDF a list per storage location with photos, weights, purchase details and value at spot, e.g. for your home insurance.
 
 ### CSV import
 

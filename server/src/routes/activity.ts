@@ -65,6 +65,8 @@ function title(entity: string, s: Snapshot | null, names: Names): string {
       return String(s.name ?? "Account");
     case "metal_item":
       return `${s.quantity ?? 1}× ${s.product ?? "item"}`;
+    case "metal_photo":
+      return `Photo of ${s.product ?? "an item"}`;
     case "import":
       return String(s.fileName ?? "CSV import");
     case "integration":
