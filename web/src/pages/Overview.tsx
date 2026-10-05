@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { AllocationBar } from "../charts/AllocationBar";
+import { RankedBars, type RankedRow } from "../charts/RankedBars";
+import type { Holding, Summary } from "../api";
 import { NetWorthChart } from "../charts/NetWorthChart";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Card, Delta, Empty, PageHeader, Spinner, Stat, Tabs } from "../components/ui";
@@ -59,13 +61,6 @@ export function OverviewPage() {
       </>
     );
   }
-
-  const slices = CLASS_ORDER.map((c) => ({
-    key: c,
-    label: CLASS_LABEL[c]!,
-    value: Number(summary.byClass[c]),
-    color: CLASS_COLOR[c]!,
-  }));
 
   return (
     <>
@@ -163,9 +158,7 @@ export function OverviewPage() {
       </Card>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
-        <Card title="Allocation by asset class" className="lg:col-span-2">
-          <AllocationBar slices={slices} />
-        </Card>
+        <AllocationCard summary={summary} holdings={holdings} />
         <Card
           title="Top holdings"
           className="lg:col-span-3"
@@ -204,20 +197,94 @@ export function OverviewPage() {
             ))}
           </ul>
         </Card>
-        <Card title="By account" className="lg:col-span-2" padded={false}>
-          <ul className="divide-y divide-line">
-            {summary.byAccount.map((a) => (
-              <li key={a.accountId} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                <div>
-                  <div className="text-ink">{a.name}</div>
-                  <div className="text-xs capitalize text-muted">{a.kind}</div>
-                </div>
-                <div className="tabular text-ink">{eur(a.valueEur)}</div>
-              </li>
-            ))}
-          </ul>
-        </Card>
       </div>
     </>
+  );
+}
+
+type AllocationView = "class" | "asset" | "account";
+const TOP_ASSETS = 10;
+
+const classSegments = (byClass: Map<string, number>) =>
+  CLASS_ORDER.filter((c) => (byClass.get(c) ?? 0) > 0).map((c) => ({
+    key: c,
+    label: CLASS_LABEL[c]!,
+    value: byClass.get(c)!,
+    color: CLASS_COLOR[c]!,
+  }));
+
+/** Allocation by asset class, by individual holding, or by account (each split by asset class). */
+function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Holding[] }) {
+  const [view, setView] = useState<AllocationView>("class");
+  const slices = CLASS_ORDER.map((c) => ({
+    key: c,
+    label: CLASS_LABEL[c]!,
+    value: Number(summary.byClass[c]),
+    color: CLASS_COLOR[c]!,
+  }));
+  const legend = slices.filter((s) => s.value > 0).map((s) => ({ label: s.label, color: s.color }));
+
+  let rows: RankedRow[] = [];
+  if (view === "asset") {
+    const sorted = holdings
+      .filter((h) => Number(h.valueEur) > 0)
+      .sort((a, b) => Number(b.valueEur) - Number(a.valueEur));
+    rows = sorted.slice(0, TOP_ASSETS).map((h) => ({
+      key: h.key,
+      label: h.name,
+      sub: h.symbol,
+      value: Number(h.valueEur),
+      segments: classSegments(new Map([[h.assetClass, Number(h.valueEur)]])),
+    }));
+    const rest = sorted.slice(TOP_ASSETS);
+    if (rest.length) {
+      const byClass = new Map<string, number>();
+      for (const h of rest) byClass.set(h.assetClass, (byClass.get(h.assetClass) ?? 0) + Number(h.valueEur));
+      rows.push({
+        key: "other",
+        label: `${rest.length} other holding${rest.length === 1 ? "" : "s"}`,
+        value: rest.reduce((a, h) => a + Number(h.valueEur), 0),
+        segments: classSegments(byClass),
+      });
+    }
+  } else if (view === "account") {
+    const kind = new Map(summary.byAccount.map((a) => [a.accountId, a.kind]));
+    const accounts = new Map<number, { name: string; byClass: Map<string, number> }>();
+    for (const h of holdings) {
+      for (const a of h.accounts) {
+        const acc = accounts.get(a.accountId) ?? { name: a.accountName, byClass: new Map() };
+        acc.byClass.set(h.assetClass, (acc.byClass.get(h.assetClass) ?? 0) + Number(a.valueEur));
+        accounts.set(a.accountId, acc);
+      }
+    }
+    rows = [...accounts.entries()]
+      .map(([id, a]) => ({
+        key: String(id),
+        label: a.name,
+        sub: kind.get(id),
+        value: [...a.byClass.values()].reduce((x, y) => x + y, 0),
+        segments: classSegments(a.byClass),
+      }))
+      .sort((a, b) => b.value - a.value);
+  }
+
+  return (
+    <Card
+      title="Allocation"
+      className="lg:col-span-2"
+      actions={
+        <Tabs
+          value={view}
+          onChange={setView}
+          options={[
+            { value: "class", label: "Class" },
+            { value: "asset", label: "Asset" },
+            { value: "account", label: "Account" },
+          ]}
+        />
+      }
+    >
+      {view === "class" ? <AllocationBar slices={slices} /> : <RankedBars rows={rows} legend={legend} />}
+    </Card>
   );
 }
