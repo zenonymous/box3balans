@@ -126,6 +126,8 @@ const pages = [
   "/api/performance",
   "/api/income",
   `/api/box3/${new Date().getFullYear() - 1}`,
+  "/api/returns",
+  "/api/costs",
   "/api/transactions?limit=100",
   "/api/export/transactions.csv",
 ];
