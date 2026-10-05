@@ -2,14 +2,16 @@ name: kluishuis
 
 services:
   db:
-    image: postgres:17-alpine
+    # Major versions need a backup and restore to upgrade (README → Upgrading PostgreSQL).
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_DB: kluishuis
       POSTGRES_USER: kluishuis
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
     volumes:
-      - db-data:/var/lib/postgresql/data
+      # Since PostgreSQL 18 the image keeps its data in /var/lib/postgresql/<major>/docker.
+      - db-data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kluishuis -d kluishuis"]
       interval: 10s

@@ -62,6 +62,17 @@ It copies the new code and runs `docker compose up -d --build` on the NAS. Your 
 
 To also pick up security updates of the Node and PostgreSQL base images, run on the NAS: `docker compose pull db && docker compose build --pull && docker compose up -d`.
 
+### Upgrading PostgreSQL
+
+Patch updates (18.x) come with `docker compose pull db && docker compose up -d`. A new major version (e.g. 18 → 19) can't read the old data files directly; move the data with a backup instead. This was rehearsed on real PostgreSQL 17 → 18: every page showed identical data afterwards.
+
+1. Make a backup: `docker compose exec app node dist/cli.js backup`.
+2. `docker compose down`.
+3. In `docker-compose.yml`, change the `db` image tag (e.g. `postgres:19-alpine`) **and** rename the volume (`db-data` → `db-data-19`, in both places). The old volume stays untouched as a fallback.
+4. `docker compose up -d`. The app starts on an empty database and creates the tables.
+5. Restore: `docker compose exec app node dist/cli.js restore /backups/<the backup from step 1>`, then `docker compose restart app` and sign in again.
+6. Once everything looks right, remove the old volume: `docker volume rm kluishuis_db-data`.
+
 ### Access away from home (VPN)
 
 Keep Kluishuis off the internet: don't forward port 8080 on your router. To reach it from your phone or laptop elsewhere, use a VPN:
@@ -285,13 +296,14 @@ Demo data: after creating a user, run `SESSION=<pd_session cookie> npx tsx serve
 
 ## Troubleshooting
 
-| Symptom                                         | What to check                                                                                                                                                                                                                         |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A synced coin got the wrong price (wrong coin)  | After a sync, _New assets added_ shows which price feed each new coin was matched to (e.g. "LUNA → CoinGecko terra-luna-2"). If it's wrong, edit the asset under _Assets_ and set the right CoinGecko id.                             |
-| A price shows "stale" or "no price yet"         | _Settings → Prices_ lists failures. Free APIs rate-limit; prices retry on the next refresh. For a wrong ticker, edit the asset (_Assets_) and fix its Yahoo ticker or CoinGecko id.                                                   |
-| The history chart says "valued at cost"         | Price history is still loading (it runs in the background after changes), or there is no free history for that asset. `POST /api/prices/backfill` forces a re-check.                                                                  |
-| A connection or wallet shows balance mismatches | History the API doesn't expose (very old trades, staking moves). Fix the history, or use _Adjust_ to record a correcting deposit or withdrawal.                                                                                       |
-| "Stored credentials cannot be decrypted"        | `APP_SECRET` changed. Restore the old value, or re-enter the API keys.                                                                                                                                                                |
-| The container is unhealthy                      | `docker compose logs app`. The health check (`/api/health`) also fails when the database is unreachable.                                                                                                                              |
-| Pages feel slow                                 | Set `LOG_LEVEL=debug` and `docker compose up -d`; every request then logs its `responseTime` in milliseconds (`docker compose logs app \| grep responseTime`). Set it back to `info` afterwards.                                      |
-| Locked out                                      | There is one user and no reset by e-mail. Restore a backup, or reset the password from the database: `docker compose exec db psql -U kluishuis -c "delete from users"`, then open the app to run first-time setup again (data stays). |
+| Symptom                                             | What to check                                                                                                                                                                                                                         |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A synced coin got the wrong price (wrong coin)      | After a sync, _New assets added_ shows which price feed each new coin was matched to (e.g. "LUNA → CoinGecko terra-luna-2"). If it's wrong, edit the asset under _Assets_ and set the right CoinGecko id.                             |
+| A price shows "stale" or "no price yet"             | _Settings → Prices_ lists failures. Free APIs rate-limit; prices retry on the next refresh. For a wrong ticker, edit the asset (_Assets_) and fix its Yahoo ticker or CoinGecko id.                                                   |
+| The history chart says "valued at cost"             | Price history is still loading (it runs in the background after changes), or there is no free history for that asset. `POST /api/prices/backfill` forces a re-check.                                                                  |
+| A connection or wallet shows balance mismatches     | History the API doesn't expose (very old trades, staking moves). Fix the history, or use _Adjust_ to record a correcting deposit or withdrawal.                                                                                       |
+| "Stored credentials cannot be decrypted"            | `APP_SECRET` changed. Restore the old value, or re-enter the API keys.                                                                                                                                                                |
+| The container is unhealthy                          | `docker compose logs app`. The health check (`/api/health`) also fails when the database is unreachable.                                                                                                                              |
+| Pages feel slow                                     | Set `LOG_LEVEL=debug` and `docker compose up -d`; every request then logs its `responseTime` in milliseconds (`docker compose logs app \| grep responseTime`). Set it back to `info` afterwards.                                      |
+| The `db` container keeps restarting after an update | Its log mentions old databases or incompatible data files: the PostgreSQL major version changed. Go back to the previous image tag, then follow [Upgrading PostgreSQL](#upgrading-postgresql).                                        |
+| Locked out                                          | There is one user and no reset by e-mail. Restore a backup, or reset the password from the database: `docker compose exec db psql -U kluishuis -c "delete from users"`, then open the app to run first-time setup again (data stays). |
