@@ -32,6 +32,7 @@ import { importRoutes } from "./routes/imports.js";
 import { activityRoutes } from "./routes/activity.js";
 import { attentionRoutes } from "./routes/attention.js";
 import { returnRoutes } from "./routes/returns.js";
+import { dividendRoutes } from "./routes/dividends.js";
 
 export interface AppDeps {
   db: DB;
@@ -173,6 +174,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(activityRoutes, { prefix: "/api/activity" });
   await app.register(attentionRoutes, { prefix: "/api/attention" });
   await app.register(returnRoutes, { prefix: "/api/returns" });
+  await app.register(dividendRoutes, { prefix: "/api/dividends" });
 
   // Serve the built frontend (single-page app) when present.
   const webDist = path.resolve(deps.config.WEB_DIST);

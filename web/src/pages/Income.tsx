@@ -5,6 +5,7 @@ import { get, type IncomeResponse } from "../api";
 import { downloadCsv } from "../csv";
 import { Alert, Button, Card, Empty, PageHeader, Select, Spinner, Stat, Swatch } from "../components/ui";
 import { date, eur, getLocale } from "../format";
+import { DividendForecastCard, WithholdingCard } from "./DividendOutlook";
 
 // Categorical slots in fixed order: colour follows the income kind.
 const KINDS = [
@@ -67,6 +68,9 @@ export function IncomePage() {
             Dividends, staking rewards and interest show up here once recorded or synced.
           </Empty>
         </Card>
+        <div className="mt-4">
+          <DividendForecastCard />
+        </div>
       </>
     );
   }
@@ -198,6 +202,11 @@ export function IncomePage() {
           </ResponsiveContainer>
         </div>
       </Card>
+
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <DividendForecastCard />
+        <WithholdingCard />
+      </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-5">
         <Card title="By asset" padded={false} className="xl:col-span-2">

@@ -82,3 +82,29 @@ export async function yahooSearch(query: string, fetchFn?: FetchFn): Promise<Ass
       isin: isIsin ? query.trim().toUpperCase() : undefined,
     }));
 }
+
+export interface DividendEvent {
+  exDate: string; // YYYY-MM-DD
+  amount: ReturnType<typeof D>; // per share, in `currency`
+  currency: string;
+}
+
+/** Dividends per share over the last two years (ex-dividend dates), from Yahoo's chart events. */
+export async function yahooDividends(ticker: string, fetchFn?: FetchFn): Promise<DividendEvent[]> {
+  const url = `${BASE}/v8/finance/chart/${encodeURIComponent(ticker)}?range=2y&interval=1mo&events=div`;
+  const data = await getJson<{
+    chart: {
+      result:
+        | { meta: { currency: string }; events?: { dividends?: Record<string, { amount: number; date: number }> } }[]
+        | null;
+    };
+  }>(url, { fetchFn });
+  const r = data.chart.result?.[0];
+  if (!r) return [];
+  return Object.values(r.events?.dividends ?? {})
+    .map((d) => {
+      const { currency, price } = normaliseCurrency(r.meta.currency, D(d.amount));
+      return { exDate: new Date(d.date * 1000).toISOString().slice(0, 10), amount: price, currency };
+    })
+    .sort((a, b) => a.exDate.localeCompare(b.exDate));
+}
