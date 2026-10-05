@@ -15,6 +15,9 @@ export interface HistoryPoint {
   investedEur: number;
   // Value − invested for non-cash holdings.
   unrealizedEur: number;
+  // Money that came in (+) or went out (−) of the portfolio that day, as opposed to results:
+  // deposits and withdrawals, trades or dividends not booked in cash, metal bought or sold.
+  flowEur: number;
 }
 
 export interface History {
@@ -22,6 +25,8 @@ export interface History {
   // Assets valued at cost for more than a few days because no price history was available
   // (a market holiday on the purchase day doesn't count).
   estimated: { symbol: string; until: string }[];
+  // Sum of each asset's daily value per year ("2024|17" → €), for average holdings (e.g. ETF costs).
+  assetValueDays: Record<string, number>;
 }
 
 const CLASSES: AssetClassKey[] = ["stock", "etf", "crypto", "metal", "cash", "other"];
@@ -94,7 +99,7 @@ export async function computeHistory(db: DB, method: CostMethod): Promise<Histor
   const firstItem = items.reduce<string | null>((m, i) => (!m || i.purchaseDate < m ? i.purchaseDate : m), null);
   const start = [firstTx, firstItem].filter((d): d is string => !!d).sort()[0];
   const today = localToday();
-  if (!start) return { points: [], estimated: [] };
+  if (!start) return { points: [], estimated: [], assetValueDays: {} };
 
   const ledger = new Ledger(method);
   const estimated = new Map<string, { until: string; days: number }>();
@@ -103,22 +108,35 @@ export async function computeHistory(db: DB, method: CostMethod): Promise<Histor
     estimated.set(symbol, { until: day, days: e.days + 1 });
   };
   const points: HistoryPoint[] = [];
+  const assetValueDays: Record<string, number> = {};
   let ti = 0;
 
   for (let day = start; day <= today; day = addDay(day)) {
-    // Transactions belong to their calendar day in the user's time zone.
-    while (ti < txs.length && localDay(txs[ti]!.occurredAt) <= day) ledger.apply(txs[ti++]!);
     const isToday = day === today;
-    const byClass = Object.fromEntries(CLASSES.map((c) => [c, ZERO])) as Record<AssetClassKey, Decimal>;
-    let invested = ZERO;
-    let nonCashValue = ZERO;
-
     const unitPrice = (assetId: number): Decimal | null => {
       const a = assetById.get(assetId);
       if (a?.priceSource === "fx" && a.priceRef === "EUR") return D(1);
       if (isToday && latestById.has(assetId)) return latestById.get(assetId)!;
       return priceOf(assetId, day);
     };
+
+    // Transactions belong to their calendar day in the user's time zone.
+    let flow = ZERO;
+    while (ti < txs.length && localDay(txs[ti]!.occurredAt) <= day) {
+      const tx = txs[ti++]!;
+      const a = assetById.get(tx.assetId);
+      if (a && !a.hidden) flow = flow.plus(externalFlow(tx, a.assetClass === "cash", unitPrice(tx.assetId)));
+      ledger.apply(tx);
+    }
+    for (const it of items) {
+      if (it.purchaseDate === day) flow = flow.plus(D(it.purchasePriceEur));
+      if (it.soldDate === day && it.salePriceEur) flow = flow.minus(D(it.salePriceEur));
+    }
+
+    const byClass = Object.fromEntries(CLASSES.map((c) => [c, ZERO])) as Record<AssetClassKey, Decimal>;
+    let invested = ZERO;
+    let nonCashValue = ZERO;
+    const yr = day.slice(0, 4);
 
     for (const p of ledger.positions.values()) {
       if (p.quantity.isZero()) continue;
@@ -137,6 +155,8 @@ export async function computeHistory(db: DB, method: CostMethod): Promise<Histor
       if (cls !== "cash") {
         invested = invested.plus(p.costEur);
         nonCashValue = nonCashValue.plus(value);
+        const k = `${yr}|${p.assetId}`;
+        assetValueDays[k] = (assetValueDays[k] ?? 0) + value.toNumber();
       }
     }
 
@@ -163,15 +183,57 @@ export async function computeHistory(db: DB, method: CostMethod): Promise<Histor
       >,
       investedEur: invested.toDecimalPlaces(2).toNumber(),
       unrealizedEur: nonCashValue.minus(invested).toDecimalPlaces(2).toNumber(),
+      flowEur: flow.toDecimalPlaces(2).toNumber(),
     });
   }
 
   const value: History = {
     points,
     estimated: [...estimated].filter(([, e]) => e.days > 5).map(([symbol, e]) => ({ symbol, until: e.until })),
+    assetValueDays,
   };
   cache = { key, value };
   return value;
+}
+
+/**
+ * Money moving into (+) or out of (−) the portfolio with one transaction, in EUR. What stays
+ * inside (a buy paid from tracked cash, a transfer between your accounts, a reward, a fee) is part
+ * of the result, not a flow. Assets moving in or out are counted at that day's market value, else
+ * at the price recorded with the transaction.
+ */
+export function externalFlow(
+  tx: {
+    type: string;
+    quantity: string;
+    price: string;
+    fxRate: string;
+    feeEur: string;
+    amount: string;
+    taxWithheld: string;
+    settleAssetId?: number | null;
+  },
+  isCash: boolean,
+  marketEur: Decimal | null,
+): Decimal {
+  const q = D(tx.quantity);
+  const atPrice = q.mul(D(tx.price)).mul(D(tx.fxRate));
+  const valued = isCash ? atPrice : marketEur ? q.mul(marketEur) : atPrice;
+  switch (tx.type) {
+    case "deposit":
+      return valued;
+    case "withdrawal":
+      return valued.neg();
+    case "buy":
+      return tx.settleAssetId ? ZERO : atPrice.plus(D(tx.feeEur));
+    case "sell":
+      return tx.settleAssetId ? ZERO : atPrice.minus(D(tx.feeEur)).neg();
+    case "dividend":
+      // Paid out to a bank account outside the portfolio: income, then gone.
+      return tx.settleAssetId ? ZERO : D(tx.amount).minus(D(tx.taxWithheld)).mul(D(tx.fxRate)).neg();
+    default:
+      return ZERO;
+  }
 }
 
 /** Value on the last day on or before `day` (null before the history starts). */

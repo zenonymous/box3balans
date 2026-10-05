@@ -87,18 +87,22 @@ describe("second price sources", () => {
         close: 296.45,
       },
     });
-    const aapl = await addAsset({
-      assetClass: "stock",
-      name: "Apple",
-      symbol: "AAPL",
-      isin: "US0378331005",
-      priceSource: "yahoo",
-      priceRef: "AAPL",
-      currency: "USD",
-    });
+    // Inserted directly: adding it through the API would check the (failing) Yahoo quote.
+    const [aapl] = await t.database.db
+      .insert(assets)
+      .values({
+        assetClass: "stock",
+        name: "Apple",
+        symbol: "AAPL",
+        isin: "US0378331005",
+        priceSource: "yahoo",
+        priceRef: "AAPL",
+        currency: "USD",
+      })
+      .returning();
     const r = await t.prices.refreshAll();
     expect(r.fallbacks).toEqual([{ symbol: "AAPL", source: "tradegate" }]);
-    const p = (await latest(aapl.id))!;
+    const p = (await latest(aapl!.id))!;
     // €296.70 at 1.25 USD per EUR = $370.875; valued back in EUR it's €296.70.
     expect(p).toMatchObject({ source: "tradegate", currency: "USD" });
     expect(Number(p.price)).toBeCloseTo(370.875, 6);
@@ -113,17 +117,20 @@ describe("second price sources", () => {
       // No last trade yet: the middle of bid and ask, written German-style with a thousands space.
       "tradegatebsx.com/refresh.php?isin=NL0010273215": { bid: "1 659,20", ask: "1 660,60", delta: "0,19" },
     });
-    const asml = await addAsset({
-      assetClass: "stock",
-      name: "ASML",
-      symbol: "ASML",
-      isin: "NL0010273215",
-      priceSource: "yahoo",
-      priceRef: "ASML.AS",
-      currency: "EUR",
-    });
+    const [asml] = await t.database.db
+      .insert(assets)
+      .values({
+        assetClass: "stock",
+        name: "ASML",
+        symbol: "ASML",
+        isin: "NL0010273215",
+        priceSource: "yahoo",
+        priceRef: "ASML.AS",
+        currency: "EUR",
+      })
+      .returning();
     await t.prices.refreshAll();
-    const p = (await latest(asml.id))!;
+    const p = (await latest(asml!.id))!;
     expect(Number(p.price)).toBeCloseTo(1659.9, 6);
     expect(Number(p.changePct24h)).toBeCloseTo(0.19, 6);
   });

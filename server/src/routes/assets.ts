@@ -52,7 +52,7 @@ export async function assetRoutes(app: FastifyInstance) {
       .object({ q: z.string().trim().min(1).max(100), kind: z.enum(["securities", "crypto"]) })
       .parse(req.query);
     try {
-      return kind === "crypto" ? await coingeckoSearch(q) : await yahooSearch(q);
+      return kind === "crypto" ? await coingeckoSearch(q, prices.fetchFn) : await yahooSearch(q, prices.fetchFn);
     } catch (err) {
       throw new HttpError(502, `Search failed: ${(err as Error).message}`);
     }
@@ -67,7 +67,7 @@ export async function assetRoutes(app: FastifyInstance) {
     if (data.priceSource === "yahoo") {
       if (!priceRef) throw new HttpError(400, "A Yahoo ticker is required");
       try {
-        currency = (await yahooQuote(priceRef)).currency;
+        currency = (await yahooQuote(priceRef, prices.fetchFn)).currency;
       } catch (err) {
         throw new HttpError(400, `Could not price ${priceRef} on Yahoo: ${(err as Error).message}`);
       }
