@@ -34,10 +34,9 @@ services:
     ports:
       - "${HTTP_PORT:-8080}:8080"
     volumes:
-      # Automatic and manual backups (see README → Backups). To keep them on the host instead, use a
-      # bind mount such as ./backups:/backups (create it first and `chown 1000:1000 ./backups`).
-      - backups:/backups
+      # Backups in a folder next to this file, for your NAS's own backup tool to copy off-site.
+      # Files belong to PUID/PGID from .env (your NAS user); set BACKUP_PASSPHRASE to encrypt them.
+      - ./backups:/backups
 
 volumes:
   db-data:
-  backups:

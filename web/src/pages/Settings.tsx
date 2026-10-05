@@ -270,6 +270,16 @@ interface BackupInfo {
   name: string;
   sizeBytes: number;
   createdAt: string;
+  encrypted: boolean;
+}
+
+interface BackupList {
+  dir: string;
+  intervalHours: number;
+  keep: number;
+  encrypted: boolean;
+  status: { lastSuccessAt?: string; lastErrorAt?: string; lastError?: string };
+  backups: BackupInfo[];
 }
 
 /** Backups (gzipped JSON of all data) in the server's backup folder, plus CSV exports. */
@@ -277,12 +287,13 @@ function BackupsCard() {
   const qc = useQueryClient();
   const list = useQuery({
     queryKey: ["backups"],
-    queryFn: () => get<{ dir: string; intervalHours: number; keep: number; backups: BackupInfo[] }>("/api/backups"),
+    queryFn: () => get<BackupList>("/api/backups"),
   });
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string }>();
   const [restoring, setRestoring] = useState<string | null>(null);
   const [confirm, setConfirm] = useState("");
+  const [passphrase, setPassphrase] = useState("");
 
   const backupNow = async () => {
     setBusy(true);
@@ -304,7 +315,10 @@ function BackupsCard() {
     setBusy(true);
     setMsg(undefined);
     try {
-      await post(`/api/backups/${encodeURIComponent(restoring)}/restore`, { confirm });
+      await post(`/api/backups/${encodeURIComponent(restoring)}/restore`, {
+        confirm,
+        ...(passphrase ? { passphrase } : {}),
+      });
       // Sessions aren't in backups: sign in again with the restored account.
       qc.clear();
       qc.setQueryData(["auth"], { needsSetup: false, user: null });
@@ -325,7 +339,19 @@ function BackupsCard() {
             : "Automatic backups are off (BACKUP_INTERVAL_HOURS=0). "}
           Backups contain all data (exchange keys stay encrypted, so restoring them needs the same APP_SECRET) and are
           stored on the server in <code className="rounded bg-surface-2 px-1 text-xs">{d?.dir ?? "…"}</code>.
+          {d?.encrypted && " New backups are encrypted with your BACKUP_PASSPHRASE."}
         </p>
+        {d && !d.encrypted && (
+          <Alert>
+            Backups aren't encrypted: anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and
+            restart to encrypt new backups.
+          </Alert>
+        )}
+        {d?.status.lastErrorAt && (!d.status.lastSuccessAt || d.status.lastErrorAt > d.status.lastSuccessAt) && (
+          <Alert tone="danger">
+            The last automatic backup failed ({relativeTime(d.status.lastErrorAt)}): {d.status.lastError}
+          </Alert>
+        )}
         <div className="flex flex-wrap gap-2">
           <Button variant="primary" onClick={backupNow} disabled={busy}>
             {busy && !restoring ? "Backing up…" : "Back up now"}
@@ -359,7 +385,14 @@ function BackupsCard() {
               <tbody className="divide-y divide-line">
                 {d.backups.map((b) => (
                   <tr key={b.name}>
-                    <td className="px-3 py-2 font-mono text-xs">{b.name}</td>
+                    <td className="px-3 py-2 font-mono text-xs">
+                      {b.name}
+                      {b.encrypted && (
+                        <span className="ml-1.5 font-sans text-muted" title="Encrypted">
+                          🔒
+                        </span>
+                      )}
+                    </td>
                     <td className="px-3 py-2 text-ink-2" title={b.createdAt}>
                       {date(b.createdAt)} · {relativeTime(b.createdAt)}
                     </td>
@@ -374,6 +407,7 @@ function BackupsCard() {
                         onClick={() => {
                           setRestoring(b.name);
                           setConfirm("");
+                          setPassphrase("");
                         }}
                       >
                         Restore…
@@ -404,6 +438,20 @@ function BackupsCard() {
                 />
               )}
             </Field>
+            {restoring.endsWith(".enc") && (
+              <Field label="Passphrase" hint="Only needed if this backup was made with a different BACKUP_PASSPHRASE">
+                {(id) => (
+                  <Input
+                    id={id}
+                    type="password"
+                    value={passphrase}
+                    onChange={(e) => setPassphrase(e.target.value)}
+                    autoComplete="off"
+                    className="max-w-72"
+                  />
+                )}
+              </Field>
+            )}
             <div className="flex gap-2">
               <Button type="submit" variant="danger" disabled={busy || confirm !== "RESTORE"}>
                 {busy ? "Restoring…" : "Restore"}

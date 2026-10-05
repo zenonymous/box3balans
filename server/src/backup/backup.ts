@@ -5,6 +5,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import * as s from "../db/schema.js";
+import { decryptBackup, encryptBackup, isEncryptedBackup } from "./crypto.js";
 
 export const BACKUP_FORMAT = "kluishuis-backup";
 // Backups made before the app was named Kluishuis.
@@ -138,10 +139,11 @@ export interface BackupInfo {
   name: string;
   sizeBytes: number;
   createdAt: string;
+  encrypted: boolean;
 }
 
-// "kluishuis-…", or "portfolio-…" for backups made before the rename.
-const NAME_RE = /^(?:kluishuis|portfolio)-(\d{8}-\d{6})(-[a-z]+)?\.json\.gz$/;
+// "kluishuis-…", or "portfolio-…" for backups made before the rename; ".enc" when encrypted.
+const NAME_RE = /^(?:kluishuis|portfolio)-(\d{8}-\d{6})(-[a-z]+)?\.json\.gz(\.enc)?$/;
 const stampOf = (name: string) => NAME_RE.exec(name)?.[1] ?? "";
 
 /** Only names this app generates are accepted, so a request can never reach outside the folder. */
@@ -152,19 +154,38 @@ export function backupPath(dir: string, name: string): string {
 
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
 
+/** Writes a backup; encrypted with `passphrase` when given (see crypto.ts). */
 export async function writeBackupFile(
   db: DB,
   dir: string,
   label?: "auto" | "manual" | "prerestore",
+  passphrase?: string,
 ): Promise<BackupInfo> {
   fs.mkdirSync(dir, { recursive: true });
-  const data = encodeBackup(await createBackup(db));
-  const name = `kluishuis-${stamp(new Date())}${label ? `-${label}` : ""}.json.gz`;
+  const plain = encodeBackup(await createBackup(db));
+  const data = passphrase ? await encryptBackup(plain, passphrase) : plain;
+  const name = `kluishuis-${stamp(new Date())}${label ? `-${label}` : ""}.json.gz${passphrase ? ".enc" : ""}`;
   const file = backupPath(dir, name);
   // Write then rename, so a crash never leaves a half-written file that looks valid.
   fs.writeFileSync(`${file}.tmp`, data, { mode: 0o600 });
   fs.renameSync(`${file}.tmp`, file);
-  return { name, sizeBytes: data.length, createdAt: new Date().toISOString() };
+  // Run as root (e.g. `docker compose exec app …`): give the file to whoever owns the folder, so the
+  // app can still prune it and the NAS backup tool sees the usual owner.
+  if (process.getuid?.() === 0) {
+    const owner = fs.statSync(dir);
+    fs.chownSync(file, owner.uid, owner.gid);
+  }
+  return { name, sizeBytes: data.length, createdAt: new Date().toISOString(), encrypted: !!passphrase };
+}
+
+/** Reads and decodes a backup file, decrypting it when needed. */
+export async function readBackupFile(file: string, passphrase?: string): Promise<BackupFile> {
+  let buf: Buffer = fs.readFileSync(file);
+  if (isEncryptedBackup(buf)) {
+    if (!passphrase) throw new Error("This backup is encrypted: set BACKUP_PASSPHRASE or enter its passphrase");
+    buf = await decryptBackup(buf, passphrase);
+  }
+  return decodeBackup(buf);
 }
 
 export function listBackups(dir: string): BackupInfo[] {
@@ -175,16 +196,18 @@ export function listBackups(dir: string): BackupInfo[] {
       .filter((f) => NAME_RE.test(f))
       .map((name) => {
         const st = fs.statSync(path.join(dir, name));
-        return { name, sizeBytes: st.size, createdAt: st.mtime.toISOString() };
+        return { name, sizeBytes: st.size, createdAt: st.mtime.toISOString(), encrypted: name.endsWith(".enc") };
       })
       // Newest first by the time in the name (not the prefix, which changed with the rename).
       .sort((a, b) => stampOf(b.name).localeCompare(stampOf(a.name)) || b.name.localeCompare(a.name))
   );
 }
 
+export const isAutomatic = (name: string) => /-auto\.json\.gz(\.enc)?$/.test(name);
+
 /** Keeps the newest `keep` automatic backups; manual and pre-restore backups are never pruned. */
 export function pruneBackups(dir: string, keep: number): string[] {
-  const auto = listBackups(dir).filter((b) => b.name.endsWith("-auto.json.gz"));
+  const auto = listBackups(dir).filter((b) => isAutomatic(b.name));
   const removed = auto.slice(keep).map((b) => b.name);
   for (const name of removed) fs.rmSync(path.join(dir, name));
   return removed;

@@ -6,7 +6,8 @@ import { type PriceService, type RefreshResult, today } from "../prices/service.
 import type { SyncService } from "../sync/service.js";
 import type { WalletService } from "../wallets/service.js";
 import type { BackfillService } from "./backfill.js";
-import { listBackups, pruneBackups, writeBackupFile } from "../backup/backup.js";
+import { isAutomatic, listBackups, pruneBackups, writeBackupFile } from "../backup/backup.js";
+import { recordBackupStatus } from "../backup/status.js";
 
 // A price counts as stale once it missed two refresh cycles plus some slack.
 export const staleAfterMs = (config: Config) => (config.PRICE_REFRESH_MINUTES * 2 + 10) * 60_000;
@@ -91,13 +92,17 @@ export function startScheduler(
   const backupMs = config.BACKUP_INTERVAL_HOURS * 3_600_000;
   const backupTick = async () => {
     try {
-      const latest = listBackups(config.BACKUP_DIR).find((b) => b.name.endsWith("-auto.json.gz"));
+      const latest = listBackups(config.BACKUP_DIR).find((b) => isAutomatic(b.name));
       if (latest && Date.now() - Date.parse(latest.createdAt) < backupMs) return;
-      const b = await writeBackupFile(db, config.BACKUP_DIR, "auto");
+      const b = await writeBackupFile(db, config.BACKUP_DIR, "auto", config.BACKUP_PASSPHRASE);
       const removed = pruneBackups(config.BACKUP_DIR, config.BACKUP_KEEP);
+      await recordBackupStatus(db, { lastSuccessAt: new Date().toISOString(), lastName: b.name });
       log.info({ backup: b.name, sizeBytes: b.sizeBytes, pruned: removed.length }, "automatic backup written");
     } catch (err) {
       log.error({ err }, "automatic backup failed");
+      await recordBackupStatus(db, { lastErrorAt: new Date().toISOString(), lastError: (err as Error).message }).catch(
+        () => undefined,
+      );
     }
   };
   const firstBackup = backupMs > 0 ? setTimeout(backupTick, 5 * 60_000) : undefined;

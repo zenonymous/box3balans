@@ -9,12 +9,15 @@ import {
   encodeBackup,
   listBackups,
   pruneBackups,
+  readBackupFile,
   restoreBackup,
   schemaVersion,
+  writeBackupFile,
 } from "../src/backup/backup.js";
 import { openDatabase } from "../src/db/client.js";
 import * as s from "../src/db/schema.js";
 import { SecretBox } from "../src/lib/secrets.js";
+import { WrongPassphraseError, decryptBackup, encryptBackup, isEncryptedBackup } from "../src/backup/crypto.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
@@ -208,6 +211,69 @@ describe("backup and restore", () => {
     return createBackup({ select: () => ({ from: async () => [] }) } as never).then((b) =>
       expect(Object.keys(b.tables).sort()).toEqual(all),
     );
+  });
+});
+
+describe("encrypted backups", () => {
+  const PASS = "correct horse battery staple";
+
+  it("round-trips, and refuses a wrong passphrase or a tampered file", async () => {
+    const plain = Buffer.from("hello backup");
+    const enc = await encryptBackup(plain, PASS);
+    expect(isEncryptedBackup(enc)).toBe(true);
+    expect(enc.includes(plain)).toBe(false);
+    expect((await decryptBackup(enc, PASS)).equals(plain)).toBe(true);
+    await expect(decryptBackup(enc, "wrong passphrase!!")).rejects.toBeInstanceOf(WrongPassphraseError);
+    const tampered = Buffer.from(enc);
+    tampered[tampered.length - 1]! ^= 1;
+    await expect(decryptBackup(tampered, PASS)).rejects.toBeInstanceOf(WrongPassphraseError);
+    // The scrypt parameters are authenticated too.
+    const weaker = Buffer.from(enc);
+    weaker[8] = 14;
+    await expect(decryptBackup(weaker, PASS)).rejects.toBeInstanceOf(WrongPassphraseError);
+    // Two encryptions of the same data differ (random salt and IV).
+    expect((await encryptBackup(plain, PASS)).equals(enc)).toBe(false);
+  });
+
+  it("writes .enc backups with BACKUP_PASSPHRASE and restores them through the API", async () => {
+    t = await createTestApp(undefined, { env: { BACKUP_PASSPHRASE: PASS } });
+    await populate();
+    const list0 = json(await t!.api("GET", "/api/backups"));
+    expect(list0.encrypted).toBe(true);
+    const made = json(await t!.api("POST", "/api/backups"));
+    expect(made).toMatchObject({ encrypted: true, name: expect.stringMatching(/-manual\.json\.gz\.enc$/) });
+    const file = path.join(t!.backupDir, made.name);
+    expect(isEncryptedBackup(fs.readFileSync(file))).toBe(true);
+    await expect(readBackupFile(file)).rejects.toThrow(/encrypted/);
+    expect((await readBackupFile(file, PASS)).tables.accounts).toHaveLength(2);
+
+    const res = await t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE" });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(json(res).safetyBackup).toMatch(/-prerestore\.json\.gz\.enc$/);
+
+    // A restore signs everyone out; sign in again.
+    const login = await t!.api("POST", "/api/auth/login", { username: "me", password: "correct horse battery" });
+    t!.cookie = `pd_session=${login.cookies.find((c) => c.name === "pd_session")!.value}`;
+
+    // A backup made with an earlier passphrase: refused, unless that passphrase is entered.
+    const old = await writeBackupFile(t!.database.db, t!.backupDir, "manual", "an older passphrase");
+    const refused = await t!.api("POST", `/api/backups/${old.name}/restore`, { confirm: "RESTORE" });
+    expect(refused.statusCode).toBe(400);
+    expect(json(refused).error).toMatch(/Wrong backup passphrase/);
+    const ok = await t!.api("POST", `/api/backups/${old.name}/restore`, {
+      confirm: "RESTORE",
+      passphrase: "an older passphrase",
+    });
+    expect(ok.statusCode).toBe(200);
+
+    // Pruning counts encrypted automatic backups too.
+    for (let d = 1; d <= 3; d++)
+      fs.writeFileSync(path.join(t!.backupDir, `kluishuis-2024010${d}-000000-auto.json.gz.enc`), "x");
+    expect(pruneBackups(t!.backupDir, 2)).toEqual(["kluishuis-20240101-000000-auto.json.gz.enc"]);
+  });
+
+  it("rejects a short passphrase at startup", async () => {
+    await expect(createTestApp(undefined, { env: { BACKUP_PASSPHRASE: "short" } })).rejects.toThrow(/at least 12/);
   });
 });
 

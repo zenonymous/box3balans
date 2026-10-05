@@ -51,6 +51,12 @@ const schema = z.object({
   BACKUP_INTERVAL_HOURS: z.coerce.number().min(0).default(24),
   // How many automatic backups to keep (manual and pre-restore backups are never deleted).
   BACKUP_KEEP: z.coerce.number().int().min(1).default(14),
+  // Encrypts backups (AES-256-GCM, key from scrypt) so they can be copied off-site safely.
+  BACKUP_PASSPHRASE: z
+    .string()
+    .optional()
+    .transform((v) => (v ? v : undefined))
+    .refine((v) => v === undefined || v.length >= 12, "BACKUP_PASSPHRASE must be at least 12 characters"),
   LOG_LEVEL: z.string().default("info"),
 });
 

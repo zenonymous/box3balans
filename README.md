@@ -40,7 +40,7 @@ You need an x86-64 machine with Docker and Docker Compose v2 (`docker compose ve
    # fill in POSTGRES_PASSWORD and APP_SECRET, each e.g. with: openssl rand -hex 32
    ```
 
-   Also store `APP_SECRET` in your password manager: backups need it to decrypt exchange API keys (see [Backups](#backups-and-restore)).
+   Also set `BACKUP_PASSPHRASE` (encrypts backups) and `PUID`/`PGID` (your NAS user, so you and your NAS backup tool can reach the `backups` folder). Store `APP_SECRET` and `BACKUP_PASSPHRASE` in your password manager: restoring needs them (see [Backups](#backups-and-restore)).
 
 3. **Start** with `docker compose up -d --build`. The first build takes a few minutes. After about 30 seconds `docker compose ps` should show both containers as `healthy`.
 
@@ -79,32 +79,31 @@ Keep Kluishuis off the internet: don't forward port 8080 on your router. To reac
 
 ## Backups and restore
 
-Backups are gzipped JSON of **all** data except login sessions: accounts, transactions, metals, prices, settings, connections and wallets. They are written to the `/backups` volume:
+Backups are gzipped JSON of **all** data except login sessions: accounts, transactions, metals and their photos, prices, settings, connections and wallets. They are written to the **`backups` folder next to `docker-compose.yml`** on the NAS:
 
 - **Automatically**, every `BACKUP_INTERVAL_HOURS` (default 24). The newest `BACKUP_KEEP` (default 14) automatic backups are kept.
 - **Manually**, with _Settings → Backups & export → Back up now_, or `docker compose exec app node dist/cli.js backup`. Manual backups are never deleted automatically.
-- **Before every restore**, as a safety copy (`…-prerestore.json.gz`).
+- **Before every restore**, as a safety copy (`…-prerestore…`).
 
-Exchange API keys inside a backup stay encrypted with `APP_SECRET`. **Keep `.env` (or at least `APP_SECRET`) together with your backups.** Without it, a restore works but the API keys must be re-entered. Backup files contain your user's password hash and all financial data, so store copies somewhere private.
+**Encrypt them.** Set `BACKUP_PASSPHRASE` in `.env` (at least 12 characters, e.g. a few random words) and new backups are encrypted (`….json.gz.enc`, AES-256-GCM with a key derived by scrypt). A wrong passphrase or a damaged file is detected, never half-restored. Keep the passphrase in your password manager: **without it an encrypted backup can't be restored**. Without a passphrase, backups are plain gzip and contain your password hash and all financial data in readable form; _Needs attention_ reminds you.
 
-**Getting backups off the server.** Use _Download_ next to each backup in Settings, or copy the whole folder:
+**Off-site copies.** Point your NAS's own backup tool (Hyper Backup, rclone, a cloud sync…) at the `backups` folder. Files belong to `PUID`/`PGID` from `.env`: set those to your NAS user (`id` on the NAS shows them) so the tool and you can reach them. Or use _Download_ next to each backup in Settings.
 
-```bash
-docker compose cp app:/backups ./backups-copy
-```
-
-Or keep them on the host directly: in `docker-compose.yml`, replace `backups:/backups` with a bind mount such as `./backups:/backups`, after `mkdir backups && sudo chown 1000:1000 backups`.
+Exchange API keys inside a backup are encrypted with `APP_SECRET` as well. **Keep `APP_SECRET` in your password manager too**: without it, a restore works but the API keys must be re-entered.
 
 **Restoring** replaces all current data with the backup's, in one database transaction: either everything is restored or nothing changes. Backups from older app versions restore fine; backups from a newer version are refused. Everyone is signed out afterwards; sign in with the account from the backup.
 
-- From the UI: _Settings → Backups & export → Restore…_ next to a backup, then type `RESTORE`.
-- From a file, e.g. on a new server:
+- From the UI: _Settings → Backups & export → Restore…_ next to a backup, then type `RESTORE`. For a backup made with an earlier passphrase, enter that passphrase there.
+- From a file, e.g. on a new server: put it in the `backups` folder, then
 
   ```bash
-  docker compose cp ./kluishuis-20261002-030000-auto.json.gz app:/backups/
-  docker compose exec app node dist/cli.js restore /backups/kluishuis-20261002-030000-auto.json.gz
+  docker compose exec app node dist/cli.js restore /backups/kluishuis-20261002-030000-auto.json.gz.enc
   docker compose restart app
   ```
+
+  It uses `BACKUP_PASSPHRASE` from `.env`; for another one: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
+
+- To read an encrypted backup outside the app: `docker compose exec app node dist/cli.js decrypt /backups/<file>.enc` writes the plain `.json.gz` next to it.
 
 **Extra safety net (optional).** A raw database dump, which needs a matching PostgreSQL version to restore:
 
@@ -130,6 +129,8 @@ docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.
 | `SOLANA_RPC_URL`        | public mainnet RPC      | Optional own Solana RPC (e.g. a free Helius key) for faster first imports |
 | `BACKUP_INTERVAL_HOURS` | `24`                    | Automatic backup interval; `0` = off                                      |
 | `BACKUP_KEEP`           | `14`                    | Automatic backups to keep                                                 |
+| `BACKUP_PASSPHRASE`     | —                       | Encrypts backups (12+ characters). Keep it safe: needed to restore        |
+| `PUID` / `PGID`         | `1000`                  | Owner of the backup files: your NAS user and group ids                    |
 | `LOG_LEVEL`             | `info`                  | `debug` also logs every request                                           |
 
 ## Using it

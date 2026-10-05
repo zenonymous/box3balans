@@ -83,7 +83,7 @@ export interface TestApp {
 
 export async function createTestApp(
   routes: Record<string, unknown> = defaultRoutes,
-  opts: { login?: boolean } = {},
+  opts: { login?: boolean; env?: Record<string, string> } = {},
 ): Promise<TestApp> {
   const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "pd-backups-"));
   const config = loadConfig({
@@ -92,6 +92,7 @@ export async function createTestApp(
     SCHEDULER: "false",
     LOG_LEVEL: "silent",
     WEB_DIST: "/nonexistent",
+    ...opts.env,
   });
   const database = await openDatabase({});
   await seed(database.db);
