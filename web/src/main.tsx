@@ -14,6 +14,7 @@ const TransactionsPage = lazy(() => import("./pages/Transactions").then((m) => (
 const ImportPage = lazy(() => import("./pages/Import").then((m) => ({ default: m.ImportPage })));
 const ActivityPage = lazy(() => import("./pages/Activity").then((m) => ({ default: m.ActivityPage })));
 const InventoryPage = lazy(() => import("./pages/Inventory").then((m) => ({ default: m.InventoryPage })));
+const AttentionPage = lazy(() => import("./pages/Attention").then((m) => ({ default: m.AttentionPage })));
 const MetalsPage = lazy(() => import("./pages/Metals").then((m) => ({ default: m.MetalsPage })));
 const AccountsPage = lazy(() => import("./pages/Accounts").then((m) => ({ default: m.AccountsPage })));
 const ConnectionsPage = lazy(() => import("./pages/Connections").then((m) => ({ default: m.ConnectionsPage })));
@@ -67,6 +68,7 @@ function AuthGate() {
         <Route path="assets" element={<AssetsPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityPage />} />
+        <Route path="attention" element={<AttentionPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

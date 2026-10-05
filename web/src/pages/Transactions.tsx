@@ -1,5 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { del, get, post, put, type Asset, type Transaction, type TxType } from "../api";
 import {
@@ -39,7 +39,14 @@ const ENTRY_TYPES: TxType[] = ["buy", "sell", "deposit", "withdrawal", "dividend
 export function TransactionsPage() {
   const accounts = useAccounts();
   const assets = useAssets();
-  const [filters, setFilters] = useState({ accountId: "", assetId: "", type: "", q: "" });
+  // Links elsewhere (e.g. Needs attention) can open the list pre-filtered.
+  const [search] = useSearchParams();
+  const [filters, setFilters] = useState({
+    accountId: search.get("accountId") ?? "",
+    assetId: search.get("assetId") ?? "",
+    type: search.get("type") ?? "",
+    q: search.get("q") ?? "",
+  });
   const [page, setPage] = useState(0);
   const [editing, setEditing] = useState<Transaction | "new" | null>(null);
   const [transferOpen, setTransferOpen] = useState(false);

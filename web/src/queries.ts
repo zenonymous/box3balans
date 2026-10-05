@@ -39,6 +39,26 @@ export const useAssets = () => useQuery({ queryKey: ["assets"], queryFn: () => g
 export const useMetals = () =>
   useQuery({ queryKey: ["metals"], queryFn: () => get<MetalsOverview>("/api/metals/overview") });
 
+export interface Issue {
+  key: string;
+  severity: "problem" | "warning" | "info";
+  title: string;
+  detail?: string;
+  link?: { to: string; label: string };
+  fingerprint: string;
+  dismissible: boolean;
+  dismissed: boolean;
+}
+
+/** Things that need a look (see the Needs attention page); refreshed every few minutes. */
+export const useAttention = () =>
+  useQuery({
+    queryKey: ["attention"],
+    queryFn: () => get<Issue[]>("/api/attention"),
+    staleTime: 60_000,
+    refetchInterval: 5 * 60_000,
+  });
+
 /** After any data change, everything derived from the ledger is stale. */
 export function useInvalidateAll() {
   const qc = useQueryClient();

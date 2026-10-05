@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router";
 import { get, type User } from "../api";
+import { AttentionBadge } from "../pages/Attention";
 import { Spinner, cx } from "./ui";
 
 const NAV = [
@@ -38,6 +39,7 @@ export function Layout({ user }: { user: User }) {
             <div className="text-[11px] text-muted">Your vault lives at home</div>
           </div>
         </div>
+        <AttentionBadge className="mb-3" />
         <nav className="flex flex-col gap-0.5">
           {NAV.map((n) => (
             <NavLink
@@ -65,6 +67,7 @@ export function Layout({ user }: { user: User }) {
       </aside>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-5 sm:px-6 md:pb-10 md:pt-8">
+        <AttentionBadge className="mb-4 md:hidden print:hidden" />
         <Suspense fallback={<Spinner />}>
           <Outlet />
         </Suspense>
