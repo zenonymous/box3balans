@@ -1,0 +1,40 @@
+{
+  "name": "server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "cli": "tsx --env-file=.env src/cli.ts"
+  },
+  "dependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@fastify/cookie": "^11.1.2",
+    "@fastify/rate-limit": "^11.2.0",
+    "@fastify/static": "^10.1.5",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "@node-rs/argon2": "^2.2.1",
+    "@scure/base": "^2.4.0",
+    "@scure/bip32": "^2.4.0",
+    "decimal.js": "^10.6.0",
+    "drizzle-orm": "^0.45.3",
+    "fast-xml-parser": "^5.11.2",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@scure/bip39": "^2.4.0",
+    "@types/node": "^26.6.4",
+    "@types/pg": "^8.23.1",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

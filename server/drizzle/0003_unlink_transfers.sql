@@ -1,0 +1,1 @@
+ALTER TABLE "transactions" ADD COLUMN "no_auto_match" boolean DEFAULT false NOT NULL;

@@ -1,0 +1,53 @@
+/**
+ * Maintenance commands (run with the app's environment, e.g. inside the container):
+ *   node dist/cli.js backup             write a backup to BACKUP_DIR
+ *   node dist/cli.js restore <file>     replace ALL data with a backup (a safety backup is written first)
+ *   node dist/cli.js list               list backups in BACKUP_DIR
+ */
+import fs from "node:fs";
+import { decodeBackup, listBackups, restoreBackup, writeBackupFile } from "./backup/backup.js";
+import { loadConfig } from "./config.js";
+import { openDatabase } from "./db/client.js";
+
+const [cmd, arg] = process.argv.slice(2);
+const config = loadConfig();
+
+async function main() {
+  if (cmd === "list") {
+    for (const b of listBackups(config.BACKUP_DIR))
+      console.log(`${b.name}\t${Math.max(1, Math.round(b.sizeBytes / 1024))} KB\t${b.createdAt}`);
+    return;
+  }
+  if (cmd !== "backup" && cmd !== "restore") {
+    console.error("Usage: cli.js backup | restore <file> | list");
+    process.exitCode = 2;
+    return;
+  }
+  const database = await openDatabase({
+    url: config.DATABASE_URL,
+    pgEnv: !!config.PGHOST,
+    pgliteDir: config.PGLITE_DIR,
+  });
+  try {
+    if (cmd === "backup") {
+      const b = await writeBackupFile(database.db, config.BACKUP_DIR, "manual");
+      console.log(`Backup written: ${config.BACKUP_DIR}/${b.name} (${Math.max(1, Math.round(b.sizeBytes / 1024))} KB)`);
+    } else {
+      if (!arg || !fs.existsSync(arg)) throw new Error(`Backup file not found: ${arg ?? "(none given)"}`);
+      const backup = decodeBackup(fs.readFileSync(arg));
+      const safety = await writeBackupFile(database.db, config.BACKUP_DIR, "prerestore");
+      console.log(`Safety backup of the current data: ${config.BACKUP_DIR}/${safety.name}`);
+      const counts = await restoreBackup(database.db, backup);
+      console.log(`Restored backup from ${backup.createdAt}:`);
+      for (const [t, n] of Object.entries(counts)) if (n) console.log(`  ${t}: ${n} rows`);
+      console.log("Restart the app so caches start fresh. Everyone has to sign in again.");
+    }
+  } finally {
+    await database.close();
+  }
+}
+
+main().catch((err) => {
+  console.error(`Error: ${(err as Error).message}`);
+  process.exitCode = 1;
+});

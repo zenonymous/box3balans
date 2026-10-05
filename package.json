@@ -1,0 +1,26 @@
+{
+  "name": "kluishuis",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev -w server",
+    "dev:web": "npm run dev -w web",
+    "build": "npm run build -w server && npm run build -w web",
+    "test": "npm test -w server && npm test -w web",
+    "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.11.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript-eslint": "^8.71.0"
+  }
+}

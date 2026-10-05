@@ -1,0 +1,229 @@
+import fs from "node:fs";
+import path from "node:path";
+import { getTableName, is } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  createBackup,
+  decodeBackup,
+  encodeBackup,
+  listBackups,
+  pruneBackups,
+  restoreBackup,
+  schemaVersion,
+} from "../src/backup/backup.js";
+import { openDatabase } from "../src/db/client.js";
+import * as s from "../src/db/schema.js";
+import { SecretBox } from "../src/lib/secrets.js";
+import { createTestApp, type TestApp } from "./helpers.js";
+
+let t: TestApp | undefined;
+afterEach(async () => {
+  await t?.close();
+  t = undefined;
+});
+
+const json = <T = any>(res: { body: string }) => JSON.parse(res.body) as T;
+
+/** A bit of everything: accounts, assets, trades, a transfer, metal, settings, a connection and a wallet. */
+async function populate() {
+  const a = json(await t!.api("POST", "/api/accounts", { name: "Broker", kind: "broker" }));
+  const b = json(await t!.api("POST", "/api/accounts", { name: "Ledger", kind: "wallet" }));
+  const btc = json(
+    await t!.api("POST", "/api/assets", {
+      assetClass: "crypto",
+      name: "Bitcoin",
+      symbol: "BTC",
+      priceSource: "coingecko",
+      priceRef: "bitcoin",
+    }),
+  );
+  await t!.api("POST", "/api/transactions", {
+    accountId: a.id,
+    assetId: btc.id,
+    type: "buy",
+    occurredAt: "2024-01-02T10:00:00Z",
+    quantity: "0.5",
+    price: "40000",
+    feeEur: "2.5",
+  });
+  await t!.api("POST", "/api/transactions/transfer", {
+    fromAccountId: a.id,
+    toAccountId: b.id,
+    assetId: btc.id,
+    occurredAt: "2024-02-01T10:00:00Z",
+    quantity: "0.2",
+  });
+  await t!.api("POST", "/api/metals/items", {
+    accountId: b.id,
+    metal: "gold",
+    product: "Krugerrand 1 oz",
+    grossWeightG: "33.93",
+    purity: "0.9167",
+    quantity: 2,
+    purchaseDate: "2023-05-01",
+    purchasePriceEur: "3800",
+  });
+  await t!.api("PUT", "/api/settings", { costMethod: "fifo" });
+  await t!.prices.refreshAll();
+  const db = t!.database.db;
+  await db.insert(s.integrations).values({
+    accountId: a.id,
+    provider: "kraken",
+    credentials: new SecretBox("x".repeat(40)).seal({ apiKey: "k", apiSecret: "s" }),
+    keyHint: "…k",
+  });
+  await db.insert(s.walletAddresses).values({
+    accountId: b.id,
+    chain: "bitcoin",
+    address: "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu",
+    cursor: { txCounts: { x: 1 } },
+  });
+  await db.insert(s.syncIgnored).values({ accountId: a.id, source: "api", externalId: "gone" });
+  return { a, b, btc };
+}
+
+describe("backup and restore", () => {
+  it("round-trips every table into a fresh database, and new rows continue after restored ids", async () => {
+    t = await createTestApp();
+    await populate();
+    const backup = decodeBackup(encodeBackup(await createBackup(t!.database.db)));
+    expect(backup.schemaVersion).toBe(schemaVersion());
+    expect(backup.tables.sessions).toBeUndefined();
+
+    const fresh = await openDatabase({});
+    try {
+      const counts = await restoreBackup(fresh.db, backup);
+      expect(counts.transactions).toBe(3);
+      const original = await createBackup(t!.database.db);
+      const restored = await createBackup(fresh.db);
+      for (const name of Object.keys(original.tables)) {
+        expect(JSON.parse(JSON.stringify(restored.tables[name])), name).toEqual(
+          JSON.parse(JSON.stringify(original.tables[name])),
+        );
+      }
+      // Sequences continue after the highest restored id.
+      const [acc] = await fresh.db.insert(s.accounts).values({ name: "New", kind: "bank" }).returning();
+      expect(acc!.id).toBe(3);
+    } finally {
+      await fresh.close();
+    }
+  });
+
+  it("backs up and restores through the API, with a safety backup, and signs everyone out", async () => {
+    t = await createTestApp();
+    const { a } = await populate();
+    const made = json(await t!.api("POST", "/api/backups"));
+    expect(made.name).toMatch(/^kluishuis-\d{8}-\d{6}-manual\.json\.gz$/);
+    expect(fs.statSync(path.join(t!.backupDir, made.name)).mode & 0o077).toBe(0); // owner-only
+
+    // Download it.
+    const dl = await t!.app.inject({ method: "GET", url: `/api/backups/${made.name}`, headers: { cookie: t!.cookie } });
+    expect(dl.headers["content-type"]).toBe("application/gzip");
+    expect(decodeBackup(dl.rawPayload).tables.accounts).toHaveLength(2);
+
+    // Lose some data, then restore.
+    await t!.api("PUT", `/api/accounts/${a.id}`, { name: "Renamed by mistake" });
+    expect((await t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "nope" })).statusCode).toBe(400);
+    const res = await t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE" });
+    expect(res.statusCode).toBe(200);
+    const body = json(res);
+    expect(body.safetyBackup).toMatch(/-prerestore\.json\.gz$/);
+    expect(fs.existsSync(path.join(t!.backupDir, body.safetyBackup))).toBe(true);
+
+    // Sessions aren't in backups: this browser is signed out, and the restored user can sign in again.
+    expect((await t!.api("GET", "/api/accounts")).statusCode).toBe(401);
+    const login = await t!.api("POST", "/api/auth/login", { username: "me", password: "correct horse battery" });
+    expect(login.statusCode).toBe(200);
+    t!.cookie = `pd_session=${login.cookies.find((c) => c.name === "pd_session")!.value}`;
+    const names = json<any[]>(await t!.api("GET", "/api/accounts")).map((x) => x.name);
+    expect(names).toContain("Broker");
+    expect(names).not.toContain("Renamed by mistake");
+    expect(json(await t!.api("GET", "/api/settings")).costMethod).toBe("fifo");
+  });
+
+  it("only serves files it created (no path traversal)", async () => {
+    t = await createTestApp();
+    for (const bad of ["..%2F..%2Fetc%2Fpasswd", "kluishuis-20240101-000000.json.gz.tmp", "secrets.txt"]) {
+      const res = await t!.api("GET", `/api/backups/${bad}`);
+      expect([400, 404]).toContain(res.statusCode);
+    }
+    expect((await t!.api("POST", "/api/backups/..%2Fx/restore", { confirm: "RESTORE" })).statusCode).toBe(400);
+  });
+
+  it("refuses backups from a newer version and files that aren't backups", async () => {
+    t = await createTestApp();
+    const b = await createBackup(t!.database.db);
+    await expect(restoreBackup(t!.database.db, { ...b, schemaVersion: schemaVersion() + 1 })).rejects.toThrow(
+      /newer version/,
+    );
+    expect(() => decodeBackup(Buffer.from("hello"))).toThrow(/Not a readable backup/);
+    expect(() => decodeBackup(Buffer.from(JSON.stringify({ format: "other" })))).toThrow(/Not a Kluishuis backup/);
+  });
+
+  it("keeps only the newest automatic backups", async () => {
+    t = await createTestApp();
+    const touch = (n: string) => fs.writeFileSync(path.join(t!.backupDir, n), "x");
+    for (let d = 1; d <= 5; d++) touch(`kluishuis-2024010${d}-000000-auto.json.gz`);
+    touch("kluishuis-20230101-000000-manual.json.gz");
+    const removed = pruneBackups(t!.backupDir, 3);
+    expect(removed.sort()).toEqual([
+      "kluishuis-20240101-000000-auto.json.gz",
+      "kluishuis-20240102-000000-auto.json.gz",
+    ]);
+    expect(fs.existsSync(path.join(t!.backupDir, "kluishuis-20230101-000000-manual.json.gz"))).toBe(true);
+  });
+
+  // Rename to Kluishuis: backups made under the old name still list, sort by time and restore.
+  it("still handles backups made before the rename", async () => {
+    t = await createTestApp();
+    await populate();
+    const b = await createBackup(t!.database.db);
+    const legacy = { ...b, format: "portfolio-dashboard-backup" };
+    fs.writeFileSync(path.join(t!.backupDir, "portfolio-20250601-120000-manual.json.gz"), encodeBackup(legacy));
+    const touch = (n: string) => fs.writeFileSync(path.join(t!.backupDir, n), "x");
+    touch("kluishuis-20250101-000000-auto.json.gz");
+    touch("kluishuis-20251001-000000-auto.json.gz");
+    touch("portfolio-20250501-000000-auto.json.gz");
+    expect(listBackups(t!.backupDir).map((x) => x.name)).toEqual([
+      "kluishuis-20251001-000000-auto.json.gz",
+      "portfolio-20250601-120000-manual.json.gz",
+      "portfolio-20250501-000000-auto.json.gz",
+      "kluishuis-20250101-000000-auto.json.gz",
+    ]);
+    // The oldest automatic backup goes, whatever its prefix.
+    expect(pruneBackups(t!.backupDir, 2)).toEqual(["kluishuis-20250101-000000-auto.json.gz"]);
+    const res = await t!.api("POST", "/api/backups/portfolio-20250601-120000-manual.json.gz/restore", {
+      confirm: "RESTORE",
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("covers every table except sessions", () => {
+    const all = (Object.values(s) as unknown[])
+      .filter((v): v is PgTable => is(v, PgTable))
+      .map((v) => getTableName(v))
+      .filter((n) => n !== "sessions")
+      .sort();
+    return createBackup({ select: () => ({ from: async () => [] }) } as never).then((b) =>
+      expect(Object.keys(b.tables).sort()).toEqual(all),
+    );
+  });
+});
+
+describe("CSV export", () => {
+  it("exports every transaction with names", async () => {
+    t = await createTestApp();
+    await populate();
+    const res = await t!.api("GET", "/api/export/transactions.csv");
+    expect(res.headers["content-type"]).toMatch(/text\/csv/);
+    expect(res.headers["content-disposition"]).toMatch(/attachment; filename="transactions-\d{4}-\d{2}-\d{2}\.csv"/);
+    const lines = res.body
+      .replace(/^\uFEFF/, "")
+      .trim()
+      .split("\r\n");
+    expect(lines[0]).toMatch(/^Date,Type,Account,Asset,Symbol,ISIN,Quantity/);
+    expect(lines).toHaveLength(4);
+    expect(lines[1]).toContain("buy,Broker,Bitcoin,BTC");
+  });
+});
