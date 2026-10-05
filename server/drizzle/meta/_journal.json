@@ -29,6 +29,13 @@
       "when": 1791212301453,
       "tag": "0003_unlink_transfers",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791227364026,
+      "tag": "0004_csv_imports",
+      "breakpoints": true
     }
   ]
 }

@@ -42,5 +42,7 @@ export const useMetals = () =>
 /** After any data change, everything derived from the ledger is stale. */
 export function useInvalidateAll() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "auth" });
+  // Import previews are keyed by their input and their upload is gone after importing.
+  return () =>
+    qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "auth" && q.queryKey[0] !== "import-preview" });
 }

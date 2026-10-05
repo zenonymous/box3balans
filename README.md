@@ -8,16 +8,16 @@ A self-hosted dashboard for tracking investments in **stocks/ETFs, crypto, and g
 
 The work follows the 8 milestones in [`docs/PROMPT.md`](docs/PROMPT.md).
 
-| #   | Milestone                                                               | Status                                                  |
-| --- | ----------------------------------------------------------------------- | ------------------------------------------------------- |
-| 1   | Compose stack, auth, DB, manual entry, live prices, overview & holdings | ✅ done                                                 |
-| 2   | Physical/vaulted metals and metals view                                 | ✅ done (built together with 1)                         |
-| 3   | CSV importers (DEGIRO, Trade Republic, IBKR, Goldrepublic, generic)     | ⏳ needs sample exports                                 |
-| 4   | Exchange API sync (Bitvavo, Kraken, Coinbase, IBKR Flex)                | ✅ done (not yet tried against live accounts)           |
-| 5   | Wallet tracking (BTC incl. xpub, EVM, Solana, more)                     | ✅ done (BTC verified live; other chains against stubs) |
-| 6   | History backfill, P&L reports, dividends/income views                   | ✅ done                                                 |
-| 7   | Dutch Box 3 overview & exports                                          | ✅ done                                                 |
-| 8   | Backups, polish                                                         | ✅ done                                                 |
+| #   | Milestone                                                               | Status                                                                                  |
+| --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | Compose stack, auth, DB, manual entry, live prices, overview & holdings | ✅ done                                                                                 |
+| 2   | Physical/vaulted metals and metals view                                 | ✅ done (built together with 1)                                                         |
+| 3   | CSV importers (DEGIRO, Trade Republic, IBKR, Goldrepublic, generic)     | 🟡 generic import with column mapping done; built-in broker formats need sample exports |
+| 4   | Exchange API sync (Bitvavo, Kraken, Coinbase, IBKR Flex)                | ✅ done (not yet tried against live accounts)                                           |
+| 5   | Wallet tracking (BTC incl. xpub, EVM, Solana, more)                     | ✅ done (BTC verified live; other chains against stubs)                                 |
+| 6   | History backfill, P&L reports, dividends/income views                   | ✅ done                                                                                 |
+| 7   | Dutch Box 3 overview & exports                                          | ✅ done                                                                                 |
+| 8   | Backups, polish                                                         | ✅ done                                                                                 |
 
 ## Install on your NAS
 
@@ -138,6 +138,25 @@ docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.
 2. **Assets**: search Yahoo Finance by name, ticker or ISIN, or CoinGecko by coin. Pick the listing you actually trade (e.g. `IWDA.AS` rather than `IWDA.L`). Gold, silver, platinum, palladium and EUR cash exist already.
 3. **Transactions**: buy, sell, deposit, withdrawal, dividend (gross plus tax withheld), staking reward, fee paid in the asset, split, and **transfers** between accounts, which carry the cost basis along. Foreign-currency trades get the ECB rate for that date automatically; you can override it.
 4. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset.
+
+### CSV import
+
+_Transactions → Import CSV_ reads exports from any broker, exchange or spreadsheet:
+
+1. **Choose the account and the file.** Semicolons or commas, decimal commas or points, a byte order mark, title lines above the header and Windows-encoded files are all handled.
+2. **Check the columns.** Kluishuis guesses which column is what from common English and Dutch headers (Datum, Aantal, Koers, Valuta…) and shows an example value for each. The transaction type comes from a type column, is the same for every row, or follows the sign of the quantity (negative = sell, as in some broker exports). Each value of a type column ("Koop", "Staking", "Airdrop"…) is mapped to a type or skipped. Save the settings under a name: files with the same columns then use them automatically.
+3. **Review before importing.** Nothing is written until you press _Import_. The preview shows:
+   - **New**: will be imported.
+   - **Already imported**: the same row from an earlier import of this or an overlapping export.
+   - **Possible duplicate**: same asset, type, day and quantity as a transaction from another source (an API sync, manual entry or an import with different settings). Skipped unless you tick _Import anyway_.
+   - **Problem**: a row that can't be read, with the reason (e.g. a date or number it doesn't understand).
+   - **Assets**: what each symbol or ISIN is booked on. Existing assets are reused; new ones are looked up on Yahoo (by ISIN, preferring a euro listing) or CoinGecko (by symbol) and created when you import. Pick another asset for any of them if the match is wrong.
+
+Times without a time zone are read as local time (`TIME_ZONE`). Prices in a foreign currency get the ECB rate of that day. Rewards and crypto deposits without a price are valued at that day's close. Crypto withdrawals and deposits are linked to matching transfers in your other accounts, as with syncs.
+
+**Undo:** _Earlier imports_ lists every import with an _Undo_ that deletes exactly the transactions it created. Transactions you delete one by one stay deleted when you import the same file again.
+
+**Template:** for anything without a usable export, fill in [the template](server/src/import/mapping.ts) (_↓ Template_ on the import page). Columns: `date` (YYYY-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (for a split: the ratio, e.g. 4), `price`, `total`, `currency`, `fee`, `amount` and `tax_withheld` (dividends), `notes`, `id`.
 
 ### Connections (exchange & broker sync)
 

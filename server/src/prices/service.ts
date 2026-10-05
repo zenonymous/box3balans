@@ -27,7 +27,8 @@ export class PriceService {
 
   constructor(
     private db: DB,
-    fetchFn?: FetchFn,
+    // Shared with other lookups (asset matching for imports), so tests can stub the network.
+    readonly fetchFn?: FetchFn,
   ) {
     this.fx = new FxService(db, fetchFn);
     this.providers = {

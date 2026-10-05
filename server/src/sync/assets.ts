@@ -90,7 +90,11 @@ export class AssetResolver {
     // Minimum spacing between CoinGecko contract lookups (free tier is ~10–30 calls/min).
     private throttleMs = 0,
     private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+    // Look everything up but create nothing: new assets get negative ids (for import previews).
+    private opts: { dryRun?: boolean } = {},
   ) {}
+
+  private fakeId = 0;
 
   /**
    * Assets created during this sync, with the price feed each was matched to, e.g.
@@ -127,6 +131,22 @@ export class AssetResolver {
   }
 
   private async create(values: typeof assets.$inferInsert): Promise<Asset> {
+    if (this.opts.dryRun) {
+      const fake = {
+        id: --this.fakeId,
+        isin: null,
+        currency: "EUR",
+        priceRef: null,
+        unit: "unit",
+        chain: null,
+        contract: null,
+        hidden: false,
+        createdAt: new Date(),
+        ...values,
+      } as Asset;
+      this.created.push(fake);
+      return fake;
+    }
     const [row] = await this.db.insert(assets).values(values).onConflictDoNothing().returning();
     if (row) {
       await audit(this.db, "asset", row.id, "create", null, { ...row, via: "sync" });
@@ -289,8 +309,45 @@ export class AssetResolver {
     }
     const assetClass = ref.etf ? "etf" : "stock";
     const suffix = ref.exchange ? YAHOO_SUFFIX[ref.exchange.toUpperCase()] : undefined;
+    const symbol = ref.symbol.toUpperCase();
+    if (!ref.isin) {
+      // Only a ticker (e.g. a CSV without ISINs): an asset you already have with that symbol or
+      // Yahoo ticker comes first.
+      const rows = await this.db
+        .select()
+        .from(assets)
+        .where(
+          and(
+            sql`${assets.assetClass} in ('stock', 'etf', 'other')`,
+            sql`(upper(${assets.symbol}) = ${symbol} or upper(${assets.priceRef}) = ${symbol})`,
+          ),
+        );
+      const held = rows.find((r) => !r.hidden) ?? rows[0];
+      if (held) return held;
+    }
     try {
-      const candidates = ref.isin ? await yahooSearch(ref.isin, this.fetchFn) : [];
+      let candidates = await yahooSearch(ref.isin ?? ref.symbol, this.fetchFn);
+      const euroRank = (t: string) => {
+        const i = EURO_SUFFIXES.indexOf(tickerSuffix(t));
+        return i >= 0 ? i : EURO_SUFFIXES.length;
+      };
+      if (!ref.isin) {
+        // Without an ISIN, only listings of exactly this ticker count: "IWDA" → IWDA.AS, IWDA.L…,
+        // the ticker itself first, then euro exchanges.
+        const base = (t: string) => t.toUpperCase().replace(/\.[A-Z]+$/, "");
+        const rank = (t: string) => (t.toUpperCase() === symbol ? -1 : euroRank(t));
+        candidates = candidates
+          .filter((c) => c.priceRef.toUpperCase() === symbol || base(c.priceRef) === symbol)
+          .sort((a, b) => rank(a.priceRef) - rank(b.priceRef));
+      } else {
+        // Yahoo also lists odd quotes named after the ISIN itself ("IE00….SG", sparse prices): last.
+        // A euro trade without an exchange (e.g. a CSV) prefers a euro listing over Yahoo's first
+        // hit, which is often London or New York.
+        const isinQuote = (t: string) => (t.toUpperCase().startsWith(ref.isin!) ? 100 : 0);
+        const preferEuro = suffix === undefined && ref.currency === "EUR";
+        const pref = (t: string) => isinQuote(t) + (preferEuro ? euroRank(t) : 0);
+        candidates = [...candidates].sort((a, b) => pref(a.priceRef) - pref(b.priceRef));
+      }
       // Prefer the listing on the exchange the provider reports, then the plain symbol guess.
       const tickers = [
         ...candidates.filter((c) => suffix !== undefined && tickerSuffix(c.priceRef) === suffix).map((c) => c.priceRef),
@@ -303,17 +360,19 @@ export class AssetResolver {
           .from(assets)
           .where(and(eq(assets.priceSource, "yahoo"), eq(assets.priceRef, ticker)));
         if (existing) {
-          if (!existing.isin && ref.isin)
+          if (!existing.isin && ref.isin && !this.opts.dryRun)
             await this.db.update(assets).set({ isin: ref.isin }).where(eq(assets.id, existing.id));
           return existing;
         }
         try {
           const q = await yahooQuote(ticker, this.fetchFn);
           const c = candidates.find((x) => x.priceRef === ticker);
+          // A product name or ISIN standing in for the symbol (CSV without tickers): use the listing's.
+          const tickerLike = /^[A-Z0-9][A-Z0-9.-]{0,11}$/i.test(ref.symbol) && ref.symbol !== ref.isin;
           return this.create({
             assetClass: c?.assetClass ?? assetClass,
             name: c?.name ?? ref.name ?? ref.symbol,
-            symbol: ref.symbol,
+            symbol: tickerLike ? ref.symbol : (c?.symbol ?? ref.symbol),
             isin: ref.isin ?? null,
             priceSource: "yahoo",
             priceRef: ticker,
@@ -340,6 +399,9 @@ export class AssetResolver {
     });
   }
 }
+
+// Yahoo suffixes of exchanges quoting in euros, in order of preference for ambiguous tickers.
+const EURO_SUFFIXES = [".AS", ".DE", ".F", ".PA", ".MI", ".BR", ".MC", ".VI", ".HE", ".MU", ".SG"];
 
 function tickerSuffix(ticker: string): string {
   const i = ticker.lastIndexOf(".");

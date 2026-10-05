@@ -64,6 +64,12 @@ export function TransactionsPage() {
         subtitle={list.data ? `${list.data.total} transactions` : undefined}
         actions={
           <>
+            <Link
+              to="/transactions/import"
+              className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
+            >
+              ↑ Import CSV
+            </Link>
             <Button onClick={() => setTransferOpen(true)} disabled={noSetup}>
               ⇄ Transfer
             </Button>

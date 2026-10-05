@@ -11,6 +11,7 @@ import { Button, Field, Input, Spinner } from "./components/ui";
 const OverviewPage = lazy(() => import("./pages/Overview").then((m) => ({ default: m.OverviewPage })));
 const HoldingsPage = lazy(() => import("./pages/Holdings").then((m) => ({ default: m.HoldingsPage })));
 const TransactionsPage = lazy(() => import("./pages/Transactions").then((m) => ({ default: m.TransactionsPage })));
+const ImportPage = lazy(() => import("./pages/Import").then((m) => ({ default: m.ImportPage })));
 const MetalsPage = lazy(() => import("./pages/Metals").then((m) => ({ default: m.MetalsPage })));
 const AccountsPage = lazy(() => import("./pages/Accounts").then((m) => ({ default: m.AccountsPage })));
 const ConnectionsPage = lazy(() => import("./pages/Connections").then((m) => ({ default: m.ConnectionsPage })));
@@ -55,6 +56,7 @@ function AuthGate() {
         <Route path="income" element={<IncomePage />} />
         <Route path="box3" element={<Box3Page />} />
         <Route path="transactions" element={<TransactionsPage />} />
+        <Route path="transactions/import" element={<ImportPage />} />
         <Route path="metals" element={<MetalsPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="connections" element={<ConnectionsPage />} />

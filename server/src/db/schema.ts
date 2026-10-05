@@ -140,6 +140,8 @@ export const transactions = pgTable(
     settleAssetId: integer("settle_asset_id").references(() => assets.id, { onDelete: "restrict" }),
     source: txSource("source").notNull().default("manual"),
     externalId: text("external_id"),
+    // CSV import that created the row, so a whole import can be undone.
+    importId: integer("import_id").references(() => imports.id, { onDelete: "set null" }),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -147,11 +149,25 @@ export const transactions = pgTable(
   (t) => [
     index("transactions_asset_idx").on(t.assetId),
     index("transactions_account_idx").on(t.accountId),
+    index("transactions_import_idx").on(t.importId),
     uniqueIndex("transactions_external_uq")
       .on(t.accountId, t.source, t.externalId)
       .where(sql`${t.externalId} is not null`),
   ],
 );
+
+// One CSV import into an account; undoing it deletes the transactions it created.
+export const imports = pgTable("imports", {
+  id: serial("id").primaryKey(),
+  accountId: integer("account_id")
+    .notNull()
+    .references(() => accounts.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(),
+  // Rows in the file, and transactions it created.
+  rows: integer("rows").notNull(),
+  inserted: integer("inserted").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
 
 export const metalItems = pgTable("metal_items", {
   id: serial("id").primaryKey(),
