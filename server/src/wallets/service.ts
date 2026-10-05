@@ -152,7 +152,17 @@ export class WalletService {
       const includeUnlisted = rows.some((r) => r.includeUnlisted);
       const { events, balances } = await this.filterTokens(
         resolver,
-        movementsToEvents(chain, fetched.movements, fetched.fees),
+        [
+          ...movementsToEvents(chain, fetched.movements, fetched.fees),
+          ...(fetched.rewards ?? []).map((r): SyncEvent => ({
+            kind: r.kind,
+            id: `${chain}:${r.id}`,
+            at: r.at,
+            asset: r.asset,
+            quantity: r.amount.toFixed(),
+            note: r.note,
+          })),
+        ],
         fetched.balances,
         new Set(fetched.spamContracts ?? []),
         includeUnlisted,

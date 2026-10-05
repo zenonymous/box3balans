@@ -108,7 +108,8 @@ export async function walletRoutes(app: FastifyInstance) {
     await audit(db, "wallet_address", row!.id, "create", null, { accountId, chain: chain.id, address });
     // The first import runs in the background; the UI polls GET / for `running` and `lastResult`.
     const started = body.sync ? wallets.start(accountId, chain.id) : false;
-    return { id: row!.id, accountId, started };
+    // `address` as stored, e.g. a Cardano receive address becomes its stake address.
+    return { id: row!.id, accountId, address, started };
   });
 
   app.put("/:id", async (req) => {

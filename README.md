@@ -178,14 +178,16 @@ Known limits: the Bitvavo fee handling assumes fees are charged on top of the se
 
 **Wallets** tracks addresses read-only, from free public explorers with no API keys. It never asks for or stores seed phrases or private keys.
 
-| Chain                                       | Source                           | Notes                                                                                                                                                                                                             |
-| ------------------------------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bitcoin                                     | mempool.space                    | Addresses or **xpub/ypub/zpub**. Extended keys are scanned with a gap limit of 20 on both the receive and change chains. Legacy, nested SegWit, native SegWit and **Taproot** (choose "Taproot" for a BIP86 xpub) |
-| Litecoin                                    | litecoinspace.org                | Addresses or Ltub/Mtub/xpub-style keys                                                                                                                                                                            |
-| Ethereum, Arbitrum, Optimism, Base, Polygon | Blockscout                       | Native coin, internal transfers and ERC-20 tokens. The add dialog can track the same address on several chains at once                                                                                            |
-| Solana                                      | public RPC (or `SOLANA_RPC_URL`) | SOL and SPL tokens. Large histories import gradually (~1,500 transactions per sync) because of the public rate limit                                                                                              |
-| XRP Ledger                                  | xrplcluster.com                  | XRP payments; issued tokens are skipped                                                                                                                                                                           |
-| Tron                                        | TronGrid                         | TRX and TRC-20 tokens (e.g. USDT)                                                                                                                                                                                 |
+| Chain                                       | Source                           | Notes                                                                                                                                                                                                                            |
+| ------------------------------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bitcoin                                     | mempool.space                    | Addresses or **xpub/ypub/zpub**. Extended keys are scanned with a gap limit of 20 on both the receive and change chains. Legacy, nested SegWit, native SegWit and **Taproot** (choose "Taproot" for a BIP86 xpub)                |
+| Litecoin                                    | litecoinspace.org                | Addresses or Ltub/Mtub/xpub-style keys                                                                                                                                                                                           |
+| Ethereum, Arbitrum, Optimism, Base, Polygon | Blockscout                       | Native coin, internal transfers and ERC-20 tokens. The add dialog can track the same address on several chains at once                                                                                                           |
+| Solana                                      | public RPC (or `SOLANA_RPC_URL`) | SOL and SPL tokens. Large histories import gradually (~1,500 transactions per sync) because of the public rate limit                                                                                                             |
+| XRP Ledger                                  | xrplcluster.com                  | XRP payments; issued tokens are skipped                                                                                                                                                                                          |
+| Tron                                        | TronGrid                         | TRX and TRC-20 tokens (e.g. USDT)                                                                                                                                                                                                |
+| Cardano                                     | Koios (free public API)          | ADA, native tokens and **staking rewards** (dated when they become spendable; deposit refunds are not income). Paste the stake address (stake1…) or any receive address: Kluishuis tracks the whole wallet through its stake key |
+| Dogecoin                                    | BlockCypher (free tier)          | Addresses or **dgub/xpub** (BIP44, gap limit 20). The free tier allows 100 requests an hour: a big history or a fresh xpub can take a few syncs                                                                                  |
 
 How a wallet sync works:
 
@@ -197,7 +199,7 @@ How a wallet sync works:
 
 Adding another chain means implementing `ChainAdapter` (`server/src/wallets/types.ts`): validate an address, then fetch per-transaction movements, fees paid and current balances. Netting, token lookup, import, transfer matching and reconciliation are shared.
 
-Not covered yet: Cardano and Dogecoin; Ethereum validator withdrawals; Solana stake accounts and staking rewards; frozen TRX; XRP issued tokens.
+Not covered yet: Ethereum validator withdrawals; Solana stake accounts and staking rewards; frozen TRX; XRP issued tokens; Cardano Byron-era addresses.
 
 ### Box 3 (Dutch wealth tax)
 

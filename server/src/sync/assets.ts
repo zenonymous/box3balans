@@ -25,6 +25,7 @@ export const COINGECKO_PLATFORM: Record<string, string> = {
   polygon: "polygon-pos",
   solana: "solana",
   tron: "tron",
+  cardano: "cardano",
 };
 
 // Unlisted tokens are re-checked after this long (new listings happen).

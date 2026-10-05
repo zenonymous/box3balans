@@ -22,7 +22,7 @@ const hash160 = (b: Uint8Array) => ripemd160(sha256(b));
 export type ScriptType = "p2pkh" | "p2sh-p2wpkh" | "p2wpkh" | "p2tr";
 export const SCRIPT_TYPES: ScriptType[] = ["p2pkh", "p2sh-p2wpkh", "p2wpkh", "p2tr"];
 
-interface UtxoChain {
+export interface UtxoChain {
   id: string;
   label: string;
   symbol: string;

@@ -23,9 +23,23 @@ export interface Fee {
   amount: Decimal;
 }
 
+/**
+ * Income that isn't a transfer in a transaction, e.g. staking rewards credited to a stake account.
+ * "deposit" is for credits that aren't income (a refunded deposit).
+ */
+export interface Reward {
+  id: string;
+  kind: "reward" | "deposit";
+  at: Date;
+  asset: AssetRef;
+  amount: Decimal;
+  note?: string;
+}
+
 export interface ChainFetchResult {
   movements: Movement[];
   fees: Fee[];
+  rewards?: Reward[];
   balances: Balance[];
   cursor: Record<string, unknown>;
   warnings: string[];

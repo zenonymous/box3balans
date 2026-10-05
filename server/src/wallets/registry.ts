@@ -1,4 +1,6 @@
 import { BITCOIN, LITECOIN, SCRIPT_TYPES, utxoAdapter } from "./bitcoin.js";
+import { cardanoAdapter } from "./cardano.js";
+import { dogecoinAdapter } from "./dogecoin.js";
 import { EVM_CHAINS, evmAdapter } from "./evm.js";
 import { solanaAdapter } from "./solana.js";
 import { tronAdapter } from "./tron.js";
@@ -18,6 +20,8 @@ export function buildChains(): Record<string, ChainAdapter> {
     utxoAdapter(LITECOIN),
     xrpAdapter(),
     tronAdapter(),
+    cardanoAdapter(),
+    dogecoinAdapter(),
   ];
   return Object.fromEntries(list.map((c) => [c.id, c]));
 }
