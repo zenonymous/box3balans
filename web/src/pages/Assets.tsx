@@ -16,7 +16,7 @@ import {
   Spinner,
   Tabs,
 } from "../components/ui";
-import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eurPrice, relativeTime, toApiNumber } from "../format";
+import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eurPrice, relativeTime, toApiNumber, toInputNumber } from "../format";
 import { useAssets, useInvalidateAll } from "../queries";
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -350,11 +350,13 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
     isin: asset.isin ?? "",
     priceRef: asset.priceRef ?? "",
     hidden: asset.hidden,
+    terPct: toInputNumber(asset.terPct?.replace(/\.?0+$/, "") ?? ""),
   });
   const [price, setPrice] = useState("");
   const [error, setError] = useState<string>();
   const builtin = asset.priceSource === "metal" || (asset.priceSource === "fx" && asset.priceRef === "EUR");
   const editableRef = asset.priceSource === "yahoo" || asset.priceSource === "coingecko";
+  const isFund = asset.assetClass === "etf";
 
   const run = async (fn: () => Promise<unknown>) => {
     setError(undefined);
@@ -376,6 +378,7 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         isin: f.isin || null,
         hidden: f.hidden,
         ...(editableRef ? { priceRef: f.priceRef } : {}),
+        ...(isFund ? { terPct: f.terPct.trim() ? toApiNumber(f.terPct, "Running costs") : null } : {}),
       });
       if (price)
         await post(`/api/assets/${asset.id}/price`, { price: toApiNumber(price, "Price"), currency: asset.currency });
@@ -441,6 +444,14 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
             {(id) => (
               <Input id={id} value={f.priceRef} onChange={(e) => setF({ ...f, priceRef: e.target.value })} required />
             )}
+          </Field>
+        )}
+        {isFund && (
+          <Field
+            label="Running costs per year (TER, %)"
+            hint="From the fund's factsheet, e.g. 0,20. Used to estimate what holding it costs (Performance → Costs)."
+          >
+            {(id) => <AmountInput id={id} value={f.terPct} onChange={(e) => setF({ ...f, terPct: e.target.value })} />}
           </Field>
         )}
         {asset.priceSource === "manual" && (

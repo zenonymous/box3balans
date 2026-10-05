@@ -32,6 +32,12 @@ const updateBody = z.object({
   isin: z.string().trim().toUpperCase().nullish(),
   priceRef: z.string().trim().max(100).nullish(),
   hidden: z.boolean().optional(),
+  // Fund running costs per year, e.g. "0.2" for 0.20%; empty to clear.
+  terPct: z
+    .union([z.string(), z.number(), z.null()])
+    .transform((v) => (v === null || String(v).trim() === "" ? null : String(v).trim().replace(",", ".")))
+    .refine((v) => v === null || (/^\d+(\.\d+)?$/.test(v) && Number(v) <= 5), "Running costs must be between 0 and 5%")
+    .optional(),
 });
 
 export async function assetRoutes(app: FastifyInstance) {

@@ -4,6 +4,7 @@ import { downsample, computeHistory } from "../domain/history.js";
 import { computeYears, loadEvents } from "../domain/performance.js";
 import { buildPortfolio } from "../domain/portfolio.js";
 import { getCostMethod, setCostMethod } from "../domain/settings.js";
+import { computeCosts } from "../domain/costs.js";
 import { D, type Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { staleAfterMs } from "../jobs/scheduler.js";
 
@@ -41,6 +42,8 @@ export async function analyticsRoutes(app: FastifyInstance) {
       backfill: backfill.lastResult,
     };
   });
+
+  app.get("/costs", async () => computeCosts(db, await getCostMethod(db)));
 
   app.get("/performance", async () => {
     const method = await getCostMethod(db);

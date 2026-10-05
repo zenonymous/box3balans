@@ -15,6 +15,7 @@ import {
 import { get, type Performance } from "../api";
 import { downloadCsv } from "../csv";
 import { Alert, Badge, Button, Card, Delta, Empty, PageHeader, Select, Spinner, Stat, Tabs } from "../components/ui";
+import { CostsView } from "./Costs";
 import { ReturnPct, ReturnsView, useReturns } from "./Returns";
 import { CLASS_COLOR, date, eur, getLocale, num } from "../format";
 
@@ -26,10 +27,11 @@ const compact = (v: number) =>
     maximumFractionDigits: 1,
   }).format(v);
 
-type Tab = "results" | "returns";
+type Tab = "results" | "returns" | "costs";
 const TABS: { value: Tab; label: string }[] = [
   { value: "results", label: "Results in euros" },
   { value: "returns", label: "Returns %" },
+  { value: "costs", label: "Costs" },
 ];
 
 export function PerformancePage() {
@@ -37,7 +39,7 @@ export function PerformancePage() {
   const returns = useReturns();
   // The tab is in the URL (?tab=returns), so it can be linked to and survives a reload.
   const [search, setSearch] = useSearchParams();
-  const tab: Tab = search.get("tab") === "returns" ? "returns" : "results";
+  const tab: Tab = TABS.find((t) => t.value === search.get("tab"))?.value ?? "results";
   const setTab = (t: Tab) => setSearch(t === "results" ? {} : { tab: t }, { replace: true });
   const [year, setYear] = useState("all");
 
@@ -83,6 +85,8 @@ export function PerformancePage() {
       </div>
       {tab === "returns" ? (
         <ReturnsView />
+      ) : tab === "costs" ? (
+        <CostsView />
       ) : (
         <>
           <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">

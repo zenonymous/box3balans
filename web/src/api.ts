@@ -97,6 +97,7 @@ export interface Asset {
   priceRef: string | null;
   unit: string;
   hidden: boolean;
+  terPct: string | null;
   price: LatestPrice | null;
 }
 

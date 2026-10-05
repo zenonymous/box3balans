@@ -98,6 +98,8 @@ export const assets = pgTable(
     chain: text("chain"),
     contract: text("contract"),
     hidden: boolean("hidden").notNull().default(false),
+    // Yearly running costs of a fund (TER / OCF) in %, entered by the user; for the cost overview.
+    terPct: numeric("ter_pct", { precision: 6, scale: 4 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

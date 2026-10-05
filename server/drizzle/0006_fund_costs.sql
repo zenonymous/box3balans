@@ -1,0 +1,1 @@
+ALTER TABLE "assets" ADD COLUMN "ter_pct" numeric(6, 4);
