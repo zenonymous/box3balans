@@ -1,10 +1,13 @@
 import { generateKeyPairSync, verify } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { bitvavoSignature, mapBitvavoItem } from "../src/sync/providers/bitvavo.js";
-import { coinbaseJwt, mapCoinbaseTx } from "../src/sync/providers/coinbase.js";
+import { bitvavoSignature, mapBitvavoHistory, mapBitvavoItem } from "../src/sync/providers/bitvavo.js";
+import { coinbaseJwt, mapCoinbaseTx, mapCoinbaseTxs } from "../src/sync/providers/coinbase.js";
 import { parseFlexStatement, parseIbDate } from "../src/sync/providers/ibkr.js";
-import { krakenSignature, mapKrakenLedger, normaliseKrakenAsset } from "../src/sync/providers/kraken.js";
+import { krakenEvents, krakenSignature, mapKrakenLedger, normaliseKrakenAsset } from "../src/sync/providers/kraken.js";
+import type { SyncEvent } from "../src/sync/types.js";
 import { FLEX_XML } from "./fixtures/flex.js";
+
+const qty = (e: SyncEvent) => ("quantity" in e ? e.quantity : undefined);
 
 describe("Kraken", () => {
   it("signs requests exactly like Kraken's documented example", () => {
@@ -78,6 +81,86 @@ describe("Kraken", () => {
       quote: { amount: "0.01", currency: "BTC" },
     });
   });
+
+  it("books staking and earn income as rewards and skips moves between Kraken's wallets", () => {
+    const t0 = 1704189600;
+    const events = mapKrakenLedger([
+      // Auto-earn allocation: a move.
+      { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL", amount: "-5", fee: "0" },
+      { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL.F", amount: "5", fee: "0" },
+      // Earn reward, net of Kraken's fee.
+      { refid: "B", time: t0 + 1, type: "earn", subtype: "reward", asset: "SOL.F", amount: "0.02", fee: "0.004" },
+      // Old-style earn entries: with a fee a reward, without one a move.
+      { refid: "C", time: t0 + 2, type: "earn", asset: "DOT.S", amount: "0.1", fee: "0.015" },
+      { refid: "D", time: t0 + 3, type: "earn", asset: "DOT.S", amount: "10", fee: "0" },
+      { refid: "E", time: t0 + 4, type: "earn", subtype: "airdrop", asset: "FLR", amount: "12", fee: "0" },
+      { refid: "F", time: t0 + 5, type: "invite bonus", asset: "ZEUR", amount: "10", fee: "0" },
+      // Fee credits are not an asset.
+      { refid: "G", time: t0 + 6, type: "deposit", asset: "KFEE", amount: "1000", fee: "0" },
+      // A trade whose fee was paid in fee credits.
+      { refid: "H", time: t0 + 7, type: "trade", asset: "XXBT", amount: "0.01", fee: "0" },
+      { refid: "H", time: t0 + 7, type: "trade", asset: "ZEUR", amount: "-400", fee: "0" },
+      { refid: "H", time: t0 + 7, type: "trade", asset: "KFEE", amount: "0", fee: "64" },
+      // A delisted asset converted into USDC.
+      {
+        refid: "I",
+        time: t0 + 8,
+        type: "earn",
+        subtype: "delistingconversion",
+        asset: "LUNA2",
+        amount: "-50",
+        fee: "0",
+      },
+      { refid: "I", time: t0 + 8, type: "earn", subtype: "delistingconversion", asset: "USDC", amount: "21", fee: "0" },
+    ]);
+    expect(events.map((e) => [e.kind, e.asset.kind === "crypto" ? e.asset.symbol : "EUR", qty(e)])).toEqual([
+      ["reward", "SOL", "0.016"],
+      ["reward", "DOT", "0.085"],
+      ["reward", "FLR", "12"],
+      ["reward", "EUR", "10"],
+      ["trade", "BTC", "0.01"],
+      ["trade", "USDC", "21"],
+    ]);
+    expect(events[4]).toMatchObject({ quote: { amount: "400", currency: "EUR" }, feeQuote: undefined });
+    expect(events[5]).toMatchObject({
+      side: "buy",
+      quote: { amount: "50", currency: "LUNA2" },
+      note: "Kraken delisting conversion",
+    });
+  });
+
+  it("cancels out a move booked as two legs under different refids", () => {
+    const t0 = 1704189600;
+    const now = t0 + 30 * 86_400;
+    const events = mapKrakenLedger(
+      [
+        // Staked ETH2 converted back to ETH: two refids, an hour apart.
+        { refid: "P1", time: t0, type: "transfer", subtype: "", asset: "ETH2.S", amount: "-1.5", fee: "0" },
+        { refid: "P2", time: t0 + 3600, type: "adjustment", asset: "XETH", amount: "1.5", fee: "0" },
+        // A fork credit with no counterpart is income.
+        { refid: "P3", time: t0 + 7200, type: "transfer", subtype: "", asset: "BCH", amount: "0.3", fee: "0" },
+        // A real deposit of the same amount is never paired.
+        { refid: "P4", time: t0 + 7300, type: "deposit", asset: "XETH", amount: "1.5", fee: "0" },
+      ],
+      {},
+      now,
+    );
+    expect(events.map((e) => [e.id, e.kind, qty(e)])).toEqual([
+      ["P3", "reward", "0.3"],
+      ["P4", "deposit", "1.5"],
+    ]);
+  });
+
+  it("holds back a recent leg whose counterpart may still come", () => {
+    const t0 = 1704189600;
+    const leg = { refid: "Q1", time: t0, type: "transfer", subtype: "", asset: "XETH", amount: "-2", fee: "0" };
+    const early = krakenEvents([leg], {}, t0 + 3600);
+    expect(early.events).toEqual([]);
+    expect(early.held).toMatchObject([{ refid: "Q1", sym: "ETH" }]);
+    // Once the window has passed it's a withdrawal after all.
+    const late = krakenEvents([leg], {}, t0 + 3 * 86_400);
+    expect(late.events).toMatchObject([{ kind: "withdrawal", quantity: "2" }]);
+  });
 });
 
 describe("Bitvavo", () => {
@@ -135,6 +218,49 @@ describe("Bitvavo", () => {
       receivedAmount: "1000",
     });
     expect(eurIn[0]).toMatchObject({ kind: "deposit", asset: { kind: "fiat", currency: "EUR" }, quantity: "1000" });
+  });
+
+  const item = (id: string, at: string, type: string, extra: Record<string, string>) => ({
+    transactionId: id,
+    executedAt: at,
+    type,
+    ...extra,
+  });
+
+  it("keeps fixed staking: locking isn't selling, the release beyond the lock is the reward", () => {
+    const first = mapBitvavoHistory([
+      item("f1", "2024-01-01T00:00:00Z", "fixed_staking", { sentCurrency: "ETH", sentAmount: "2" }),
+      item("f2", "2024-02-01T00:00:00Z", "fixed_staking", { receivedCurrency: "ETH", receivedAmount: "0.004" }),
+    ]);
+    expect(first.events).toMatchObject([{ id: "f2", kind: "reward", quantity: "0.004" }]);
+    expect(first.openLocks).toEqual([{ currency: "ETH", amount: "2" }]);
+    // The release comes in a later sync: the cursor carried the lock.
+    const later = mapBitvavoHistory(
+      [item("f3", "2024-07-01T00:00:00Z", "fixed_staking", { receivedCurrency: "ETH", receivedAmount: "2.03" })],
+      first.openLocks,
+    );
+    expect(later.events).toMatchObject([{ id: "f3", kind: "reward", quantity: "0.03" }]);
+    expect(later.openLocks).toEqual([]);
+  });
+
+  it("undoes a cancelled withdrawal and pairs moves between Bitvavo's wallets", () => {
+    const { events } = mapBitvavoHistory([
+      item("w1", "2024-03-01T00:00:00Z", "withdrawal", {
+        sentCurrency: "BTC",
+        sentAmount: "0.5",
+        feesCurrency: "BTC",
+        feesAmount: "0.0001",
+      }),
+      item("c1", "2024-03-01T01:00:00Z", "withdrawal_cancelled", { receivedCurrency: "BTC", receivedAmount: "0.5" }),
+      item("i1", "2024-03-02T00:00:00Z", "internal_transfer", { sentCurrency: "SOL", sentAmount: "3" }),
+      item("i2", "2024-03-02T00:00:01Z", "internal_transfer", { receivedCurrency: "SOL", receivedAmount: "3" }),
+      item("i3", "2024-03-03T00:00:00Z", "internal_transfer", { sentCurrency: "ADA", sentAmount: "100" }),
+    ]);
+    expect(events.map((e) => [e.id, e.kind, qty(e), e.note])).toEqual([
+      // Only the fee that wasn't refunded remains.
+      ["w1", "withdrawal", "0.0001", "Bitvavo fee on a cancelled withdrawal"],
+      ["i3", "withdrawal", "100", "Bitvavo internal transfer"],
+    ]);
   });
 });
 
@@ -203,6 +329,28 @@ describe("Coinbase", () => {
         "1",
       ),
     ).toBeNull();
+  });
+
+  it("treats the ETH2 wallet as ether and drops moves between Coinbase wallets", () => {
+    const base = { status: "completed" };
+    const tx = (id: string, type: string, amount: string, currency: string, at: string) => ({
+      tx: { ...base, id, type, amount: { amount, currency }, created_at: at },
+      eur: undefined,
+    });
+    const { events, dropped } = mapCoinbaseTxs([
+      tx("r1", "staking_reward", "0.001", "ETH2", "2023-01-01T00:00:00Z"),
+      // ETH2 retired: out of the ETH2 wallet, into the ETH wallet.
+      tx("m1", "retail_eth2_deprecation", "-1.2", "ETH2", "2023-06-01T00:00:00Z"),
+      tx("m2", "retail_eth2_deprecation", "1.2", "ETH", "2023-06-01T00:00:05Z"),
+      tx("s1", "staking_transfer", "-1", "ETH", "2022-01-01T00:00:00Z"),
+      // To a portfolio this key can't see.
+      tx("v1", "transfer", "-0.5", "BTC", "2023-07-01T00:00:00Z"),
+    ]);
+    expect(events.map((e) => [e.id, e.kind, e.asset.kind === "crypto" && e.asset.symbol, qty(e)])).toEqual([
+      ["r1", "reward", "ETH", "0.001"],
+      ["v1", "withdrawal", "BTC", "0.5"],
+    ]);
+    expect(dropped.sort()).toEqual(["m1", "m2", "s1"]);
   });
 });
 

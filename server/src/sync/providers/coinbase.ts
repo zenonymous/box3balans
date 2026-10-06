@@ -1,6 +1,6 @@
 import { createPrivateKey, randomBytes, sign, type KeyObject } from "node:crypto";
 import { z } from "zod";
-import { D } from "../../lib/decimal.js";
+import { D, type Decimal } from "../../lib/decimal.js";
 import { assetRef, isFiat } from "../assets.js";
 import { type Balance, type ExchangeProvider, ProviderError, type ProviderContext, type SyncEvent } from "../types.js";
 
@@ -106,6 +106,7 @@ const TRADE_TYPES = new Set([
   "retail_simple_dust",
   "wrap_asset",
   "unwrap_asset",
+  "asset_migration",
 ]);
 const REWARD_TYPES = new Set([
   "earn_payout",
@@ -117,8 +118,27 @@ const REWARD_TYPES = new Set([
 ]);
 // Moves between Coinbase's own wallets (e.g. into staking): not portfolio changes.
 const SKIP_TYPES = new Set(["staking_transfer", "unstaking_transfer"]);
+// Moves that leave one Coinbase wallet for another one (a vault, another portfolio, the ETH2
+// wallet being retired). Both legs visible: nothing changed. One leg: it left or entered the
+// wallets this key can see.
+const MOVE_TYPES = new Set([
+  "transfer",
+  "vault_withdrawal",
+  "retail_eth2_deprecation",
+  "intx_deposit",
+  "intx_withdrawal",
+  "exchange_deposit",
+  "exchange_withdrawal",
+  "pro_deposit",
+  "pro_withdrawal",
+]);
+const PAIR_WINDOW_MS = 86_400_000;
 
-const currencyCode = (a: CbAccount) => (typeof a.currency === "string" ? a.currency : a.currency.code).toUpperCase();
+// Coinbase kept staked ether in a separate ETH2 wallet; it's ether all the same.
+const ALIASES: Record<string, string> = { ETH2: "ETH" };
+export const coinbaseSymbol = (code: string) => ALIASES[code.toUpperCase()] ?? code.toUpperCase();
+
+const currencyCode = (a: CbAccount) => coinbaseSymbol(typeof a.currency === "string" ? a.currency : a.currency.code);
 
 /**
  * Maps a Coinbase v2 transaction. Every transaction is a single-asset movement with its EUR value
@@ -127,7 +147,7 @@ const currencyCode = (a: CbAccount) => (typeof a.currency === "string" ? a.curre
  */
 export function mapCoinbaseTx(tx: CbTx, eurValue: string | undefined): SyncEvent | null {
   if (tx.status !== "completed" || SKIP_TYPES.has(tx.type)) return null;
-  const cur = tx.amount.currency.toUpperCase();
+  const cur = coinbaseSymbol(tx.amount.currency);
   const amount = D(tx.amount.amount);
   if (amount.isZero()) return null;
   const at = new Date(tx.created_at);
@@ -182,6 +202,49 @@ export function mapCoinbaseTx(tx: CbTx, eurValue: string | undefined): SyncEvent
   };
 }
 
+/**
+ * Maps a batch of new transactions, dropping moves whose two legs (equal and opposite, same
+ * currency, within a day) are both in it. Returns the ids deliberately left out.
+ */
+export function mapCoinbaseTxs(list: { tx: CbTx; eur: string | undefined }[]): {
+  events: SyncEvent[];
+  dropped: string[];
+} {
+  const moves = list
+    .filter(({ tx }) => tx.status === "completed" && MOVE_TYPES.has(tx.type))
+    .sort((a, b) => Date.parse(a.tx.created_at) - Date.parse(b.tx.created_at));
+  const paired = new Set<string>();
+  for (const { tx: out } of moves) {
+    const amount = D(out.amount.amount);
+    if (!amount.lt(0) || paired.has(out.id)) continue;
+    const back = moves.find(
+      ({ tx }) =>
+        !paired.has(tx.id) &&
+        coinbaseSymbol(tx.amount.currency) === coinbaseSymbol(out.amount.currency) &&
+        D(tx.amount.amount).eq(amount.neg()) &&
+        Math.abs(Date.parse(tx.created_at) - Date.parse(out.created_at)) <= PAIR_WINDOW_MS,
+    );
+    if (back) {
+      paired.add(out.id);
+      paired.add(back.tx.id);
+    }
+  }
+  const events: SyncEvent[] = [];
+  const dropped: string[] = [];
+  for (const { tx, eur } of list) {
+    const e = paired.has(tx.id) ? null : mapCoinbaseTx(tx, eur);
+    if (e) events.push(e);
+    // Not pending ones (they come back completed) or trades without a EUR value (they can be
+    // imported once the native currency is EUR).
+    else if (
+      tx.status === "completed" &&
+      (paired.has(tx.id) || SKIP_TYPES.has(tx.type) || D(tx.amount.amount).isZero())
+    )
+      dropped.push(tx.id);
+  }
+  return { events, dropped };
+}
+
 export const coinbase: ExchangeProvider<Creds> = {
   id: "coinbase",
   label: "Coinbase",
@@ -218,7 +281,9 @@ export const coinbase: ExchangeProvider<Creds> = {
     }
 
     const incremental = ctx.cursor?.synced === true;
-    const events: SyncEvent[] = [];
+    // Transactions deliberately not imported (moves, zero amounts): known as well.
+    const skipped = new Set((ctx.cursor?.skipped as string[] | undefined) ?? []);
+    const list: { tx: CbTx; eur: string | undefined }[] = [];
     const warnings: string[] = [];
     let nonEurNative = false;
     for (const acc of accounts) {
@@ -228,27 +293,41 @@ export const coinbase: ExchangeProvider<Creds> = {
           const native = tx.native_amount;
           const eur = native && native.currency.toUpperCase() === "EUR" ? native.amount : undefined;
           if (native && native.currency.toUpperCase() !== "EUR") nonEurNative = true;
-          const e = mapCoinbaseTx(tx, eur);
-          if (e) events.push(e);
+          list.push({ tx, eur });
         }
-        // Newest first: once a whole page is already stored, older pages are too.
+        // Newest first: once a whole page is already handled, older pages are too.
         if (incremental && page.data.length > 0) {
           const known = await ctx.isKnown(page.data.map((t) => t.id));
-          if (page.data.every((t) => known.has(t.id))) break;
+          if (page.data.every((t) => known.has(t.id) || skipped.has(t.id))) break;
         }
         path = page.pagination?.next_uri;
       }
     }
+    // Only new transactions are mapped: one already imported can't be paired away any more.
+    const known = await ctx.isKnown(list.map(({ tx }) => tx.id));
+    const { events, dropped } = mapCoinbaseTxs(list.filter(({ tx }) => !known.has(tx.id) && !skipped.has(tx.id)));
     if (nonEurNative) {
       warnings.push(
         "Your Coinbase native currency is not EUR; set it to EUR in Coinbase settings so trades can be valued exactly.",
       );
     }
 
-    const balances: Balance[] = accounts
-      .filter((a) => !D(a.balance.amount).isZero())
-      .map((a) => ({ asset: assetRef(currencyCode(a)), quantity: a.balance.amount }));
+    // ETH and the old ETH2 wallet add up to one balance.
+    const totals = new Map<string, Decimal>();
+    for (const a of accounts) {
+      const sym = currencyCode(a);
+      totals.set(sym, (totals.get(sym) ?? D(0)).plus(D(a.balance.amount)));
+    }
+    const balances: Balance[] = [...totals]
+      .filter(([, q]) => !q.isZero())
+      .map(([sym, q]) => ({ asset: assetRef(sym), quantity: q.toFixed() }));
 
-    return { events, balances, balanceScope: "all", cursor: { synced: true }, warnings };
+    return {
+      events,
+      balances,
+      balanceScope: "all",
+      cursor: { synced: true, skipped: [...skipped, ...dropped] },
+      warnings,
+    };
   },
 };

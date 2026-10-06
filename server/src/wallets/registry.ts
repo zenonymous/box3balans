@@ -1,3 +1,4 @@
+import { BSC, ankrAdapter } from "./ankr.js";
 import { BITCOIN, LITECOIN, SCRIPT_TYPES, utxoAdapter } from "./bitcoin.js";
 import { cardanoAdapter } from "./cardano.js";
 import { dogecoinAdapter } from "./dogecoin.js";
@@ -16,6 +17,7 @@ export function buildChains(): Record<string, ChainAdapter> {
   const list: ChainAdapter[] = [
     utxoAdapter(BITCOIN),
     ...EVM_CHAINS.map(evmAdapter),
+    ankrAdapter(BSC),
     solanaAdapter(),
     utxoAdapter(LITECOIN),
     xrpAdapter(),

@@ -64,6 +64,10 @@ export interface ChainAdapter {
   /** Placeholder / help text for the address field. */
   addressHint: string;
   supportsXpub: boolean;
+  /** An 0x address that is the same on every EVM chain. */
+  evm?: boolean;
+  /** Why the chain can't sync yet (e.g. an API key to set up); shown instead of letting you add it. */
+  unavailable?: string;
   /** Returns the normalised address/xpub, or throws with a user-facing message. */
   normalise(input: string): string;
   fetch(inputs: WalletInput[], ctx: ChainContext): Promise<ChainFetchResult>;

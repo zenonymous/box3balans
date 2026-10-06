@@ -24,6 +24,9 @@ export const EVM_CHAINS: EvmChain[] = [
     explorer: "https://polygon.blockscout.com",
     native: { symbol: "POL", coingeckoId: "polygon-ecosystem-token", name: "Polygon" },
   },
+  { id: "unichain", label: "Unichain", explorer: "https://unichain.blockscout.com", native: ETH },
+  { id: "ink", label: "Ink", explorer: "https://explorer.inkonchain.com", native: ETH },
+  { id: "soneium", label: "Soneium", explorer: "https://soneium.blockscout.com", native: ETH },
 ];
 
 interface Page<T> {
@@ -123,6 +126,7 @@ export function evmAdapter(c: EvmChain): ChainAdapter {
     nativeSymbol: c.native.symbol,
     addressHint: "0x… address (same address works on every EVM chain)",
     supportsXpub: false,
+    evm: true,
 
     normalise(input) {
       const s = input.trim();

@@ -308,6 +308,9 @@ export interface ChainInfo {
   addressHint: string;
   supportsXpub: boolean;
   scriptTypes: string[];
+  evm: boolean;
+  // Set when the chain needs setting up first (e.g. an API key).
+  unavailable: string | null;
 }
 
 export interface WalletSyncResult {

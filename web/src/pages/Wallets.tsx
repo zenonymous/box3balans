@@ -6,8 +6,6 @@ import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Sel
 import { relativeTime } from "../format";
 import { useAccounts, useInvalidateAll } from "../queries";
 
-const EVM = ["ethereum", "arbitrum", "optimism", "base", "polygon"];
-
 const SCRIPT_LABEL: Record<string, string> = {
   p2pkh: "Legacy (1…)",
   "p2sh-p2wpkh": "Nested SegWit (3…)",
@@ -260,7 +258,9 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
   const [results, setResults] = useState<{ chain: string; result: WalletSyncResult | null }[]>();
 
   const info = chains.find((c) => c.id === chain)!;
-  const isEvm = EVM.includes(chain);
+  const isEvm = info.evm;
+  // Other EVM chains the same address can be tracked on.
+  const otherEvm = chains.filter((c) => c.evm && c.id !== chain);
   const xpub = info.supportsXpub && looksLikeXpub(address);
   const wallets = accounts.data?.filter((a) => !a.archived && (a.kind === "wallet" || a.kind === "other")) ?? [];
   const label_ = (id: string) => chains.find((c) => c.id === id)?.label ?? id;
@@ -268,7 +268,7 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    const targets = [chain, ...(isEvm ? alsoOn.filter((c) => c !== chain) : [])];
+    const targets = [chain, ...(isEvm ? alsoOn.filter((c) => otherEvm.some((o) => o.id === c && !o.unavailable)) : [])];
     let accountId = accountChoice === "new" ? undefined : Number(accountChoice);
     const out: { chain: string; result: WalletSyncResult | null }[] = [];
     try {
@@ -319,7 +319,7 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
         ) : (
           <>
             <Button onClick={onClose}>Cancel</Button>
-            <Button variant="primary" type="submit" form="wallet-form" disabled={!!busy}>
+            <Button variant="primary" type="submit" form="wallet-form" disabled={!!busy || !!info.unavailable}>
               {busy ?? "Add and import"}
             </Button>
           </>
@@ -354,7 +354,7 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
               <Select id={id} value={chain} onChange={(e) => setChain(e.target.value)}>
                 {chains.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.label} ({c.nativeSymbol})
+                    {c.label} ({c.nativeSymbol}){c.unavailable ? " – needs setup" : ""}
                   </option>
                 ))}
               </Select>
@@ -370,6 +370,11 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
               />
             )}
           </Field>
+          {info.unavailable && (
+            <div className="sm:col-span-2">
+              <Alert tone="warn">{info.unavailable}</Alert>
+            </div>
+          )}
           <Field label="Public address" hint={info.addressHint} className="sm:col-span-2">
             {(id) => (
               <Input
@@ -405,14 +410,22 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
             <fieldset className="sm:col-span-2">
               <legend className="mb-1 text-xs font-medium text-ink-2">Also track this address on</legend>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                {EVM.filter((c) => c !== chain).map((c) => (
-                  <label key={c} className="flex items-center gap-1.5">
+                {otherEvm.map((c) => (
+                  <label
+                    key={c.id}
+                    className={`flex items-center gap-1.5${c.unavailable ? " text-muted" : ""}`}
+                    title={c.unavailable ?? undefined}
+                  >
                     <input
                       type="checkbox"
-                      checked={alsoOn.includes(c)}
-                      onChange={(e) => setAlsoOn(e.target.checked ? [...alsoOn, c] : alsoOn.filter((x) => x !== c))}
+                      disabled={!!c.unavailable}
+                      checked={!c.unavailable && alsoOn.includes(c.id)}
+                      onChange={(e) =>
+                        setAlsoOn(e.target.checked ? [...alsoOn, c.id] : alsoOn.filter((x) => x !== c.id))
+                      }
                     />
-                    {label_(c)}
+                    {c.label}
+                    {c.unavailable && " (needs setup)"}
                   </label>
                 ))}
               </div>

@@ -99,6 +99,9 @@ export function normaliseKrakenAsset(code: string, altnames: Record<string, stri
   return ALIASES[c] ?? c;
 }
 
+// Fee credits Kraken hands out to pay trading fees with: not an asset you own.
+const IGNORED_ASSETS = new Set(["KFEE"]);
+
 // Moves between Kraken's spot and staking/earn wallets: not portfolio changes.
 const INTERNAL_SUBTYPES = new Set([
   "spottostaking",
@@ -109,26 +112,68 @@ const INTERNAL_SUBTYPES = new Set([
   "spotfromfutures",
   "allocation",
   "deallocation",
+  "autoallocate",
   "autoallocation",
   "migration",
 ]);
-const TRADE_TYPES = new Set(["trade", "spend", "receive", "conversion", "sale", "margin"]);
-const REWARD_TYPES = new Set(["staking", "reward", "dividend", "credit"]);
+const TRADE_TYPES = new Set(["trade", "spend", "receive", "conversion", "sale", "margin", "settled"]);
+const REWARD_TYPES = new Set(["staking", "reward", "dividend", "credit", "invite bonus"]);
+// Kinds of entry Kraken sometimes books as two legs under different refids (e.g. staked ETH2.S
+// converted back to ETH): an equal and opposite pair close together is a move, not a change.
+const PAIRABLE_TYPES = new Set(["transfer", "earn", "adjustment", "custodytransfer"]);
+const PAIR_WINDOW_S = 2 * 86_400;
+
+const isInternal = (e: LedgerEntry) =>
+  ((e.type === "transfer" || e.type === "earn") && INTERNAL_SUBTYPES.has(e.subtype ?? "")) ||
+  // Earn entries from before subtypes existed: with a fee it's a reward, without one a move.
+  (e.type === "earn" && !e.subtype && D(e.fee || 0).isZero());
+
+/** Whether an incoming amount is income (staking, earn rewards, airdrops, forks) rather than a deposit. */
+const isIncome = (type: string, subtype: string) =>
+  REWARD_TYPES.has(type) ||
+  ((type === "earn" || type === "transfer") && (subtype === "reward" || subtype === "airdrop")) ||
+  (type === "earn" && !subtype) ||
+  (type === "transfer" && !subtype) ||
+  type === "adjustment";
+
+interface Leg {
+  refid: string;
+  id: string;
+  time: number;
+  sym: string;
+  amount: Decimal;
+  type: string;
+  subtype: string;
+}
 
 /** Groups ledger entries by refid and turns each group into events. */
-export function mapKrakenLedger(entries: LedgerEntry[], altnames: Record<string, string> = {}): SyncEvent[] {
+export function mapKrakenLedger(
+  entries: LedgerEntry[],
+  altnames: Record<string, string> = {},
+  now = Date.now() / 1000,
+): SyncEvent[] {
+  return krakenEvents(entries, altnames, now).events;
+}
+
+/**
+ * Also returns the legs held back: a move's other leg may still be on its way, so a pairable leg
+ * younger than the pairing window waits for a later sync.
+ */
+export function krakenEvents(entries: LedgerEntry[], altnames: Record<string, string>, now: number) {
   const groups = new Map<string, LedgerEntry[]>();
   for (const e of entries) {
+    if (IGNORED_ASSETS.has(normaliseKrakenAsset(e.asset, altnames))) continue;
     const g = groups.get(e.refid) ?? [];
     g.push(e);
     groups.set(e.refid, g);
   }
   const events: SyncEvent[] = [];
+  const legs: Leg[] = [];
   for (const [refid, group] of groups) {
-    const at = new Date(Math.min(...group.map((e) => e.time)) * 1000);
+    const time = Math.min(...group.map((e) => e.time));
+    const at = new Date(time * 1000);
     const types = new Set(group.map((e) => e.type));
-    if (group.every((e) => (e.type === "transfer" || e.type === "earn") && INTERNAL_SUBTYPES.has(e.subtype ?? "")))
-      continue;
+    if (group.every(isInternal)) continue;
 
     // Net balance change per normalised asset (Kraken: balance changes by amount − fee).
     const net = new Map<string, Decimal>();
@@ -144,7 +189,8 @@ export function mapKrakenLedger(entries: LedgerEntry[], altnames: Record<string,
     const plus = [...net].filter(([, v]) => v.gt(0));
     const minus = [...net].filter(([, v]) => v.lt(0));
 
-    if ([...types].some((t) => TRADE_TYPES.has(t)) && plus.length === 1 && minus.length === 1) {
+    const delisting = group.some((e) => e.subtype === "delistingconversion");
+    if (([...types].some((t) => TRADE_TYPES.has(t)) || delisting) && plus.length === 1 && minus.length === 1) {
       const [inSym, inAmt] = plus[0]!;
       const [outSym, outAmt] = minus[0]!;
       // Fiat is always the quote; for crypto-to-crypto the asset given up is the quote.
@@ -162,31 +208,62 @@ export function mapKrakenLedger(entries: LedgerEntry[], altnames: Record<string,
         quantity: qty.toFixed(),
         quote: { amount: quoteAmt.toFixed(), currency: quoteSym },
         feeQuote: fee && !fee.isZero() ? fee.toFixed() : undefined,
+        note: delisting ? "Kraken delisting conversion" : undefined,
       });
       continue;
     }
 
     const multi = net.size > 1;
-    for (const [sym, v] of net) {
-      const id = multi ? `${refid}:${sym}` : refid;
-      const quantity = v.abs().toFixed();
-      const type = group.find((e) => normaliseKrakenAsset(e.asset, altnames) === sym)?.type ?? "";
-      const subtype = group.find((e) => normaliseKrakenAsset(e.asset, altnames) === sym)?.subtype ?? "";
-      const note =
-        type === "deposit" || type === "withdrawal"
-          ? undefined
-          : `Kraken ${[type, subtype].filter(Boolean).join(" / ")}`;
-      if (
-        v.gt(0) &&
-        (REWARD_TYPES.has(type) || (type === "earn" && subtype === "reward") || (type === "transfer" && !subtype))
-      ) {
-        events.push({ kind: "reward", id, at, asset: assetRef(sym), quantity, note });
-      } else {
-        events.push({ kind: v.gt(0) ? "deposit" : "withdrawal", id, at, asset: assetRef(sym), quantity, note });
-      }
+    for (const [sym, amount] of net) {
+      const entry = group.find((e) => normaliseKrakenAsset(e.asset, altnames) === sym);
+      legs.push({
+        refid,
+        id: multi ? `${refid}:${sym}` : refid,
+        time,
+        sym,
+        amount,
+        type: entry?.type ?? "",
+        subtype: entry?.subtype ?? "",
+      });
     }
   }
-  return events;
+
+  // Cancel out moves booked as separate legs.
+  const pairable = (l: Leg) => PAIRABLE_TYPES.has(l.type) && !["reward", "airdrop"].includes(l.subtype);
+  const paired = new Set<Leg>();
+  const sorted = legs.filter(pairable).sort((a, b) => a.time - b.time);
+  for (const out of sorted) {
+    if (!out.amount.lt(0) || paired.has(out)) continue;
+    const back = sorted.find(
+      (l) =>
+        !paired.has(l) &&
+        l.sym === out.sym &&
+        l.amount.eq(out.amount.neg()) &&
+        Math.abs(l.time - out.time) <= PAIR_WINDOW_S,
+    );
+    if (back) {
+      paired.add(out);
+      paired.add(back);
+    }
+  }
+
+  const held: Leg[] = [];
+  for (const l of legs) {
+    if (paired.has(l)) continue;
+    if (pairable(l) && l.time > now - PAIR_WINDOW_S) {
+      held.push(l);
+      continue;
+    }
+    const at = new Date(l.time * 1000);
+    const quantity = l.amount.abs().toFixed();
+    const note =
+      l.type === "deposit" || l.type === "withdrawal"
+        ? undefined
+        : `Kraken ${[l.type, l.subtype].filter(Boolean).join(" / ")}`;
+    const kind = l.amount.gt(0) ? (isIncome(l.type, l.subtype) ? "reward" : "deposit") : "withdrawal";
+    events.push({ kind, id: l.id, at, asset: assetRef(l.sym), quantity, note });
+  }
+  return { events: events.sort((a, b) => a.at.getTime() - b.at.getTime()), held };
 }
 
 export const kraken: ExchangeProvider<Creds> = {
@@ -238,10 +315,29 @@ export const kraken: ExchangeProvider<Creds> = {
       await ctx.sleep(ofs > 200 ? 3_000 : 1_000);
     }
 
+    // Groups handled by the previous sync (re-read in the overlap) are skipped: their events are in,
+    // and pairing them again could leave out what they were paired with.
+    const seen = new Set((ctx.cursor?.seen as string[] | undefined) ?? []);
+    const { events, held } = krakenEvents(
+      entries.filter((e) => !seen.has(e.refid)),
+      altnames,
+      Date.now() / 1000,
+    );
+    const heldRefids = new Set(held.map((l) => l.refid));
+    // Re-read from the oldest held-back leg next time.
+    const nextLast = Math.min(maxTime, ...held.map((l) => Math.floor(l.time)));
+    const nextSeen = [
+      ...new Set(
+        entries.filter((e) => e.time >= nextLast - 2 * 86_400 && !heldRefids.has(e.refid)).map((e) => e.refid),
+      ),
+    ];
     const bal = await privateCall<Record<string, string>>(c, ctx, "Balance");
     const totals = new Map<string, Decimal>();
+    // Held-back legs aren't booked yet: compare the balance without them.
+    for (const l of held) totals.set(l.sym, (totals.get(l.sym) ?? D(0)).minus(l.amount));
     for (const [code, q] of Object.entries(bal)) {
       const sym = normaliseKrakenAsset(code, altnames);
+      if (IGNORED_ASSETS.has(sym)) continue;
       totals.set(sym, (totals.get(sym) ?? D(0)).plus(D(q)));
     }
     const balances: Balance[] = [...totals]
@@ -249,10 +345,10 @@ export const kraken: ExchangeProvider<Creds> = {
       .map(([sym, q]) => ({ asset: assetRef(sym), quantity: q.toFixed() }));
 
     return {
-      events: mapKrakenLedger(entries, altnames),
+      events,
       balances,
       balanceScope: "all",
-      cursor: { lastTime: maxTime },
+      cursor: { lastTime: nextLast, seen: nextSeen },
       warnings: [],
     };
   },

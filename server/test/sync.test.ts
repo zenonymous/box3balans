@@ -82,13 +82,14 @@ const BITVAVO_HISTORY = [
   },
 ];
 
-const bitvavoRoutes = (history = BITVAVO_HISTORY) => ({
+const bitvavoRoutes = (history: object[] = BITVAVO_HISTORY) => ({
   ...defaultRoutes,
   "api.bitvavo.com/v2/balance": [
     { symbol: "EUR", available: "537.65", inOrder: "0" },
     { symbol: "BTC", available: "0.00099", inOrder: "0" },
     { symbol: "ETH", available: "0.101", inOrder: "0" },
   ],
+  "api.bitvavo.com/v2/stakingBalance": [],
   "api.bitvavo.com/v2/account/history": { items: history, currentPage: 1, totalPages: 1, maxItems: 100 },
   "api/v3/search?query=BTC": { coins: [{ id: "bitcoin", name: "Bitcoin", symbol: "btc" }] },
   "api/v3/search?query=ETH": {
@@ -174,10 +175,11 @@ describe("exchange connections", () => {
     const eth = json(await t.api("GET", "/api/assets")).find((a: any) => a.symbol === "ETH");
     expect(eth.priceRef).toBe("ethereum"); // highest market-cap match, not the copycat
 
-    // Second sync: nothing new.
+    // Second sync: nothing new. The newest item, in the re-read overlap, was handled last time and
+    // is skipped outright; the rest (this stub ignores fromDate) are duplicates.
     const again = await resync(id);
     expect(again.inserted).toBe(0);
-    expect(again.duplicates).toBe(6);
+    expect(again.duplicates).toBe(5);
 
     // Deleting a synced transaction sticks across syncs.
     await t.api("DELETE", `/api/transactions/${reward.id}`);
@@ -189,6 +191,37 @@ describe("exchange connections", () => {
       expect.objectContaining({ symbol: "ETH", reported: "0.101", computed: "0.1", difference: "0.001" }),
     ]);
     expect(third.status).toBe("warning");
+  });
+
+  it("counts Bitvavo assets in fixed staking and doesn't book the lock as a withdrawal", async () => {
+    t = await createTestApp({
+      ...bitvavoRoutes([
+        ...BITVAVO_HISTORY,
+        {
+          transactionId: "fs1",
+          executedAt: "2024-03-05T00:00:00Z",
+          type: "fixed_staking",
+          sentCurrency: "ETH",
+          sentAmount: "0.05",
+        },
+      ]),
+      // 0.05 of the 0.101 ETH is locked: no longer in /balance, but in /stakingBalance.
+      "api.bitvavo.com/v2/balance": [
+        { symbol: "EUR", available: "537.65", inOrder: "0" },
+        { symbol: "BTC", available: "0.00099", inOrder: "0" },
+        { symbol: "ETH", available: "0.051", inOrder: "0" },
+      ],
+      "api.bitvavo.com/v2/stakingBalance": [{ symbol: "ETH", amount: "0.05" }],
+    });
+    const { id, accountId } = await connectBitvavo();
+    const result = await connResult(id);
+    expect(result.error).toBeUndefined();
+    expect(result.mismatches).toEqual([]);
+    expect(result.inserted).toBe(6);
+    const txs = json(await t.api("GET", `/api/transactions?accountId=${accountId}`)).items;
+    expect(txs.find((x: any) => x.externalId === "fs1")).toBeUndefined();
+    const [row] = await t.database.db.select().from(integrations).where(eq(integrations.id, id));
+    expect(row!.cursor).toMatchObject({ locks: [{ currency: "ETH", amount: "0.05" }], seen: ["fs1"] });
   });
 
   it("links a withdrawal on one exchange to the deposit on another as a transfer", async () => {

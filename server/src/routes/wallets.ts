@@ -39,6 +39,8 @@ export async function walletRoutes(app: FastifyInstance) {
       addressHint: c.addressHint,
       supportsXpub: c.supportsXpub,
       scriptTypes: c.supportsXpub ? SCRIPT_TYPES : [],
+      evm: !!c.evm,
+      unavailable: c.unavailable ?? null,
     })),
   );
 
@@ -61,6 +63,7 @@ export async function walletRoutes(app: FastifyInstance) {
     const body = createBody.parse(req.body);
     const chain = wallets.chains[body.chain];
     if (!chain) throw new HttpError(400, `Unsupported chain ${body.chain}`);
+    if (chain.unavailable) throw new HttpError(400, chain.unavailable);
     let address: string;
     try {
       address = chain.normalise(body.address);
