@@ -26,6 +26,11 @@ async function main() {
     if (!config.BACKUP_PASSPHRASE) throw new Error("Set BACKUP_PASSPHRASE to the passphrase the backup was made with");
     const out = arg.slice(0, -".enc".length);
     fs.writeFileSync(out, await decryptBackup(fs.readFileSync(arg), config.BACKUP_PASSPHRASE), { mode: 0o600 });
+    // Run as root via `docker compose exec`: same owner as the encrypted file.
+    if (process.getuid?.() === 0) {
+      const owner = fs.statSync(arg);
+      fs.chownSync(out, owner.uid, owner.gid);
+    }
     console.log(`Decrypted to ${out}`);
     return;
   }
@@ -37,7 +42,9 @@ async function main() {
   const database = await openDatabase({
     url: config.DATABASE_URL,
     pgEnv: !!config.PGHOST,
+    password: config.PGPASSWORD,
     pgliteDir: config.PGLITE_DIR,
+    lock: "check",
   });
   try {
     if (cmd === "backup") {

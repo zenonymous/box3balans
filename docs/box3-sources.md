@@ -1,64 +1,64 @@
-# Box 3: rules used and where they come from
+# Box 3: gebruikte regels en hun bronnen
 
-Checked on 5 October 2026. Box 3 changes often; recheck these before relying on a year's numbers.
+Gecontroleerd op 5 oktober 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
 
-## Deemed return (forfaitair, tax years 2023 onwards)
+## Forfaitair rendement (belastingjaren vanaf 2023)
 
-The official steps and the 2023–2026 figures are in `server/src/domain/box3.ts` (`DEFAULT_RATES`). They are editable in the app under _Box 3 → Rules & rates_.
+De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain/box3.ts` (`DEFAULT_RATES`). Je kunt ze aanpassen in de app onder _Box 3 → Rules & rates_.
 
-**2027 is not built in yet.** The Belastingplan 2027's key figures (30 September 2026) list a tax-free amount of €60,098. But the cabinet's letter of 29 September 2026 proposes lowering it to €30,846 and raising the deemed return on other assets by 1.5 points, to 7.87%, to pay for the novelle below. Add 2027 under _Rules & rates_ once it's final.
+**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Voeg 2027 toe onder _Rules & rates_ zodra het definitief is.
 
 - Holdwise, _Box 3 in 2027_: https://holdwise.nl/kennisbank/box-3-2027
 
-## Tegenbewijsregeling: actual return instead of deemed (Wet tegenbewijsregeling box 3)
+## Tegenbewijsregeling: werkelijk in plaats van forfaitair rendement (Wet tegenbewijsregeling box 3)
 
-When your actual return is lower than the deemed one, you can be taxed on the actual return. You submit it with the _Opgaaf werkelijk rendement_ (OWR), available since 8 July 2025.
+Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Je geeft het door met de _Opgaaf werkelijk rendement_ (OWR), beschikbaar sinds 8 juli 2025.
 
-What the app applies (Kluishuis: _Box 3 → year → Actual return_):
+Wat de app toepast (Kluishuis: _Box 3 → jaar → Actual return_):
 
-- **Actual return** = direct return (interest, dividends **gross**, rent, other income such as staking rewards) + indirect return (all value changes, realised and unrealised, of every box 3 asset held during the year, not only those held on 1 January), − **actual interest paid on box 3 debts**.
-- **Costs are not deductible**, except interest on debts. Transaction fees and account fees don't reduce it, and dividend tax withheld doesn't either: dividends count gross.
-- **No tax-free allowance** (heffingsvrij vermogen) and no debt threshold.
-- **A negative total counts as €0.** Losses don't carry over to other years.
-- Returns are nominal, without inflation correction, with interest counted on an accrual basis.
-- **Tax:** the box 3 rate (36% from 2024) × the actual return. You never pay more than with the deemed return, so the lower of the two applies.
-- **Fiscal partners:** split by their shares of the joint grondslag. This changes nothing for the combined tax: there's no allowance and the rate is flat.
-- **Green investments:** their return is exempt pro rata. The app leaves green and "not in box 3" accounts out of the actual return, which is an approximation.
+- **Werkelijk rendement** = direct rendement (rente, dividenden **bruto**, huur, andere inkomsten zoals stakingbeloningen) + indirect rendement (alle waardeveranderingen, gerealiseerd en ongerealiseerd, van elke box 3-bezitting die je in het jaar had, niet alleen die op 1 januari) − **werkelijk betaalde rente op box 3-schulden**.
+- **Kosten zijn niet aftrekbaar**, behalve rente op schulden. Transactie- en accountkosten verlagen het niet, en ingehouden dividendbelasting ook niet: dividenden tellen bruto.
+- **Geen heffingsvrij vermogen** en geen schuldendrempel.
+- **Een negatief totaal telt als € 0.** Verliezen schuiven niet door naar andere jaren.
+- Rendementen zijn nominaal, zonder inflatiecorrectie, en rente telt in het jaar waarin die opkomt (niet wanneer die wordt uitbetaald).
+- **Belasting:** het box 3-tarief (36% vanaf 2024) × het werkelijke rendement. Je betaalt nooit meer dan met het forfaitaire rendement: het laagste van de twee geldt.
+- **Fiscale partners:** verdeeld naar hun aandeel in de gezamenlijke grondslag. Voor de belasting samen maakt dat niets uit: er is geen heffingsvrij deel en het tarief is vlak.
+- **Groene beleggingen:** hun rendement is naar verhouding vrijgesteld. De app laat groene rekeningen en rekeningen "niet in box 3" buiten het werkelijk rendement; dat is een benadering.
 
-Sources:
+Bronnen:
 
 - Belastingdienst, _Wat is mijn werkelijk rendement?_: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/wat-is-mijn-werkelijk-rendement
-- Belastingdienst, FAQ on the Opgaaf werkelijk rendement (no tax-free allowance; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
-- SRA, summary of the tegenbewijsregeling 2017–2027 (gross dividends, no debt threshold, partners, accrual): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
+- Belastingdienst, veelgestelde vragen over de Opgaaf werkelijk rendement (geen heffingsvrij vermogen; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
+- SRA, overzicht van de tegenbewijsregeling 2017–2027 (bruto dividenden, geen schuldendrempel, partners, toerekening van rente): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 
-## From 2028: Wet werkelijk rendement box 3 (bill 36.748), not law yet
+## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
 
-Status on 5 October 2026:
+Stand op 5 oktober 2026:
 
-- **Tweede Kamer:** passed the bill on 12 February 2026.
-- **Eerste Kamer:** postponed its vote until it has dealt with a novelle (amending bill), expected from January 2027.
-- **Novelle:** on 29 September 2026 the cabinet confirmed it is coming, with one year of loss carry-back and a higher tax-free result among its contents.
+- **Tweede Kamer:** nam het wetsvoorstel aan op 12 februari 2026.
+- **Eerste Kamer:** stelde de stemming uit tot ze een novelle (wijzigingswet) heeft behandeld, verwacht vanaf januari 2027.
+- **Novelle:** op 29 september 2026 bevestigde het kabinet dat die komt, met onder meer één jaar verliesverrekening naar achteren en een hoger heffingsvrij resultaat.
 
-Rules of the bill as passed by the Tweede Kamer (the app's default preview):
+Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstelling van de vooruitblik in de app):
 
-- **Capital accrual tax (vermogensaanwas) as the main rule:** each year's direct return plus realised and unrealised value changes, minus costs. Real estate and shares in start-ups are taxed on realisation instead (capital gains).
-- **Costs are deductible**, including transaction costs, account fees and interest paid. Dividend tax is not deductible.
-- **Rate:** 36%.
-- **Tax-free result:** €1,800 per taxpayer.
-- **Losses** above €500 carry forward to later years. Carrying them back is not in the bill; the novelle adds one year.
-- **Green investments** keep a tax credit.
+- **Vermogensaanwasbelasting als hoofdregel:** elk jaar het directe rendement plus de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Onroerend goed en aandelen in startende ondernemingen worden belast bij verkoop (vermogenswinstbelasting).
+- **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
+- **Tarief:** 36%.
+- **Heffingsvrij resultaat:** € 1.800 per belastingplichtige.
+- **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de novelle voegt één jaar toe.
+- **Groene beleggingen** houden een heffingskorting.
 
-Options the cabinet studied for the novelle (June–August 2026): a 35% rate, a €1,900 tax-free result, and one year of loss carry-back. The app's "novelle" preset uses €1,900 and one year of carry-back at 36%. **These details aren't final**, which is why every parameter is editable.
+Opties die het kabinet voor de novelle onderzocht (juni–augustus 2026): een tarief van 35%, een heffingsvrij resultaat van € 1.900, en één jaar verliesverrekening naar achteren. De instelling "novelle" in de app gebruikt € 1.900 en één jaar terugwenteling bij 36%. **Deze details zijn niet definitief**, daarom is elke instelling aan te passen.
 
-Not specified by the sources, and assumed by the app:
+Niet beschreven in de bronnen, en aangenomen door de app:
 
-- A loss of at least the threshold carries forward in full.
-- Losses carried forward are set off against the result left after the tax-free amount.
+- Een verlies van minstens de drempel schuift volledig door.
+- Doorgeschoven verliezen worden verrekend met het resultaat dat overblijft na het heffingsvrije resultaat.
 
-Sources:
+Bronnen:
 
-- Eerste Kamer, bill 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
 - SRA, _Wet werkelijk rendement box 3 (voorlopig) nog niet aangenomen_: https://www.sra.nl/nieuwsoverzicht/2026/wet-werkelijk-rendement-box-3-voorlopig-nog-niet-aangenomen
-- SRA, summary of the bill (rate, €1,800, €500, deductible costs): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027
+- SRA, overzicht van het wetsvoorstel (tarief, € 1.800, € 500, aftrekbare kosten): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027
 - Rijksoverheid, _Plannen werkelijk rendement box 3_: https://www.rijksoverheid.nl/onderwerpen/inkomstenbelasting/plannen-werkelijk-rendement-box-3
-- Nextens, options for the novelle (22 June 2026): https://www.nextens.nl/fiscaal-nieuws/nieuws/cat2/wet-werkelijk-rendement-box-3-krijgt-novelle-op-prinsjesdag/
+- Nextens, opties voor de novelle (22 juni 2026): https://www.nextens.nl/fiscaal-nieuws/nieuws/cat2/wet-werkelijk-rendement-box-3-krijgt-novelle-op-prinsjesdag/

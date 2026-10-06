@@ -26,7 +26,7 @@ const MOBILE_NAV = ["/", "/holdings", "/transactions", "/metals", "/settings"];
 export function Layout({ user }: { user: User }) {
   const version = useQuery({
     queryKey: ["version"],
-    queryFn: () => get<{ version: string }>("/api/version"),
+    queryFn: () => get<{ version: string; source: string }>("/api/version"),
     staleTime: Infinity,
   });
   return (
@@ -62,7 +62,19 @@ export function Layout({ user }: { user: User }) {
         </nav>
         <div className="mt-auto px-2.5 text-xs text-muted">
           Signed in as {user.username}
-          {version.data && <div className="mt-0.5 tabular-nums">Version {version.data.version}</div>}
+          {version.data && (
+            <div className="mt-0.5 tabular-nums">
+              Version {version.data.version} ·{" "}
+              <a
+                className="underline-offset-2 hover:underline"
+                href={version.data.source}
+                target="_blank"
+                rel="noreferrer"
+              >
+                source
+              </a>
+            </div>
+          )}
         </div>
       </aside>
 

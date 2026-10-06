@@ -1,0 +1,38 @@
+name: Exportbestand van een broker, bank of beurs
+description: Vraag ingebouwde ondersteuning aan voor het CSV-bestand van jouw broker, bank of beurs.
+labels: [exportformaat]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Met een voorbeeldbestand kan Kluishuis het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
+  - type: input
+    id: aanbieder
+    attributes:
+      label: Broker, bank of beurs
+      placeholder: DEGIRO, Trade Republic, ING, Rabobank …
+    validations:
+      required: true
+  - type: input
+    id: export
+    attributes:
+      label: Welke export?
+      description: Waar in hun app of website maak je het bestand, en hoe heet het?
+      placeholder: "Inbox → Rekeningoverzicht → Exporteren als CSV"
+    validations:
+      required: true
+  - type: textarea
+    id: voorbeeld
+    attributes:
+      label: Geanonimiseerd voorbeeld
+      description: Plak een paar regels (met de kopregel), of sleep het bestand hierheen. Liefst met verschillende soorten regels.
+      render: text
+    validations:
+      required: true
+  - type: checkboxes
+    id: anoniem
+    attributes:
+      label: Controle
+      options:
+        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in.
+          required: true

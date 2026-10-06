@@ -1,333 +1,375 @@
 # Kluishuis
 
-_Your vault lives at home._
+_Je kluis woont thuis._
 
-A self-hosted dashboard for tracking investments in **stocks/ETFs, crypto, and gold & silver** (physical and vaulted) in **EUR**. It runs as a single `docker compose` stack and has one user.
+Kluishuis houdt je beleggingen bij: **aandelen en ETF's, crypto, en goud en zilver** (thuis of in een kluis), alles in **euro's**, met een schatting van je **box 3**. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Kluishuis stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het haalt alleen openbare koersen op.
 
-## Status
+> **Geen belastingadvies.** Kluishuis maakt schattingen. Controleer de bedragen met de jaaroverzichten van je bank en broker voordat je ze in je aangifte gebruikt. Gebruik op eigen risico; er is geen garantie (zie de [licentie](LICENSE)).
 
-The work follows the 8 milestones in [`docs/PROMPT.md`](docs/PROMPT.md).
+**Status:** in ontwikkeling en bruikbaar. De app zelf is nog Engelstalig; een Nederlandse versie staat op de [roadmap](docs/ROADMAP.md).
 
-| #   | Milestone                                                               | Status                                                                                  |
-| --- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| 1   | Compose stack, auth, DB, manual entry, live prices, overview & holdings | ✅ done                                                                                 |
-| 2   | Physical/vaulted metals and metals view                                 | ✅ done (built together with 1)                                                         |
-| 3   | CSV importers (DEGIRO, Trade Republic, IBKR, Goldrepublic, generic)     | 🟡 generic import with column mapping done; built-in broker formats need sample exports |
-| 4   | Exchange API sync (Bitvavo, Kraken, Coinbase, IBKR Flex)                | ✅ done (not yet tried against live accounts)                                           |
-| 5   | Wallet tracking (BTC incl. xpub, EVM, Solana, more)                     | ✅ done (Bitcoin, Cardano, Dogecoin, Unichain, Ink and Soneium verified live)           |
-| 6   | History backfill, P&L reports, dividends/income views                   | ✅ done                                                                                 |
-| 7   | Dutch Box 3 overview & exports                                          | ✅ done                                                                                 |
-| 8   | Backups, polish                                                         | ✅ done                                                                                 |
+## Wat het kan
 
-Beyond the milestones: deploy tooling and version stamping, a change history with restore, encrypted backups for off-site copies, a _Needs attention_ page, second price sources, time- and money-weighted returns against a benchmark, a cost overview, expected dividends, the Box 3 actual return and 2028 preview, staking on exchanges, and Cardano, Dogecoin, BNB Chain and more L2 wallets.
+- **Overzicht:** vermogen door de tijd, de verdeling over beleggingssoorten, posities en rekeningen, en per positie de kostprijs en het gerealiseerde en ongerealiseerde resultaat.
+- **Transacties** met de hand, via een **CSV-import** van vrijwel elke broker of beurs, via **koppelingen** met Bitvavo, Kraken, Coinbase en Interactive Brokers, en voor **wallets** op adres: Bitcoin, Ethereum en L2's, BNB Chain, Solana, Cardano, Dogecoin, Litecoin, XRP en Tron.
+- **Edelmetaal:** munten en baren met gewicht, zuiverheid, foto's en een printbare inventaris (bijvoorbeeld voor je inboedelverzekering).
+- **Rendement:** tijd- en geldgewogen rendement tegen een benchmark, een kostenoverzicht en verwachte dividenden.
+- **Box 3:** het forfaitaire stelsel per jaar, je **werkelijk rendement** voor de tegenbewijsregeling, en een vooruitblik op het stelsel vanaf 2028.
+- **Veilig bewaard:** versleutelde back-ups in een map die je NAS elders kan kopiëren, een volledige wijzigingsgeschiedenis, en een lijst met wat aandacht nodig heeft.
 
-## Install on your NAS
+## Installeren
 
-You need an x86-64 machine with Docker and Docker Compose v2 (`docker compose version` works), and SSH access to it from the computer that has this repository.
+Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose version` werkt). Dat kan een NAS zijn (Synology, QNAP, Unraid, TrueNAS), een Raspberry Pi 4 of 5, een thuisserver of een laptop met Docker Desktop. Intel/AMD (x86-64) en ARM64 worden allebei ondersteund. Stap-voor-stapuitleg per systeem staat in [docs/installatie.md](docs/installatie.md).
 
-1. **Copy the code** (on your computer, in this repository):
+1. Maak een map en zet [`docker-compose.yml`](docker-compose.yml) erin:
 
    ```bash
-   scripts/deploy.sh you@nas
+   mkdir kluishuis && cd kluishuis
+   curl -fsSLO https://raw.githubusercontent.com/OWNER/kluishuis/main/docker-compose.yml
    ```
 
-   This sends the last commit to `~/kluishuis` on the NAS. Give a second argument for another folder, e.g. `scripts/deploy.sh you@nas /volume1/docker/kluishuis`. If `docker` needs `sudo` there (as on Synology), use `DOCKER="sudo docker" scripts/deploy.sh you@nas`. Only committed files are sent: never `.env`, data or backups.
-
-2. **Configure** (on the NAS):
+2. Start Kluishuis:
 
    ```bash
-   cd ~/kluishuis
-   cp .env.example .env
-   chmod 600 .env
-   # fill in POSTGRES_PASSWORD and APP_SECRET, each e.g. with: openssl rand -hex 32
+   docker compose up -d
    ```
 
-   Also set `BACKUP_PASSPHRASE` (encrypts backups) and `PUID`/`PGID` (your NAS user, so you and your NAS backup tool can reach the `backups` folder). Store `APP_SECRET` and `BACKUP_PASSPHRASE` in your password manager: restoring needs them (see [Backups](#backups-and-restore)).
+   De eerste keer worden de images gedownload. Na ongeveer een halve minuut toont `docker compose ps` beide containers als `healthy`.
 
-3. **Start** with `docker compose up -d --build`. The first build takes a few minutes. After about 30 seconds `docker compose ps` should show both containers as `healthy`.
+3. Open `http://<je-server>:8080` en maak je gebruiker aan, met een wachtwoord van minstens 12 tekens.
 
-4. **Open** `http://<nas>:8080` and create your user (a password of 12 or more characters). The sidebar shows the version you're running.
+4. **Aanbevolen:** maak naast `docker-compose.yml` een bestand `.env` (voorbeeld: [`.env.example`](.env.example)) met minstens:
 
-No SSH? Run `git archive -o kluishuis.tar HEAD`, copy the file over (e.g. with the NAS's file manager), unpack it into the folder, and continue with step 2.
+   ```bash
+   BACKUP_PASSPHRASE='vier willekeurige woorden hier'   # versleutelt de back-ups
+   PUID=1000                                            # jouw gebruikers-id (commando: id)
+   PGID=1000                                            # jouw groeps-id
+   ```
 
-**Checking on it:** `docker compose logs app --tail 50`. The first lines show `Kluishuis starting` with the version, followed by `price refresh done`. After a NAS reboot you may see `Database not reachable yet…, waiting for it` once: the app waits for PostgreSQL to come up.
+   Voer daarna `docker compose up -d` opnieuw uit. Bewaar de wachtwoordzin in je wachtwoordmanager: zonder kun je een versleutelde back-up niet terugzetten.
 
-### Updating
+Een `.env` is niet verplicht. Bij de eerste start maakt Kluishuis zelf een sleutel voor het versleutelen van API-sleutels en een databasewachtwoord aan, in het volume `app-data`.
 
-Commit your changes, then run the same command:
+**Controleren:** `docker compose logs app --tail 50`. De eerste regels tonen `Kluishuis starting` met de versie. Na een herstart van je NAS kan één keer `Database not reachable yet…, waiting for it` voorbijkomen: de app wacht dan tot de database klaar is.
+
+### In één container
+
+Om het uit te proberen, of op een laptop met Docker Desktop, kan Kluishuis ook in één container draaien, met de database ingebouwd (PGlite):
 
 ```bash
-scripts/deploy.sh you@nas
+curl -fsSLO https://raw.githubusercontent.com/OWNER/kluishuis/main/docker-compose.lite.yml
+docker compose -f docker-compose.lite.yml up -d
 ```
 
-It copies the new code and runs `docker compose up -d --build` on the NAS. Your `.env`, database and backups stay as they are, and database migrations run automatically on startup. For a backup first: `docker compose exec app node dist/cli.js backup`.
+Voor een NAS of server is de standaardopstelling met een eigen PostgreSQL de stevigere keuze. Overstappen gaat met een back-up en terugzetten. Maak in deze variant back-ups vanuit de app (_Settings → Backups & export_): de back-up via de opdrachtregel kan niet zolang de app de database open heeft.
 
-To also pick up security updates of the Node and PostgreSQL base images, run on the NAS: `docker compose pull db && docker compose build --pull && docker compose up -d`.
+### Zelf bouwen
 
-### Upgrading PostgreSQL
+Wil je eigen wijzigingen draaien, bouw het image dan vanuit de broncode:
 
-Patch updates (18.x) come with `docker compose pull db && docker compose up -d`. A new major version (e.g. 18 → 19) can't read the old data files directly; move the data with a backup instead. This was rehearsed on real PostgreSQL 17 → 18: every page showed identical data afterwards.
+```bash
+git clone https://github.com/OWNER/kluishuis.git && cd kluishuis
+docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+```
 
-1. Make a backup: `docker compose exec app node dist/cli.js backup`.
+Werk je op een andere computer dan je server, dan kopieert `scripts/deploy.sh gebruiker@nas` de laatste commit via SSH naar `~/kluishuis` op de server en bouwt het daar. Geef een tweede argument voor een andere map. Moet `docker` daar met `sudo` (zoals op Synology): `DOCKER="sudo docker" scripts/deploy.sh gebruiker@nas`. Alleen gecommitte bestanden gaan mee, nooit `.env`, gegevens of back-ups.
+
+### Bijwerken
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Je instellingen, database en back-ups blijven zoals ze zijn; databasemigraties draaien vanzelf bij het opstarten. Wil je eerst een back-up: `docker compose exec app node dist/cli.js backup`. Wil je op een vaste versie blijven, zet dan bijvoorbeeld `KLUISHUIS_VERSION=1.2.0` in `.env`. Wat er per versie verandert, staat bij de [releases](https://github.com/OWNER/kluishuis/releases).
+
+### PostgreSQL upgraden
+
+Kleine updates (18.x) komen mee met `docker compose pull`. Een nieuwe hoofdversie (bijvoorbeeld 18 → 19) kan de oude databestanden niet lezen; je verhuist de gegevens dan met een back-up. Dit is uitgeprobeerd met PostgreSQL 17 → 18: alle pagina's toonden daarna dezelfde gegevens.
+
+1. Maak een back-up: `docker compose exec app node dist/cli.js backup`.
 2. `docker compose down`.
-3. In `docker-compose.yml`, change the `db` image tag (e.g. `postgres:19-alpine`) **and** rename the volume (`db-data` → `db-data-19`, in both places). The old volume stays untouched as a fallback.
-4. `docker compose up -d`. The app starts on an empty database and creates the tables.
-5. Restore: `docker compose exec app node dist/cli.js restore /backups/<the backup from step 1>`, then `docker compose restart app` and sign in again.
-6. Once everything looks right, remove the old volume: `docker volume rm kluishuis_db-data`.
+3. Zet in `docker-compose.yml` het image van `db` op de nieuwe versie (bijvoorbeeld `postgres:19-alpine`) **en** hernoem het volume (`db-data` → `db-data-19`, op beide plekken). Het oude volume blijft zo onaangeroerd als terugvaloptie.
+4. `docker compose up -d`. De app start met een lege database en maakt de tabellen aan.
+5. Zet terug: `docker compose exec app node dist/cli.js restore /backups/<de back-up uit stap 1>`, dan `docker compose restart app`, en log opnieuw in.
+6. Klopt alles, verwijder dan het oude volume: `docker volume rm kluishuis_db-data`.
 
-### Access away from home (VPN)
+### Toegang buitenshuis (VPN)
 
-Keep Kluishuis off the internet: don't forward port 8080 on your router. To reach it from your phone or laptop elsewhere, use a VPN:
+Zet Kluishuis niet open naar het internet: stuur poort 8080 niet door in je router. Wil je erbij vanaf je telefoon of laptop buiten de deur, gebruik dan een VPN:
 
-- **WireGuard or Tailscale, plain:** open `http://<nas-vpn-address>:8080`. The VPN already encrypts the traffic. Keep `COOKIE_SECURE=false`.
-- **Tailscale with HTTPS** (a proper `https://` address): turn on MagicDNS and HTTPS certificates in the Tailscale admin console, then run on the NAS (with `sudo` if needed):
+- **WireGuard of Tailscale, gewoon:** open `http://<vpn-adres-van-je-server>:8080`. De VPN versleutelt het verkeer al. Laat `COOKIE_SECURE=false`.
+- **Tailscale met HTTPS** (een echt `https://`-adres): zet MagicDNS en HTTPS-certificaten aan in de Tailscale-beheeromgeving en voer op de server uit (zo nodig met `sudo`):
 
   ```bash
   tailscale serve --bg 8080
   ```
 
-  Kluishuis is now at `https://<nas-name>.<tailnet>.ts.net`. Set `COOKIE_SECURE=true` in `.env` and run `docker compose up -d`. From then on, use only the https address: the plain `http://` one won't keep you signed in. Leave `TRUST_PROXY=false`. All requests then share one login rate limit, which is fine for a single user.
+  Kluishuis staat dan op `https://<servernaam>.<tailnet>.ts.net`. Zet `COOKIE_SECURE=true` in `.env` en voer `docker compose up -d` uit. Gebruik vanaf dan alleen het https-adres: via het gewone `http://`-adres blijf je niet ingelogd. Laat `TRUST_PROXY=false`. Alle verzoeken delen dan één limiet voor inlogpogingen; voor één gebruiker is dat prima.
 
-  To make the https address the only way in, publish the port on the NAS itself only: in `docker-compose.yml`, change the `ports` line to `"127.0.0.1:${HTTP_PORT:-8080}:8080"`.
+  Wil je dat het https-adres de enige ingang is, publiceer de poort dan alleen op de server zelf: verander in `docker-compose.yml` de regel onder `ports` in `"127.0.0.1:${HTTP_PORT:-8080}:8080"`.
 
-## Backups and restore
+## Back-ups en terugzetten
 
-Backups are gzipped JSON of **all** data except login sessions: accounts, transactions, metals and their photos, prices, settings, connections and wallets. They are written to the **`backups` folder next to `docker-compose.yml`** on the NAS:
+Een back-up is een gzip-bestand met **alle** gegevens behalve inlogsessies: rekeningen, transacties, edelmetaal met foto's, koersen, instellingen, koppelingen en wallets. Ze komen in de map **`backups` naast `docker-compose.yml`**:
 
-- **Automatically**, every `BACKUP_INTERVAL_HOURS` (default 24). The newest `BACKUP_KEEP` (default 14) automatic backups are kept.
-- **Manually**, with _Settings → Backups & export → Back up now_, or `docker compose exec app node dist/cli.js backup`. Manual backups are never deleted automatically.
-- **Before every restore**, as a safety copy (`…-prerestore…`).
+- **Automatisch**, elke `BACKUP_INTERVAL_HOURS` (standaard 24). De nieuwste `BACKUP_KEEP` (standaard 14) automatische back-ups blijven bewaard.
+- **Handmatig**, via _Settings → Backups & export → Back up now_, of `docker compose exec app node dist/cli.js backup`. Handmatige back-ups worden nooit automatisch verwijderd.
+- **Vóór elke terugzetting**, als vangnet (`…-prerestore…`).
 
-**Encrypt them.** Set `BACKUP_PASSPHRASE` in `.env` (at least 12 characters, e.g. a few random words) and new backups are encrypted (`….json.gz.enc`, AES-256-GCM with a key derived by scrypt). A wrong passphrase or a damaged file is detected, never half-restored. Keep the passphrase in your password manager: **without it an encrypted backup can't be restored**. Without a passphrase, backups are plain gzip and contain your password hash and all financial data in readable form; _Needs attention_ reminds you.
+**Versleutel ze.** Met `BACKUP_PASSPHRASE` in `.env` (minstens 12 tekens) worden nieuwe back-ups versleuteld (`….json.gz.enc`, AES-256-GCM met een sleutel afgeleid via scrypt). Een verkeerde wachtwoordzin of een beschadigd bestand wordt herkend; er wordt nooit half teruggezet. **Zonder de wachtwoordzin kun je een versleutelde back-up niet terugzetten.** Zonder wachtwoordzin zijn back-ups gewone gzip-bestanden, met je wachtwoord-hash en al je financiële gegevens leesbaar erin; _Needs attention_ herinnert je daaraan.
 
-**Off-site copies.** Point your NAS's own backup tool (Hyper Backup, rclone, a cloud sync…) at the `backups` folder. Files belong to `PUID`/`PGID` from `.env`: set those to your NAS user (`id` on the NAS shows them) so the tool and you can reach them. Or use _Download_ next to each backup in Settings.
+**Kopieën elders.** Laat de back-uptool van je NAS (Hyper Backup, rclone, een cloudsync …) de map `backups` meenemen. De bestanden zijn van `PUID`/`PGID` uit `.env`: zet die op je eigen gebruiker (het commando `id` op de NAS toont ze), zodat jij en je back-uptool erbij kunnen. Of gebruik _Download_ naast een back-up in Settings.
 
-Exchange API keys inside a backup are encrypted with `APP_SECRET` as well. **Keep `APP_SECRET` in your password manager too**: without it, a restore works but the API keys must be re-entered.
+**De sleutel voor API-sleutels.** API-sleutels van beurzen staan versleuteld in de database, met een sleutel die Kluishuis bij de eerste start aanmaakt in het volume `app-data`. Die sleutel zit niet in de back-ups. Verhuis je naar een andere server, bewaar hem dan in je wachtwoordmanager en zet hem daar als `APP_SECRET` in `.env`:
 
-**Restoring** replaces all current data with the backup's, in one database transaction: either everything is restored or nothing changes. Backups from older app versions restore fine; backups from a newer version are refused. Everyone is signed out afterwards; sign in with the account from the backup.
+```bash
+docker compose exec app cat /data/app-secret
+```
 
-- From the UI: _Settings → Backups & export → Restore…_ next to a backup, then type `RESTORE`. For a backup made with an earlier passphrase, enter that passphrase there.
-- From a file, e.g. on a new server: put it in the `backups` folder, then
+Zonder die sleutel lukt het terugzetten ook, maar moet je de API-sleutels opnieuw invoeren.
+
+**Terugzetten** vervangt alle huidige gegevens door die uit de back-up, in één databasetransactie: alles wordt teruggezet of er verandert niets. Back-ups van oudere versies gaan prima; back-ups van een nieuwere versie worden geweigerd. Daarna is iedereen uitgelogd; log in met de gebruiker uit de back-up.
+
+- Vanuit de app: _Settings → Backups & export → Restore…_ naast een back-up, en typ `RESTORE`. Is de back-up met een eerdere wachtwoordzin gemaakt, vul die dan daar in.
+- Vanuit een bestand, bijvoorbeeld op een nieuwe server: zet het in de map `backups` en voer uit:
 
   ```bash
   docker compose exec app node dist/cli.js restore /backups/kluishuis-20261002-030000-auto.json.gz.enc
   docker compose restart app
   ```
 
-  It uses `BACKUP_PASSPHRASE` from `.env`; for another one: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
+  Dit gebruikt `BACKUP_PASSPHRASE` uit `.env`; voor een andere: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
 
-- To read an encrypted backup outside the app: `docker compose exec app node dist/cli.js decrypt /backups/<file>.enc` writes the plain `.json.gz` next to it.
-- `docker compose exec app node dist/cli.js list` lists the backups with their size and date.
+- Een versleutelde back-up buiten de app lezen: `docker compose exec app node dist/cli.js decrypt /backups/<bestand>.enc` zet het gewone `.json.gz` ernaast.
+- `docker compose exec app node dist/cli.js list` toont de back-ups met grootte en datum.
 
-**Extra safety net (optional).** A raw database dump, which needs a matching PostgreSQL version to restore:
+**Extra vangnet (optioneel).** Een ruwe databasedump; terugzetten daarvan vraagt dezelfde PostgreSQL-versie:
 
 ```bash
 docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.gz
 ```
 
-**Exports.** _Settings → Backups & export_ also downloads **all transactions** and **current holdings** as CSV. Performance, Income and Box 3 each have their own CSV export.
+**Exports.** _Settings → Backups & export_ downloadt ook **alle transacties** en de **huidige posities** als CSV. Performance, Income en Box 3 hebben elk hun eigen CSV-export.
 
-### Configuration (`.env`)
+### Instellingen (`.env`)
 
-| Variable                | Default                 | Purpose                                                                   |
-| ----------------------- | ----------------------- | ------------------------------------------------------------------------- |
-| `POSTGRES_PASSWORD`     | — (required)            | Password for the bundled PostgreSQL                                       |
-| `APP_SECRET`            | — (required, ≥32 chars) | Key material for encrypting exchange API keys at rest                     |
-| `HTTP_PORT`             | `8080`                  | Host port                                                                 |
-| `COOKIE_SECURE`         | `false`                 | Set to `true` when served over HTTPS (reverse proxy)                      |
-| `TRUST_PROXY`           | `false`                 | Only behind a reverse proxy: `true`, a hop count, or the proxy's IP(s)    |
-| `TIME_ZONE`             | `Europe/Amsterdam`      | Calendar for "which day/year" (Box 3 peildatum, yearly results)           |
-| `SESSION_DAYS`          | `30`                    | Login lifetime                                                            |
-| `PRICE_REFRESH_MINUTES` | `15`                    | Price refresh interval                                                    |
-| `SYNC_INTERVAL_HOURS`   | `6`                     | Exchange, broker and wallet sync interval; `0` = manual only              |
-| `SOLANA_RPC_URL`        | public mainnet RPC      | Optional own Solana RPC (e.g. a free Helius key) for faster first imports |
-| `ANKR_API_KEY`          | —                       | Free Ankr Advanced API key; needed to track BNB Chain wallets             |
-| `BACKUP_INTERVAL_HOURS` | `24`                    | Automatic backup interval; `0` = off                                      |
-| `BACKUP_KEEP`           | `14`                    | Automatic backups to keep                                                 |
-| `BACKUP_PASSPHRASE`     | —                       | Encrypts backups (12+ characters). Keep it safe: needed to restore        |
-| `PUID` / `PGID`         | `1000`                  | Owner of the backup files: your NAS user and group ids                    |
-| `LOG_LEVEL`             | `info`                  | `debug` also logs every request                                           |
+Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-compose.yml` en voer daarna `docker compose up -d` uit.
 
-## Using it
+| Variabele               | Standaard          | Waarvoor                                                                                   |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `HTTP_PORT`             | `8080`             | Poort op de server                                                                         |
+| `KLUISHUIS_VERSION`     | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                               |
+| `BACKUP_PASSPHRASE`     | —                  | Versleutelt back-ups (minstens 12 tekens). Nodig om terug te zetten: bewaar hem goed       |
+| `PUID` / `PGID`         | `1000`             | Eigenaar van de back-upbestanden: jouw gebruikers- en groeps-id                            |
+| `BACKUP_INTERVAL_HOURS` | `24`               | Uren tussen automatische back-ups; `0` = uit                                               |
+| `BACKUP_KEEP`           | `14`               | Aantal automatische back-ups dat bewaard blijft                                            |
+| `COOKIE_SECURE`         | `false`            | Op `true` als je Kluishuis via HTTPS opent                                                 |
+| `TRUST_PROXY`           | `false`            | Alleen achter een reverse proxy: `true`, het aantal proxy's, of hun IP-adres(sen)          |
+| `SESSION_DAYS`          | `30`               | Hoe lang je ingelogd blijft                                                                |
+| `TIME_ZONE`             | `Europe/Amsterdam` | Kalender voor "welke dag of welk jaar" (box 3-peildatum, jaarresultaten)                   |
+| `PRICE_REFRESH_MINUTES` | `15`               | Minuten tussen koersupdates                                                                |
+| `SYNC_INTERVAL_HOURS`   | `6`                | Uren tussen synchronisaties van koppelingen en wallets; `0` = alleen met de hand           |
+| `SOLANA_RPC_URL`        | openbare RPC       | Eigen Solana-RPC (bijvoorbeeld een gratis Helius-sleutel) voor snellere eerste imports     |
+| `ANKR_API_KEY`          | —                  | Gratis Ankr Advanced API-sleutel; nodig voor BNB Chain-wallets                             |
+| `LOG_LEVEL`             | `info`             | `debug` logt ook elk verzoek                                                               |
+| `APP_SECRET`            | aangemaakt         | Eigen sleutel (minstens 32 tekens) voor API-sleutels, in plaats van de aangemaakte         |
+| `POSTGRES_PASSWORD`     | aangemaakt         | Eigen databasewachtwoord, alleen bij de allereerste start; daarna staat het in de database |
 
-1. **Overview and Holdings**: net worth over time, today's change, allocation by asset class, by holding or by account, and each holding per account with its cost, open and realized gains.
-2. **Needs attention**: a red or orange link at the top of the sidebar appears when something wants a look: a failed sync, balances that don't match an exchange or wallet, prices that couldn't be updated, a negative balance, deposits without a value, withdrawals that weren't linked to a deposit, or backups that failed, are overdue or aren't encrypted. Each item links to where to fix it; a warning can be dismissed until it changes.
-3. **History** (_Settings → History_): every change to transactions, assets, accounts, metal items, imports, connections and wallets, field by field, whether you made it or a sync or import did. Deleted transactions and metal items can be restored from there.
-4. **Accounts**: add one per place you hold assets: brokers (DEGIRO), exchanges (Bitvavo), wallets (Ledger), vaults (Goldrepublic), physical storage (Home safe).
-5. **Assets**: search Yahoo Finance by name, ticker or ISIN, or CoinGecko by coin. Pick the listing you actually trade (e.g. `IWDA.AS` rather than `IWDA.L`). Gold, silver, platinum, palladium and EUR cash exist already.
-6. **Transactions**: buy, sell, deposit, withdrawal, dividend (gross plus tax withheld), staking reward, fee paid in the asset, split, and **transfers** between accounts, which carry the cost basis along. Foreign-currency trades get the ECB rate for that date automatically; you can override it.
-7. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset. Each item can have up to 8 **photos** (resized in the browser; location data is removed). _Inventory_ prints or saves as PDF a list per storage location with photos, weights, purchase details and value at spot, e.g. for your home insurance.
+## Gebruiken
 
-### CSV import
+1. **Overview en Holdings:** je vermogen door de tijd, de verandering van vandaag, de verdeling per beleggingssoort, per positie of per rekening, en elke positie per rekening met kostprijs en open en gerealiseerd resultaat.
+2. **Needs attention:** bovenaan de zijbalk verschijnt een rode of oranje link als iets aandacht nodig heeft: een mislukte synchronisatie, saldi die niet kloppen met een beurs of wallet, koersen die niet bijgewerkt konden worden, een negatief saldo, stortingen zonder waarde, opnames die niet aan een storting gekoppeld zijn, of back-ups die mislukt zijn, te lang geleden zijn of niet versleuteld zijn. Elk punt linkt naar waar je het oplost; een waarschuwing kun je wegklikken tot er iets aan verandert.
+3. **History** (_Settings → History_): elke wijziging aan transacties, beleggingen, rekeningen, edelmetaal, imports, koppelingen en wallets, veld voor veld, of jij of een synchronisatie of import het deed. Verwijderde transacties en edelmetaalstukken zet je daar terug.
+4. **Accounts:** maak er één per plek waar je iets aanhoudt: brokers (DEGIRO), beurzen (Bitvavo), wallets (Ledger), kluizen (Goldrepublic), thuis (de kluis).
+5. **Assets:** zoek in Yahoo Finance op naam, ticker of ISIN, of in CoinGecko op munt. Kies de notering die je echt verhandelt (bijvoorbeeld `IWDA.AS` in plaats van `IWDA.L`). Goud, zilver, platina, palladium en euro's staan er al.
+6. **Transactions:** aankoop, verkoop, storting, opname, dividend (bruto plus ingehouden belasting), stakingbeloning, kosten betaald in de belegging zelf, split, en **overboekingen** tussen rekeningen, die de kostprijs meenemen. Transacties in een vreemde munt krijgen automatisch de ECB-koers van die dag; die kun je aanpassen.
+7. **Metals:** voeg munten en baren toe met gewicht en zuiverheid, of kies een voorbeeld (Krugerrand, Maple Leaf, Gouden Tientje, standaardbaren …). Stukken worden gewaardeerd tegen de spotprijs van het fijngewicht. Vul je de spotwaarde bij aankoop in, dan zie je de betaalde opslag. Metaal in een kluis (Goldrepublic) boek je als aankopen in **grammen** op Gold of Silver. Elk stuk kan tot 8 **foto's** hebben (verkleind in de browser, zonder locatiegegevens). _Inventory_ print een lijst per bewaarplek, of slaat die op als pdf, met foto's, gewichten, aankoopgegevens en waarde.
 
-_Transactions → Import CSV_ reads exports from any broker, exchange or spreadsheet:
+### CSV-import
 
-1. **Choose the account and the file.** Semicolons or commas, decimal commas or points, a byte order mark, title lines above the header and Windows-encoded files are all handled.
-2. **Check the columns.** Kluishuis guesses which column is what from common English and Dutch headers (Datum, Aantal, Koers, Valuta…) and shows an example value for each. The transaction type comes from a type column, is the same for every row, or follows the sign of the quantity (negative = sell, as in some broker exports). Each value of a type column ("Koop", "Staking", "Airdrop"…) is mapped to a type or skipped. Save the settings under a name: files with the same columns then use them automatically.
-3. **Review before importing.** Nothing is written until you press _Import_. The preview shows:
-   - **New**: will be imported.
-   - **Already imported**: the same row from an earlier import of this or an overlapping export.
-   - **Possible duplicate**: same asset, type, day and quantity as a transaction from another source (an API sync, manual entry or an import with different settings). Skipped unless you tick _Import anyway_.
-   - **Problem**: a row that can't be read, with the reason (e.g. a date or number it doesn't understand).
-   - **Assets**: what each symbol or ISIN is booked on. Existing assets are reused; new ones are looked up on Yahoo (by ISIN, preferring a euro listing) or CoinGecko (by symbol) and created when you import. Pick another asset for any of them if the match is wrong.
+_Transactions → Import CSV_ leest exports van vrijwel elke broker, beurs of spreadsheet:
 
-Times without a time zone are read as local time (`TIME_ZONE`). Prices in a foreign currency get the ECB rate of that day. Rewards and crypto deposits without a price are valued at that day's close. Crypto withdrawals and deposits are linked to matching transfers in your other accounts, as with syncs.
+1. **Kies de rekening en het bestand.** Puntkomma's of komma's, decimale komma's of punten, een byte order mark, titelregels boven de kopregel en Windows-codering worden allemaal herkend.
+2. **Controleer de kolommen.** Kluishuis raadt welke kolom wat is aan de hand van gangbare Engelse en Nederlandse kopjes (Datum, Aantal, Koers, Valuta …) en toont per kolom een voorbeeldwaarde. Het soort transactie komt uit een kolom, is voor elke regel hetzelfde, of volgt uit het teken van het aantal (negatief = verkoop, zoals in sommige brokerexports). Elke waarde in een soortkolom ("Koop", "Staking", "Airdrop" …) koppel je aan een soort of sla je over. Bewaar de instellingen onder een naam: bestanden met dezelfde kolommen gebruiken ze dan vanzelf.
+3. **Bekijk alles voordat je importeert.** Er wordt niets opgeslagen tot je op _Import_ drukt. Het voorbeeld toont:
+   - **New:** wordt geïmporteerd.
+   - **Already imported:** dezelfde regel uit een eerdere import van dit of een overlappend bestand.
+   - **Possible duplicate:** dezelfde belegging, soort, dag en hoeveelheid als een transactie uit een andere bron (een koppeling, handmatige invoer of een import met andere instellingen). Wordt overgeslagen, tenzij je _Import anyway_ aanvinkt.
+   - **Problem:** een regel die niet te lezen is, met de reden (bijvoorbeeld een datum of getal dat niet wordt begrepen).
+   - **Assets:** op welke belegging elk symbool of ISIN wordt geboekt. Bestaande worden hergebruikt; nieuwe worden opgezocht in Yahoo (op ISIN, bij voorkeur een euronotering) of CoinGecko (op symbool) en bij het importeren aangemaakt. Kies een andere als de match niet klopt.
 
-**Undo:** _Earlier imports_ lists every import with an _Undo_ that deletes exactly the transactions it created. Transactions you delete one by one stay deleted when you import the same file again.
+Tijden zonder tijdzone worden gelezen als lokale tijd (`TIME_ZONE`). Prijzen in een vreemde munt krijgen de ECB-koers van die dag. Beloningen en cryptostortingen zonder prijs krijgen de slotkoers van die dag. Crypto-opnames en -stortingen worden gekoppeld aan overboekingen naar je andere rekeningen, net als bij synchronisaties.
 
-**Template:** for anything without a usable export, fill in [the template](server/src/import/mapping.ts) (_↓ Template_ on the import page). Columns: `date` (YYYY-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (for a split: the ratio, e.g. 4), `price`, `total`, `currency`, `fee`, `amount` and `tax_withheld` (dividends), `notes`, `id`.
+**Ongedaan maken:** _Earlier imports_ toont elke import met een _Undo_ die precies de transacties verwijdert die hij aanmaakte. Transacties die je los verwijdert, blijven weg als je hetzelfde bestand opnieuw importeert.
 
-### Connections (exchange & broker sync)
+**Sjabloon:** voor alles zonder bruikbare export vul je [het sjabloon](server/src/import/mapping.ts) in (_↓ Template_ op de importpagina). Kolommen: `date` (JJJJ-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (bij een split: de verhouding, bijvoorbeeld 4), `price`, `total`, `currency`, `fee`, `amount` en `tax_withheld` (dividenden), `notes`, `id`.
 
-**Connections** imports history over read-only APIs: **Bitvavo**, **Kraken**, **Coinbase** (CDP ECDSA key) and **Interactive Brokers** (Flex Web Service). The connect dialog lists the exact permissions to grant for each one. Keys are checked with a live read-only call, encrypted with AES-256-GCM using a key derived from `APP_SECRET`, and never returned by the API or written to logs.
+Wil je dat Kluishuis het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/OWNER/kluishuis/issues/new/choose).
 
-Each sync:
+### Koppelingen met beurzen en brokers
 
-1. **Imports** trades, deposits, withdrawals, staking rewards, dividends (with withholding tax) and interest as normal transactions (`source: api`). Missing assets are created automatically: coins via CoinGecko (highest market cap match for the symbol), and securities via Yahoo by ISIN on the listing exchange IBKR reports.
-2. **Settles cash**: buys draw down and sales credit the account's cash balance in the trade currency, so exchange EUR balances add up.
-3. **Values in EUR**: fiat trades use the ECB rate of the day. Staking rewards, crypto deposits and crypto-to-crypto trades use the daily EUR close (Yahoo `SYM-EUR`, with CoinGecko as fallback). Coinbase provides EUR values itself, provided your Coinbase native currency is EUR.
-4. **Links transfers**: a crypto withdrawal from one account and a matching deposit into another (within 5 days, at least 95% of the amount arriving) become one transfer, so the cost basis moves along with it. If a link is wrong, open either leg under _Transactions_ and choose **Unlink**; those two rows are then never linked automatically again.
-5. **Reconciles** the computed balances against what the exchange reports. Differences are listed on the Connections page with a one-click adjustment.
+**Connections** importeert de geschiedenis via API's met alleen leesrechten: **Bitvavo**, **Kraken**, **Coinbase** (een CDP-sleutel met ECDSA) en **Interactive Brokers** (Flex Web Service). De verbindingsdialoog noemt per aanbieder precies welke rechten je geeft. Sleutels worden gecontroleerd met een echte leesopdracht, versleuteld opgeslagen (AES-256-GCM, met een sleutel afgeleid van de app-sleutel) en nooit teruggestuurd of gelogd.
 
-Re-syncs are idempotent. You can edit imported transactions, and a re-sync never overwrites your edits. Imported transactions you delete stay deleted.
+Elke synchronisatie:
 
-**Staking on an exchange.** Staked coins stay yours, so moving them into or out of staking is not a sale or a withdrawal:
+1. **Importeert** aankopen, verkopen, stortingen, opnames, stakingbeloningen, dividenden (met ingehouden belasting) en rente als gewone transacties (`source: api`). Ontbrekende beleggingen worden vanzelf aangemaakt: munten via CoinGecko (de grootste marktwaarde bij dat symbool), effecten via Yahoo op ISIN, op de beurs die IBKR noemt.
+2. **Boekt het geld:** aankopen gaan af van en verkopen gaan naar het geldsaldo van de rekening in de handelsvaluta, zodat euro-saldi op een beurs kloppen.
+3. **Waardeert in euro's:** fiattransacties tegen de ECB-koers van die dag. Stakingbeloningen, cryptostortingen en crypto-naar-cryptotransacties tegen de slotkoers van die dag (Yahoo `SYM-EUR`, met CoinGecko als terugval). Coinbase levert de eurowaarde zelf, mits je basisvaluta bij Coinbase EUR is.
+4. **Koppelt overboekingen:** een crypto-opname van de ene rekening en een passende storting op een andere (binnen 5 dagen, minstens 95% aangekomen) worden één overboeking, zodat de kostprijs meegaat. Klopt een koppeling niet, open dan een van beide onder _Transactions_ en kies **Unlink**; die twee worden daarna nooit meer vanzelf gekoppeld.
+5. **Vergelijkt saldi** met wat de beurs meldt. Verschillen staan op de pagina Connections, met een knop om ze in één keer recht te zetten.
 
-- **Kraken**: staked, opt-in and auto-earn balances (`DOT.S`, `ETH2.S`, `SOL.F`, `USDC.M`…) count as the coin itself. Moves between the spot and earn wallets are skipped, including the older "earn" entries without a fee. Moves Kraken books as two separate legs (e.g. `ETH2.S` converted back to ETH) cancel out when they appear within two days of each other; a recent leg waits for one sync until its counterpart can arrive. Rewards, airdrops and invite bonuses are income. Delisting conversions are trades. Fee credits (KFEE) are ignored.
-- **Bitvavo**: coins in fixed staking are counted via the separate staking balance. A fixed-staking or lending lock is not a withdrawal; when it's released, only the amount above what was locked is the reward. A cancelled withdrawal is undone (apart from a fee that wasn't refunded), and moves between Bitvavo's own wallets cancel out.
-- **Coinbase**: the old ETH2 wallet (staked ether) counts as ETH, its rewards included. Moves between your Coinbase wallets (vaults, other portfolios, the ETH2 retirement) cancel out when both sides are visible to the key; otherwise they are a deposit or withdrawal.
+Opnieuw synchroniseren is veilig: niets wordt dubbel geboekt. Je kunt geïmporteerde transacties aanpassen; een nieuwe synchronisatie overschrijft je wijzigingen nooit. Geïmporteerde transacties die je verwijdert, blijven weg.
 
-Known limits: the Bitvavo fee handling assumes fees are charged on top of the sent amount, and Bitvavo doesn't document what its fixed-staking and lending history entries contain; reconciliation flags it if either is wrong. Coinbase doesn't report trade fees separately. IBKR Flex covers at most 365 days per query, skips options and futures, and doesn't apply stock splits (reconciliation flags those).
+**Staking op een beurs.** Gestakete munten blijven van jou, dus erin of eruit gaan is geen verkoop en geen opname:
 
-### Wallets (self-custody, by public address)
+- **Kraken:** gestakete, opt-in- en auto-earn-saldi (`DOT.S`, `ETH2.S`, `SOL.F`, `USDC.M` …) tellen als de munt zelf. Verplaatsingen tussen de spot- en earn-portemonnee worden overgeslagen, ook de oudere "earn"-regels zonder kosten. Verplaatsingen die Kraken als twee losse regels boekt (bijvoorbeeld `ETH2.S` terug naar ETH) vallen tegen elkaar weg als ze binnen twee dagen van elkaar staan; een recente regel wacht één synchronisatie op zijn tegenhanger. Beloningen, airdrops en uitnodigingsbonussen zijn inkomsten. Omzettingen bij een delisting zijn transacties. Kraken's tegoed voor handelskosten (KFEE) wordt genegeerd.
+- **Bitvavo:** munten in vaste staking tellen mee via het aparte stakingsaldo. Vastzetten (vaste staking of uitlenen) is geen opname; komt het terug, dan is alleen wat er bovenop komt de beloning. Een geannuleerde opname wordt teruggedraaid (op niet-terugbetaalde kosten na), en verplaatsingen tussen Bitvavo's eigen portemonnees vallen tegen elkaar weg.
+- **Coinbase:** de oude ETH2-portemonnee (gestakete ether) telt als ETH, beloningen inbegrepen. Verplaatsingen tussen je Coinbase-portemonnees (kluizen, andere portfolio's, het opheffen van ETH2) vallen tegen elkaar weg als de sleutel beide kanten ziet; anders zijn het een storting of opname.
 
-**Wallets** tracks addresses read-only, from free public explorers. Only BNB Chain needs a (free) API key. It never asks for or stores seed phrases or private keys.
+Bekende beperkingen: bij Bitvavo gaat Kluishuis ervan uit dat kosten bovenop het verzonden bedrag komen, en Bitvavo documenteert niet wat er in de regels voor vaste staking en uitlenen staat; de saldovergelijking laat het zien als een van beide niet klopt. Coinbase meldt handelskosten niet apart. IBKR Flex levert maximaal 365 dagen per opvraging, slaat opties en futures over en verwerkt geen aandelensplitsingen (de saldovergelijking laat die zien).
 
-| Chain                                                               | Source                             | Notes                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bitcoin                                                             | mempool.space                      | Addresses or **xpub/ypub/zpub**. Extended keys are scanned with a gap limit of 20 on both the receive and change chains. Legacy, nested SegWit, native SegWit and **Taproot** (choose "Taproot" for a BIP86 xpub)                           |
-| Litecoin                                                            | litecoinspace.org                  | Addresses or Ltub/Mtub/xpub-style keys                                                                                                                                                                                                      |
-| Ethereum, Arbitrum, Optimism, Base, Polygon, Unichain, Ink, Soneium | Blockscout                         | Native coin, internal transfers and ERC-20 tokens. The add dialog can track the same address on several chains at once                                                                                                                      |
-| BNB Chain                                                           | Ankr Advanced API (`ANKR_API_KEY`) | BNB and BEP-20 tokens. Needs a free Ankr account (see below). Ankr doesn't report internal transactions: BNB paid out by a contract (e.g. swapping a token for BNB) is missing from the history and shows up as a difference you can adjust |
-| Solana                                                              | public RPC (or `SOLANA_RPC_URL`)   | SOL and SPL tokens. Large histories import gradually (~1,500 transactions per sync) because of the public rate limit                                                                                                                        |
-| XRP Ledger                                                          | xrplcluster.com                    | XRP payments; issued tokens are skipped                                                                                                                                                                                                     |
-| Tron                                                                | TronGrid                           | TRX and TRC-20 tokens (e.g. USDT)                                                                                                                                                                                                           |
-| Cardano                                                             | Koios (free public API)            | ADA, native tokens and **staking rewards** (dated when they become spendable; deposit refunds are not income). Paste the stake address (stake1…) or any receive address: Kluishuis tracks the whole wallet through its stake key            |
-| Dogecoin                                                            | BlockCypher (free tier)            | Addresses or **dgub/xpub** (BIP44, gap limit 20). The free tier allows 100 requests an hour: a big history or a fresh xpub can take a few syncs                                                                                             |
+### Wallets (eigen beheer, op adres)
 
-How a wallet sync works:
+**Wallets** volgt adressen alleen-lezen, via gratis openbare blockchainverkenners. Alleen BNB Chain vraagt een (gratis) API-sleutel. Kluishuis vraagt nooit om je seed phrase of privésleutels en bewaart die ook niet.
 
-- **All addresses of a wallet on one chain are netted together**, so moving coins between your own addresses (or change outputs) only costs the network fee. Adding or removing an address re-imports that chain.
-- **Fees** become `fee` transactions, and **swaps** (one token out, another in) become a sale plus a purchase at the same EUR value.
-- **Tokens** are identified by contract through CoinGecko, so USDC on Ethereum, Base and Solana is one asset. Tokens CoinGecko doesn't list, or that the explorer flags as spam, are **skipped**: usually they are airdrop spam. Each wallet lists them and has an "include them anyway" switch, which adds them as manually priced assets. Lookups are cached and capped per sync; on a rate limit the rest wait for the next sync.
-- **Transfers** to and from your exchanges are linked automatically, so the purchase cost carries over. **Reconciliation** compares the result with the on-chain balance once the full history is in.
-- Syncs run in the background. Pages show progress, and dialogs can be closed while an import continues.
+| Blockchain                                                          | Bron                               | Opmerkingen                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bitcoin                                                             | mempool.space                      | Adressen of **xpub/ypub/zpub**. Uitgebreide sleutels worden doorzocht met een gap limit van 20, voor zowel ontvangst- als wisselgeldadressen. Legacy, nested SegWit, native SegWit en **Taproot** (kies "Taproot" bij een BIP86-xpub)                                           |
+| Litecoin                                                            | litecoinspace.org                  | Adressen of Ltub/Mtub/xpub-sleutels                                                                                                                                                                                                                                             |
+| Ethereum, Arbitrum, Optimism, Base, Polygon, Unichain, Ink, Soneium | Blockscout                         | De munt zelf, interne overboekingen en ERC-20-tokens. Je kunt hetzelfde adres in één keer op meerdere ketens volgen                                                                                                                                                             |
+| BNB Chain                                                           | Ankr Advanced API (`ANKR_API_KEY`) | BNB en BEP-20-tokens. Vraagt een gratis Ankr-account (zie hieronder). Ankr meldt geen interne transacties: BNB die een contract uitbetaalt (bijvoorbeeld bij het ruilen van een token naar BNB) ontbreekt in de geschiedenis en verschijnt als verschil dat je kunt rechtzetten |
+| Solana                                                              | openbare RPC (of `SOLANA_RPC_URL`) | SOL en SPL-tokens. Grote geschiedenissen komen er geleidelijk in (ongeveer 1.500 transacties per synchronisatie) door de limiet van de openbare RPC                                                                                                                             |
+| XRP Ledger                                                          | xrplcluster.com                    | XRP-betalingen; uitgegeven tokens worden overgeslagen                                                                                                                                                                                                                           |
+| Tron                                                                | TronGrid                           | TRX en TRC-20-tokens (zoals USDT)                                                                                                                                                                                                                                               |
+| Cardano                                                             | Koios (gratis openbare API)        | ADA, native tokens en **stakingbeloningen** (gedateerd wanneer ze opneembaar worden; teruggekregen borg is geen inkomen). Plak het stake-adres (stake1…) of een ontvangstadres: Kluishuis volgt de hele wallet via de stake-sleutel                                             |
+| Dogecoin                                                            | BlockCypher (gratis)               | Adressen of **dgub/xpub** (BIP44, gap limit 20). De gratis laag staat 100 verzoeken per uur toe: een grote geschiedenis of een nieuwe xpub kan een paar synchronisaties duren                                                                                                   |
 
-**BNB Chain key.** No explorer offers BNB Chain history for free without an account (BscScan's API is paid for this chain since Etherscan's V2 move). Create a free account at [ankr.com](https://www.ankr.com/rpc/advanced-api/), copy your API key from the Advanced API endpoint (`https://rpc.ankr.com/multichain/<key>`), put it in `.env` as `ANKR_API_KEY=` and restart. The free plan allows 50 requests a minute and 200 million credits a month; a sync takes about three requests per address. Until a key is set, BNB Chain shows as "needs setup".
+Zo werkt een wallet-synchronisatie:
 
-Adding another chain means implementing `ChainAdapter` (`server/src/wallets/types.ts`): validate an address, then fetch per-transaction movements, fees paid and current balances. Netting, token lookup, import, transfer matching and reconciliation are shared.
+- **Alle adressen van een wallet op één keten worden samen verrekend**, dus geld tussen je eigen adressen (of wisselgeld) kost alleen de netwerkkosten. Een adres toevoegen of verwijderen importeert die keten opnieuw.
+- **Netwerkkosten** worden `fee`-transacties, en **ruilen** (het ene token eruit, het andere erin) wordt een verkoop plus een aankoop met dezelfde eurowaarde.
+- **Tokens** worden via CoinGecko op contractadres herkend, dus USDC op Ethereum, Base en Solana is één belegging. Tokens die CoinGecko niet kent, of die de verkenner als spam markeert, worden **overgeslagen**: meestal is dat airdrop-spam. Elke wallet toont ze en heeft een schakelaar "toch meenemen", die ze toevoegt met een handmatige koers. Opzoekingen worden onthouden en per synchronisatie begrensd; bij een limiet wacht de rest tot de volgende synchronisatie.
+- **Overboekingen** van en naar je beurzen worden vanzelf gekoppeld, zodat de aankoopprijs meegaat. De **saldovergelijking** vergelijkt het resultaat met het saldo op de blockchain zodra de hele geschiedenis binnen is.
+- Synchronisaties lopen op de achtergrond. Pagina's tonen de voortgang, en je kunt dialogen sluiten terwijl een import doorloopt.
 
-Not covered yet: Ethereum validator withdrawals; Solana stake accounts and staking rewards; frozen TRX; XRP issued tokens; Cardano Byron-era addresses.
+**Sleutel voor BNB Chain.** Geen enkele verkenner biedt de geschiedenis van BNB Chain gratis aan zonder account (de API van BscScan is voor deze keten betaald sinds Etherscan's overstap naar V2). Maak een gratis account op [ankr.com](https://www.ankr.com/rpc/advanced-api/), kopieer je API-sleutel uit het Advanced API-adres (`https://rpc.ankr.com/multichain/<sleutel>`), zet hem in `.env` als `ANKR_API_KEY=` en voer `docker compose up -d` uit. Het gratis abonnement staat 50 verzoeken per minuut en 200 miljoen credits per maand toe; een synchronisatie kost ongeveer drie verzoeken per adres. Zolang er geen sleutel is, staat BNB Chain op "needs setup".
 
-### Box 3 (Dutch wealth tax)
+Nog niet ondersteund: opnames van Ethereum-validators; Solana-stake-accounts en hun beloningen; bevroren TRX; uitgegeven tokens op de XRP Ledger; Cardano-adressen uit het Byron-tijdperk.
 
-The **Box 3** page estimates box 3 under the forfaitaire spaarvariant (tax years 2023 onwards) for each tax year since your first activity.
+### Box 3
 
-- **Peildatum 1 January:** holdings at the end of 31 December, valued at that day's close or the last close before it. Wallets, vaults and physical metal are included.
-- **Categories:** each holding counts as _banktegoeden_, _overige bezittingen_, _groene beleggingen_ (green investments) or _niet in box 3_. By default, cash at a bank or broker is a bank balance, cash on a crypto exchange or in a wallet is another asset, and investments, crypto and metals are other assets. Whole accounts can be overridden, e.g. a fund with a groenverklaring as green investments, or a pension account as not in box 3. Green investments are exempt only up to the yearly limit (2023 €65,072; 2024 €71,251; 2025 €26,312; 2026 €26,715 per person, doubled for partners); the excess counts as other assets, and the small green tax credit (0.7% through 2024, 0.1% after) is deducted. The exemption ends in 2027. Other assets are also split into investments, crypto and metals, matching how the aangifte asks for them.
-- **Your situation per year:** fiscal partner (doubles the allowance and debt threshold), debts, and bank balances or other assets the app doesn't track.
-- **Calculation:** follows the Belastingdienst steps (deemed return → rendementsgrondslag → grondslag → share → voordeel → tax). The official 2023–2026 figures are built in (2026 bank and debt rates are provisional), and every rate is editable under _Rules & rates_.
-- **Actual return (tegenbewijsregeling):** for each year, the actual return as the _Opgaaf werkelijk rendement_ asks for it. It is set out per category: value on 1 January, money in and out, value on 31 December, value change and income. Dividends count gross, costs are not deducted, interest paid on debts is, and there is no tax-free allowance. It's compared with the deemed-return tax and says whether filing would save money, and roughly how much. Enter interest paid on debts and the return on untracked assets per year under _Your situation_.
-- **From 2028 (preview):** the planned actual-return system (bill 36.748, **not law yet**) applied to your past years: result after costs, the tax-free result, losses carried forward (and back, with the novelle), and the tax compared with the current system. Rate, tax-free result, loss threshold and carry-back are editable, with presets for the bill as passed by the Tweede Kamer and the announced novelle.
-- **Sources:** the rules used, with links, are in [`docs/box3-sources.md`](docs/box3-sources.md). 2027 rates aren't built in yet: they weren't final on 5 October 2026.
-- **Export:** CSV of all holdings on the peildatum, and _Print / PDF_ (a print layout without the app chrome).
+De pagina **Box 3** schat je box 3 volgens de forfaitaire spaarvariant (belastingjaren vanaf 2023), voor elk jaar sinds je eerste transactie.
 
-It's an estimate, not tax advice: check the values against your banks' and brokers' year statements (jaaroverzichten).
+- **Peildatum 1 januari:** je bezit aan het eind van 31 december, gewaardeerd tegen de slotkoers van die dag of de laatste daarvoor. Wallets, kluizen en fysiek metaal tellen mee.
+- **Categorieën:** elke positie telt als _banktegoed_, _overige bezitting_, _groene belegging_ of _niet in box 3_. Standaard is geld bij een bank of broker een banktegoed, geld op een cryptobeurs of in een wallet een overige bezitting, en zijn beleggingen, crypto en metalen overige bezittingen. Hele rekeningen kun je anders indelen, bijvoorbeeld een fonds met een groenverklaring als groene belegging of een pensioenrekening als niet in box 3. Groene beleggingen zijn alleen vrijgesteld tot de jaargrens (2023 € 65.072; 2024 € 71.251; 2025 € 26.312; 2026 € 26.715 per persoon, het dubbele met een fiscale partner); wat erboven zit, telt als overige bezitting, en de kleine heffingskorting voor groene beleggingen (0,7% tot en met 2024, daarna 0,1%) gaat eraf. De vrijstelling vervalt in 2027. Overige bezittingen worden ook gesplitst in beleggingen, crypto en metalen, zoals de aangifte erom vraagt.
+- **Jouw situatie per jaar:** fiscale partner (verdubbelt het heffingsvrij vermogen en de schuldendrempel), schulden, en banktegoeden of andere bezittingen die de app niet bijhoudt.
+- **Berekening:** volgt de stappen van de Belastingdienst (forfaitair rendement → rendementsgrondslag → grondslag sparen en beleggen → aandeel → voordeel → belasting). De officiële cijfers voor 2023–2026 zitten erin (de percentages voor banktegoeden en schulden van 2026 zijn voorlopig), en elk tarief is aan te passen onder _Rules & rates_.
+- **Werkelijk rendement (tegenbewijsregeling):** per jaar het werkelijke rendement zoals de _Opgaaf werkelijk rendement_ erom vraagt, per categorie: waarde op 1 januari, geld erin en eruit, waarde op 31 december, waardeverandering en inkomsten. Dividenden tellen bruto, kosten mogen er niet af, betaalde rente op schulden wel, en er is geen heffingsvrij deel. Het wordt vergeleken met de belasting volgens het forfaitaire stelsel, met de vraag of de opgaaf je geld bespaart, en ongeveer hoeveel. Vul per jaar onder _Your situation_ de betaalde rente op schulden en het rendement op bezittingen die de app niet bijhoudt in.
+- **Vanaf 2028 (vooruitblik):** het geplande stelsel op basis van werkelijk rendement (wetsvoorstel 36.748, **nog geen wet**) toegepast op je afgelopen jaren: resultaat na kosten, het heffingsvrije resultaat, verliezen die naar voren (en met de novelle naar achteren) worden verrekend, en de belasting vergeleken met het huidige stelsel. Tarief, heffingsvrij resultaat, verliesdrempel en verliesverrekening naar achteren zijn aan te passen, met instellingen voor het wetsvoorstel zoals de Tweede Kamer het aannam en voor de aangekondigde novelle.
+- **Bronnen:** de gebruikte regels, met links, staan in [`docs/box3-sources.md`](docs/box3-sources.md). De tarieven voor 2027 zitten er nog niet in: op 5 oktober 2026 waren ze nog niet definitief.
+- **Export:** CSV van alle posities op de peildatum, en _Print / PDF_ (een printweergave zonder de rest van de app).
 
-### How the numbers are calculated
+Het blijft een schatting: controleer de waarden met de jaaroverzichten van je banken en brokers.
 
-- **Entering numbers** follows the number format chosen in Settings. With the Dutch format, "5.000" is five thousand and "1,5" is one and a half; "1.234,56" works too. As soon as you type a separator, the field shows how it was read (e.g. "= 5 000"), and a value that could be read two ways is highlighted. Numbers copied from English-language sites, like "0.0015", are still read correctly.
-- **Cost basis** is per account, with **average cost** by default or **FIFO** (Settings → Cost basis). Fees on buys are added to cost, and fees on sells are deducted from proceeds. Transfers carry their cost lots along.
-- **Network fees paid in a coin** (gas, Bitcoin miner fees) are a realized loss of the cost of the coins spent. They're listed as "network fee" among the realized gains.
-- **Realized P&L** = sell proceeds − fees − cost of the units sold. Because cost is in EUR at the transaction's FX rate, currency effects are included. For holdings bought in a foreign currency, the open gain is also split into a **price effect** (valued at the exchange rate you paid) and a **currency effect**.
-- **Rewards** (staking) arrive with a cost basis equal to their market value and count as income. **Dividends** count as income net of withholding tax.
-- **Cash** is valued at face value (non-EUR at the ECB rate) and is not part of "invested". Manual buys, sells and dividends can optionally settle against an account's cash balance; synced ones always do.
-- **Net worth over time** is computed from your transactions: each day's holdings are valued at that day's close, carrying the last close over weekends and holidays. Holdings without any price history yet count at cost, and the chart says so. Period changes (1W, 1M, YTD) are net worth changes and include deposits.
-- **Performance per year** = realized gains + income + change in open (unrealized) gains over the year. Deposits and withdrawals aren't results, and the years add up to the all-time result. Fees and withholding tax are already included and shown for reference.
-- **Income** = dividends net of withholding tax, staking and other rewards at their EUR value when received, and interest (rewards paid on cash). The Income and Performance pages export CSV.
-- **Money in and out.** For returns, money enters or leaves the portfolio with deposits and withdrawals, assets moved in or out (at that day's market value), buys and sells not paid from a tracked cash balance, dividends paid to a bank account outside it, and physical metal bought or sold. Rewards, fees and transfers between your accounts stay inside: they are results.
-- **Time-weighted return** (_Performance → Returns %_) chains each day's return, with deposits counted from the start of their day and withdrawals at its end: how the investments did, whatever the timing of your money, as funds report it. **Money-weighted return** (XIRR) is your own return including that timing; per year it is shown over the year, all time annualised. Per holding and per account it is annualised when held a year or more, else over the holding period.
-- **Benchmark:** the same money in and out invested in MSCI World (IWDA), FTSE All-World (VWCE), S&P 500 (CSPX), gold or bitcoin instead. These funds accumulate dividends, so their price return is their whole return. The benchmark's prices are kept as a hidden asset.
-- **Costs** (_Performance → Costs_): trading and account fees, network and vault storage fees paid in an asset (at what those units cost), dividend tax withheld, premiums paid above spot on physical metal, and fund running costs, estimated as the fund's daily value × its TER ÷ 365. Enter a fund's TER (from its factsheet) under _Assets_. Running costs are taken from the fund's price, so they're already inside your results; the overview just makes them visible.
-- **Expected dividends** (_Income_): each holding's dividends per share over the last 12 months (Yahoo), moved a year ahead, for what you hold now, at today's exchange rates. Tax is estimated with the rate you were actually withheld on that holding, else the usual rate for its country (NL and US 15%, Irish and Luxembourg funds 0%).
-- **Tax withheld by country** (_Income_): per year and country (from the ISIN), with what it means for the Dutch tax return. Dutch dividend tax is offset in full, foreign tax up to the treaty rate; US tax above 15% usually means your broker has no W-8BEN form.
-- **Day change** comes from each provider's 24h change. Where a provider has none (metals), it is derived from the previous stored daily close.
+### Hoe de getallen berekend worden
 
-### Price sources (free, no keys)
+- **Getallen invoeren** volgt de notatie die je in Settings kiest. Met de Nederlandse notatie is "5.000" vijfduizend en "1,5" anderhalf; "1.234,56" werkt ook. Zodra je een scheidingsteken typt, laat het veld zien hoe het gelezen is (bijvoorbeeld "= 5 000"), en een waarde die op twee manieren te lezen is, wordt gemarkeerd. Getallen uit Engelstalige sites, zoals "0.0015", worden ook goed gelezen.
+- **Kostprijs** is per rekening, standaard met **gemiddelde kostprijs**, of **FIFO** (_Settings → Cost basis_). Kosten bij een aankoop tellen bij de kostprijs op, kosten bij een verkoop gaan van de opbrengst af. Overboekingen nemen hun kostprijs mee.
+- **Netwerkkosten betaald in een munt** (gas, Bitcoin-transactiekosten) zijn een gerealiseerd verlies ter grootte van de kostprijs van de uitgegeven munten. Ze staan als "network fee" bij de gerealiseerde resultaten.
+- **Gerealiseerd resultaat** = verkoopopbrengst − kosten − kostprijs van de verkochte stukken. Omdat de kostprijs in euro's is tegen de koers van de transactie, zit het valuta-effect erin. Bij posities gekocht in een vreemde munt wordt het open resultaat ook gesplitst in een **koerseffect** (gewaardeerd tegen de wisselkoers die je betaalde) en een **valuta-effect**.
+- **Beloningen** (staking) komen binnen met een kostprijs gelijk aan hun marktwaarde en tellen als inkomsten. **Dividenden** tellen als inkomsten na ingehouden belasting.
+- **Geld** wordt gewaardeerd tegen de nominale waarde (vreemde valuta tegen de ECB-koers) en telt niet als "belegd". Handmatige aankopen, verkopen en dividenden kunnen naar keuze het geldsaldo van een rekening aanpassen; gesynchroniseerde doen dat altijd.
+- **Vermogen door de tijd** wordt uit je transacties berekend: elke dag worden je posities gewaardeerd tegen de slotkoers van die dag, met de laatste slotkoers over weekenden en feestdagen. Posities zonder koersgeschiedenis tellen tegen kostprijs, en de grafiek vermeldt dat. Veranderingen per periode (1W, 1M, YTD) zijn veranderingen van je vermogen, stortingen inbegrepen.
+- **Resultaat per jaar** = gerealiseerd resultaat + inkomsten + verandering in open (ongerealiseerd) resultaat over het jaar. Stortingen en opnames zijn geen resultaat, en de jaren tellen op tot het totale resultaat. Kosten en ingehouden belasting zitten er al in en worden ter informatie getoond.
+- **Inkomsten** = dividenden na ingehouden belasting, staking- en andere beloningen tegen hun eurowaarde bij ontvangst, en rente (beloningen op geld). De pagina's Income en Performance exporteren CSV.
+- **Geld erin en eruit.** Voor rendementen komt geld je portefeuille in of uit met stortingen en opnames, beleggingen die erin of eruit gaan (tegen de marktwaarde van die dag), aan- en verkopen die niet via een bijgehouden geldsaldo lopen, dividenden die naar een bankrekening buiten Kluishuis gaan, en gekocht of verkocht fysiek metaal. Beloningen, kosten en overboekingen tussen je rekeningen blijven erbinnen: dat zijn resultaten.
+- **Tijdgewogen rendement** (_Performance → Returns %_) schakelt de rendementen van elke dag aan elkaar, met stortingen vanaf het begin van hun dag en opnames aan het eind: hoe de beleggingen het deden, ongeacht wanneer jij geld erin of eruit haalde, zoals fondsen het melden. **Geldgewogen rendement** (XIRR) is je eigen rendement inclusief die timing: per jaar over dat jaar, over de hele periode als jaarrendement. Per positie en per rekening is het een jaarrendement als je die een jaar of langer hebt, anders het rendement over de looptijd.
+- **Benchmark:** hetzelfde geld erin en eruit, maar belegd in MSCI World (IWDA), FTSE All-World (VWCE), S&P 500 (CSPX), goud of bitcoin. Deze fondsen herbeleggen dividend, dus hun koersrendement is hun hele rendement. De koersen van de benchmark worden bewaard als verborgen belegging.
+- **Kosten** (_Performance → Costs_): transactie- en accountkosten, netwerk- en kluiskosten betaald in een belegging (tegen wat die stukken kostten), ingehouden dividendbelasting, opslag boven de spotprijs bij fysiek metaal, en de lopende kosten van fondsen, geschat als dagwaarde van het fonds × de TER ÷ 365. Vul de TER van een fonds (uit de factsheet) in onder _Assets_. Lopende kosten gaan van de koers van het fonds af en zitten dus al in je resultaten; het overzicht maakt ze alleen zichtbaar.
+- **Verwachte dividenden** (_Income_): per positie het dividend per aandeel van de afgelopen 12 maanden (Yahoo), een jaar vooruitgeschoven, voor wat je nu hebt, tegen de wisselkoers van vandaag. De belasting wordt geschat met het percentage dat op die positie werkelijk is ingehouden, anders het gangbare percentage voor het land (NL en VS 15%, Ierse en Luxemburgse fondsen 0%).
+- **Ingehouden belasting per land** (_Income_): per jaar en land (uit de ISIN), met wat het betekent voor je aangifte. Nederlandse dividendbelasting wordt helemaal verrekend, buitenlandse tot het verdragstarief; Amerikaanse belasting boven 15% betekent meestal dat je broker geen W-8BEN-formulier van je heeft.
+- **Dagverandering** komt uit de 24-uursverandering van elke bron. Waar een bron die niet heeft (metalen), wordt ze afgeleid van de vorige opgeslagen slotkoers.
 
-| Asset         | Source                                                     | Fallback                                                   |
-| ------------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| Stocks / ETFs | Yahoo Finance chart API (quotes in GBp/ZAc are normalised) | Tradegate by ISIN (EUR, converted to the listing currency) |
-| Crypto        | CoinGecko `simple/price` (EUR)                             | Bitvavo public ticker, then Yahoo `SYM-EUR`                |
-| Metals        | gold-api.com spot (USD/oz → EUR/g)                         | Yahoo COMEX futures (`GC=F`, `SI=F`, …)                    |
-| FX            | ECB reference rates via Frankfurter                        | last cached rate                                           |
+### Koersbronnen (gratis, zonder sleutels)
 
-A fallback is only used when the main source gives no price, and only if its price is between half and double the last known one (a token without a known price is never priced by symbol, which could be a different coin). _Settings → Prices_ shows when it happened. Every refresh stores the latest quote, today's close in `price_history`, and a net-worth snapshot.
+| Belegging        | Bron                                                           | Terugval                                                           |
+| ---------------- | -------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Aandelen / ETF's | Yahoo Finance chart-API (koersen in GBp/ZAc worden omgerekend) | Tradegate op ISIN (EUR, omgerekend naar de valuta van de notering) |
+| Crypto           | CoinGecko `simple/price` (EUR)                                 | Bitvavo's openbare ticker, daarna Yahoo `SYM-EUR`                  |
+| Metalen          | gold-api.com spot (USD/oz → EUR/g)                             | Yahoo COMEX-futures (`GC=F`, `SI=F`, …)                            |
+| Valuta           | ECB-referentiekoersen via Frankfurter                          | laatst bekende koers                                               |
 
-**Price history backfill** loads daily EUR closes for every asset from its first transaction until today. It covers Yahoo (stocks, ETFs, `SYM-EUR` crypto pairs), CoinGecko (crypto, last 365 days, as a fallback), Yahoo futures for metals, and ECB rates for foreign cash. A coin's Yahoo `SYM-EUR` pair is only used when its current price is within half to double the coin's own price, because another coin can share the symbol; otherwise its history comes from CoinGecko. It runs 30 seconds after startup, daily, and a few seconds after transactions change or a sync finishes. Each asset is loaded in full once, then topped up incrementally. `POST /api/prices/backfill` forces a full re-check. One failing asset does not block the others; failures appear on the Overview and Settings pages.
+Een terugvalbron wordt alleen gebruikt als de hoofdbron geen koers geeft, en alleen als die koers tussen de helft en het dubbele van de laatst bekende ligt (een token zonder bekende koers krijgt nooit een koers op symbool, want dat kan een andere munt zijn). _Settings → Prices_ toont wanneer dat gebeurde. Elke update bewaart de laatste koers, de slotkoers van vandaag in `price_history`, en een momentopname van je vermogen.
 
-## Development
+**Koersgeschiedenis** laadt dagelijkse slotkoersen in euro's voor elke belegging, van de eerste transactie tot vandaag: Yahoo (aandelen, ETF's, crypto-paren `SYM-EUR`), CoinGecko (crypto, de laatste 365 dagen, als terugval), Yahoo-futures voor metalen en ECB-koersen voor vreemde valuta. Het `SYM-EUR`-paar van Yahoo wordt voor een munt alleen gebruikt als de huidige koers tussen de helft en het dubbele van de eigen koers van die munt ligt, omdat een andere munt hetzelfde symbool kan hebben; anders komt de geschiedenis van CoinGecko. Het laden gebeurt 30 seconden na het opstarten, dagelijks, en een paar seconden nadat transacties veranderen of een synchronisatie klaar is. Elke belegging wordt één keer volledig geladen en daarna aangevuld. `POST /api/prices/backfill` dwingt een volledige controle af. Eén mislukte belegging houdt de rest niet tegen; mislukkingen staan op de pagina's Overview en Settings.
 
-Requirements: Node 22+. Without `DATABASE_URL`, the server uses an embedded PostgreSQL (PGlite) under `server/.data/`, so no Docker is needed.
+## Ontwikkelen
+
+Bijdragen zijn welkom: lees [CONTRIBUTING.md](CONTRIBUTING.md). Je hebt Node 22 of nieuwer nodig. Zonder `DATABASE_URL` gebruikt de server een ingebouwde PostgreSQL (PGlite) in `server/.data/`, dus Docker is niet nodig.
 
 ```bash
 npm install
-cp .env.example server/.env   # set APP_SECRET; leave DATABASE_URL unset for PGlite
-npm run dev:server            # API on :8080 (also serves web/dist if built)
-npm run dev:web               # Vite on :5173, proxies /api to :8080
+echo "APP_SECRET=$(openssl rand -hex 32)" > server/.env
+npm run dev:server            # API op :8080 (serveert ook web/dist als die gebouwd is)
+npm run dev:web               # Vite op :5173, stuurt /api door naar :8080
 ```
 
-| Command                                           | What it does                                                                                                                                                                              |
-| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `npm test`                                        | Server unit tests (ledger maths) and API integration tests (in-memory Postgres, stubbed price APIs)                                                                                       |
-| `npm run typecheck`                               | TypeScript, server and web                                                                                                                                                                |
-| `npm run lint` / `npm run format`                 | ESLint / Prettier                                                                                                                                                                         |
-| `npm run build`                                   | Compile server to `server/dist`, bundle web to `web/dist`                                                                                                                                 |
-| `npm run db:generate -w server`                   | Generate a migration after editing `server/src/db/schema.ts`                                                                                                                              |
-| `npm run dev:live -w server`                      | A second instance on `http://127.0.0.1:8081` with its own empty database, to try real exchange keys and wallets without mixing them with demo data. Delete `server/.data/live` afterwards |
-| `npx tsx scripts/bench.ts [scale]` (in `server/`) | Times the main pages against a large synthetic history (scale 1 ≈ 20,000 transactions)                                                                                                    |
+| Opdracht                                           | Wat het doet                                                                                                                                                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm test`                                         | Unittests van de server (rekenwerk) en API-integratietests (PostgreSQL in het geheugen, nagebootste koers-API's)                                                                                              |
+| `npm run typecheck`                                | TypeScript-controle van server en web                                                                                                                                                                         |
+| `npm run lint` / `npm run format`                  | ESLint / Prettier                                                                                                                                                                                             |
+| `npm run build`                                    | Bouwt de server naar `server/dist` en de web-app naar `web/dist`                                                                                                                                              |
+| `npm run db:generate -w server`                    | Maakt een migratie na een wijziging in `server/src/db/schema.ts`                                                                                                                                              |
+| `npm run dev:live -w server`                       | Een tweede instantie op `http://127.0.0.1:8081` met een eigen lege database, om echte API-sleutels en wallets uit te proberen zonder ze te mengen met voorbeeldgegevens. Verwijder `server/.data/live` daarna |
+| `npx tsx scripts/bench.ts [schaal]` (in `server/`) | Meet de belangrijkste pagina's met een grote nagebootste geschiedenis (schaal 1 ≈ 20.000 transacties)                                                                                                         |
 
-Demo data: after creating a user, run `SESSION=<pd_session cookie> npx tsx server/scripts/sample-data.ts`.
+Voorbeeldgegevens: maak een gebruiker aan en voer dan `SESSION=<pd_session-cookie> npx tsx server/scripts/sample-data.ts` uit.
 
-### Stack and why
+Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 
-- **Fastify + TypeScript** (server): fast, schema-friendly, small footprint. One language across server and UI.
-- **PostgreSQL + Drizzle ORM**: `NUMERIC` columns for exact money and quantities (decimal.js in code, never floats), typed queries, and generated SQL migrations. PGlite runs the same migrations in tests and local dev.
-- **React + Vite + Tailwind + TanStack Query + Recharts** (web): a responsive SPA with light/dark themes, served by the same container.
-- **Single app container** with an in-process scheduler. For a one-user home server, a separate worker or queue would only add moving parts.
+### Techniek en waarom
 
-### Security notes
+- **Fastify + TypeScript** (server): snel, past goed bij schema's, weinig overhead. Eén taal voor server en web-app.
+- **PostgreSQL + Drizzle ORM**: `NUMERIC`-kolommen voor exacte bedragen en hoeveelheden (decimal.js in de code, nooit gewone getallen), getypte queries en gegenereerde SQL-migraties. PGlite draait dezelfde migraties in tests, bij het ontwikkelen en in de variant met één container.
+- **React + Vite + Tailwind + TanStack Query + Recharts** (web): een responsieve app met een lichte en donkere weergave, geserveerd door dezelfde container.
+- **Eén app-container** met een ingebouwde planner. Voor één gebruiker thuis zouden een aparte worker of wachtrij alleen maar onderdelen toevoegen.
 
-- Passwords are hashed with argon2id. Sessions are random 256-bit tokens, stored hashed, in `HttpOnly; SameSite=Strict` cookies.
-- CSRF: every mutating `/api` request must carry `X-Requested-With: portfolio`, which cross-site pages cannot send without a CORS preflight the server never grants.
-- Login, setup and password change are rate-limited per client IP. The app only trusts `X-Forwarded-For` when `TRUST_PROXY` is set, so a faked header can't dodge the limit. Behind a reverse proxy, set `TRUST_PROXY` (e.g. `true`, or the proxy's IP). First-run setup is atomic, so only one account can ever be created. Credentials and cookies are redacted from logs.
-- CSV exports escape cells that would otherwise run as spreadsheet formulas (e.g. a token named `=HYPERLINK(…)`).
-- Every create, update and delete is written to `audit_log` with before/after snapshots.
-- Responses carry a strict Content-Security-Policy (same-origin scripts only, no framing), `nosniff`, `no-referrer` and a restrictive Permissions-Policy. HSTS is added when `COOKIE_SECURE=true`.
-- The container runs as an unprivileged user. Backups are written owner-readable only, and backup file names are validated so requests can't reach outside the backup folder.
-- Exposing the dashboard to the internet isn't recommended; use a VPN (see [Access away from home](#access-away-from-home-vpn)). If you do expose it, put it behind a reverse proxy with HTTPS and set `COOKIE_SECURE=true`.
-- Exchange credentials are encrypted at rest (AES-256-GCM, HKDF from `APP_SECRET`) and never returned or logged. Changing `APP_SECRET` means re-entering keys.
+### Beveiliging
 
-## Troubleshooting
+- Wachtwoorden worden gehasht met argon2id. Sessies zijn willekeurige tokens van 256 bits, gehasht opgeslagen, in `HttpOnly; SameSite=Strict`-cookies.
+- CSRF: elk API-verzoek dat iets verandert, moet de header `X-Requested-With: portfolio` hebben, die andere sites niet kunnen meesturen zonder een CORS-preflight die de server nooit toestaat.
+- Inloggen, de eerste installatie en wachtwoord wijzigen zijn per IP-adres begrensd. De app vertrouwt `X-Forwarded-For` alleen als `TRUST_PROXY` is gezet, zodat een vervalste header de limiet niet omzeilt. Achter een reverse proxy zet je `TRUST_PROXY` (bijvoorbeeld `true`, of het IP-adres van de proxy). De eerste installatie is atomair: er kan maar één gebruiker worden aangemaakt. Wachtwoorden en cookies worden niet gelogd.
+- CSV-exports maken cellen onschadelijk die anders als spreadsheetformule zouden draaien (bijvoorbeeld een token met de naam `=HYPERLINK(…)`).
+- Elke toevoeging, wijziging en verwijdering wordt vastgelegd in `audit_log`, met de situatie ervoor en erna.
+- Antwoorden hebben een strikte Content-Security-Policy (alleen scripts van de eigen site, niet in een frame te laden), `nosniff`, `no-referrer` en een beperkende Permissions-Policy. Met `COOKIE_SECURE=true` komt er HSTS bij.
+- De app draait als gewone gebruiker, niet als root. Back-ups zijn alleen leesbaar voor de eigenaar, en back-upnamen worden gecontroleerd zodat verzoeken niet buiten de back-upmap kunnen komen.
+- Kluishuis op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
+- API-sleutels van beurzen worden versleuteld opgeslagen (AES-256-GCM, HKDF van de app-sleutel) en nooit teruggestuurd of gelogd. Verandert de app-sleutel, dan moet je ze opnieuw invoeren.
+- Een kwetsbaarheid gevonden? Meld het privé: zie [SECURITY.md](SECURITY.md).
 
-| Symptom                                             | What to check                                                                                                                                                                                                                         |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A synced coin got the wrong price (wrong coin)      | After a sync, _New assets added_ shows which price feed each new coin was matched to (e.g. "LUNA → CoinGecko terra-luna-2"). If it's wrong, edit the asset under _Assets_ and set the right CoinGecko id.                             |
-| A price shows "stale" or "no price yet"             | _Settings → Prices_ lists failures. Free APIs rate-limit; prices retry on the next refresh. For a wrong ticker, edit the asset (_Assets_) and fix its Yahoo ticker or CoinGecko id.                                                   |
-| The history chart says "valued at cost"             | Price history is still loading (it runs in the background after changes), or there is no free history for that asset. `POST /api/prices/backfill` forces a re-check.                                                                  |
-| A connection or wallet shows balance mismatches     | History the API doesn't expose (very old trades, staking moves). Fix the history, or use _Adjust_ to record a correcting deposit or withdrawal.                                                                                       |
-| "Stored credentials cannot be decrypted"            | `APP_SECRET` changed. Restore the old value, or re-enter the API keys.                                                                                                                                                                |
-| The container is unhealthy                          | `docker compose logs app`. The health check (`/api/health`) also fails when the database is unreachable.                                                                                                                              |
-| Pages feel slow                                     | Set `LOG_LEVEL=debug` and `docker compose up -d`; every request then logs its `responseTime` in milliseconds (`docker compose logs app \| grep responseTime`). Set it back to `info` afterwards.                                      |
-| The `db` container keeps restarting after an update | Its log mentions old databases or incompatible data files: the PostgreSQL major version changed. Go back to the previous image tag, then follow [Upgrading PostgreSQL](#upgrading-postgresql).                                        |
-| Locked out                                          | There is one user and no reset by e-mail. Restore a backup, or reset the password from the database: `docker compose exec db psql -U kluishuis -c "delete from users"`, then open the app to run first-time setup again (data stays). |
+## Problemen oplossen
+
+| Wat je ziet                                         | Wat je kunt doen                                                                                                                                                                                                                                             |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Een gesynchroniseerde munt heeft de verkeerde koers | Na een synchronisatie toont _New assets added_ aan welke koersbron elke nieuwe munt gekoppeld is (bijvoorbeeld "LUNA → CoinGecko terra-luna-2"). Klopt dat niet, pas de belegging dan aan onder _Assets_ en vul de juiste CoinGecko-id in.                   |
+| Een koers staat op "stale" of "no price yet"        | _Settings → Prices_ toont wat mislukte. Gratis API's begrenzen; koersen worden bij de volgende update opnieuw geprobeerd. Bij een verkeerde ticker: pas de belegging aan (_Assets_) en verbeter de Yahoo-ticker of CoinGecko-id.                             |
+| De grafiek zegt "valued at cost"                    | De koersgeschiedenis wordt nog geladen (dat gebeurt op de achtergrond na wijzigingen), of er is geen gratis geschiedenis voor die belegging. `POST /api/prices/backfill` dwingt een nieuwe controle af.                                                      |
+| Een koppeling of wallet toont verschillen in saldo  | Geschiedenis die de API niet laat zien (heel oude transacties, stakingverplaatsingen). Vul de geschiedenis aan, of gebruik _Adjust_ voor een correctiestorting of -opname.                                                                                   |
+| "Stored credentials cannot be decrypted"            | De app-sleutel is veranderd (bijvoorbeeld een nieuw `app-data`-volume of een andere `APP_SECRET`). Zet de oude sleutel terug, of voer de API-sleutels opnieuw in.                                                                                            |
+| De container is unhealthy                           | `docker compose logs app`. De gezondheidscontrole (`/api/health`) faalt ook als de database niet bereikbaar is.                                                                                                                                              |
+| Pagina's zijn traag                                 | Zet `LOG_LEVEL=debug` en voer `docker compose up -d` uit; elk verzoek logt dan zijn `responseTime` in milliseconden (`docker compose logs app \| grep responseTime`). Zet het daarna terug op `info`.                                                        |
+| De `db`-container herstart steeds na een update     | Het log noemt oude databases of onverenigbare databestanden: de hoofdversie van PostgreSQL is veranderd. Ga terug naar de vorige image-tag en volg [PostgreSQL upgraden](#postgresql-upgraden).                                                              |
+| "The database … is in use by the running Kluishuis" | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Settings → Backups & export_, of stop eerst de app.                                                                                   |
+| Buitengesloten                                      | Er is één gebruiker en geen herstel via e-mail. Zet een back-up terug, of wis de gebruiker in de database: `docker compose exec db psql -U kluishuis -c "delete from users"`, en open de app om de eerste installatie opnieuw te doen (je gegevens blijven). |
+
+## Licentie
+
+Kluishuis is vrije software onder de [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Je mag het gebruiken, bestuderen, aanpassen en verspreiden. Verspreid je een aangepaste versie, of laat je anderen die via een netwerk gebruiken, dan moet je hun de broncode van die versie aanbieden, onder dezelfde licentie. De app linkt daarom naar zijn eigen broncode (_Settings → About_). Er is geen garantie.
+
+De naam "Kluishuis" valt niet onder de licentie: geef een aangepaste versie die je verspreidt een eigen naam.
+
+## In English
+
+Kluishuis is a self-hosted dashboard for Dutch investors: stocks and ETFs, crypto, and gold and silver, in euros, with an estimate of the Dutch wealth tax (box 3), including the actual-return rebuttal scheme and a preview of the system planned from 2028. It runs on your own NAS, home server or laptop with Docker (`docker compose up -d` with [`docker-compose.yml`](docker-compose.yml)), and your data never leaves it. The app's interface is English for now; the documentation is in Dutch. Contributions in English are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under the AGPL-3.0.

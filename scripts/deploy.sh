@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-# Copies the last commit to the NAS over SSH and (re)builds and starts it there.
+# For running your own changes: copies the last commit to a server over SSH and builds and starts
+# it there (instead of downloading the published image).
 #
 #   scripts/deploy.sh user@nas [folder-on-nas]        # folder defaults to "kluishuis" in your home
 #   DOCKER="sudo docker" scripts/deploy.sh user@nas   # when docker needs sudo (e.g. Synology)
 #
-# Only committed files are sent: never .env, the database or backups. The NAS keeps its own .env
-# and data; code folders (server, web, docs) are replaced so deleted files don't linger.
+# Only committed files are sent: never .env, the database or backups. The server keeps its own
+# .env and data; code folders (server, web, docs) are replaced so deleted files don't linger.
 set -euo pipefail
 
 host=${1:?"Usage: scripts/deploy.sh user@nas [folder-on-nas]"}
@@ -32,10 +33,5 @@ git archive --format=tar HEAD | ssh "$host" "set -e
   tar -xf -"
 
 ssh -t "$host" "set -e; cd '$dir'
-  if [ ! -f .env ]; then
-    echo 'Code copied. First deploy: create $dir/.env from .env.example (see README), then run:'
-    echo '  cd $dir && $docker compose up -d --build'
-    exit 0
-  fi
-  $docker compose up -d --build
-  $docker compose ps"
+  $docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+  $docker compose -f docker-compose.yml -f docker-compose.build.yml ps"

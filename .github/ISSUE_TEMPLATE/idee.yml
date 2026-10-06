@@ -1,0 +1,20 @@
+name: Idee of verbetering
+description: Een voorstel voor iets nieuws of iets dat beter kan.
+labels: [idee]
+body:
+  - type: textarea
+    id: probleem
+    attributes:
+      label: Waar loop je tegenaan?
+      description: Beschrijf de situatie, liefst met een voorbeeld. Bijvoorbeeld welke regel uit de aangifte je niet kunt invullen.
+    validations:
+      required: true
+  - type: textarea
+    id: oplossing
+    attributes:
+      label: Wat zou helpen?
+  - type: textarea
+    id: bronnen
+    attributes:
+      label: Bronnen
+      description: Gaat het om belastingregels? Link naar de Belastingdienst, wetteksten of andere betrouwbare bronnen.

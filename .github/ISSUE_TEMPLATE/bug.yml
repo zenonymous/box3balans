@@ -1,0 +1,52 @@
+name: Fout melden
+description: Iets werkt niet zoals het zou moeten.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Bedankt voor het melden. **Deel geen persoonlijke financiële gegevens**: geen bedragen, rekeningnummers, adressen van wallets, API-sleutels of back-ups. Vervang ze door voorbeeldwaarden.
+  - type: textarea
+    id: wat
+    attributes:
+      label: Wat ging er mis?
+      description: Wat deed je, wat verwachtte je, en wat gebeurde er?
+    validations:
+      required: true
+  - type: textarea
+    id: stappen
+    attributes:
+      label: Hoe kunnen we het nadoen?
+      placeholder: |
+        1. Ga naar …
+        2. Klik op …
+  - type: input
+    id: versie
+    attributes:
+      label: Versie
+      description: Staat linksonder in de app, of onder Settings → About.
+      placeholder: 1.0.0 (abc1234)
+    validations:
+      required: true
+  - type: dropdown
+    id: installatie
+    attributes:
+      label: Installatie
+      options:
+        - Standaard (docker-compose.yml met PostgreSQL)
+        - Eén container (docker-compose.lite.yml)
+        - Zelf gebouwd (docker-compose.build.yml of deploy.sh)
+        - Ontwikkelomgeving (npm run dev)
+    validations:
+      required: true
+  - type: input
+    id: systeem
+    attributes:
+      label: Waar draait het op?
+      placeholder: Synology DS920+ met DSM 7.2, Raspberry Pi 5, Docker Desktop op Windows …
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logregels
+      description: "De laatste regels van `docker compose logs app --tail 50`, zonder gevoelige gegevens."
+      render: text

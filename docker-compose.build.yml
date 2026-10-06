@@ -1,0 +1,9 @@
+# Builds the app image from this folder instead of downloading it, e.g. for your own changes:
+#
+#   docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
+#
+# scripts/deploy.sh does this on your server.
+services:
+  app:
+    image: kluishuis:local
+    build: .

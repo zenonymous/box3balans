@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { z } from "zod";
 
 const schema = z.object({
@@ -8,9 +9,14 @@ const schema = z.object({
   DATABASE_URL: z.string().optional(),
   // Alternatively the standard libpq variables (PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGPORT).
   PGHOST: z.string().optional(),
+  PGPASSWORD: z.string().optional(),
+  // The Docker image keeps a generated database password here (see docker-entrypoint.sh).
+  PGPASSWORD_FILE: z.string().optional(),
   PGLITE_DIR: z.string().default("./.data/pglite"),
-  // Used to derive the key that encrypts exchange API secrets at rest.
-  APP_SECRET: z.string().min(32, "APP_SECRET must be at least 32 characters"),
+  // Used to derive the key that encrypts exchange API secrets at rest. Either set directly, or
+  // read from APP_SECRET_FILE (the Docker image generates one there on first start).
+  APP_SECRET: z.string().optional(),
+  APP_SECRET_FILE: z.string().optional(),
   // Set to true when served over HTTPS (e.g. behind a reverse proxy).
   COOKIE_SECURE: z
     .enum(["true", "false"])
@@ -58,15 +64,33 @@ const schema = z.object({
     .transform((v) => (v ? v : undefined))
     .refine((v) => v === undefined || v.length >= 12, "BACKUP_PASSPHRASE must be at least 12 characters"),
   LOG_LEVEL: z.string().default("info"),
+  // Where the running code's source can be found (AGPL); the Docker build sets it.
+  SOURCE_URL: z.string().default("https://github.com/OWNER/kluishuis"),
 });
 
-export type Config = z.infer<typeof schema>;
+export type Config = Omit<z.infer<typeof schema>, "APP_SECRET" | "PGPASSWORD"> & {
+  APP_SECRET: string;
+  PGPASSWORD?: string;
+};
+
+/** A value given directly, else the trimmed contents of its file (when that exists). */
+function fromFile(value: string | undefined, file: string | undefined): string | undefined {
+  if (value) return value;
+  if (!file || !fs.existsSync(file)) return undefined;
+  return fs.readFileSync(file, "utf8").trim() || undefined;
+}
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = schema.safeParse(env);
-  if (!parsed.success) {
-    const issues = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
-    throw new Error(`Invalid configuration:\n${issues}`);
-  }
-  return parsed.data;
+  const issues = parsed.success ? [] : parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`);
+  const appSecret = parsed.success ? fromFile(parsed.data.APP_SECRET, parsed.data.APP_SECRET_FILE) : undefined;
+  if (parsed.success && !appSecret)
+    issues.push("  APP_SECRET: not set (nor a readable APP_SECRET_FILE); use at least 32 random characters");
+  else if (appSecret && appSecret.length < 32) issues.push("  APP_SECRET: must be at least 32 characters");
+  if (!parsed.success || issues.length) throw new Error(`Invalid configuration:\n${issues.join("\n")}`);
+  return {
+    ...parsed.data,
+    APP_SECRET: appSecret!,
+    PGPASSWORD: fromFile(parsed.data.PGPASSWORD, parsed.data.PGPASSWORD_FILE),
+  };
 }

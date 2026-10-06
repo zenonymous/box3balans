@@ -1,0 +1,38 @@
+# Kluishuis in a single container, with the database built in (PGlite): to try it out, or on a
+# laptop with Docker Desktop. On a NAS or server, the standard docker-compose.yml with its own
+# PostgreSQL is the sturdier choice. Moving between the two goes through a backup and restore.
+#
+#   docker compose -f docker-compose.lite.yml up -d
+#
+# Everything lives in the app-data volume; backups go to ./backups. Make backups from the app
+# (Settings → Backups & export): the command-line backup can't run while the app has the database open.
+name: kluishuis
+
+services:
+  app:
+    image: ghcr.io/OWNER/kluishuis:${KLUISHUIS_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      PRICE_REFRESH_MINUTES: ${PRICE_REFRESH_MINUTES:-15}
+      SYNC_INTERVAL_HOURS: ${SYNC_INTERVAL_HOURS:-6}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-}
+      ANKR_API_KEY: ${ANKR_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      APP_SECRET: ${APP_SECRET:-}
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - app-data:/data
+      - ./backups:/backups
+
+volumes:
+  app-data:

@@ -155,8 +155,41 @@ export function SettingsPage() {
         <Card title="Session">
           <Button onClick={logout}>Sign out</Button>
         </Card>
+
+        <AboutCard />
       </div>
     </>
+  );
+}
+
+/** Version, license and where the source is (the AGPL asks a network service to offer it). */
+function AboutCard() {
+  const version = useQuery({
+    queryKey: ["version"],
+    queryFn: () => get<{ version: string; source: string }>("/api/version"),
+    staleTime: Infinity,
+  });
+  return (
+    <Card title="About">
+      <div className="flex flex-col gap-2 text-sm text-ink-2">
+        <p>
+          Kluishuis {version.data ? <span className="tabular-nums">{version.data.version}</span> : null} is free
+          software under the{" "}
+          <a className="underline" href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer">
+            GNU AGPL-3.0
+          </a>
+          , without any warranty. It estimates; it doesn't give tax advice.
+        </p>
+        {version.data?.source && (
+          <p>
+            <a className="underline" href={version.data.source} target="_blank" rel="noreferrer">
+              Source code
+            </a>{" "}
+            · report problems and suggest improvements there.
+          </p>
+        )}
+      </div>
+    </Card>
   );
 }
 

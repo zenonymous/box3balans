@@ -155,8 +155,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     }
   });
 
-  // Signed-in only: which build is running (shown in the sidebar).
-  app.get("/api/version", async () => ({ version: APP_VERSION }));
+  // Signed-in only: which build is running and where its source is (sidebar, Settings → About).
+  app.get("/api/version", async () => ({ version: APP_VERSION, source: deps.config.SOURCE_URL }));
 
   await app.register(authRoutes, { prefix: "/api/auth" });
   await app.register(accountRoutes, { prefix: "/api/accounts" });

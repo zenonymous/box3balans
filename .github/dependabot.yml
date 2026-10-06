@@ -1,0 +1,23 @@
+# Weekly update proposals; minor and patch updates come grouped in one pull request per ecosystem.
+# The PostgreSQL image in docker-compose.yml is left out on purpose: a new major version needs a
+# backup and restore (README → PostgreSQL upgraden), and patch releases arrive with `docker compose pull`.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly

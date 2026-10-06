@@ -1,44 +1,67 @@
+# Kluishuis with its own PostgreSQL database: the recommended setup for a NAS or home server.
+#
+#   docker compose up -d                  start (the first time downloads the images)
+#   docker compose pull && docker compose up -d   update
+#
+# Works without a .env file: the encryption key and the database password are created on first
+# start (in the app-data volume). Settings you can change in .env are listed in .env.example.
 name: kluishuis
 
 services:
+  app:
+    image: ghcr.io/OWNER/kluishuis:${KLUISHUIS_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      PRICE_REFRESH_MINUTES: ${PRICE_REFRESH_MINUTES:-15}
+      SYNC_INTERVAL_HOURS: ${SYNC_INTERVAL_HOURS:-6}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      SOLANA_RPC_URL: ${SOLANA_RPC_URL:-}
+      ANKR_API_KEY: ${ANKR_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      # Optional: your own values instead of the generated ones.
+      APP_SECRET: ${APP_SECRET:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: kluishuis
+      PGDATABASE: kluishuis
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - app-data:/data
+      # Backups in a folder next to this file, for your NAS's own backup tool to copy off-site.
+      # Files belong to PUID/PGID (your NAS user); set BACKUP_PASSPHRASE to encrypt them.
+      - ./backups:/backups
+
   db:
-    # Major versions need a backup and restore to upgrade (README → Upgrading PostgreSQL).
+    # Major versions need a backup and restore to upgrade (README → PostgreSQL upgraden).
     image: postgres:18-alpine
     restart: unless-stopped
+    # The app creates the database password on its first start; the database uses it from there.
+    depends_on:
+      - app
     environment:
       POSTGRES_DB: kluishuis
       POSTGRES_USER: kluishuis
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_PASSWORD_FILE: /kluishuis/db-password
     volumes:
       # Since PostgreSQL 18 the image keeps its data in /var/lib/postgresql/<major>/docker.
       - db-data:/var/lib/postgresql
+      - app-data:/kluishuis:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U kluishuis -d kluishuis"]
       interval: 10s
       timeout: 5s
       retries: 10
 
-  app:
-    build: .
-    image: kluishuis:latest
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    env_file: .env
-    environment:
-      # Separate variables rather than a URL, so any characters in the password work.
-      PGHOST: db
-      PGPORT: "5432"
-      PGUSER: kluishuis
-      PGPASSWORD: ${POSTGRES_PASSWORD}
-      PGDATABASE: kluishuis
-    ports:
-      - "${HTTP_PORT:-8080}:8080"
-    volumes:
-      # Backups in a folder next to this file, for your NAS's own backup tool to copy off-site.
-      # Files belong to PUID/PGID from .env (your NAS user); set BACKUP_PASSPHRASE to encrypt them.
-      - ./backups:/backups
-
 volumes:
+  app-data:
   db-data:

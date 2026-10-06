@@ -4,3 +4,5 @@
 **/.env
 .git
 backups
+.github
+docs

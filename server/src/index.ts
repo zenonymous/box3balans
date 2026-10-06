@@ -13,7 +13,13 @@ import { APP_VERSION } from "./lib/version.js";
 
 const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
-const database = await openDatabase({ url: config.DATABASE_URL, pgEnv: !!config.PGHOST, pgliteDir: config.PGLITE_DIR });
+const database = await openDatabase({
+  url: config.DATABASE_URL,
+  pgEnv: !!config.PGHOST,
+  password: config.PGPASSWORD,
+  pgliteDir: config.PGLITE_DIR,
+  lock: "take",
+});
 await seed(database.db);
 
 const prices = new PriceService(database.db);
