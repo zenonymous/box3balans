@@ -10,7 +10,17 @@ import { idParam } from "../lib/validation.js";
 
 type Snapshot = Record<string, unknown>;
 
-const ENTITIES = ["transaction", "asset", "account", "metal_item", "import", "integration", "wallet_address"] as const;
+const ENTITIES = [
+  "transaction",
+  "asset",
+  "account",
+  "account_years",
+  "person",
+  "metal_item",
+  "import",
+  "integration",
+  "wallet_address",
+] as const;
 // Entities whose deletion can be undone from the history.
 const RESTORABLE: Record<string, PgTable> = { transaction: transactions, metal_item: metalItems };
 
@@ -48,10 +58,14 @@ interface Names {
   asset: Map<number, string>;
 }
 
-function title(entity: string, s: Snapshot | null, names: Names): string {
+function title(entity: string, s: Snapshot | null, names: Names, entityId: number): string {
   if (!s) return entity;
   const n = (v: unknown) => Number(v);
   switch (entity) {
+    case "account_years":
+      return `Values per year · ${names.account.get(entityId) ?? `account #${entityId}`}`;
+    case "person":
+      return `${s.name ?? "Person"} (${s.role === "self" ? "you" : (s.role ?? "")})`;
     case "transaction": {
       const asset = names.asset.get(n(s.assetId)) ?? `asset #${s.assetId}`;
       const account = names.account.get(n(s.accountId)) ?? `account #${s.accountId}`;
@@ -80,9 +94,26 @@ function title(entity: string, s: Snapshot | null, names: Names): string {
   }
 }
 
+/** Values per year: which years and fields changed. */
+function yearChanges(before: Snapshot, after: Snapshot) {
+  const byYear = (s: Snapshot) => new Map(((s.rows as Snapshot[] | undefined) ?? []).map((r) => [Number(r.year), r]));
+  const [b, a] = [byYear(before), byYear(after)];
+  const out: { field: string; from: unknown; to: unknown }[] = [];
+  for (const year of [...new Set([...b.keys(), ...a.keys()])].sort()) {
+    const [from, to] = [b.get(year), a.get(year)];
+    for (const field of ["valueEur", "inEur", "outEur", "incomeEur", "costsEur"]) {
+      const [f, t] = [tidy(from?.[field]), tidy(to?.[field])];
+      if (JSON.stringify(f) !== JSON.stringify(t))
+        out.push({ field: `${year} ${field}`, from: f ?? null, to: t ?? null });
+    }
+  }
+  return { fields: out, flags: [] };
+}
+
 /** Fields an update changed. `after` can be a partial patch (e.g. a transfer link). */
-function changes(before: Snapshot | null, after: Snapshot | null, names: Names) {
+function changes(entity: string, before: Snapshot | null, after: Snapshot | null, names: Names) {
   if (!before || !after) return null;
+  if (entity === "account_years") return yearChanges(before, after);
   const show = (field: string, v: unknown) => {
     if (v == null) return null;
     if (field === "assetId" || field === "settleAssetId") return names.asset.get(Number(v)) ?? `#${v}`;
@@ -169,9 +200,9 @@ export async function activityRoutes(app: FastifyInstance) {
           entity: r.entity,
           entityId: r.entityId,
           action: r.action,
-          title: title(r.entity, subject, names),
+          title: title(r.entity, subject, names, r.entityId),
           via: (after?.via as string | undefined) ?? (after?.restoredFrom ? "restore" : undefined),
-          changes: r.action === "update" ? changes(before, after, names) : null,
+          changes: r.action === "update" ? changes(r.entity, before, after, names) : null,
           restorable: r.action === "delete" && (gone.get(r.entity)?.has(r.entityId) ?? false),
         };
       }),

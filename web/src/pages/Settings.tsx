@@ -48,6 +48,9 @@ export function SettingsPage() {
             <Link to="/accounts" className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
               ▣ Accounts — brokers, exchanges, wallets, vaults, storage
             </Link>
+            <Link to="/household" className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
+              ⌂ Household — you, your partner and children, for box 3
+            </Link>
             <Link to="/connections" className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
               ⇅ Connections — sync Bitvavo, Kraken, Coinbase and IBKR
             </Link>

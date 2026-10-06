@@ -8,6 +8,7 @@ import {
   type RefreshStatus,
   type HistoryResponse,
   type Summary,
+  type Person,
 } from "./api";
 
 export const usePortfolio = () =>
@@ -33,6 +34,8 @@ export const usePriceStatus = () =>
   });
 
 export const useAccounts = () => useQuery({ queryKey: ["accounts"], queryFn: () => get<Account[]>("/api/accounts") });
+
+export const useHousehold = () => useQuery({ queryKey: ["household"], queryFn: () => get<Person[]>("/api/household") });
 
 export const useAssets = () => useQuery({ queryKey: ["assets"], queryFn: () => get<Asset[]>("/api/assets") });
 

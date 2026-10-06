@@ -9,6 +9,7 @@ import {
   destroySession,
   userCount,
 } from "../auth/service.js";
+import { getLanguage } from "../domain/settings.js";
 import { HttpError } from "../lib/errors.js";
 
 const credentials = z.object({
@@ -35,6 +36,8 @@ export async function authRoutes(app: FastifyInstance) {
   app.get("/state", async (req) => ({
     needsSetup: (await userCount(db)) === 0,
     user: req.user,
+    // Public, so the sign-in screen is in the right language too.
+    language: await getLanguage(db),
   }));
 
   // First-run: creates the single user. Refused once a user exists.

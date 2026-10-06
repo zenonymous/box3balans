@@ -14,7 +14,7 @@ Kluishuis houdt je beleggingen bij: **aandelen en ETF's, crypto, en goud en zilv
 - **Transacties** met de hand, via een **CSV-import** van vrijwel elke broker of beurs, via **koppelingen** met Bitvavo, Kraken, Coinbase en Interactive Brokers, en voor **wallets** op adres: Bitcoin, Ethereum en L2's, BNB Chain, Solana, Cardano, Dogecoin, Litecoin, XRP en Tron.
 - **Edelmetaal:** munten en baren met gewicht, zuiverheid, foto's en een printbare inventaris (bijvoorbeeld voor je inboedelverzekering).
 - **Rendement:** tijd- en geldgewogen rendement tegen een benchmark, een kostenoverzicht en verwachte dividenden.
-- **Box 3:** het forfaitaire stelsel per jaar, je **werkelijk rendement** voor de tegenbewijsregeling, en een vooruitblik op het stelsel vanaf 2028.
+- **Box 3 voor je hele huishouden:** jij, je fiscale partner en minderjarige kinderen; spaarrekeningen, beleggingen, een tweede of verhuurde woning, uitgeleend geld en schulden. Per rekening houd je transacties bij, of alleen de waarde op 1 januari, die je ook uit de export van je bank kunt laten halen. Per jaar het forfaitaire stelsel, je **werkelijk rendement** voor de tegenbewijsregeling, en een vooruitblik op het stelsel vanaf 2028.
 - **Veilig bewaard:** versleutelde back-ups in een map die je NAS elders kan kopiëren, een volledige wijzigingsgeschiedenis, en een lijst met wat aandacht nodig heeft.
 
 ## Installeren
@@ -181,10 +181,35 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 1. **Overview en Holdings:** je vermogen door de tijd, de verandering van vandaag, de verdeling per beleggingssoort, per positie of per rekening, en elke positie per rekening met kostprijs en open en gerealiseerd resultaat.
 2. **Needs attention:** bovenaan de zijbalk verschijnt een rode of oranje link als iets aandacht nodig heeft: een mislukte synchronisatie, saldi die niet kloppen met een beurs of wallet, koersen die niet bijgewerkt konden worden, een negatief saldo, stortingen zonder waarde, opnames die niet aan een storting gekoppeld zijn, of back-ups die mislukt zijn, te lang geleden zijn of niet versleuteld zijn. Elk punt linkt naar waar je het oplost; een waarschuwing kun je wegklikken tot er iets aan verandert.
 3. **History** (_Settings → History_): elke wijziging aan transacties, beleggingen, rekeningen, edelmetaal, imports, koppelingen en wallets, veld voor veld, of jij of een synchronisatie of import het deed. Verwijderde transacties en edelmetaalstukken zet je daar terug.
-4. **Accounts:** maak er één per plek waar je iets aanhoudt: brokers (DEGIRO), beurzen (Bitvavo), wallets (Ledger), kluizen (Goldrepublic), thuis (de kluis).
-5. **Assets:** zoek in Yahoo Finance op naam, ticker of ISIN, of in CoinGecko op munt. Kies de notering die je echt verhandelt (bijvoorbeeld `IWDA.AS` in plaats van `IWDA.L`). Goud, zilver, platina, palladium en euro's staan er al.
-6. **Transactions:** aankoop, verkoop, storting, opname, dividend (bruto plus ingehouden belasting), stakingbeloning, kosten betaald in de belegging zelf, split, en **overboekingen** tussen rekeningen, die de kostprijs meenemen. Transacties in een vreemde munt krijgen automatisch de ECB-koers van die dag; die kun je aanpassen.
-7. **Metals:** voeg munten en baren toe met gewicht en zuiverheid, of kies een voorbeeld (Krugerrand, Maple Leaf, Gouden Tientje, standaardbaren …). Stukken worden gewaardeerd tegen de spotprijs van het fijngewicht. Vul je de spotwaarde bij aankoop in, dan zie je de betaalde opslag. Metaal in een kluis (Goldrepublic) boek je als aankopen in **grammen** op Gold of Silver. Elk stuk kan tot 8 **foto's** hebben (verkleind in de browser, zonder locatiegegevens). _Inventory_ print een lijst per bewaarplek, of slaat die op als pdf, met foto's, gewichten, aankoopgegevens en waarde.
+4. **Household** (_Settings → Household_): jouw naam, je partner en je kinderen, met geboortedatum en wie het gezag heeft. Daarmee weet Kluishuis welke rekeningen in jouw box 3 meetellen, en voor hoeveel.
+5. **Accounts:** maak er één per plek waar je iets aanhoudt: banken (ING-spaarrekening), brokers (DEGIRO), beurzen (Bitvavo), wallets (Ledger), kluizen (Goldrepublic), thuis (de kluis), en ook een tweede of verhuurde woning, uitgeleend geld, een kapitaalverzekering of een schuld. Per rekening kies je:
+   - **van wie:** van jou, van je partner, van jullie samen (met jouw aandeel, meestal 50%) of van een kind;
+   - **hoe je hem bijhoudt:** met **transacties** (aankopen, verkopen, dividenden: met de hand, uit een CSV of via een koppeling; dan krijg je koersen, rendementen en geschiedenis), of met **waarden per jaar**: alleen de waarde op 1 januari en wat er in het jaar binnenkwam, uitging en werd verdiend. Dat is genoeg voor box 3. Woningen, uitgeleend geld, schulden en verzekeringen gaan altijd zo.
+6. **Assets:** zoek in Yahoo Finance op naam, ticker of ISIN, of in CoinGecko op munt. Kies de notering die je echt verhandelt (bijvoorbeeld `IWDA.AS` in plaats van `IWDA.L`). Goud, zilver, platina, palladium en euro's staan er al.
+7. **Transactions:** aankoop, verkoop, storting, opname, dividend (bruto plus ingehouden belasting), stakingbeloning, kosten betaald in de belegging zelf, split, en **overboekingen** tussen rekeningen, die de kostprijs meenemen. Transacties in een vreemde munt krijgen automatisch de ECB-koers van die dag; die kun je aanpassen.
+8. **Metals:** voeg munten en baren toe met gewicht en zuiverheid, of kies een voorbeeld (Krugerrand, Maple Leaf, Gouden Tientje, standaardbaren …). Stukken worden gewaardeerd tegen de spotprijs van het fijngewicht. Vul je de spotwaarde bij aankoop in, dan zie je de betaalde opslag. Metaal in een kluis (Goldrepublic) boek je als aankopen in **grammen** op Gold of Silver. Elk stuk kan tot 8 **foto's** hebben (verkleind in de browser, zonder locatiegegevens). _Inventory_ print een lijst per bewaarplek, of slaat die op als pdf, met foto's, gewichten, aankoopgegevens en waarde.
+
+### Waarden per jaar en bankexports
+
+Voor een rekening met **waarden per jaar** (_Accounts → Values per year_) vul je per jaar in:
+
+- **de waarde op 1 januari**: van het jaaroverzicht van je bank of broker, of het saldo aan het eind van 31 december. De waarde op 31 december is de waarde op 1 januari van het jaar erna, dus die vul je niet apart in;
+- **geld erin en eruit** in dat jaar (stortingen en opnames);
+- **inkomsten**: rente of dividend dat op de rekening binnenkwam, huur van een verhuurde woning, rente op uitgeleend geld; bij een schuld de **betaalde rente**;
+- **kosten** (alleen voor de vooruitblik op 2028, waar ze aftrekbaar zijn).
+
+Bij een **woning** vul je de WOZ-waarde in die voor dat jaar geldt (die met waardepeildatum 1 januari van het jaar ervoor). Verhuur je hem met huurbescherming, vink dan _let_ aan en vul de jaarhuur in: hij telt dan voor een deel van de WOZ-waarde (de leegwaarderatio, 73% tot 100%, afhankelijk van de huur als percentage van de WOZ-waarde). Je eigen woning hoort niet in box 3 (dat is box 1).
+
+**Bankexport inlezen.** Bij een bankrekening haalt _Read a bank export_ de saldi op 1 januari, de rente en het geld erin en eruit per jaar uit de transacties die je bij je bank downloadt. Kluishuis leest:
+
+- **CSV met een saldokolom**, zoals van ING (_Saldo na mutatie_), Rabobank (_Saldo na trn_), Knab, Triodos en andere banken; meerdere rekeningen in één bestand worden uit elkaar gehouden;
+- **het TAB-bestand van ABN AMRO**;
+- **CAMT.053**, het standaard afschriftformaat dat de meeste banken aanbieden;
+- **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Kluishuis de rest terug.
+
+Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je ziet eerst per jaar wat er gevonden is: een geschat saldo (omdat het bestand halverwege een jaar begint of eindigt) en de totalen van jaren die het bestand maar deels beslaat, staan uit tot je ze aanvinkt. Er wordt pas iets opgeslagen als je in de tabel op _Save_ drukt.
+
+In januari herinnert _Needs attention_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
 
 ### CSV-import
 
@@ -263,14 +288,16 @@ De pagina **Box 3** schat je box 3 volgens de forfaitaire spaarvariant (belastin
 
 - **Peildatum 1 januari:** je bezit aan het eind van 31 december, gewaardeerd tegen de slotkoers van die dag of de laatste daarvoor. Wallets, kluizen en fysiek metaal tellen mee.
 - **Categorieën:** elke positie telt als _banktegoed_, _overige bezitting_, _groene belegging_ of _niet in box 3_. Standaard is geld bij een bank of broker een banktegoed, geld op een cryptobeurs of in een wallet een overige bezitting, en zijn beleggingen, crypto en metalen overige bezittingen. Hele rekeningen kun je anders indelen, bijvoorbeeld een fonds met een groenverklaring als groene belegging of een pensioenrekening als niet in box 3. Groene beleggingen zijn alleen vrijgesteld tot de jaargrens (2023 € 65.072; 2024 € 71.251; 2025 € 26.312; 2026 € 26.715 per persoon, het dubbele met een fiscale partner); wat erboven zit, telt als overige bezitting, en de kleine heffingskorting voor groene beleggingen (0,7% tot en met 2024, daarna 0,1%) gaat eraf. De vrijstelling vervalt in 2027. Overige bezittingen worden ook gesplitst in beleggingen, crypto en metalen, zoals de aangifte erom vraagt.
-- **Jouw situatie per jaar:** fiscale partner (verdubbelt het heffingsvrij vermogen en de schuldendrempel), schulden, en banktegoeden of andere bezittingen die de app niet bijhoudt.
+- **Wie telt mee:** elke rekening telt voor zijn eigenaar (_Accounts_). Heb je dat jaar een fiscale partner (_Your situation_), dan tellen jullie bezittingen samen, met twee keer het heffingsvrij vermogen en de schuldendrempel; zo niet, dan telt alleen wat van jou is (en jouw deel van gezamenlijke rekeningen). Bezittingen van een kind dat op 1 januari jonger is dan 18 tellen voor de ouders met gezag: ieder de helft, of alles als je alleen het gezag hebt. Een kind van 18 doet zelf aangifte. Elke positie toont welk deel meetelt, en waarom.
+- **Verdeling tussen partners:** fiscale partners mogen de gezamenlijke grondslag sparen en beleggen verdelen zoals ze willen, als het samen 100% is. Kies jouw deel onder _Your situation_; de kaart _Per person_ toont wat ieder bezit en ieders deel van de grondslag en de belasting. Samen betalen jullie hetzelfde; een verdeling kan elders in de aangifte uitmaken, zoals bij de algemene heffingskorting.
+- **Jouw situatie per jaar:** fiscale partner, en schulden, banktegoeden of andere bezittingen die je niet als rekening bijhoudt (zoals contant geld boven de vrijstelling: dat telt als banktegoed).
 - **Berekening:** volgt de stappen van de Belastingdienst (forfaitair rendement → rendementsgrondslag → grondslag sparen en beleggen → aandeel → voordeel → belasting). De officiële cijfers voor 2023–2026 zitten erin (de percentages voor banktegoeden en schulden van 2026 zijn voorlopig), en elk tarief is aan te passen onder _Rules & rates_.
 - **Werkelijk rendement (tegenbewijsregeling):** per jaar het werkelijke rendement zoals de _Opgaaf werkelijk rendement_ erom vraagt, per categorie: waarde op 1 januari, geld erin en eruit, waarde op 31 december, waardeverandering en inkomsten. Dividenden tellen bruto, kosten mogen er niet af, betaalde rente op schulden wel, en er is geen heffingsvrij deel. Het wordt vergeleken met de belasting volgens het forfaitaire stelsel, met de vraag of de opgaaf je geld bespaart, en ongeveer hoeveel. Vul per jaar onder _Your situation_ de betaalde rente op schulden en het rendement op bezittingen die de app niet bijhoudt in.
 - **Vanaf 2028 (vooruitblik):** het geplande stelsel op basis van werkelijk rendement (wetsvoorstel 36.748, **nog geen wet**) toegepast op je afgelopen jaren: resultaat na kosten, het heffingsvrije resultaat, verliezen die naar voren (en met de novelle naar achteren) worden verrekend, en de belasting vergeleken met het huidige stelsel. Tarief, heffingsvrij resultaat, verliesdrempel en verliesverrekening naar achteren zijn aan te passen, met instellingen voor het wetsvoorstel zoals de Tweede Kamer het aannam en voor de aangekondigde novelle.
 - **Bronnen:** de gebruikte regels, met links, staan in [`docs/box3-sources.md`](docs/box3-sources.md). De tarieven voor 2027 zitten er nog niet in: op 5 oktober 2026 waren ze nog niet definitief.
 - **Export:** CSV van alle posities op de peildatum, en _Print / PDF_ (een printweergave zonder de rest van de app).
 
-Het blijft een schatting: controleer de waarden met de jaaroverzichten van je banken en brokers.
+Het blijft een schatting: controleer de waarden met de jaaroverzichten van je banken en brokers. Rekeningen met waarden per jaar tellen mee in box 3, maar niet in de beleggingsoverzichten (Overview, Performance, Income): daar is een geschiedenis met koersen voor nodig.
 
 ### Hoe de getallen berekend worden
 

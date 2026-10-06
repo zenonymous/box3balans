@@ -3,7 +3,7 @@ import { z } from "zod";
 import { downsample, computeHistory } from "../domain/history.js";
 import { computeYears, loadEvents } from "../domain/performance.js";
 import { buildPortfolio } from "../domain/portfolio.js";
-import { getCostMethod, setCostMethod } from "../domain/settings.js";
+import { getCostMethod, getLanguage, setCostMethod, setLanguage } from "../domain/settings.js";
 import { computeCosts } from "../domain/costs.js";
 import { D, type Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { staleAfterMs } from "../jobs/scheduler.js";
@@ -13,12 +13,15 @@ const RANGE_DAYS: Record<string, number | null> = { "1M": 31, "3M": 92, "1Y": 36
 export async function analyticsRoutes(app: FastifyInstance) {
   const { db, config, backfill } = app.deps;
 
-  app.get("/settings", async () => ({ costMethod: await getCostMethod(db) }));
+  app.get("/settings", async () => ({ costMethod: await getCostMethod(db), language: await getLanguage(db) }));
 
   app.put("/settings", async (req) => {
-    const body = z.object({ costMethod: z.enum(["average", "fifo"]) }).parse(req.body);
-    await setCostMethod(db, body.costMethod);
-    return { costMethod: body.costMethod };
+    const body = z
+      .object({ costMethod: z.enum(["average", "fifo"]).optional(), language: z.enum(["nl", "en"]).optional() })
+      .parse(req.body);
+    if (body.costMethod) await setCostMethod(db, body.costMethod);
+    if (body.language) await setLanguage(db, body.language);
+    return { costMethod: await getCostMethod(db), language: await getLanguage(db) };
   });
 
   // Daily net worth by asset class, computed from transactions and stored daily prices.

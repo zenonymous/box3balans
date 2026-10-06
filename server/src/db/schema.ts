@@ -28,7 +28,25 @@ export const accountKind = pgEnum("account_kind", [
   "bank",
   "physical",
   "other",
+  // Kept as values per year (see accountYears): a home or other real estate, money lent to others,
+  // a debt, and a capital insurance policy.
+  "property",
+  "receivable",
+  "debt",
+  "insurance",
 ]);
+
+// How an account's contents are known: from its transactions, or from values entered per year.
+export const accountTracking = pgEnum("account_tracking", ["transactions", "yearly"]);
+
+// Whose an account is, for box 3: yours, your partner's, the two of you together, or a child's.
+export const accountOwner = pgEnum("account_owner", ["self", "partner", "joint", "child"]);
+
+export const personRole = pgEnum("person_role", ["self", "partner", "child"]);
+
+// Who has custody of a minor child, which decides whose box 3 the child's assets count in:
+// together (half each), only you, you and someone outside the household (half to you), only your partner.
+export const childCustody = pgEnum("child_custody", ["together", "self", "self_half", "partner"]);
 
 export const assetClass = pgEnum("asset_class", ["stock", "etf", "crypto", "metal", "cash", "other"]);
 
@@ -70,6 +88,26 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// The household, for box 3: you, a partner and children. Your own row only holds a name; without
+// one you're simply "you".
+export const persons = pgTable(
+  "persons",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    role: personRole("role").notNull(),
+    // Children: their assets count for their parents until they turn 18.
+    birthDate: date("birth_date"),
+    custody: childCustody("custody").notNull().default("together"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("persons_one_self_partner_uq")
+      .on(t.role)
+      .where(sql`${t.role} in ('self', 'partner')`),
+  ],
+);
+
 export const accounts = pgTable("accounts", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -77,8 +115,50 @@ export const accounts = pgTable("accounts", {
   provider: text("provider"),
   notes: text("notes"),
   archived: boolean("archived").notNull().default(false),
+  tracking: accountTracking("tracking").notNull().default("transactions"),
+  owner: accountOwner("owner").notNull().default("self"),
+  // With owner "child": which child.
+  ownerChildId: integer("owner_child_id").references(() => persons.id, { onDelete: "set null" }),
+  // With owner "joint": your share in percent; the rest is your partner's.
+  jointSelfPct: numeric("joint_self_pct", { precision: 5, scale: 2 }).notNull().default("50"),
+  // Held abroad (the tax return asks for these separately).
+  foreign: boolean("foreign").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Values per year for accounts kept that way (tracking "yearly"): the value on 1 January of `year`
+ * (the box 3 peildatum) and what happened during `year`. The value on 31 December is the next
+ * year's 1 January value. Debts: the amount owed, and `incomeEur` is the interest paid. Homes:
+ * the WOZ value that applies to the year, with `details.rented` / `details.rentEur` when let.
+ */
+export const accountYears = pgTable(
+  "account_years",
+  {
+    accountId: integer("account_id")
+      .notNull()
+      .references(() => accounts.id, { onDelete: "cascade" }),
+    year: integer("year").notNull(),
+    valueEur: money("value_eur"),
+    inEur: money("in_eur").notNull().default("0"),
+    outEur: money("out_eur").notNull().default("0"),
+    // Interest, dividends or rent received (gross); for a debt, the interest paid.
+    incomeEur: money("income_eur").notNull().default("0"),
+    // Costs paid, for the system planned from 2028 (where they're deductible).
+    costsEur: money("costs_eur").notNull().default("0"),
+    details: jsonb("details").$type<AccountYearDetails>().notNull().default({}),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.accountId, t.year] })],
+);
+
+export interface AccountYearDetails {
+  // A let home: rented out with rent protection, at this yearly rent (the leegwaarderatio applies).
+  rented?: boolean;
+  rentEur?: string;
+  // Where the values came from, e.g. "bank export kluis-2024.csv".
+  source?: string;
+}
 
 export const assets = pgTable(
   "assets",

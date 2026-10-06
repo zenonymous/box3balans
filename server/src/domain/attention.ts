@@ -1,10 +1,11 @@
 import { and, eq, inArray, isNull, lt } from "drizzle-orm";
 import type { Config } from "../config.js";
 import type { DB } from "../db/client.js";
-import { accounts, assets, integrations, settings, transactions, walletAddresses } from "../db/schema.js";
+import { accounts, accountYears, assets, integrations, settings, transactions, walletAddresses } from "../db/schema.js";
 import { isAutomatic, listBackups } from "../backup/backup.js";
 import { getBackupStatus } from "../backup/status.js";
 import { D } from "../lib/decimal.js";
+import { localToday } from "../lib/time.js";
 import { REFRESH_STATUS_KEY, type RefreshResult } from "../prices/service.js";
 import type { BackfillResult } from "../jobs/backfill.js";
 import { buildPortfolio } from "./portfolio.js";
@@ -233,6 +234,33 @@ export async function collectIssues(
         detail: `${list([...new Set(zero.map((z) => assetById.get(z.assetId)?.symbol ?? "?"))])}: booked at €0 because no price was known for that day, which overstates gains when sold. Edit them to enter the value.`,
         link: { to: "/transactions?type=deposit", label: "Transactions" },
         fingerprint: String(zero.length),
+      });
+    }
+  }
+
+  // Accounts kept as values per year need their 1 January value each year (from the bank's year
+  // statement or the WOZ assessment).
+  const yearlyAccounts = accountRows.filter((a) => a.tracking === "yearly" && !a.archived);
+  if (yearlyAccounts.length) {
+    const thisYear = Number(localToday().slice(0, 4));
+    const rows = await db
+      .select({ accountId: accountYears.accountId, year: accountYears.year, valueEur: accountYears.valueEur })
+      .from(accountYears);
+    const missing = yearlyAccounts.filter((a) => {
+      const own = rows.filter((r) => r.accountId === a.id);
+      return own.length > 0 && !own.some((r) => r.year === thisYear && r.valueEur != null);
+    });
+    if (missing.length) {
+      add({
+        key: `yearly-missing:${thisYear}`,
+        severity: "warning",
+        title: `${missing.length} account${missing.length === 1 ? "" : "s"} without a value on 1 January ${thisYear}`,
+        detail: `${list(missing.map((a) => a.name))}. Box 3 counts what you had on 1 January: take it from the year statement (jaaroverzicht) or, for a home, the WOZ assessment.`,
+        link: { to: "/accounts", label: "Accounts" },
+        fingerprint: missing
+          .map((a) => a.id)
+          .sort()
+          .join(","),
       });
     }
   }

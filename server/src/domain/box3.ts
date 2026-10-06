@@ -1,10 +1,12 @@
 import { eq, min } from "drizzle-orm";
 import { z } from "zod";
 import type { DB } from "../db/client.js";
-import { metalItems, settings, transactions } from "../db/schema.js";
+import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { holdingsOn } from "./valuation.js";
 import { localDay } from "../lib/time.js";
+import { type AttributionNote, attribute, loadHousehold } from "./household.js";
+import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
 
 /**
  * Dutch box 3 ("sparen en beleggen"), forfaitaire spaarvariant (tax years 2023 onwards):
@@ -91,7 +93,19 @@ export const DEFAULT_RATES: Record<string, Box3Rates> = {
   },
 };
 
-const ACCOUNT_KINDS = ["broker", "exchange", "vault", "wallet", "bank", "physical", "other"] as const;
+const ACCOUNT_KINDS = [
+  "broker",
+  "exchange",
+  "vault",
+  "wallet",
+  "bank",
+  "physical",
+  "other",
+  "property",
+  "receivable",
+  "debt",
+  "insurance",
+] as const;
 const NON_CASH_CLASSES = ["stock", "etf", "crypto", "metal", "other"] as const;
 
 const category = z.enum(CATEGORIES);
@@ -119,6 +133,8 @@ export const configSchema = z.object({
       // on assets the app doesn't track. Added later, so older saved configs lack them.
       debtInterestEur: decimalStr.default("0"),
       extraReturnEur: decimalStr.default("0"),
+      // Fiscal partners divide the joint grondslag freely; this is your part, in percent.
+      allocationSelfPct: decimalStr.default("50"),
     }),
   ),
 });
@@ -134,6 +150,10 @@ export const DEFAULT_CONFIG: Box3Config = {
       vault: "other",
       physical: "other",
       other: "bank",
+      property: "other",
+      receivable: "other",
+      debt: "other",
+      insurance: "other",
     },
     classCategory: { stock: "other", etf: "other", crypto: "other", metal: "other", other: "other" },
     accountOverrides: {},
@@ -258,6 +278,8 @@ export interface Box3Row {
   accountId: number;
   accountName: string;
   accountKind: string;
+  // "transactions": from the account's history; "yearly": a value entered per year.
+  source: "transactions" | "yearly";
   assetId: number;
   symbol: string;
   name: string;
@@ -267,9 +289,22 @@ export interface Box3Row {
   unit: string;
   priceEur: string | null;
   priceDay: string | null;
+  // The whole value; `countedEur` is the part that counts for you and your fiscal partner.
   valueEur: string;
-  category: Category;
+  countedEur: string;
+  category: Category | "debt";
   missingPrice: boolean;
+  owner: string;
+  ownerChildId: number | null;
+  countedPct: string;
+  note?: AttributionNote;
+}
+
+interface PersonTotals {
+  bank: string;
+  other: string;
+  green: string;
+  debts: string;
 }
 
 export interface Box3Year {
@@ -282,51 +317,106 @@ export interface Box3Year {
   // "other" split by kind of asset, which is how the aangifte asks for it.
   otherBreakdown: { investments: string; crypto: string; metals: string; cash: string; other: string };
   extra: { bankEur: string; otherEur: string; debtsEur: string };
+  // Debts: entered for the year plus debt accounts.
+  debtsEur: string;
   calculation: Box3Calculation | null;
+  // What counts for each of you (before the allowance), and how the grondslag is divided.
+  perPerson: { self: PersonTotals; partner: PersonTotals | null };
+  allocation: {
+    selfPct: string;
+    self: { taxableBaseEur: string; benefitEur: string; taxEur: string };
+    partner: { taxableBaseEur: string; benefitEur: string; taxEur: string };
+  } | null;
   rows: Box3Row[];
   warnings: string[];
 }
 
 /** First and last tax years with something to report: the year after the first activity, until now. */
 export async function availableYears(db: DB): Promise<number[]> {
-  const [[t], [m]] = await Promise.all([
+  const [[t], [m], [y]] = await Promise.all([
     db.select({ first: min(transactions.occurredAt) }).from(transactions),
     db.select({ first: min(metalItems.purchaseDate) }).from(metalItems),
+    db.select({ first: min(accountYears.year) }).from(accountYears),
   ]);
-  const firsts = [
-    t?.first ? localDay(new Date(t.first)).slice(0, 4) : null,
-    m?.first ? String(m.first).slice(0, 4) : null,
-  ].filter((x): x is string => !!x);
-  if (firsts.length === 0) return [];
-  const from = Math.min(...firsts.map(Number)) + 1;
+  const froms = [
+    t?.first ? Number(localDay(new Date(t.first)).slice(0, 4)) + 1 : null,
+    m?.first ? Number(String(m.first).slice(0, 4)) + 1 : null,
+    // A value per year is a value on 1 January of that tax year.
+    y?.first ?? null,
+  ].filter((x): x is number => x != null);
+  if (froms.length === 0) return [];
+  const from = Math.min(...froms);
   const to = new Date().getUTCFullYear();
   const out: number[] = [];
   for (let y = to; y >= from; y--) out.push(y);
   return out;
 }
 
+type OtherKind = "investments" | "crypto" | "metals" | "cash" | "other";
+const otherKind = (assetClass: string): OtherKind =>
+  assetClass === "stock" || assetClass === "etf"
+    ? "investments"
+    : assetClass === "crypto"
+      ? "crypto"
+      : assetClass === "metal"
+        ? "metals"
+        : assetClass === "cash"
+          ? "cash"
+          : "other";
+
 export async function computeBox3Year(db: DB, year: number, config: Box3Config): Promise<Box3Year> {
   const valuedAt = `${year - 1}-12-31`;
-  const holdings = await holdingsOn(db, valuedAt);
+  const input = config.years[String(year)];
+  const fiscalPartner = input?.partner ?? false;
+  const [holdings, household, accountRows, yearly] = await Promise.all([
+    holdingsOn(db, valuedAt),
+    loadHousehold(db),
+    db.select().from(accounts),
+    loadYearly(db),
+  ]);
+  const accountById = new Map(accountRows.map((a) => [a.id, a]));
+
   const totals: Record<Category, Decimal> = { bank: ZERO, other: ZERO, exempt: ZERO, excluded: ZERO };
-  const other = { investments: ZERO, crypto: ZERO, metals: ZERO, cash: ZERO, other: ZERO };
+  const other: Record<OtherKind, Decimal> = { investments: ZERO, crypto: ZERO, metals: ZERO, cash: ZERO, other: ZERO };
+  const blank = () => ({ bank: ZERO, other: ZERO, green: ZERO, debts: ZERO });
+  const person = { self: blank(), partner: blank() };
+  let accountDebts = ZERO;
   const warnings: string[] = [];
-  const rows: Box3Row[] = holdings.map((h) => {
-    const cat = categoryOf(config, h);
-    totals[cat] = totals[cat].plus(h.valueEur);
-    if (cat === "other") {
-      const k =
-        h.assetClass === "stock" || h.assetClass === "etf"
-          ? "investments"
-          : h.assetClass === "crypto"
-            ? "crypto"
-            : h.assetClass === "metal"
-              ? "metals"
-              : h.assetClass === "cash"
-                ? "cash"
-                : "other";
-      other[k] = other[k].plus(h.valueEur);
+  const rows: Box3Row[] = [];
+
+  /** Adds a value to the totals, per person, as it counts for this account's owner. */
+  const count = (accountId: number, cat: Category | "debt", assetClass: string, value: Decimal) => {
+    const acc = accountById.get(accountId);
+    const a = acc ? attribute(acc, household, year, fiscalPartner) : { self: D(1), partner: ZERO, note: undefined };
+    const counted = value.mul(a.self.plus(a.partner));
+    const bucket = cat === "debt" ? "debts" : cat === "bank" ? "bank" : cat === "exempt" ? "green" : "other";
+    if (cat === "debt") accountDebts = accountDebts.plus(counted);
+    else {
+      totals[cat] = totals[cat].plus(counted);
+      if (cat === "other") {
+        const k = otherKind(assetClass);
+        other[k] = other[k].plus(counted);
+      }
     }
+    if (cat !== "excluded") {
+      person.self[bucket] = person.self[bucket].plus(value.mul(a.self));
+      person.partner[bucket] = person.partner[bucket].plus(value.mul(a.partner));
+    }
+    return {
+      counted,
+      owner: acc?.owner ?? "self",
+      ownerChildId: acc?.ownerChildId ?? null,
+      countedPct: a.self.plus(a.partner).mul(100).toDecimalPlaces(2).toFixed(),
+      note: a.note,
+    };
+  };
+
+  for (const h of holdings) {
+    const acc = accountById.get(h.accountId);
+    // An account kept as values per year is counted from those values only.
+    if (acc?.tracking === "yearly") continue;
+    const cat = categoryOf(config, h);
+    const c = count(h.accountId, cat, h.assetClass, h.valueEur);
     const missing = h.priceEur === null;
     if (missing) warnings.push(`No price for ${h.symbol} on or before ${valuedAt}; it is counted as €0.`);
     else if (h.priceDay && Date.parse(valuedAt) - Date.parse(h.priceDay) > 10 * 86_400_000) {
@@ -334,10 +424,11 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     }
     if (h.quantity.lt(0))
       warnings.push(`${h.accountName} has a negative ${h.symbol} balance on ${valuedAt}; check its history.`);
-    return {
+    rows.push({
       accountId: h.accountId,
       accountName: h.accountName,
       accountKind: h.accountKind,
+      source: "transactions",
       assetId: h.assetId,
       symbol: h.symbol,
       name: h.name,
@@ -348,16 +439,66 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
       priceEur: h.priceEur ? h.priceEur.toFixed(6) : null,
       priceDay: h.priceDay,
       valueEur: money2(h.valueEur),
+      countedEur: money2(c.counted),
       category: cat,
       missingPrice: missing,
-    };
-  });
+      owner: c.owner,
+      ownerChildId: c.ownerChildId,
+      countedPct: c.countedPct,
+      note: c.note,
+    });
+  }
 
-  const input = config.years[String(year)];
+  // Accounts kept as values per year: their value on 1 January.
+  for (const acc of accountRows) {
+    if (acc.tracking !== "yearly") continue;
+    const byYear = yearly.get(acc.id);
+    const row = byYear?.get(year);
+    const value = yearlyValue(acc.kind, row);
+    if (value == null) {
+      // Only worth a warning while the account existed: it has values for this year's neighbours.
+      if (byYear && [...byYear.keys()].some((y) => y < year) && !acc.archived)
+        warnings.push(`${acc.name}: no value on 1 January ${year}. Enter it under Accounts → Values per year.`);
+      continue;
+    }
+    const cls = yearlyClass(acc.kind);
+    const cat: Category | "debt" =
+      cls === "debt" ? "debt" : categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls });
+    const c = count(acc.id, cat, cls, value);
+    rows.push({
+      accountId: acc.id,
+      accountName: acc.name,
+      accountKind: acc.kind,
+      source: "yearly",
+      assetId: 0,
+      symbol: "",
+      name: acc.name,
+      assetClass: cls,
+      physical: false,
+      quantity: "1",
+      unit: "",
+      priceEur: null,
+      priceDay: null,
+      valueEur: money2(value),
+      countedEur: money2(c.counted),
+      category: cat,
+      missingPrice: false,
+      owner: c.owner,
+      ownerChildId: c.ownerChildId,
+      countedPct: c.countedPct,
+      note: c.note,
+    });
+  }
+  rows.sort((x, y) => x.accountName.localeCompare(y.accountName) || Number(y.valueEur) - Number(x.valueEur));
+
   const extraBank = D(input?.extraBankEur ?? 0);
   const extraOther = D(input?.extraOtherEur ?? 0);
-  const debts = D(input?.debtsEur ?? 0);
-  const partner = input?.partner ?? false;
+  const extraDebts = D(input?.debtsEur ?? 0);
+  const debts = extraDebts.plus(accountDebts);
+  // Entered for the year as a whole: yours (shared with a fiscal partner by the allocation below).
+  person.self.bank = person.self.bank.plus(extraBank);
+  person.self.other = person.self.other.plus(extraOther);
+  person.self.debts = person.self.debts.plus(extraDebts);
   other.other = other.other.plus(extraOther);
   const rates = ratesFor(config, year);
   if (!rates) warnings.push(`No box 3 rates for ${year}. Add them under "Rules & rates" to estimate the tax.`);
@@ -370,17 +511,42 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
           other: totals.other.plus(extraOther),
           green: totals.exempt,
           debts,
-          partner,
+          partner: fiscalPartner,
         },
         rates,
       )
     : null;
 
+  const selfPct = D(input?.allocationSelfPct ?? 50);
+  const part = (v: string, pct: Decimal) => money2(D(v).mul(pct).div(100));
+  const allocation =
+    fiscalPartner && calculation
+      ? {
+          selfPct: selfPct.toFixed(),
+          self: {
+            taxableBaseEur: part(calculation.taxableBaseEur, selfPct),
+            benefitEur: part(calculation.benefitEur, selfPct),
+            taxEur: part(calculation.netTaxEur, selfPct),
+          },
+          partner: {
+            taxableBaseEur: part(calculation.taxableBaseEur, D(100).minus(selfPct)),
+            benefitEur: part(calculation.benefitEur, D(100).minus(selfPct)),
+            taxEur: part(calculation.netTaxEur, D(100).minus(selfPct)),
+          },
+        }
+      : null;
+  const personOut = (p: ReturnType<typeof blank>): PersonTotals => ({
+    bank: money2(p.bank),
+    other: money2(p.other),
+    green: money2(p.green),
+    debts: money2(p.debts),
+  });
+
   return {
     year,
     peildatum: `${year}-01-01`,
     valuedAt,
-    partner,
+    partner: fiscalPartner,
     rates,
     totals: {
       bank: money2(totals.bank.plus(extraBank)),
@@ -395,8 +561,11 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
       cash: money2(other.cash),
       other: money2(other.other),
     },
-    extra: { bankEur: money2(extraBank), otherEur: money2(extraOther), debtsEur: money2(debts) },
+    extra: { bankEur: money2(extraBank), otherEur: money2(extraOther), debtsEur: money2(extraDebts) },
+    debtsEur: money2(debts),
     calculation,
+    perPerson: { self: personOut(person.self), partner: fiscalPartner ? personOut(person.partner) : null },
+    allocation,
     rows,
     warnings: [...new Set(warnings)],
   };

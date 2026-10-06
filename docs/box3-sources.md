@@ -10,6 +10,22 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Holdwise, _Box 3 in 2027_: https://holdwise.nl/kennisbank/box-3-2027
 
+## Wat in welke categorie valt, en van wie het is
+
+Wat de app toepast (Kluishuis: _Household_ en _Accounts_):
+
+- **Banktegoeden:** bank- en spaartegoeden in Nederland en daarbuiten, contant geld boven de vrijstelling (per persoon € 596 in 2023, € 653 in 2024, € 661 in 2025, € 672 in 2026; het dubbele voor partners die het hele jaar fiscale partner zijn), premiedepots, het niet-vrijgestelde deel van groene spaartegoeden.
+- **Overige bezittingen** (beleggingen en andere bezittingen): aandelen, obligaties en andere beleggingen, het niet-vrijgestelde deel van groene beleggingen, overige vorderingen (zoals uitgeleend geld, behalve tussen fiscale partners of tussen ouders en minderjarige kinderen), een tweede woning, een verhuurde woning, overige onroerende zaken, cryptovaluta, kapitaalverzekeringen (met hun eigen vrijstellingen, die de app niet toepast).
+- **Schulden:** schulden die niet bij de eigen woning horen, zoals consumptief krediet, studieschuld en leningen voor beleggingen of een tweede woning. Alleen het deel boven de schuldendrempel telt (€ 3.700 in 2024, € 3.800 in 2025 en 2026, per persoon).
+- **Verhuurde woning:** met huurbescherming telt de WOZ-waarde voor een percentage dat afhangt van de jaarhuur als percentage van de WOZ-waarde: tot en met 1% → 73%; tot en met 2% → 79%; tot en met 3% → 84%; tot en met 4% → 90%; tot en met 5% → 95%; meer → 100%. Dezelfde tabel geldt voor 2023 tot en met 2026. Gebruikt wordt de WOZ-waarde met waardepeildatum 1 januari van het jaar vóór het belastingjaar.
+- **Fiscale partners** mogen de gezamenlijke grondslag sparen en beleggen verdelen zoals ze willen, als het totaal 100% is.
+- **Minderjarige kinderen:** hun bezittingen tellen voor de ouder met gezag; hebben beide ouders gezag, dan ieder de helft. Wie op 1 januari 18 of ouder is, doet zelf aangifte.
+
+Bronnen:
+
+- Belastingdienst, _Hoe wordt het box 3-inkomen over 2025 berekend?_ (categorieën, verdeling tussen partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
+- Belastingdienst, _Bezittingen en schulden box 3_ per jaar (leegwaarderatio, WOZ-waardepeildatum, contant geld, kinderen, schuldendrempel): https://www.belastingdienst.nl/wps/wcm/connect/fisin/fisin2026/bezittingen_en_schulden_box_3_ (en `fisin2023`, `fisin2024`, `fisin2025`)
+
 ## Tegenbewijsregeling: werkelijk in plaats van forfaitair rendement (Wet tegenbewijsregeling box 3)
 
 Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Je geeft het door met de _Opgaaf werkelijk rendement_ (OWR), beschikbaar sinds 8 juli 2025.
@@ -24,6 +40,7 @@ Wat de app toepast (Kluishuis: _Box 3 → jaar → Actual return_):
 - **Belasting:** het box 3-tarief (36% vanaf 2024) × het werkelijke rendement. Je betaalt nooit meer dan met het forfaitaire rendement: het laagste van de twee geldt.
 - **Fiscale partners:** verdeeld naar hun aandeel in de gezamenlijke grondslag. Voor de belasting samen maakt dat niets uit: er is geen heffingsvrij deel en het tarief is vlak.
 - **Groene beleggingen:** hun rendement is naar verhouding vrijgesteld. De app laat groene rekeningen en rekeningen "niet in box 3" buiten het werkelijk rendement; dat is een benadering.
+- **Rekeningen met waarden per jaar:** de waarde op 1 januari van het jaar erna, min die op 1 januari, min geld erin, plus geld eruit, plus inkomsten. Rente of dividend dat op de rekening zelf binnenkomt, zit al in de eindwaarde en telt één keer. Bij een schuld telt alleen de betaalde rente (aflossen is geen rendement). Een minderjarig kind telt het hele jaar mee voor de ouders, ook als het in de loop van het jaar 18 wordt; de Belastingdienst rekent in dat geval alleen tot de dag van meerderjarigheid. Dat is een benadering.
 
 Bronnen:
 

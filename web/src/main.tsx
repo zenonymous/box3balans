@@ -24,6 +24,7 @@ const IncomePage = lazy(() => import("./pages/Income").then((m) => ({ default: m
 const Box3Page = lazy(() => import("./pages/Box3").then((m) => ({ default: m.Box3Page })));
 const AssetsPage = lazy(() => import("./pages/Assets").then((m) => ({ default: m.AssetsPage })));
 const SettingsPage = lazy(() => import("./pages/Settings").then((m) => ({ default: m.SettingsPage })));
+const HouseholdPage = lazy(() => import("./pages/Household").then((m) => ({ default: m.HouseholdPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ function AuthGate() {
         <Route path="metals" element={<MetalsPage />} />
         <Route path="metals/inventory" element={<InventoryPage />} />
         <Route path="accounts" element={<AccountsPage />} />
+        <Route path="household" element={<HouseholdPage />} />
         <Route path="connections" element={<ConnectionsPage />} />
         <Route path="wallets" element={<WalletsPage />} />
         <Route path="assets" element={<AssetsPage />} />

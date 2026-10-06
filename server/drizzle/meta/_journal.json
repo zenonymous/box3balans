@@ -50,6 +50,13 @@
       "when": 1791231484261,
       "tag": "0006_fund_costs",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791321470967,
+      "tag": "0007_household_yearly_values",
+      "breakpoints": true
     }
   ]
 }

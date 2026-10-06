@@ -1,4 +1,5 @@
-import { Fragment, useState, type FormEvent } from "react";
+import { Fragment, useState, type FormEvent, type ReactNode } from "react";
+import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, put, type Box3Category, type Box3Config, type Box3Overview, type Box3Rates, type Box3Year } from "../api";
 import { downloadCsv } from "../csv";
@@ -11,41 +12,36 @@ import {
   Card,
   Empty,
   Field,
+  Input,
   PageHeader,
   Select,
   Spinner,
   Stat,
 } from "../components/ui";
 import { date, eur, eurPrice, num, toApiNumber, toInputNumber } from "../format";
+import { getLang, t, tj } from "../i18n";
+import { categoryLabel, kindLabel, noteLabel, ownerLabel } from "../labels";
+import { useHousehold } from "../queries";
 
-const CATEGORY_LABEL: Record<Box3Category, string> = {
-  bank: "Bank balances",
-  other: "Other assets",
-  exempt: "Green investments",
-  excluded: "Not in box 3",
-};
-const CATEGORY_NL: Record<Box3Category, string> = {
+/** The Dutch tax term next to an English label (in Dutch, the label is the term). */
+const term = (nl: string): ReactNode => (getLang() === "en" ? <span className="text-xs text-muted">{nl}</span> : null);
+
+const CATEGORY_NL: Record<Box3Category | "debt", string> = {
   bank: "banktegoeden",
   other: "overige bezittingen",
   exempt: "groene beleggingen",
   excluded: "niet in box 3",
+  debt: "schulden",
 };
-const KIND_LABEL: Record<string, string> = {
-  bank: "Bank account",
-  broker: "Broker",
-  exchange: "Crypto exchange",
-  wallet: "Crypto wallet",
-  vault: "Metal vault",
-  physical: "Physical storage",
-  other: "Other",
-};
-const CLASS_LABEL_SHORT: Record<string, string> = {
-  stock: "Stocks",
-  etf: "ETFs & funds",
-  crypto: "Crypto",
-  metal: "Precious metals",
-  other: "Other",
-};
+
+const classLabel = (k: string) =>
+  ({
+    stock: t("Stocks"),
+    etf: t("ETFs and funds"),
+    crypto: t("Crypto"),
+    metal: t("Precious metals"),
+    other: t("Other"),
+  })[k] ?? k;
 
 const pctFmt = (v: string) => `${num(v, 2)}%`;
 
@@ -65,10 +61,13 @@ export function Box3Page() {
   if (o.years.length === 0) {
     return (
       <>
-        <PageHeader title="Box 3" />
+        <PageHeader title={t("Box 3")} />
         <Card>
-          <Empty title="Nothing to report yet">
-            Box 3 uses your wealth on 1 January, so it starts the year after your first transaction.
+          <Empty title={t("Nothing to report yet")}>
+            {tj(
+              "Box 3 counts what you had on 1 January. Add your accounts under <0>Accounts</0>: with values per year, or with transactions (box 3 then starts the year after the first one).",
+              [<Link key="a" to="/accounts" className="underline" />],
+            )}
           </Empty>
         </Card>
       </>
@@ -78,19 +77,21 @@ export function Box3Page() {
   return (
     <>
       <PageHeader
-        title="Box 3 (sparen en beleggen)"
-        subtitle="Your wealth on 1 January per box 3 category, and an estimate of the tax under the current forfaitaire system (2023 onwards). An estimate, not tax advice: check against your banks' and brokers' year statements."
+        title={t("Box 3 (savings and investments)")}
+        subtitle={t(
+          "What you had on 1 January per box 3 category, and an estimate of the tax under the current system (2023 onwards). An estimate, not tax advice: check it against the year statements of your banks and brokers.",
+        )}
         actions={
           <>
             <Select
               value={year ?? ""}
               onChange={(e) => setSelected(Number(e.target.value))}
-              aria-label="Tax year"
+              aria-label={t("Tax year")}
               className="max-w-40 print:hidden"
             >
               {o.years.map((y) => (
                 <option key={y} value={y}>
-                  Tax year {y}
+                  {t("Tax year {year}", { year: y })}
                 </option>
               ))}
             </Select>
@@ -114,40 +115,46 @@ export function Box3Page() {
 }
 
 function ExportButtons({ y }: { y: Box3Year }) {
+  const people = useHousehold();
   return (
     <div className="flex gap-2 print:hidden">
       <Button
         size="sm"
         onClick={() =>
           downloadCsv(`box3-${y.year}-peildatum-${y.peildatum}.csv`, y.rows, [
-            { header: "Account", value: (r) => r.accountName },
-            { header: "Account type", value: (r) => KIND_LABEL[r.accountKind] ?? r.accountKind },
-            { header: "Box 3 category", value: (r) => CATEGORY_NL[r.category] },
-            { header: "Asset", value: (r) => r.name },
-            { header: "Symbol", value: (r) => r.symbol },
-            { header: "Quantity", value: (r) => r.quantity },
-            { header: "Unit", value: (r) => r.unit },
-            { header: "Price EUR", value: (r) => r.priceEur },
-            { header: "Price date", value: (r) => r.priceDay },
-            { header: `Value EUR on ${y.peildatum}`, value: (r) => r.valueEur },
+            { header: t("Account"), value: (r) => r.accountName },
+            { header: t("Account type"), value: (r) => kindLabel(r.accountKind) },
+            { header: t("Owner"), value: (r) => ownerLabel(r, people.data ?? []) },
+            { header: t("Box 3 category"), value: (r) => CATEGORY_NL[r.category] },
+            { header: t("Asset"), value: (r) => r.name },
+            { header: t("Symbol"), value: (r) => r.symbol },
+            { header: t("Quantity"), value: (r) => (r.source === "yearly" ? "" : r.quantity) },
+            { header: t("Unit"), value: (r) => r.unit },
+            { header: t("Price EUR"), value: (r) => r.priceEur },
+            { header: t("Price date"), value: (r) => r.priceDay },
+            { header: t("Value EUR on {date}", { date: y.peildatum }), value: (r) => r.valueEur },
+            { header: t("Counted %"), value: (r) => r.countedPct },
+            { header: t("Counted EUR"), value: (r) => r.countedEur },
           ])
         }
       >
         ⤓ CSV
       </Button>
-      <Button size="sm" onClick={() => window.print()} title="Use “Save as PDF” in the print dialog">
-        ⎙ Print / PDF
+      <Button size="sm" onClick={() => window.print()} title={t("Use “Save as PDF” in the print dialog")}>
+        ⎙ {t("Print / PDF")}
       </Button>
     </div>
   );
 }
 
 function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
+  const people = useHousehold();
+  const persons = people.data ?? [];
   const c = y.calculation;
   const r = y.rates;
   const byAccount = new Map<
     number,
-    { name: string; kind: string; rows: Box3Year["rows"]; total: number; categories: Set<Box3Category> }
+    { name: string; kind: string; rows: Box3Year["rows"]; total: number; categories: Set<Box3Category | "debt"> }
   >();
   for (const row of y.rows) {
     const a = byAccount.get(row.accountId) ?? {
@@ -162,12 +169,17 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
     a.categories.add(row.category);
     byAccount.set(row.accountId, a);
   }
+  const partnerName = persons.find((p) => p.role === "partner")?.name ?? t("Partner");
+  const selfName = persons.find((p) => p.role === "self")?.name ?? t("You");
 
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-ink-2">
-        Peildatum <strong className="text-ink">{date(y.peildatum)}</strong>: holdings at the end of {date(y.valuedAt)},
-        valued at that day’s close (or the last one before it).
+        {tj(
+          "Peildatum <0>{peildatum}</0>: holdings at the end of {day}, valued at that day's close (or the last one before it).",
+          [<strong key="p" className="text-ink" />],
+          { peildatum: date(y.peildatum), day: date(y.valuedAt) },
+        )}
       </p>
       {y.warnings.length > 0 && (
         <div className="flex flex-col gap-2">
@@ -178,56 +190,48 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
       )}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label={t("Bank balances")} value={eur(y.totals.bank, { decimals: 0 })} sub={term("banktegoeden")} />
         <Stat
-          label="Bank balances"
-          value={eur(y.totals.bank, { decimals: 0 })}
-          sub={<span className="text-muted">banktegoeden</span>}
-        />
-        <Stat
-          label="Other assets"
+          label={t("Other assets")}
           value={eur(c?.otherEur ?? y.totals.other, { decimals: 0 })}
-          sub={<span className="text-muted">overige bezittingen</span>}
+          sub={term("overige bezittingen")}
         />
+        <Stat label={t("Debts")} value={eur(y.debtsEur, { decimals: 0 })} sub={term("schulden")} />
         <Stat
-          label="Debts"
-          value={eur(y.extra.debtsEur, { decimals: 0 })}
-          sub={<span className="text-muted">schulden (entered below)</span>}
-        />
-        <Stat
-          label={`Estimated box 3 tax ${y.year}`}
+          label={t("Estimated box 3 tax {year}", { year: y.year })}
           value={c ? eur(c.netTaxEur, { decimals: 0 }) : "—"}
           sub={
             r && !r.final ? (
-              <Badge tone="warn">provisional rates</Badge>
+              <Badge tone="warn">{t("provisional rates")}</Badge>
             ) : (
-              <span className="text-muted">{y.partner ? "with fiscal partner" : "single"}</span>
+              <span className="text-muted">{y.partner ? t("with fiscal partner") : t("on your own")}</span>
             )
           }
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Card title="Other assets, by kind">
+        <Card title={t("Other assets, by kind")}>
           <dl className="tabular grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 text-sm">
-            <dt className="text-ink-2">Investments (stocks, ETFs, funds)</dt>
+            <dt className="text-ink-2">{t("Investments (shares, ETFs, funds)")}</dt>
             <dd className="text-right">{eur(y.otherBreakdown.investments)}</dd>
-            <dt className="text-ink-2">Crypto</dt>
+            <dt className="text-ink-2">{t("Crypto")}</dt>
             <dd className="text-right">{eur(y.otherBreakdown.crypto)}</dd>
-            <dt className="text-ink-2">Precious metals</dt>
+            <dt className="text-ink-2">{t("Precious metals")}</dt>
             <dd className="text-right">{eur(y.otherBreakdown.metals)}</dd>
-            <dt className="text-ink-2">Cash outside banks (e.g. on exchanges)</dt>
+            <dt className="text-ink-2">{t("Cash outside banks (e.g. on exchanges)")}</dt>
             <dd className="text-right">{eur(y.otherBreakdown.cash)}</dd>
-            <dt className="text-ink-2">Other (entered below)</dt>
+            <dt className="text-ink-2">{t("Other (homes, money lent, insurance, entered amounts)")}</dt>
             <dd className="text-right">{eur(y.otherBreakdown.other)}</dd>
             {Number(y.totals.exempt) > 0 && (
               <>
-                <dt className="text-ink-2">Green investments (exempt up to the limit)</dt>
+                <dt className="text-ink-2">{t("Green investments (exempt up to the limit)")}</dt>
                 <dd className="text-right">{eur(y.totals.exempt)}</dd>
               </>
             )}
             {Number(y.totals.excluded) > 0 && (
               <>
-                <dt className="text-ink-2">Not in box 3 (excluded accounts)</dt>
+                <dt className="text-ink-2">{t("Not in box 3 (excluded accounts)")}</dt>
                 <dd className="text-right">{eur(y.totals.excluded)}</dd>
               </>
             )}
@@ -236,12 +240,75 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
         <SituationCard key={y.year} y={y} overview={overview} />
       </div>
 
+      {y.perPerson.partner && (
+        <Card title={t("Per person")} padded={false}>
+          <div className="overflow-x-auto">
+            <table className="tabular w-full min-w-[520px] text-sm">
+              <thead>
+                <tr className="border-b border-line text-xs text-ink-2">
+                  <th className="px-3 py-2 text-left font-medium" />
+                  <th className="px-3 py-2 text-right font-medium">{t("Bank balances")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Other assets")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Debts")}</th>
+                  {y.allocation && (
+                    <>
+                      <th className="px-3 py-2 text-right font-medium">{t("Share of the grondslag")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Box 3 tax")}</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-line">
+                {(
+                  [
+                    [
+                      selfName,
+                      y.perPerson.self,
+                      y.allocation?.self,
+                      y.allocation ? Number(y.allocation.selfPct) : null,
+                    ],
+                    [
+                      partnerName,
+                      y.perPerson.partner,
+                      y.allocation?.partner,
+                      y.allocation ? 100 - Number(y.allocation.selfPct) : null,
+                    ],
+                  ] as const
+                ).map(([name, p, alloc, pctShare]) => (
+                  <tr key={name}>
+                    <td className="px-3 py-2 font-medium">{name}</td>
+                    <td className="px-3 py-2 text-right">{eur(p.bank, { decimals: 0 })}</td>
+                    <td className="px-3 py-2 text-right">{eur(Number(p.other) + Number(p.green), { decimals: 0 })}</td>
+                    <td className="px-3 py-2 text-right">{eur(p.debts, { decimals: 0 })}</td>
+                    {alloc && (
+                      <>
+                        <td className="px-3 py-2 text-right">
+                          {eur(alloc.taxableBaseEur, { decimals: 0 })}{" "}
+                          <span className="text-xs text-muted">({num(pctShare ?? 0, 2)}%)</span>
+                        </td>
+                        <td className="px-3 py-2 text-right">{eur(alloc.taxEur, { decimals: 0 })}</td>
+                      </>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="px-4 py-3 text-xs text-muted">
+            {t(
+              "What each of you owns, with children's assets split by custody. Fiscal partners add everything up and may divide the grondslag as they like (set your share under Your situation); the tax together stays the same. A split can matter elsewhere in the return, for example for the general tax credit.",
+            )}
+          </p>
+        </Card>
+      )}
+
       {c && r && (
         <Card
           title={
             <span className="flex items-center gap-2">
-              Calculation {y.year} {!r.final && <Badge tone="warn">provisional rates</Badge>}
-              {r.source === "custom" && <Badge>custom rates</Badge>}
+              {t("Calculation {year}", { year: y.year })}{" "}
+              {!r.final && <Badge tone="warn">{t("provisional rates")}</Badge>}
+              {r.source === "custom" && <Badge>{t("custom rates")}</Badge>}
             </span>
           }
           padded={false}
@@ -249,41 +316,54 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
           <table className="tabular w-full text-sm">
             <tbody className="divide-y divide-line">
               <CalcRow
-                label={`Bank balances × ${pctFmt(r.bankPct)}`}
+                label={t("Bank balances × {pct}", { pct: pctFmt(r.bankPct) })}
                 value={(Number(c.bankEur) * Number(r.bankPct)) / 100}
                 hint={eur(c.bankEur)}
               />
               <CalcRow
-                label={`Other assets × ${pctFmt(r.otherPct)}`}
+                label={t("Other assets × {pct}", { pct: pctFmt(r.otherPct) })}
                 value={(Number(c.otherEur) * Number(r.otherPct)) / 100}
                 hint={
                   Number(c.greenAboveLimitEur) > 0
-                    ? `${eur(c.otherEur)}, incl. ${eur(c.greenAboveLimitEur)} of green investments above the limit`
+                    ? t("{total}, incl. {green} of green investments above the limit", {
+                        total: eur(c.otherEur),
+                        green: eur(c.greenAboveLimitEur),
+                      })
                     : eur(c.otherEur)
                 }
               />
               <CalcRow
-                label={`Debts above ${eur(Number(r.debtThresholdEur) * (y.partner ? 2 : 1), { decimals: 0 })} × ${pctFmt(r.debtPct)}`}
+                label={t("Debts above {threshold} × {pct}", {
+                  threshold: eur(Number(r.debtThresholdEur) * (y.partner ? 2 : 1), { decimals: 0 }),
+                  pct: pctFmt(r.debtPct),
+                })}
                 value={-(Number(c.deductibleDebtsEur) * Number(r.debtPct)) / 100}
                 hint={eur(c.deductibleDebtsEur)}
               />
-              <CalcRow label="Deemed return (forfaitair rendement)" value={c.deemedReturnEur} strong />
-              <CalcRow label="Rendementsgrondslag (assets − deductible debts)" value={c.baseEur} />
+              <CalcRow label={t("Deemed return (forfaitair rendement)")} value={c.deemedReturnEur} strong />
+              <CalcRow label={t("Rendementsgrondslag (assets − deductible debts)")} value={c.baseEur} />
               <CalcRow
-                label={`Heffingsvrij vermogen${y.partner ? " (2 persons)" : ""}`}
+                label={y.partner ? t("Heffingsvrij vermogen (2 persons)") : t("Heffingsvrij vermogen")}
                 value={-Number(c.allowanceEur)}
               />
-              <CalcRow label="Grondslag sparen en beleggen" value={c.taxableBaseEur} />
-              <CalcRow label="Share of the grondslag that is taxed" text={`${num(c.sharePct, 2)}%`} />
-              <CalcRow label="Voordeel uit sparen en beleggen (deemed return × share)" value={c.benefitEur} strong />
-              <CalcRow label={`Box 3 tax at ${pctFmt(r.taxRatePct)}`} value={c.taxEur} strong />
+              <CalcRow label={t("Grondslag sparen en beleggen")} value={c.taxableBaseEur} />
+              <CalcRow label={t("Share of the rendementsgrondslag that is taxed")} text={`${num(c.sharePct, 2)}%`} />
+              <CalcRow
+                label={t("Voordeel uit sparen en beleggen (deemed return × share)")}
+                value={c.benefitEur}
+                strong
+              />
+              <CalcRow label={t("Box 3 tax at {pct}", { pct: pctFmt(r.taxRatePct) })} value={c.taxEur} strong />
               {Number(c.greenCreditEur) > 0 && (
                 <>
                   <CalcRow
-                    label={`Green investments tax credit (${pctFmt(r.greenCreditPct)} of ${eur(c.greenExemptEur, { decimals: 0 })})`}
+                    label={t("Tax credit for green investments ({pct} of {amount})", {
+                      pct: pctFmt(r.greenCreditPct),
+                      amount: eur(c.greenExemptEur, { decimals: 0 }),
+                    })}
                     value={-Number(c.greenCreditEur)}
                   />
-                  <CalcRow label="Box 3 tax after the credit" value={c.netTaxEur} strong />
+                  <CalcRow label={t("Box 3 tax after the credit")} value={c.netTaxEur} strong />
                 </>
               )}
             </tbody>
@@ -293,60 +373,88 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
 
       <ActualReturnCard y={y} />
 
-      <Card title={`Per account on ${date(y.peildatum)}`} padded={false}>
+      <Card title={t("Per account on {date}", { date: date(y.peildatum) })} padded={false}>
         {y.rows.length === 0 ? (
-          <Empty title="Nothing held on that date" />
+          <Empty title={t("Nothing held on that date")} />
         ) : (
           <div className="overflow-x-auto">
             <table className="tabular w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line text-xs text-ink-2">
-                  <th className="px-3 py-2 text-left font-medium">Account / asset</th>
-                  <th className="px-3 py-2 text-left font-medium">Category</th>
-                  <th className="px-3 py-2 text-right font-medium">Quantity</th>
-                  <th className="px-3 py-2 text-right font-medium">Price</th>
-                  <th className="px-3 py-2 text-right font-medium">Value</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Account / asset")}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Category")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Quantity")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Price")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Value")}</th>
                 </tr>
               </thead>
               <tbody>
-                {[...byAccount].map(([id, a]) => (
-                  <Fragment key={id}>
-                    <tr className="border-t border-line bg-surface-2/60">
-                      <td className="px-3 py-2 font-medium">
-                        {a.name} <span className="text-xs font-normal text-muted">{KIND_LABEL[a.kind] ?? a.kind}</span>
-                      </td>
-                      <td className="px-3 py-2 text-xs text-ink-2">
-                        {[...a.categories].map((cat) => CATEGORY_LABEL[cat]).join(", ")}
-                      </td>
-                      <td />
-                      <td />
-                      <td className="px-3 py-2 text-right font-medium">{eur(a.total)}</td>
-                    </tr>
-                    {a.rows.map((row) => (
-                      <tr key={`${row.accountId}-${row.assetId}-${row.physical}`} className="border-t border-line/50">
-                        <td className="py-1.5 pl-7 pr-3 text-ink-2">
-                          {row.name} <span className="text-xs text-muted">{row.symbol}</span>
-                        </td>
-                        <td className="px-3 py-1.5 text-xs text-muted">{CATEGORY_NL[row.category]}</td>
-                        <td className="px-3 py-1.5 text-right text-ink-2">
-                          {num(row.quantity, row.unit === "g" ? 3 : 8)}
-                          {row.unit === "g" ? " g" : ""}
-                        </td>
-                        <td
-                          className="px-3 py-1.5 text-right text-xs text-ink-2"
-                          title={row.priceDay ? `Close of ${row.priceDay}` : "No price"}
-                        >
-                          {row.missingPrice ? (
-                            <Badge tone="warn">no price</Badge>
-                          ) : (
-                            `${eurPrice(row.priceEur)}${row.unit === "g" ? "/g" : ""}`
+                {[...byAccount].map(([id, a]) => {
+                  const first = a.rows[0]!;
+                  const partial = Number(first.countedPct) !== 100;
+                  return (
+                    <Fragment key={id}>
+                      <tr className="border-t border-line bg-surface-2/60">
+                        <td className="px-3 py-2 font-medium">
+                          {a.name} <span className="text-xs font-normal text-muted">{kindLabel(a.kind)}</span>
+                          {(first.owner !== "self" || persons.length > 0) && (
+                            <span className="ml-1 text-xs font-normal text-muted">· {ownerLabel(first, persons)}</span>
                           )}
                         </td>
-                        <td className="px-3 py-1.5 text-right">{eur(row.valueEur)}</td>
+                        <td className="px-3 py-2 text-xs text-ink-2">
+                          {[...a.categories].map((cat) => categoryLabel(cat)).join(", ")}
+                        </td>
+                        <td
+                          colSpan={2}
+                          className="px-3 py-2 text-right text-xs text-muted"
+                          title={first.note && noteLabel(first.note)}
+                        >
+                          {partial && t("{pct}% counts", { pct: num(first.countedPct, 2) })}
+                          {first.note && <span className="ml-1 cursor-help">ⓘ</span>}
+                        </td>
+                        <td className="px-3 py-2 text-right font-medium">{eur(a.total)}</td>
                       </tr>
-                    ))}
-                  </Fragment>
-                ))}
+                      {a.rows.map((row) =>
+                        row.source === "yearly" ? (
+                          <tr key={`${row.accountId}-yearly`} className="border-t border-line/50">
+                            <td className="py-1.5 pl-7 pr-3 text-ink-2">
+                              {t("Value on 1 January (entered per year)")}
+                            </td>
+                            <td className="px-3 py-1.5 text-xs text-muted">{CATEGORY_NL[row.category]}</td>
+                            <td />
+                            <td />
+                            <td className="px-3 py-1.5 text-right">{eur(row.valueEur)}</td>
+                          </tr>
+                        ) : (
+                          <tr
+                            key={`${row.accountId}-${row.assetId}-${row.physical}`}
+                            className="border-t border-line/50"
+                          >
+                            <td className="py-1.5 pl-7 pr-3 text-ink-2">
+                              {row.name} <span className="text-xs text-muted">{row.symbol}</span>
+                            </td>
+                            <td className="px-3 py-1.5 text-xs text-muted">{CATEGORY_NL[row.category]}</td>
+                            <td className="px-3 py-1.5 text-right text-ink-2">
+                              {num(row.quantity, row.unit === "g" ? 3 : 8)}
+                              {row.unit === "g" ? " g" : ""}
+                            </td>
+                            <td
+                              className="px-3 py-1.5 text-right text-xs text-ink-2"
+                              title={row.priceDay ? t("Close of {day}", { day: row.priceDay }) : t("No price")}
+                            >
+                              {row.missingPrice ? (
+                                <Badge tone="warn">{t("no price")}</Badge>
+                              ) : (
+                                `${eurPrice(row.priceEur)}${row.unit === "g" ? "/g" : ""}`
+                              )}
+                            </td>
+                            <td className="px-3 py-1.5 text-right">{eur(row.valueEur)}</td>
+                          </tr>
+                        ),
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -388,6 +496,7 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
   const current = overview.config.years[String(y.year)];
   const [f, setF] = useState({
     partner: current?.partner ?? false,
+    allocationSelfPct: toInputNumber(current?.allocationSelfPct ?? "50"),
     debtsEur: toInputNumber(current?.debtsEur ?? "0"),
     extraOtherEur: toInputNumber(current?.extraOtherEur ?? "0"),
     extraBankEur: toInputNumber(current?.extraBankEur ?? "0"),
@@ -401,13 +510,16 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
     e.preventDefault();
     setError(undefined);
     try {
+      const share = toApiNumber(f.allocationSelfPct, t("Your share")) || "50";
+      if (Number(share) < 0 || Number(share) > 100) throw new Error(t("Your share must be between 0 and 100%"));
       const year = {
         partner: f.partner,
-        debtsEur: toApiNumber(f.debtsEur, "Debts") || "0",
-        extraOtherEur: toApiNumber(f.extraOtherEur, "Other assets") || "0",
-        extraBankEur: toApiNumber(f.extraBankEur, "Bank balances") || "0",
-        debtInterestEur: toApiNumber(f.debtInterestEur, "Interest paid") || "0",
-        extraReturnEur: toApiNumber(f.extraReturnEur, "Return on other assets") || "0",
+        allocationSelfPct: share,
+        debtsEur: toApiNumber(f.debtsEur, t("Debts")) || "0",
+        extraOtherEur: toApiNumber(f.extraOtherEur, t("Other assets")) || "0",
+        extraBankEur: toApiNumber(f.extraBankEur, t("Bank balances")) || "0",
+        debtInterestEur: toApiNumber(f.debtInterestEur, t("Interest paid")) || "0",
+        extraReturnEur: toApiNumber(f.extraReturnEur, t("Return on other assets")) || "0",
       };
       await put("/api/box3/config", {
         ...overview.config,
@@ -422,44 +534,62 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
   };
 
   return (
-    <Card title={`Your situation on ${date(y.peildatum)}`} className="print:hidden">
+    <Card title={t("Your situation on {date}", { date: date(y.peildatum) })} className="print:hidden">
       <form onSubmit={save} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="flex items-center gap-2 text-sm sm:col-span-2">
           <input type="checkbox" checked={f.partner} onChange={(e) => setF({ ...f, partner: e.target.checked })} />{" "}
-          Filing with a fiscal partner (amounts below are your combined amounts)
+          {t("I have a fiscal partner this year")}
         </label>
-        <Field label="Debts (schulden)" hint="e.g. a consumer loan; not your main home's mortgage (box 1)">
+        {f.partner && (
+          <Field
+            label={t("Your share of the grondslag (%)")}
+            hint={t("Fiscal partners divide it as they like; the rest goes to your partner.")}
+            className="sm:col-span-2"
+          >
+            {(id) => (
+              <Input
+                id={id}
+                inputMode="decimal"
+                className="w-28"
+                value={f.allocationSelfPct}
+                onChange={(e) => setF({ ...f, allocationSelfPct: e.target.value })}
+              />
+            )}
+          </Field>
+        )}
+        <p className="text-xs text-muted sm:col-span-2">
+          {tj(
+            "Savings, homes, money lent and debts are best added as accounts with values per year under <0>Accounts</0>, with their owner. Use the fields below for anything else.",
+            [<Link key="a" to="/accounts" className="underline" />],
+          )}
+        </p>
+        <Field label={t("Other debts")} hint={t("Not your main home's mortgage (that's box 1)")}>
           {(id) => (
-            <AmountInput
-              id={id}
-
-              value={f.debtsEur}
-              onChange={(e) => setF({ ...f, debtsEur: e.target.value })}
-            />
+            <AmountInput id={id} value={f.debtsEur} onChange={(e) => setF({ ...f, debtsEur: e.target.value })} />
           )}
         </Field>
-        <Field label="Other box 3 assets not tracked here" hint="e.g. a second home, money lent out">
+        <Field label={t("Other box 3 assets")} hint={t("e.g. cash at home above the exemption")}>
           {(id) => (
             <AmountInput
               id={id}
-
               value={f.extraOtherEur}
               onChange={(e) => setF({ ...f, extraOtherEur: e.target.value })}
             />
           )}
         </Field>
-        <Field label="Bank balances not tracked here" hint="other savings or current accounts">
+        <Field label={t("Other bank balances")}>
           {(id) => (
             <AmountInput
               id={id}
-
               value={f.extraBankEur}
               onChange={(e) => setF({ ...f, extraBankEur: e.target.value })}
             />
           )}
         </Field>
-        <p className="pt-2 text-xs font-medium text-ink-2 sm:col-span-2">During {y.year}, for the actual return</p>
-        <Field label="Interest paid on these debts" hint="deducted from the actual return">
+        <p className="pt-2 text-xs font-medium text-ink-2 sm:col-span-2">
+          {t("During {year}, for the actual return", { year: y.year })}
+        </p>
+        <Field label={t("Interest paid on these debts")} hint={t("deducted from the actual return")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -468,10 +598,7 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
             />
           )}
         </Field>
-        <Field
-          label="Return on assets not tracked here"
-          hint="income plus value change, e.g. interest on money lent out; negative for a loss"
-        >
+        <Field label={t("Return on these other assets")} hint={t("income plus value change; negative for a loss")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -482,9 +609,9 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
         </Field>
         <div className="flex items-end gap-3">
           <Button type="submit" variant="primary">
-            Save
+            {t("Save")}
           </Button>
-          {saved && <span className="text-sm text-gain">✓ Saved</span>}
+          {saved && <span className="text-sm text-gain">✓ {t("Saved")}</span>}
         </div>
         {error && (
           <div className="sm:col-span-2">
@@ -511,25 +638,25 @@ function CategorySelect({
 }) {
   return (
     <Select id={id} value={value} onChange={(e) => onChange(e.target.value)} className="py-1 text-xs">
-      {allowDefault && <option value="">Default rules</option>}
+      {allowDefault && <option value="">{t("Default rules")}</option>}
       {CATS.map((c) => (
         <option key={c} value={c}>
-          {CATEGORY_LABEL[c]}
+          {categoryLabel(c)}
         </option>
       ))}
     </Select>
   );
 }
 
-const RATE_FIELDS: { key: keyof Box3Rates; label: string }[] = [
-  { key: "bankPct", label: "Bank %" },
-  { key: "otherPct", label: "Other %" },
-  { key: "debtPct", label: "Debts %" },
-  { key: "allowanceEur", label: "Allowance €" },
-  { key: "debtThresholdEur", label: "Debt threshold €" },
-  { key: "taxRatePct", label: "Tax rate %" },
-  { key: "greenExemptEur", label: "Green limit €" },
-  { key: "greenCreditPct", label: "Green credit %" },
+const rateFields = (): { key: keyof Box3Rates; label: string }[] => [
+  { key: "bankPct", label: t("Bank %") },
+  { key: "otherPct", label: t("Other %") },
+  { key: "debtPct", label: t("Debts %") },
+  { key: "allowanceEur", label: t("Allowance €") },
+  { key: "debtThresholdEur", label: t("Debt threshold €") },
+  { key: "taxRatePct", label: t("Tax rate %") },
+  { key: "greenExemptEur", label: t("Green limit €") },
+  { key: "greenCreditPct", label: t("Green credit %") },
 ];
 
 const RATE_NUMBER_KEYS = [
@@ -610,28 +737,29 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
 
   return (
     <Card
-      title="Rules & rates"
+      title={t("Rules & rates")}
       className="mt-4 print:hidden"
       actions={
         <Button size="sm" variant="ghost" onClick={() => setOpen(!open)}>
-          {open ? "Hide" : "Show"}
+          {open ? t("Hide") : t("Show")}
         </Button>
       }
     >
       {!open ? (
         <p className="text-sm text-ink-2">
-          Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per
-          year. The official 2023–2026 figures are built in; edit them when the rules change.
+          {t(
+            "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official 2023–2026 figures are built in; edit them when the rules change.",
+          )}
         </p>
       ) : (
         <div className="flex flex-col gap-6">
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
             <div>
-              <h3 className="mb-2 text-sm font-medium">Cash, by account type</h3>
+              <h3 className="mb-2 text-sm font-medium">{t("Cash, by account type")}</h3>
               <div className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
                 {Object.keys(cfg.mapping.cashByAccountKind).map((k) => (
                   <Fragment key={k}>
-                    <span className="text-ink-2">{KIND_LABEL[k] ?? k}</span>
+                    <span className="text-ink-2">{kindLabel(k)}</span>
                     <CategorySelect
                       value={cfg.mapping.cashByAccountKind[k]!}
                       onChange={(v) =>
@@ -648,16 +776,17 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                 ))}
               </div>
               <p className="mt-2 text-xs text-muted">
-                Broker cash usually sits at a bank (e.g. flatex for DEGIRO). Euros on a crypto exchange usually don’t,
-                so they count as other assets.
+                {t(
+                  "Broker cash usually sits at a bank (e.g. flatex for DEGIRO). Euros on a crypto exchange usually don't, so they count as other assets.",
+                )}
               </p>
             </div>
             <div>
-              <h3 className="mb-2 text-sm font-medium">Everything else, by asset class</h3>
+              <h3 className="mb-2 text-sm font-medium">{t("Everything else, by asset class")}</h3>
               <div className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
                 {Object.keys(cfg.mapping.classCategory).map((k) => (
                   <Fragment key={k}>
-                    <span className="text-ink-2">{CLASS_LABEL_SHORT[k] ?? k}</span>
+                    <span className="text-ink-2">{classLabel(k)}</span>
                     <CategorySelect
                       value={cfg.mapping.classCategory[k]!}
                       onChange={(v) =>
@@ -673,7 +802,7 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                   </Fragment>
                 ))}
               </div>
-              <h3 className="mb-2 mt-5 text-sm font-medium">Whole-account overrides</h3>
+              <h3 className="mb-2 mt-5 text-sm font-medium">{t("Whole-account overrides")}</h3>
               <div className="grid grid-cols-[1fr_auto] items-center gap-2 text-sm">
                 {overview.accounts
                   .filter((a) => !a.archived)
@@ -694,25 +823,26 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                   ))}
               </div>
               <p className="mt-2 text-xs text-muted">
-                E.g. “Green investments” for a fund with a groenverklaring (exempt up to the yearly limit), “Not in box
-                3” for a pension or lijfrente account.
+                {t(
+                  "E.g. “Green investments” for a fund with a groenverklaring (exempt up to the yearly limit), “Not in box 3” for a pension or lijfrente account.",
+                )}
               </p>
             </div>
           </div>
 
           <div>
-            <h3 className="mb-2 text-sm font-medium">Rates per year</h3>
+            <h3 className="mb-2 text-sm font-medium">{t("Rates per year")}</h3>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[760px] text-sm">
                 <thead>
                   <tr className="text-xs text-ink-2">
-                    <th className="py-1 text-left font-medium">Year</th>
-                    {RATE_FIELDS.map((f) => (
+                    <th className="py-1 text-left font-medium">{t("Year")}</th>
+                    {rateFields().map((f) => (
                       <th key={f.key} className="px-1 py-1 text-left font-medium">
                         {f.label}
                       </th>
                     ))}
-                    <th className="px-1 py-1 text-left font-medium">Final</th>
+                    <th className="px-1 py-1 text-left font-medium">{t("Final")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -722,13 +852,12 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                     return (
                       <tr key={y}>
                         <td className="py-1 pr-2 font-medium">
-                          {y} {cfg.rates[y] && <Badge>custom</Badge>}
+                          {y} {cfg.rates[y] && <Badge>{t("custom")}</Badge>}
                         </td>
-                        {RATE_FIELDS.map((f) => (
+                        {rateFields().map((f) => (
                           <td key={f.key} className="px-1 py-1">
                             <AmountInput
                               aria-label={`${f.label} ${y}`}
-
                               className="w-24 py-1 text-xs"
                               value={(r?.[f.key] as string | undefined) ?? ""}
                               placeholder="—"
@@ -739,7 +868,7 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                         <td className="px-1 py-1">
                           <input
                             type="checkbox"
-                            aria-label={`Final ${y}`}
+                            aria-label={`${t("Final")} ${y}`}
                             checked={r?.final ?? false}
                             onChange={(e) => setRate(y, "final", e.target.checked)}
                           />
@@ -747,7 +876,7 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                         <td className="px-1 py-1">
                           {cfg.rates[y] && overview.defaultRates[y] && (
                             <Button size="sm" variant="ghost" onClick={() => resetRate(y)}>
-                              Reset
+                              {t("Reset")}
                             </Button>
                           )}
                         </td>
@@ -758,16 +887,17 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
               </table>
             </div>
             <p className="mt-2 text-xs text-muted">
-              Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year. Years before 2023 used a
-              different system.
+              {t(
+                "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year. Years before 2023 used a different system.",
+              )}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
             <Button variant="primary" onClick={save}>
-              Save rules & rates
+              {t("Save rules & rates")}
             </Button>
-            {saved && <span className="text-sm text-gain">✓ Saved</span>}
+            {saved && <span className="text-sm text-gain">✓ {t("Saved")}</span>}
             {error && <Alert tone="danger">{error}</Alert>}
           </div>
         </div>

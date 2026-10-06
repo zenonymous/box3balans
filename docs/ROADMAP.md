@@ -22,12 +22,12 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - Een variant met één container voor laptops en om uit te proberen.
 - Installatiehandleidingen per systeem, en de README in het Nederlands.
 
-## Fase B: box 3 voor iedereen, niet alleen beleggers
+## Fase B: box 3 voor iedereen, niet alleen beleggers ✅
 
-- **Huishouden:** jij, een fiscale partner en minderjarige kinderen (hun bezit telt bij de ouders). Per rekening een eigenaar: ik, partner, of samen met een verdeling. De verdeling van de grondslag tussen partners, per persoon zoals in de aangifte.
-- **Snelle modus per rekening per jaar:** alleen de waarde op 1 januari en 31 december, geld erin en eruit, en ontvangen rente of dividend. Genoeg voor de forfaitaire berekening en de vergelijking met het werkelijk rendement, zonder elke transactie te importeren.
-- **Spaargeld:** spaarrekeningen met rente, ingelezen uit de CSV- of CAMT.053-export van je bank.
-- **Overige bezittingen en schulden:** een tweede woning, een verhuurde woning (WOZ-waarde × leegwaarderatio), uitgeleend geld, schulden met betaalde rente, kapitaalverzekeringen, buitenlandse rekeningen.
+- **Huishouden:** jij, een fiscale partner en minderjarige kinderen (hun bezit telt voor de ouders met gezag). Per rekening een eigenaar: jij, je partner, samen (met jouw aandeel) of een kind. De verdeling van de grondslag tussen partners, met per persoon het bezit, de grondslag en de belasting.
+- **Waarden per jaar:** per rekening alleen de waarde op 1 januari, geld erin en eruit, inkomsten en kosten. Genoeg voor de forfaitaire berekening, de vergelijking met het werkelijk rendement en de vooruitblik op 2028, zonder elke transactie te importeren.
+- **Spaargeld:** saldi op 1 januari, rente en geld erin en eruit, ingelezen uit de export van je bank (CSV met saldo, het TAB-bestand van ABN AMRO, CAMT.053, of CSV zonder saldo met één bekend saldo).
+- **Overige bezittingen en schulden:** een tweede of verhuurde woning (WOZ-waarde, met de leegwaarderatio bij verhuur), uitgeleend geld, kapitaalverzekeringen, schulden met betaalde rente, en een vinkje voor rekeningen in het buitenland.
 
 ## Fase C: Nederlands
 

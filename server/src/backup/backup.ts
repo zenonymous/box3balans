@@ -5,6 +5,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import * as s from "../db/schema.js";
+import { forgetLanguage } from "../domain/settings.js";
 import { decryptBackup, encryptBackup, isEncryptedBackup } from "./crypto.js";
 
 export const BACKUP_FORMAT = "kluishuis-backup";
@@ -17,7 +18,10 @@ const LEGACY_FORMATS = new Set(["portfolio-dashboard-backup"]);
  */
 const TABLES: Table[] = [
   s.users,
+  // Before accounts: an account can belong to a child.
+  s.persons,
   s.accounts,
+  s.accountYears,
   s.assets,
   s.imports,
   s.transactions,
@@ -38,6 +42,7 @@ const TABLES: Table[] = [
 // Tables with a serial id whose sequence must continue after the restored rows.
 const SERIAL_TABLES = [
   "users",
+  "persons",
   "accounts",
   "assets",
   "imports",
@@ -130,6 +135,7 @@ export async function restoreBackup(db: DB, b: BackupFile): Promise<Record<strin
       );
     }
   });
+  forgetLanguage();
   return counts;
 }
 

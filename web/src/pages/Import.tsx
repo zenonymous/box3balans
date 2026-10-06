@@ -5,6 +5,7 @@ import { ApiError, del, get, post, type TxType } from "../api";
 import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Select, Tabs, cx } from "../components/ui";
 import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
+import { readText } from "../files";
 
 // ---- Types mirroring /api/import ----
 
@@ -147,16 +148,6 @@ const ORDER_LABEL = { YMD: "year-month-day", DMY: "day-month-year", MDY: "month-
 
 const letter = (i: number): string =>
   i < 26 ? String.fromCharCode(65 + i) : `${letter(Math.floor(i / 26) - 1)}${letter(i % 26)}`;
-
-/** Reads the file as UTF-8, or as Windows-1252 when it isn't valid UTF-8 (older Excel exports). */
-async function readText(file: File): Promise<string> {
-  const buf = await file.arrayBuffer();
-  try {
-    return new TextDecoder("utf-8", { fatal: true }).decode(buf);
-  } catch {
-    return new TextDecoder("windows-1252").decode(buf);
-  }
-}
 
 function useDebounced<T>(value: T, ms: number): T {
   const [v, setV] = useState(value);

@@ -56,7 +56,20 @@ export const del = <T>(url: string) => api<T>("DELETE", url);
 // ---- Types mirroring the server responses ----
 
 export type AssetClass = "stock" | "etf" | "crypto" | "metal" | "cash" | "other";
-export type AccountKind = "broker" | "exchange" | "vault" | "wallet" | "bank" | "physical" | "other";
+export type AccountKind =
+  | "broker"
+  | "exchange"
+  | "vault"
+  | "wallet"
+  | "bank"
+  | "physical"
+  | "other"
+  | "property"
+  | "receivable"
+  | "debt"
+  | "insurance";
+export type AccountOwner = "self" | "partner" | "joint" | "child";
+export type Custody = "together" | "self" | "self_half" | "partner";
 export type TxType =
   "buy" | "sell" | "deposit" | "withdrawal" | "transfer_in" | "transfer_out" | "dividend" | "reward" | "fee" | "split";
 export type MetalName = "gold" | "silver" | "platinum" | "palladium";
@@ -73,8 +86,52 @@ export interface Account {
   provider: string | null;
   notes: string | null;
   archived: boolean;
+  tracking: "transactions" | "yearly";
+  owner: AccountOwner;
+  ownerChildId: number | null;
+  jointSelfPct: string;
+  foreign: boolean;
   txCount: number;
   itemCount: number;
+  latestYear: number | null;
+  latestValueEur: string | null;
+}
+
+export interface Person {
+  id: number;
+  name: string;
+  role: "self" | "partner" | "child";
+  birthDate: string | null;
+  custody: Custody;
+}
+
+export interface AccountYear {
+  accountId: number;
+  year: number;
+  valueEur: string | null;
+  inEur: string;
+  outEur: string;
+  incomeEur: string;
+  costsEur: string;
+  details: { rented?: boolean; rentEur?: string; source?: string };
+}
+
+export interface BankYear {
+  year: number;
+  valueEur: string | null;
+  valueEstimated: boolean;
+  interestEur: string;
+  inEur: string;
+  outEur: string;
+  fullYear: boolean;
+  lines: number;
+}
+
+export interface BankImport {
+  format: "camt053" | "abn-tab" | "csv";
+  accounts: { account: string; from: string; to: string; lines: number; years: BankYear[] }[];
+  needsClosingBalance: boolean;
+  warnings: string[];
 }
 
 export interface LatestPrice {
@@ -480,6 +537,7 @@ export interface Box3Config {
       extraBankEur: string;
       debtInterestEur?: string;
       extraReturnEur?: string;
+      allocationSelfPct?: string;
     }
   >;
 }
@@ -491,10 +549,14 @@ export interface Box3Overview {
   accounts: { id: number; name: string; kind: AccountKind; archived: boolean }[];
 }
 
+export type AttributionNote =
+  "partner-not-fiscal" | "joint-partner-share" | "child-adult" | "child-other-parent" | "child-missing";
+
 export interface Box3Row {
   accountId: number;
   accountName: string;
   accountKind: string;
+  source: "transactions" | "yearly";
   assetId: number;
   symbol: string;
   name: string;
@@ -505,8 +567,26 @@ export interface Box3Row {
   priceEur: string | null;
   priceDay: string | null;
   valueEur: string;
-  category: Box3Category;
+  countedEur: string;
+  category: Box3Category | "debt";
   missingPrice: boolean;
+  owner: AccountOwner;
+  ownerChildId: number | null;
+  countedPct: string;
+  note?: AttributionNote;
+}
+
+export interface Box3PersonTotals {
+  bank: string;
+  other: string;
+  green: string;
+  debts: string;
+}
+
+export interface Box3PersonTax {
+  taxableBaseEur: string;
+  benefitEur: string;
+  taxEur: string;
 }
 
 export interface Box3Year {
@@ -518,6 +598,9 @@ export interface Box3Year {
   totals: Record<Box3Category, string>;
   otherBreakdown: { investments: string; crypto: string; metals: string; cash: string; other: string };
   extra: { bankEur: string; otherEur: string; debtsEur: string };
+  debtsEur: string;
+  perPerson: { self: Box3PersonTotals; partner: Box3PersonTotals | null };
+  allocation: { selfPct: string; self: Box3PersonTax; partner: Box3PersonTax } | null;
   calculation: {
     bankEur: string;
     otherEur: string;
@@ -562,6 +645,7 @@ export interface ActualReturn {
   extraReturnEur: number;
   debtInterestEur: number;
   totalEur: number;
+  warnings: string[];
   comparison: {
     deemedBenefitEur: number;
     deemedTaxEur: number;

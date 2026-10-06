@@ -5,7 +5,16 @@ import { Alert, Badge, Button, Card, Empty, PageHeader, Spinner, Tabs } from "..
 import { TX_LABEL, date, relativeTime } from "../format";
 import { useInvalidateAll } from "../queries";
 
-export type Entity = "transaction" | "asset" | "account" | "metal_item" | "import" | "integration" | "wallet_address";
+export type Entity =
+  | "transaction"
+  | "asset"
+  | "account"
+  | "account_years"
+  | "person"
+  | "metal_item"
+  | "import"
+  | "integration"
+  | "wallet_address";
 
 interface Entry {
   id: number;
@@ -23,6 +32,8 @@ const ENTITY_LABEL: Record<Entity, string> = {
   transaction: "Transaction",
   asset: "Asset",
   account: "Account",
+  account_years: "Values per year",
+  person: "Household",
   metal_item: "Metal item",
   import: "CSV import",
   integration: "Connection",
