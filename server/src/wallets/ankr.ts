@@ -24,8 +24,9 @@ export const BSC: AnkrChain = {
 };
 
 const ENDPOINT = "https://rpc.ankr.com/multichain/";
-// Freemium allows 50 Advanced API requests a minute.
+// Freemium allows 50 Advanced API requests a minute, shared by every wallet syncing at once.
 const SPACING_MS = 1_300;
+let nextSlot = 0;
 const PAGE_SIZE = 1_000;
 
 interface AnkrTx {
@@ -76,10 +77,12 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
     ? undefined
     : `${c.label} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.`;
   let id = 0;
-  let calls = 0;
 
   async function rpc<T>(ctx: ChainContext, method: string, params: Record<string, unknown>): Promise<T> {
-    if (calls++ > 0) await ctx.sleep(SPACING_MS);
+    const now = Date.now();
+    const wait = nextSlot - now;
+    nextSlot = Math.max(now, nextSlot) + SPACING_MS;
+    if (wait > 0) await ctx.sleep(wait);
     for (let attempt = 0; ; attempt++) {
       const res = await ctx.fetchFn(ENDPOINT + apiKey, {
         method: "POST",
@@ -140,7 +143,6 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
 
     async fetch(inputs, ctx) {
       if (unavailable) throw new ChainError(unavailable);
-      calls = 0;
       const ours = new Set(inputs.map((i) => lc(i.address)));
       const lastBlocks = (ctx.cursor?.lastBlock as Record<string, number> | undefined) ?? {};
       const newLastBlocks: Record<string, number> = {};

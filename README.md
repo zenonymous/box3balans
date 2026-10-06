@@ -14,10 +14,12 @@ The work follows the 8 milestones in [`docs/PROMPT.md`](docs/PROMPT.md).
 | 2   | Physical/vaulted metals and metals view                                 | ✅ done (built together with 1)                                                         |
 | 3   | CSV importers (DEGIRO, Trade Republic, IBKR, Goldrepublic, generic)     | 🟡 generic import with column mapping done; built-in broker formats need sample exports |
 | 4   | Exchange API sync (Bitvavo, Kraken, Coinbase, IBKR Flex)                | ✅ done (not yet tried against live accounts)                                           |
-| 5   | Wallet tracking (BTC incl. xpub, EVM, Solana, more)                     | ✅ done (BTC verified live; other chains against stubs)                                 |
+| 5   | Wallet tracking (BTC incl. xpub, EVM, Solana, more)                     | ✅ done (Bitcoin, Cardano, Dogecoin, Unichain, Ink and Soneium verified live)           |
 | 6   | History backfill, P&L reports, dividends/income views                   | ✅ done                                                                                 |
 | 7   | Dutch Box 3 overview & exports                                          | ✅ done                                                                                 |
 | 8   | Backups, polish                                                         | ✅ done                                                                                 |
+
+Beyond the milestones: deploy tooling and version stamping, a change history with restore, encrypted backups for off-site copies, a _Needs attention_ page, second price sources, time- and money-weighted returns against a benchmark, a cost overview, expected dividends, the Box 3 actual return and 2028 preview, staking on exchanges, and Cardano, Dogecoin, BNB Chain and more L2 wallets.
 
 ## Install on your NAS
 
@@ -115,6 +117,7 @@ Exchange API keys inside a backup are encrypted with `APP_SECRET` as well. **Kee
   It uses `BACKUP_PASSPHRASE` from `.env`; for another one: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
 
 - To read an encrypted backup outside the app: `docker compose exec app node dist/cli.js decrypt /backups/<file>.enc` writes the plain `.json.gz` next to it.
+- `docker compose exec app node dist/cli.js list` lists the backups with their size and date.
 
 **Extra safety net (optional).** A raw database dump, which needs a matching PostgreSQL version to restore:
 
@@ -147,10 +150,13 @@ docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.
 
 ## Using it
 
-1. **Accounts**: add one per place you hold assets: brokers (DEGIRO), exchanges (Bitvavo), wallets (Ledger), vaults (Goldrepublic), physical storage (Home safe).
-2. **Assets**: search Yahoo Finance by name, ticker or ISIN, or CoinGecko by coin. Pick the listing you actually trade (e.g. `IWDA.AS` rather than `IWDA.L`). Gold, silver, platinum, palladium and EUR cash exist already.
-3. **Transactions**: buy, sell, deposit, withdrawal, dividend (gross plus tax withheld), staking reward, fee paid in the asset, split, and **transfers** between accounts, which carry the cost basis along. Foreign-currency trades get the ECB rate for that date automatically; you can override it.
-4. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset. Each item can have up to 8 **photos** (resized in the browser; location data is removed). _Inventory_ prints or saves as PDF a list per storage location with photos, weights, purchase details and value at spot, e.g. for your home insurance.
+1. **Overview and Holdings**: net worth over time, today's change, allocation by asset class, by holding or by account, and each holding per account with its cost, open and realized gains.
+2. **Needs attention**: a red or orange link at the top of the sidebar appears when something wants a look: a failed sync, balances that don't match an exchange or wallet, prices that couldn't be updated, a negative balance, deposits without a value, withdrawals that weren't linked to a deposit, or backups that failed, are overdue or aren't encrypted. Each item links to where to fix it; a warning can be dismissed until it changes.
+3. **History** (_Settings → History_): every change to transactions, assets, accounts, metal items, imports, connections and wallets, field by field, whether you made it or a sync or import did. Deleted transactions and metal items can be restored from there.
+4. **Accounts**: add one per place you hold assets: brokers (DEGIRO), exchanges (Bitvavo), wallets (Ledger), vaults (Goldrepublic), physical storage (Home safe).
+5. **Assets**: search Yahoo Finance by name, ticker or ISIN, or CoinGecko by coin. Pick the listing you actually trade (e.g. `IWDA.AS` rather than `IWDA.L`). Gold, silver, platinum, palladium and EUR cash exist already.
+6. **Transactions**: buy, sell, deposit, withdrawal, dividend (gross plus tax withheld), staking reward, fee paid in the asset, split, and **transfers** between accounts, which carry the cost basis along. Foreign-currency trades get the ECB rate for that date automatically; you can override it.
+7. **Metals**: add coins and bars with weight and purity, or pick a preset (Krugerrand, Maple Leaf, Gouden Tientje, standard bars …). Items are valued at spot by fine weight. If you enter the spot value at purchase, the premium you paid is tracked. Vaulted metal (Goldrepublic) is recorded as buy transactions in **grams** on the Gold/Silver asset. Each item can have up to 8 **photos** (resized in the browser; location data is removed). _Inventory_ prints or saves as PDF a list per storage location with photos, weights, purchase details and value at spot, e.g. for your home insurance.
 
 ### CSV import
 
@@ -191,7 +197,7 @@ Re-syncs are idempotent. You can edit imported transactions, and a re-sync never
 - **Bitvavo**: coins in fixed staking are counted via the separate staking balance. A fixed-staking or lending lock is not a withdrawal; when it's released, only the amount above what was locked is the reward. A cancelled withdrawal is undone (apart from a fee that wasn't refunded), and moves between Bitvavo's own wallets cancel out.
 - **Coinbase**: the old ETH2 wallet (staked ether) counts as ETH, its rewards included. Moves between your Coinbase wallets (vaults, other portfolios, the ETH2 retirement) cancel out when both sides are visible to the key; otherwise they are a deposit or withdrawal.
 
-Known limits: the Bitvavo fee handling assumes fees are charged on top of the sent amount (reconciliation will flag it if that is wrong). Coinbase doesn't report trade fees separately. IBKR Flex covers at most 365 days per query, skips options and futures, and doesn't apply stock splits (reconciliation flags those).
+Known limits: the Bitvavo fee handling assumes fees are charged on top of the sent amount, and Bitvavo doesn't document what its fixed-staking and lending history entries contain; reconciliation flags it if either is wrong. Coinbase doesn't report trade fees separately. IBKR Flex covers at most 365 days per query, skips options and futures, and doesn't apply stock splits (reconciliation flags those).
 
 ### Wallets (self-custody, by public address)
 
@@ -268,7 +274,7 @@ It's an estimate, not tax advice: check the values against your banks' and broke
 
 A fallback is only used when the main source gives no price, and only if its price is between half and double the last known one (a token without a known price is never priced by symbol, which could be a different coin). _Settings → Prices_ shows when it happened. Every refresh stores the latest quote, today's close in `price_history`, and a net-worth snapshot.
 
-**Price history backfill** loads daily EUR closes for every asset from its first transaction until today. It covers Yahoo (stocks, ETFs, `SYM-EUR` crypto pairs), CoinGecko (crypto, last 365 days, as a fallback), Yahoo futures for metals, and ECB rates for foreign cash. It runs 30 seconds after startup, daily, and a few seconds after transactions change or a sync finishes. Each asset is loaded in full once, then topped up incrementally. `POST /api/prices/backfill` forces a full re-check. One failing asset does not block the others; failures appear on the Overview and Settings pages.
+**Price history backfill** loads daily EUR closes for every asset from its first transaction until today. It covers Yahoo (stocks, ETFs, `SYM-EUR` crypto pairs), CoinGecko (crypto, last 365 days, as a fallback), Yahoo futures for metals, and ECB rates for foreign cash. A coin's Yahoo `SYM-EUR` pair is only used when its current price is within half to double the coin's own price, because another coin can share the symbol; otherwise its history comes from CoinGecko. It runs 30 seconds after startup, daily, and a few seconds after transactions change or a sync finishes. Each asset is loaded in full once, then topped up incrementally. `POST /api/prices/backfill` forces a full re-check. One failing asset does not block the others; failures appear on the Overview and Settings pages.
 
 ## Development
 

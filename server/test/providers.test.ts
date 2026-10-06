@@ -31,6 +31,10 @@ describe("Kraken", () => {
     expect(normaliseKrakenAsset("XBT.M")).toBe("BTC");
     expect(normaliseKrakenAsset("SOL")).toBe("SOL");
     expect(normaliseKrakenAsset("XXBT", { XXBT: "XBT" })).toBe("BTC");
+    expect(normaliseKrakenAsset("EUR.HOLD")).toBe("EUR");
+    expect(normaliseKrakenAsset("ETH.INK")).toBe("ETH");
+    expect(normaliseKrakenAsset("USDT0.TEMPO")).toBe("USDT0");
+    expect(normaliseKrakenAsset("ATOM21.S")).toBe("ATOM");
   });
 
   it("groups ledger entries into trades, rewards and transfers", () => {
@@ -84,35 +88,48 @@ describe("Kraken", () => {
 
   it("books staking and earn income as rewards and skips moves between Kraken's wallets", () => {
     const t0 = 1704189600;
-    const events = mapKrakenLedger([
-      // Auto-earn allocation: a move.
-      { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL", amount: "-5", fee: "0" },
-      { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL.F", amount: "5", fee: "0" },
-      // Earn reward, net of Kraken's fee.
-      { refid: "B", time: t0 + 1, type: "earn", subtype: "reward", asset: "SOL.F", amount: "0.02", fee: "0.004" },
-      // Old-style earn entries: with a fee a reward, without one a move.
-      { refid: "C", time: t0 + 2, type: "earn", asset: "DOT.S", amount: "0.1", fee: "0.015" },
-      { refid: "D", time: t0 + 3, type: "earn", asset: "DOT.S", amount: "10", fee: "0" },
-      { refid: "E", time: t0 + 4, type: "earn", subtype: "airdrop", asset: "FLR", amount: "12", fee: "0" },
-      { refid: "F", time: t0 + 5, type: "invite bonus", asset: "ZEUR", amount: "10", fee: "0" },
-      // Fee credits are not an asset.
-      { refid: "G", time: t0 + 6, type: "deposit", asset: "KFEE", amount: "1000", fee: "0" },
-      // A trade whose fee was paid in fee credits.
-      { refid: "H", time: t0 + 7, type: "trade", asset: "XXBT", amount: "0.01", fee: "0" },
-      { refid: "H", time: t0 + 7, type: "trade", asset: "ZEUR", amount: "-400", fee: "0" },
-      { refid: "H", time: t0 + 7, type: "trade", asset: "KFEE", amount: "0", fee: "64" },
-      // A delisted asset converted into USDC.
-      {
-        refid: "I",
-        time: t0 + 8,
-        type: "earn",
-        subtype: "delistingconversion",
-        asset: "LUNA2",
-        amount: "-50",
-        fee: "0",
-      },
-      { refid: "I", time: t0 + 8, type: "earn", subtype: "delistingconversion", asset: "USDC", amount: "21", fee: "0" },
-    ]);
+    // Kraken's asset table: fee credits have the altname FEE.
+    const altnames = { KFEE: "FEE", XXBT: "XBT", ZEUR: "EUR" };
+    const events = mapKrakenLedger(
+      [
+        // Auto-earn allocation: a move.
+        { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL", amount: "-5", fee: "0" },
+        { refid: "A", time: t0, type: "earn", subtype: "autoallocate", asset: "SOL.F", amount: "5", fee: "0" },
+        // Earn reward, net of Kraken's fee.
+        { refid: "B", time: t0 + 1, type: "earn", subtype: "reward", asset: "SOL.F", amount: "0.02", fee: "0.004" },
+        // Old-style earn entries: with a fee a reward, without one a move.
+        { refid: "C", time: t0 + 2, type: "earn", asset: "DOT.S", amount: "0.1", fee: "0.015" },
+        { refid: "D", time: t0 + 3, type: "earn", asset: "DOT.S", amount: "10", fee: "0" },
+        { refid: "E", time: t0 + 4, type: "earn", subtype: "airdrop", asset: "FLR", amount: "12", fee: "0" },
+        { refid: "F", time: t0 + 5, type: "invite bonus", asset: "ZEUR", amount: "10", fee: "0" },
+        // Fee credits are not an asset.
+        { refid: "G", time: t0 + 6, type: "deposit", asset: "KFEE", amount: "1000", fee: "0" },
+        // A trade whose fee was paid in fee credits.
+        { refid: "H", time: t0 + 7, type: "trade", asset: "XXBT", amount: "0.01", fee: "0" },
+        { refid: "H", time: t0 + 7, type: "trade", asset: "ZEUR", amount: "-400", fee: "0" },
+        { refid: "H", time: t0 + 7, type: "trade", asset: "KFEE", amount: "0", fee: "64" },
+        // A delisted asset converted into USDC.
+        {
+          refid: "I",
+          time: t0 + 8,
+          type: "earn",
+          subtype: "delistingconversion",
+          asset: "LUNA2",
+          amount: "-50",
+          fee: "0",
+        },
+        {
+          refid: "I",
+          time: t0 + 8,
+          type: "earn",
+          subtype: "delistingconversion",
+          asset: "USDC",
+          amount: "21",
+          fee: "0",
+        },
+      ],
+      altnames,
+    );
     expect(events.map((e) => [e.kind, e.asset.kind === "crypto" ? e.asset.symbol : "EUR", qty(e)])).toEqual([
       ["reward", "SOL", "0.016"],
       ["reward", "DOT", "0.085"],
@@ -149,6 +166,17 @@ describe("Kraken", () => {
       ["P3", "reward", "0.3"],
       ["P4", "deposit", "1.5"],
     ]);
+  });
+
+  it("never holds back a recent reward", () => {
+    const t0 = 1704189600;
+    const { events, held } = krakenEvents(
+      [{ refid: "R", time: t0, type: "earn", asset: "DOT.S", amount: "0.1", fee: "0.015" }],
+      {},
+      t0 + 60,
+    );
+    expect(held).toEqual([]);
+    expect(events).toMatchObject([{ kind: "reward", quantity: "0.085" }]);
   });
 
   it("holds back a recent leg whose counterpart may still come", () => {

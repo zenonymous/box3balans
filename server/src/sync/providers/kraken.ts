@@ -84,8 +84,9 @@ const ALIASES: Record<string, string> = { XBT: "BTC", XDG: "DOGE", ETH2: "ETH", 
 /** Normalises a Kraken asset code (XXBT, ZEUR, DOT.S, ETH2, USDC.M …) to a common symbol. */
 export function normaliseKrakenAsset(code: string, altnames: Record<string, string> = {}): string {
   let c = code.toUpperCase();
-  // Staked / earn / bonded variants: DOT.S, XBT.M, ETH.F, ADA.B, DOT28.S …
-  c = c.replace(/\d*\.(S|M|F|B|P|HOLD)$/, "");
+  // Staked, earn, bonded and on-chain variants: DOT.S, DOT28.S (bonding days), XBT.M, ETH.F,
+  // EUR.HOLD, ETH.INK, USDT0.TEMPO … The digits only belong to the variant before ".S".
+  c = c.replace(/\d+\.S$|\.[A-Z]+$/, "");
   c = altnames[c] ?? c;
   if (/^[XZ][A-Z]{3}$/.test(c) && !altnames[code]) {
     // XXBT → XBT, ZEUR → EUR (only for the classic 4-letter codes)
@@ -99,8 +100,9 @@ export function normaliseKrakenAsset(code: string, altnames: Record<string, stri
   return ALIASES[c] ?? c;
 }
 
-// Fee credits Kraken hands out to pay trading fees with: not an asset you own.
-const IGNORED_ASSETS = new Set(["KFEE"]);
+// Fee credits Kraken hands out to pay trading fees with: not an asset you own. Matched on the
+// raw code: its altname is "FEE".
+const isFeeCredit = (code: string) => code.toUpperCase() === "KFEE";
 
 // Moves between Kraken's spot and staking/earn wallets: not portfolio changes.
 const INTERNAL_SUBTYPES = new Set([
@@ -162,7 +164,7 @@ export function mapKrakenLedger(
 export function krakenEvents(entries: LedgerEntry[], altnames: Record<string, string>, now: number) {
   const groups = new Map<string, LedgerEntry[]>();
   for (const e of entries) {
-    if (IGNORED_ASSETS.has(normaliseKrakenAsset(e.asset, altnames))) continue;
+    if (isFeeCredit(e.asset)) continue;
     const g = groups.get(e.refid) ?? [];
     g.push(e);
     groups.set(e.refid, g);
@@ -228,8 +230,10 @@ export function krakenEvents(entries: LedgerEntry[], altnames: Record<string, st
     }
   }
 
-  // Cancel out moves booked as separate legs.
-  const pairable = (l: Leg) => PAIRABLE_TYPES.has(l.type) && !["reward", "airdrop"].includes(l.subtype);
+  // Cancel out moves booked as separate legs. Rewards and airdrops never are one (nor an earn
+  // entry without a subtype that got this far: it carried a fee, so it's a reward).
+  const pairable = (l: Leg) =>
+    PAIRABLE_TYPES.has(l.type) && !["reward", "airdrop"].includes(l.subtype) && !(l.type === "earn" && !l.subtype);
   const paired = new Set<Leg>();
   const sorted = legs.filter(pairable).sort((a, b) => a.time - b.time);
   for (const out of sorted) {
@@ -336,8 +340,8 @@ export const kraken: ExchangeProvider<Creds> = {
     // Held-back legs aren't booked yet: compare the balance without them.
     for (const l of held) totals.set(l.sym, (totals.get(l.sym) ?? D(0)).minus(l.amount));
     for (const [code, q] of Object.entries(bal)) {
+      if (isFeeCredit(code)) continue;
       const sym = normaliseKrakenAsset(code, altnames);
-      if (IGNORED_ASSETS.has(sym)) continue;
       totals.set(sym, (totals.get(sym) ?? D(0)).plus(D(q)));
     }
     const balances: Balance[] = [...totals]

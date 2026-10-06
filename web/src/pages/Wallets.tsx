@@ -68,8 +68,8 @@ export function WalletsPage() {
       ) : groups.length === 0 ? (
         <Card>
           <Empty title="No wallets yet">
-            Add a Bitcoin address or xpub, an Ethereum/L2 address, or a Solana, Litecoin, XRP or Tron address. History
-            and balances are read from public blockchain explorers.
+            Add a Bitcoin, Litecoin or Dogecoin address or xpub, an Ethereum, L2 or BNB Chain address, or a Solana,
+            Cardano, XRP or Tron address. History and balances are read from public blockchain explorers.
           </Empty>
         </Card>
       ) : (
