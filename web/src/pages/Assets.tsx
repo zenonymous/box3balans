@@ -18,13 +18,14 @@ import {
 } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eurPrice, relativeTime, toApiNumber, toInputNumber } from "../format";
 import { useAssets, useInvalidateAll } from "../queries";
+import { t } from "../i18n";
 
 const SOURCE_LABEL: Record<string, string> = {
   yahoo: "Yahoo Finance",
   coingecko: "CoinGecko",
-  metal: "Spot",
-  fx: "ECB rate",
-  manual: "Manual",
+  metal: t("Spot"),
+  fx: t("ECB rate"),
+  manual: t("Manual"),
 };
 
 export function AssetsPage() {
@@ -38,16 +39,17 @@ export function AssetsPage() {
   return (
     <>
       <PageHeader
-        title="Assets"
-        subtitle="Instruments you can record transactions for, with their price source"
+        title={t("Assets")}
+        subtitle={t("Instruments you can record transactions for, with their price source")}
         actions={
           <Button variant="primary" onClick={() => setAdding(true)}>
-            + Add asset
+            {t("+ Add asset")}
           </Button>
         }
       />
       <label className="mb-3 flex items-center gap-1.5 text-sm text-ink-2">
-        <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} /> Show hidden
+        <input type="checkbox" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />{" "}
+        {t("Show hidden")}
       </label>
       {assets.isLoading ? (
         <Spinner />
@@ -77,7 +79,7 @@ export function AssetsPage() {
                       >
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium text-ink">
-                            {a.name} {a.hidden && <Badge>hidden</Badge>}
+                            {a.name} {a.hidden && <Badge>{t("hidden")}</Badge>}
                           </div>
                           <div className="truncate text-xs text-muted">
                             {a.symbol}
@@ -87,7 +89,7 @@ export function AssetsPage() {
                         </div>
                         <div className="shrink-0 text-right">
                           <div className="tabular text-ink">
-                            {a.price ? eurPrice(a.price.priceEur) : <span className="text-muted">no price</span>}
+                            {a.price ? eurPrice(a.price.priceEur) : <span className="text-muted">{t("no price")}</span>}
                             {a.unit === "g" && a.price ? "/g" : ""}
                           </div>
                           <div className="text-xs text-muted">
@@ -155,7 +157,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Modal open onClose={onClose} title="Add asset" wide>
+    <Modal open onClose={onClose} title={t("Add asset")} wide>
       <div className="mb-4">
         <Tabs
           value={mode}
@@ -166,10 +168,10 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
             setError(undefined);
           }}
           options={[
-            { value: "securities", label: "Stock / ETF" },
-            { value: "crypto", label: "Crypto" },
-            { value: "cash", label: "Cash" },
-            { value: "manual", label: "Manual" },
+            { value: "securities", label: t("Stock / ETF") },
+            { value: "crypto", label: t("Crypto") },
+            { value: "cash", label: t("Cash") },
+            { value: "manual", label: t("Manual") },
           ]}
         />
       </div>
@@ -180,23 +182,27 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder={mode === "securities" ? "Name, ticker or ISIN (e.g. IE00B4L5Y983)" : "Coin name or symbol"}
+              placeholder={
+                mode === "securities" ? t("Name, ticker or ISIN (e.g. IE00B4L5Y983)") : t("Coin name or symbol")
+              }
               autoFocus
-              aria-label="Search"
+              aria-label={t("Search")}
             />
             <Button type="submit" variant="primary">
-              Search
+              {t("Search")}
             </Button>
           </form>
           <p className="mt-2 text-xs text-muted">
             {mode === "securities"
-              ? "Prices come from Yahoo Finance. Pick the listing on the exchange you actually trade (e.g. .AS Amsterdam, .DE Xetra) — the quote currency is detected automatically."
-              : "Prices come from CoinGecko (in EUR)."}
+              ? t(
+                  "Prices come from Yahoo Finance. Pick the listing on the exchange you actually trade (e.g. .AS Amsterdam, .DE Xetra) — the quote currency is detected automatically.",
+                )
+              : t("Prices come from CoinGecko (in EUR).")}
           </p>
           <div className="mt-3">
             {search.isFetching && <Spinner />}
             {search.error && <Alert tone="danger">{(search.error as Error).message}</Alert>}
-            {search.data && search.data.length === 0 && <Empty title="No matches" />}
+            {search.data && search.data.length === 0 && <Empty title={t("No matches")} />}
             {search.data && search.data.length > 0 && (
               <ul className="divide-y divide-line rounded-lg border border-line">
                 {search.data.map((c) => (
@@ -213,7 +219,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
                       disabled={busy !== null}
                       onClick={() => create({ ...c, isin: c.isin ?? null }, c.priceRef)}
                     >
-                      {busy === c.priceRef ? "Adding…" : "Add"}
+                      {busy === c.priceRef ? t("Adding…") : t("Add")}
                     </Button>
                   </li>
                 ))}
@@ -230,7 +236,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
             void create(
               {
                 assetClass: "cash",
-                name: `Cash ${cashCurrency}`,
+                name: t("Cash {currency}", { currency: cashCurrency }),
                 symbol: cashCurrency,
                 priceSource: "fx",
                 currency: cashCurrency,
@@ -241,10 +247,11 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
           className="flex flex-col gap-3"
         >
           <p className="text-sm text-ink-2">
-            A EUR cash asset exists already. Add other currencies to track cash balances held at brokers or banks; they
-            are valued at the ECB rate.
+            {t(
+              "A EUR cash asset exists already. Add other currencies to track cash balances held at brokers or banks; they are valued at the ECB rate.",
+            )}
           </p>
-          <Field label="Currency">
+          <Field label={t("Currency")}>
             {(id) => (
               <Input
                 id={id}
@@ -257,7 +264,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
           </Field>
           <div>
             <Button type="submit" variant="primary" disabled={busy !== null}>
-              Add cash asset
+              {t("Add cash asset")}
             </Button>
           </div>
         </form>
@@ -272,9 +279,9 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
           className="grid grid-cols-1 gap-3 sm:grid-cols-2"
         >
           <p className="text-sm text-ink-2 sm:col-span-2">
-            For anything without a free price feed (unlisted shares, collectibles). You set its price yourself.
+            {t("For anything without a free price feed (unlisted shares, collectibles). You set its price yourself.")}
           </p>
-          <Field label="Name">
+          <Field label={t("Name")}>
             {(id) => (
               <Input
                 id={id}
@@ -284,7 +291,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
               />
             )}
           </Field>
-          <Field label="Symbol">
+          <Field label={t("Symbol")}>
             {(id) => (
               <Input
                 id={id}
@@ -294,7 +301,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
               />
             )}
           </Field>
-          <Field label="Class">
+          <Field label={t("Class")}>
             {(id) => (
               <Select
                 id={id}
@@ -309,7 +316,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
               </Select>
             )}
           </Field>
-          <Field label="Currency">
+          <Field label={t("Currency")}>
             {(id) => (
               <Input
                 id={id}
@@ -320,14 +327,14 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
               />
             )}
           </Field>
-          <Field label="ISIN (optional)">
+          <Field label={t("ISIN (optional)")}>
             {(id) => (
               <Input id={id} value={manual.isin} onChange={(e) => setManual({ ...manual, isin: e.target.value })} />
             )}
           </Field>
           <div className="sm:col-span-2">
             <Button type="submit" variant="primary" disabled={busy !== null}>
-              Add asset
+              {t("Add asset")}
             </Button>
           </div>
         </form>
@@ -378,10 +385,13 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         isin: f.isin || null,
         hidden: f.hidden,
         ...(editableRef ? { priceRef: f.priceRef } : {}),
-        ...(isFund ? { terPct: f.terPct.trim() ? toApiNumber(f.terPct, "Running costs") : null } : {}),
+        ...(isFund ? { terPct: f.terPct.trim() ? toApiNumber(f.terPct, t("Running costs")) : null } : {}),
       });
       if (price)
-        await post(`/api/assets/${asset.id}/price`, { price: toApiNumber(price, "Price"), currency: asset.currency });
+        await post(`/api/assets/${asset.id}/price`, {
+          price: toApiNumber(price, t("Price")),
+          currency: asset.currency,
+        });
     });
   };
 
@@ -389,27 +399,29 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
     <Modal
       open
       onClose={onClose}
-      title={`Edit ${asset.symbol}`}
+      title={t("Edit {name}", { name: asset.symbol })}
       footer={
         <>
           {!builtin && (
             <Button
               variant="danger"
               className="mr-auto"
-              onClick={() => confirm(`Delete ${asset.name}?`) && run(() => del(`/api/assets/${asset.id}`))}
+              onClick={() =>
+                confirm(t("Delete {name}?", { name: asset.name })) && run(() => del(`/api/assets/${asset.id}`))
+              }
             >
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="asset-form">
-            Save
+            {t("Save")}
           </Button>
         </>
       }
     >
       <form id="asset-form" onSubmit={save} className="flex flex-col gap-3">
-        <Field label="Name">
+        <Field label={t("Name")}>
           {(id) => (
             <Input
               id={id}
@@ -420,7 +432,7 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
             />
           )}
         </Field>
-        <Field label="Symbol">
+        <Field label={t("Symbol")}>
           {(id) => (
             <Input
               id={id}
@@ -438,8 +450,8 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         )}
         {editableRef && (
           <Field
-            label={asset.priceSource === "yahoo" ? "Yahoo ticker" : "CoinGecko id"}
-            hint="Change only if the price feed is wrong"
+            label={asset.priceSource === "yahoo" ? t("Yahoo ticker") : t("CoinGecko id")}
+            hint={t("Change only if the price feed is wrong")}
           >
             {(id) => (
               <Input id={id} value={f.priceRef} onChange={(e) => setF({ ...f, priceRef: e.target.value })} required />
@@ -448,19 +460,24 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         )}
         {isFund && (
           <Field
-            label="Running costs per year (TER, %)"
-            hint="From the fund's factsheet, e.g. 0,20. Used to estimate what holding it costs (Performance → Costs)."
+            label={t("Running costs per year (TER, %)")}
+            hint={t(
+              "From the fund's factsheet, e.g. 0,20. Used to estimate what holding it costs (Performance → Costs).",
+            )}
           >
             {(id) => <AmountInput id={id} value={f.terPct} onChange={(e) => setF({ ...f, terPct: e.target.value })} />}
           </Field>
         )}
         {asset.priceSource === "manual" && (
           <Field
-            label={`Current price (${asset.currency})`}
+            label={t("Current price ({currency})", { currency: asset.currency })}
             hint={
               asset.price
-                ? `Last set ${relativeTime(asset.price.fetchedAt)}: ${eurPrice(asset.price.price, asset.currency)}`
-                : "Not set yet"
+                ? t("Last set {when}: {price}", {
+                    when: relativeTime(asset.price.fetchedAt),
+                    price: eurPrice(asset.price.price, asset.currency),
+                  })
+                : t("Not set yet")
             }
           >
             {(id) => <AmountInput id={id} value={price} onChange={(e) => setPrice(e.target.value)} />}
@@ -469,7 +486,7 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         {!builtin && (
           <label className="flex items-center gap-2 text-sm text-ink-2">
             <input type="checkbox" checked={f.hidden} onChange={(e) => setF({ ...f, hidden: e.target.checked })} />{" "}
-            Hidden: left out of totals and forms (e.g. spam tokens)
+            {t("Hidden: left out of totals and forms (e.g. spam tokens)")}
           </label>
         )}
         {error && <Alert tone="danger">{error}</Alert>}

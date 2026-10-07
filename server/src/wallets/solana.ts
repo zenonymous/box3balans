@@ -2,6 +2,7 @@ import { base58 } from "@scure/base";
 import { D, type Decimal } from "../lib/decimal.js";
 import type { AssetRef, Balance } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 const LAMPORTS = D(1_000_000_000);
 const WSOL = "So11111111111111111111111111111111111111112";
@@ -110,7 +111,7 @@ export function solanaAdapter(
     id: "solana",
     label: "Solana",
     nativeSymbol: "SOL",
-    addressHint: "Solana wallet address (base58)",
+    addressHint: msg("Solana wallet address (base58)"),
     supportsXpub: false,
 
     normalise(input) {
@@ -120,7 +121,7 @@ export function solanaAdapter(
       } catch {
         // fall through
       }
-      throw new ChainError("Not a valid Solana address");
+      throw new ChainError(tr("Not a valid Solana address"));
     },
 
     async fetch(inputs, ctx) {

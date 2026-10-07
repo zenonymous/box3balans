@@ -3,11 +3,12 @@ import { Link } from "react-router";
 import { post } from "../api";
 import { Button, Card, Empty, PageHeader, Spinner, cx } from "../components/ui";
 import { useAttention, type Issue } from "../queries";
+import { t, tn } from "../i18n";
 
 const SEVERITY: Record<Issue["severity"], { label: string; icon: string; tone: string }> = {
-  problem: { label: "Problems", icon: "⛔", tone: "text-loss" },
-  warning: { label: "Warnings", icon: "⚠", tone: "text-warn" },
-  info: { label: "Worth a look", icon: "ⓘ", tone: "text-ink-2" },
+  problem: { label: t("Problems"), icon: "⛔", tone: "text-loss" },
+  warning: { label: t("Warnings"), icon: "⚠", tone: "text-warn" },
+  info: { label: t("Worth a look"), icon: "ⓘ", tone: "text-ink-2" },
 };
 
 export function AttentionPage() {
@@ -26,20 +27,20 @@ export function AttentionPage() {
   return (
     <>
       <PageHeader
-        title="Needs attention"
-        subtitle="Failed syncs, missing prices, backups and data that looks off, in one place."
+        title={t("Needs attention")}
+        subtitle={t("Failed syncs, missing prices, backups and data that looks off, in one place.")}
         actions={
           dismissedCount > 0 && (
             <label className="flex items-center gap-1.5 text-xs text-ink-2">
               <input type="checkbox" checked={showDismissed} onChange={(e) => setShowDismissed(e.target.checked)} />
-              Show dismissed ({dismissedCount})
+              {t("Show dismissed ({n})", { n: dismissedCount })}
             </label>
           )
         }
       />
       {shown.length === 0 ? (
         <Card>
-          <Empty title="All good ✓">Nothing needs your attention right now.</Empty>
+          <Empty title={t("All good ✓")}>{t("Nothing needs your attention right now.")}</Empty>
         </Card>
       ) : (
         <div className="flex flex-col gap-4">
@@ -72,9 +73,9 @@ export function AttentionPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => void dismiss(i)}
-                            title="Hide until it changes"
+                            title={t("Hide until it changes")}
                           >
-                            Dismiss
+                            {t("Dismiss")}
                           </Button>
                         )}
                       </div>
@@ -106,7 +107,7 @@ export function AttentionBadge({ className }: { className?: string }) {
       )}
     >
       <span aria-hidden>{problem ? "⛔" : "⚠"}</span>
-      {open.length} need{open.length === 1 ? "s" : ""} attention
+      {tn(open.length, "{n} needs attention", "{n} need attention")}
     </Link>
   );
 }

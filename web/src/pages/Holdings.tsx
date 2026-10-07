@@ -4,15 +4,16 @@ import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Badge, Card, Delta, Empty, Input, PageHeader, Select, Spinner } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, eurPrice, num, pct, relativeTime } from "../format";
 import { usePortfolio } from "../queries";
+import { t, tn } from "../i18n";
 
 type SortKey = "name" | "valueEur" | "unrealizedEur" | "unrealizedPct" | "changePct24h" | "weightPct";
 
 const COLS: { key: SortKey; label: string; numeric?: boolean }[] = [
-  { key: "name", label: "Asset" },
-  { key: "valueEur", label: "Value", numeric: true },
-  { key: "changePct24h", label: "24h", numeric: true },
-  { key: "unrealizedEur", label: "Unrealized", numeric: true },
-  { key: "weightPct", label: "Weight", numeric: true },
+  { key: "name", label: t("Asset") },
+  { key: "valueEur", label: t("Value"), numeric: true },
+  { key: "changePct24h", label: t("24h"), numeric: true },
+  { key: "unrealizedEur", label: t("Unrealized"), numeric: true },
+  { key: "weightPct", label: t("Weight"), numeric: true },
 ];
 
 const qtyLabel = (h: Holding) => (h.unit === "g" ? `${num(h.quantity, 2)} g` : num(h.quantity));
@@ -47,21 +48,21 @@ export function HoldingsPage() {
   return (
     <>
       <PageHeader
-        title="Holdings"
-        subtitle={`${rows.length} positions · ${eur(portfolio.data!.summary.totalEur)}`}
+        title={t("Holdings")}
+        subtitle={`${tn(rows.length, "{n} position", "{n} positions")} · ${eur(portfolio.data!.summary.totalEur)}`}
         actions={<RefreshButton />}
       />
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Input
-          placeholder="Search…"
+          placeholder={t("Search…")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           className="max-w-56"
-          aria-label="Search holdings"
+          aria-label={t("Search holdings")}
         />
-        <Select value={cls} onChange={(e) => setCls(e.target.value)} className="max-w-48" aria-label="Asset class">
-          <option value="all">All classes</option>
+        <Select value={cls} onChange={(e) => setCls(e.target.value)} className="max-w-48" aria-label={t("Asset class")}>
+          <option value="all">{t("All classes")}</option>
           {CLASS_ORDER.map((c) => (
             <option key={c} value={c}>
               {CLASS_LABEL[c]}
@@ -69,14 +70,14 @@ export function HoldingsPage() {
           ))}
         </Select>
         <label className="flex items-center gap-1.5 text-sm text-ink-2">
-          <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} /> Show closed
-          positions
+          <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />{" "}
+          {t("Show closed positions")}
         </label>
       </div>
 
       <Card padded={false}>
         {rows.length === 0 ? (
-          <Empty title="No holdings match" />
+          <Empty title={t("No holdings match")} />
         ) : (
           <>
             {/* Desktop table */}
@@ -92,7 +93,7 @@ export function HoldingsPage() {
                         </button>
                       </th>
                     ))}
-                    <th className="px-4 py-2.5 text-right font-medium">Price / avg cost</th>
+                    <th className="px-4 py-2.5 text-right font-medium">{t("Price / avg cost")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-line">
@@ -111,7 +112,7 @@ export function HoldingsPage() {
                             />
                             <div className="min-w-0">
                               <div className="font-medium text-ink">
-                                {h.name} {h.priceStale && <Badge tone="warn">stale price</Badge>}
+                                {h.name} {h.priceStale && <Badge tone="warn">{t("stale price")}</Badge>}
                               </div>
                               <div className="text-xs text-muted">
                                 {h.symbol} · {qtyLabel(h)} · {CLASS_LABEL[h.assetClass]}
@@ -142,7 +143,9 @@ export function HoldingsPage() {
                             {eurPrice(h.priceEur)}
                             {h.unit === "g" ? "/g" : ""}
                           </div>
-                          <div className="text-muted">{h.avgCostEur ? `avg ${eurPrice(h.avgCostEur)}` : ""}</div>
+                          <div className="text-muted">
+                            {h.avgCostEur ? t("avg {price}", { price: eurPrice(h.avgCostEur) }) : ""}
+                          </div>
                         </td>
                       </tr>
                       {expanded === h.key && <Detail h={h} colSpan={6} />}
@@ -194,10 +197,10 @@ function Detail({ h, colSpan }: { h: Holding; colSpan: number }) {
           <table className="w-full">
             <thead>
               <tr className="text-muted">
-                <th className="py-1 text-left font-medium">Account / location</th>
-                <th className="py-1 text-right font-medium">Quantity</th>
-                <th className="py-1 text-right font-medium">Cost</th>
-                <th className="py-1 text-right font-medium">Value</th>
+                <th className="py-1 text-left font-medium">{t("Account / location")}</th>
+                <th className="py-1 text-right font-medium">{t("Quantity")}</th>
+                <th className="py-1 text-right font-medium">{t("Cost")}</th>
+                <th className="py-1 text-right font-medium">{t("Value")}</th>
               </tr>
             </thead>
             <tbody>
@@ -212,34 +215,36 @@ function Detail({ h, colSpan }: { h: Holding; colSpan: number }) {
             </tbody>
           </table>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1 sm:min-w-56">
-            <dt className="text-muted">Cost basis</dt>
+            <dt className="text-muted">{t("Cost basis")}</dt>
             <dd className="tabular text-right">{eur(h.costEur)}</dd>
-            <dt className="text-muted">Realized</dt>
+            <dt className="text-muted">{t("Realized")}</dt>
             <dd className="text-right">
               <Delta value={h.realizedEur} />
             </dd>
-            <dt className="text-muted">Income</dt>
+            <dt className="text-muted">{t("Income")}</dt>
             <dd className="tabular text-right">{eur(h.incomeEur)}</dd>
-            <dt className="text-muted">Fees paid</dt>
+            <dt className="text-muted">{t("Fees paid")}</dt>
             <dd className="tabular text-right">{eur(h.feesEur)}</dd>
             {h.fxEffectEur && (
               <>
                 <dt
                   className="text-muted"
-                  title={`Open gain split: price movement (at the ${h.localCurrency} rate you paid) and currency movement`}
+                  title={t("Open gain split: price movement (at the {currency} rate you paid) and currency movement", {
+                    currency: h.localCurrency ?? "",
+                  })}
                 >
-                  From price
+                  {t("From price")}
                 </dt>
                 <dd className="text-right">
                   <Delta value={h.priceEffectEur} />
                 </dd>
-                <dt className="text-muted">From {h.localCurrency}</dt>
+                <dt className="text-muted">{t("From {currency}", { currency: h.localCurrency ?? "" })}</dt>
                 <dd className="text-right">
                   <Delta value={h.fxEffectEur} />
                 </dd>
               </>
             )}
-            <dt className="text-muted">Price updated</dt>
+            <dt className="text-muted">{t("Price updated")}</dt>
             <dd className="text-right">{relativeTime(h.priceFetchedAt)}</dd>
           </dl>
         </div>
@@ -251,13 +256,13 @@ function Detail({ h, colSpan }: { h: Holding; colSpan: number }) {
 function MobileDetail({ h }: { h: Holding }) {
   return (
     <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 rounded-lg bg-surface-2 p-3 text-xs">
-      <dt className="text-muted">Price</dt>
+      <dt className="text-muted">{t("Price")}</dt>
       <dd className="tabular text-right">{eurPrice(h.priceEur)}</dd>
-      <dt className="text-muted">Avg cost</dt>
+      <dt className="text-muted">{t("Avg cost")}</dt>
       <dd className="tabular text-right">{eurPrice(h.avgCostEur)}</dd>
-      <dt className="text-muted">24h</dt>
+      <dt className="text-muted">{t("24h")}</dt>
       <dd className="text-right">{h.changePct24h != null ? <Delta percent={h.changePct24h} /> : "—"}</dd>
-      <dt className="text-muted">Realized</dt>
+      <dt className="text-muted">{t("Realized")}</dt>
       <dd className="text-right">
         <Delta value={h.realizedEur} />
       </dd>

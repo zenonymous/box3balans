@@ -18,6 +18,7 @@ import { Alert, Badge, Button, Card, Delta, Empty, PageHeader, Select, Spinner, 
 import { CostsView } from "./Costs";
 import { ReturnPct, ReturnsView, useReturns } from "./Returns";
 import { CLASS_COLOR, date, eur, getLocale, num } from "../format";
+import { t, tj } from "../i18n";
 
 const compact = (v: number) =>
   new Intl.NumberFormat(getLocale(), {
@@ -29,9 +30,9 @@ const compact = (v: number) =>
 
 type Tab = "results" | "returns" | "costs";
 const TABS: { value: Tab; label: string }[] = [
-  { value: "results", label: "Results in euros" },
-  { value: "returns", label: "Returns %" },
-  { value: "costs", label: "Costs" },
+  { value: "results", label: t("Results in euros") },
+  { value: "returns", label: t("Returns %") },
+  { value: "costs", label: t("Costs") },
 ];
 
 export function PerformancePage() {
@@ -39,8 +40,8 @@ export function PerformancePage() {
   const returns = useReturns();
   // The tab is in the URL (?tab=returns), so it can be linked to and survives a reload.
   const [search, setSearch] = useSearchParams();
-  const tab: Tab = TABS.find((t) => t.value === search.get("tab"))?.value ?? "results";
-  const setTab = (t: Tab) => setSearch(t === "results" ? {} : { tab: t }, { replace: true });
+  const tab: Tab = TABS.find((x) => x.value === search.get("tab"))?.value ?? "results";
+  const setTab = (x: Tab) => setSearch(x === "results" ? {} : { tab: x }, { replace: true });
   const [year, setYear] = useState("all");
 
   const realized = useMemo(
@@ -54,9 +55,9 @@ export function PerformancePage() {
   if (p.years.length === 0) {
     return (
       <>
-        <PageHeader title="Performance" />
+        <PageHeader title={t("Performance")} />
         <Card>
-          <Empty title="No history yet">Add transactions to see results per year.</Empty>
+          <Empty title={t("No history yet")}>{t("Add transactions to see results per year.")}</Empty>
         </Card>
       </>
     );
@@ -67,17 +68,12 @@ export function PerformancePage() {
   return (
     <>
       <PageHeader
-        title="Performance"
-        subtitle={
-          <>
-            Investment result = realized gains + income + change in open gains. Deposits and withdrawals are not
-            results. Cost basis:{" "}
-            <Link to="/settings" className="text-accent underline">
-              {p.costMethod === "fifo" ? "FIFO" : "average cost"}
-            </Link>
-            .
-          </>
-        }
+        title={t("Performance")}
+        subtitle={tj(
+          "Investment result = realized gains + income + change in open gains. Deposits and withdrawals are not results. Cost basis: <0>{method}</0>.",
+          [<Link key="m" to="/settings" className="text-accent underline" />],
+          { method: p.costMethod === "fifo" ? "FIFO" : t("average cost") },
+        )}
       />
 
       <div className="mb-4">
@@ -90,22 +86,26 @@ export function PerformancePage() {
       ) : (
         <>
           <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <Stat label="Total result (all time)" value={<Delta value={p.allTime.resultEur} />} />
-            <Stat label="Realized gains" value={<Delta value={p.allTime.realizedEur} />} />
+            <Stat label={t("Total result (all time)")} value={<Delta value={p.allTime.resultEur} />} />
+            <Stat label={t("Realized gains")} value={<Delta value={p.allTime.realizedEur} />} />
             <Stat
-              label="Income"
+              label={t("Income")}
               value={eur(p.allTime.incomeEur)}
-              sub={<span className="text-muted">dividends, rewards, interest</span>}
+              sub={<span className="text-muted">{t("dividends, rewards, interest")}</span>}
             />
             <Stat
-              label="Open gains now"
+              label={t("Open gains now")}
               value={<Delta value={p.allTime.unrealizedEur} />}
-              sub={<span className="text-muted">fees paid: {eur(p.allTime.feesEur)} (included)</span>}
+              sub={
+                <span className="text-muted">
+                  {t("fees paid: {amount} (included)", { amount: eur(p.allTime.feesEur) })}
+                </span>
+              }
             />
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-            <Card title="Result per year" className="xl:col-span-2">
+            <Card title={t("Result per year")} className="xl:col-span-2">
               <div className="h-56">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chart} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -148,19 +148,22 @@ export function PerformancePage() {
               </div>
             </Card>
 
-            <Card title="Per year" className="xl:col-span-3" padded={false}>
+            <Card title={t("Per year")} className="xl:col-span-3" padded={false}>
               <div className="overflow-x-auto">
                 <table className="tabular w-full min-w-[560px] text-sm">
                   <thead>
                     <tr className="border-b border-line text-xs text-ink-2">
-                      <th className="px-3 py-2 text-left font-medium">Year</th>
-                      <th className="px-3 py-2 text-right font-medium">Realized</th>
-                      <th className="px-3 py-2 text-right font-medium">Income</th>
-                      <th className="px-3 py-2 text-right font-medium" title="Change in unrealized gains over the year">
-                        Δ Open gains
+                      <th className="px-3 py-2 text-left font-medium">{t("Year")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Realized")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Income")}</th>
+                      <th
+                        className="px-3 py-2 text-right font-medium"
+                        title={t("Change in unrealized gains over the year")}
+                      >
+                        {t("Δ Open gains")}
                       </th>
-                      <th className="px-3 py-2 text-right font-medium">Result</th>
-                      <th className="px-3 py-2 text-right font-medium">Net worth 31 Dec</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Result")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Net worth 31 Dec")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -172,7 +175,15 @@ export function PerformancePage() {
                         </td>
                         <td
                           className="px-3 py-2 text-right"
-                          title={`Dividends ${eur(y.dividendsEur)} · rewards ${eur(y.rewardsEur)} · interest ${eur(y.interestEur)} · tax withheld ${eur(y.taxWithheldEur)}`}
+                          title={t(
+                            "Dividends {dividends} · rewards {rewards} · interest {interest} · tax withheld {tax}",
+                            {
+                              dividends: eur(y.dividendsEur),
+                              rewards: eur(y.rewardsEur),
+                              interest: eur(y.interestEur),
+                              tax: eur(y.taxWithheldEur),
+                            },
+                          )}
                         >
                           {eur(y.incomeEur)}
                         </td>
@@ -191,22 +202,24 @@ export function PerformancePage() {
             </Card>
           </div>
 
-          <Card title="Per asset" padded={false} className="mt-4">
+          <Card title={t("Per asset")} padded={false} className="mt-4">
             <div className="overflow-x-auto">
               <table className="tabular w-full min-w-[720px] text-sm">
                 <thead>
                   <tr className="border-b border-line text-xs text-ink-2">
-                    <th className="px-3 py-2 text-left font-medium">Asset</th>
-                    <th className="px-3 py-2 text-right font-medium">Value</th>
-                    <th className="px-3 py-2 text-right font-medium">Open gain</th>
-                    <th className="px-3 py-2 text-right font-medium">Realized</th>
-                    <th className="px-3 py-2 text-right font-medium">Income</th>
-                    <th className="px-3 py-2 text-right font-medium">Total</th>
+                    <th className="px-3 py-2 text-left font-medium">{t("Asset")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("Value")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("Open gain")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("Realized")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("Income")}</th>
+                    <th className="px-3 py-2 text-right font-medium">{t("Total")}</th>
                     <th
                       className="px-3 py-2 text-right font-medium"
-                      title="Money-weighted return: annualised (p.a.) when held a year or longer, else over the holding period"
+                      title={t(
+                        "Money-weighted return: annualised (p.a.) when held a year or longer, else over the holding period",
+                      )}
                     >
-                      Return
+                      {t("Return")}
                     </th>
                   </tr>
                 </thead>
@@ -230,9 +243,12 @@ export function PerformancePage() {
                         {a.fxEffectEur && (
                           <div
                             className="text-xs text-muted"
-                            title={`Bought in ${a.localCurrency}: split of the open gain into price movement and currency movement`}
+                            title={t(
+                              "Bought in {currency}: split of the open gain into price movement and currency movement",
+                              { currency: a.localCurrency ?? "" },
+                            )}
                           >
-                            price {eur(a.priceEffectEur, { sign: true })} · {a.localCurrency}{" "}
+                            {t("price {amount}", { amount: eur(a.priceEffectEur, { sign: true }) })} · {a.localCurrency}{" "}
                             {eur(a.fxEffectEur, { sign: true })}
                           </div>
                         )}
@@ -258,7 +274,7 @@ export function PerformancePage() {
           </Card>
 
           <Card
-            title="Realized gains"
+            title={t("Realized gains")}
             padded={false}
             className="mt-4"
             actions={
@@ -267,9 +283,9 @@ export function PerformancePage() {
                   value={year}
                   onChange={(e) => setYear(e.target.value)}
                   className="py-1 text-xs"
-                  aria-label="Year"
+                  aria-label={t("Year")}
                 >
-                  <option value="all">All years</option>
+                  <option value="all">{t("All years")}</option>
                   {p.years.map((y) => (
                     <option key={y.year} value={String(y.year)}>
                       {y.year}
@@ -281,15 +297,15 @@ export function PerformancePage() {
                   disabled={realized.length === 0}
                   onClick={() =>
                     downloadCsv(`realized-gains-${year}.csv`, realized, [
-                      { header: "Date", value: (r) => r.date },
-                      { header: "Asset", value: (r) => r.name },
-                      { header: "Symbol", value: (r) => r.symbol },
-                      { header: "Type", value: (r) => (r.kind === "fee" ? "network fee" : "sale") },
-                      { header: "Account", value: (r) => r.accountName },
-                      { header: "Quantity", value: (r) => r.quantity },
-                      { header: "Proceeds EUR", value: (r) => r.proceedsEur },
-                      { header: "Cost EUR", value: (r) => r.costEur },
-                      { header: "Gain EUR", value: (r) => r.gainEur },
+                      { header: t("Date"), value: (r) => r.date },
+                      { header: t("Asset"), value: (r) => r.name },
+                      { header: t("Symbol"), value: (r) => r.symbol },
+                      { header: t("Type"), value: (r) => (r.kind === "fee" ? t("network fee") : t("sale")) },
+                      { header: t("Account"), value: (r) => r.accountName },
+                      { header: t("Quantity"), value: (r) => r.quantity },
+                      { header: t("Proceeds EUR"), value: (r) => r.proceedsEur },
+                      { header: t("Cost EUR"), value: (r) => r.costEur },
+                      { header: t("Gain EUR"), value: (r) => r.gainEur },
                     ])
                   }
                 >
@@ -299,18 +315,18 @@ export function PerformancePage() {
             }
           >
             {realized.length === 0 ? (
-              <Empty title="No sales in this period" />
+              <Empty title={t("No sales in this period")} />
             ) : (
               <div className="overflow-x-auto">
                 <table className="tabular w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="border-b border-line text-xs text-ink-2">
-                      <th className="px-3 py-2 text-left font-medium">Date</th>
-                      <th className="px-3 py-2 text-left font-medium">Asset</th>
-                      <th className="px-3 py-2 text-right font-medium">Quantity</th>
-                      <th className="px-3 py-2 text-right font-medium">Proceeds</th>
-                      <th className="px-3 py-2 text-right font-medium">Cost</th>
-                      <th className="px-3 py-2 text-right font-medium">Gain</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("Date")}</th>
+                      <th className="px-3 py-2 text-left font-medium">{t("Asset")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Quantity")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Proceeds")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Cost")}</th>
+                      <th className="px-3 py-2 text-right font-medium">{t("Gain")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-line">
@@ -319,7 +335,8 @@ export function PerformancePage() {
                         <td className="px-3 py-2 text-ink-2">{date(r.date)}</td>
                         <td className="px-3 py-2">
                           {r.name} <span className="text-xs text-muted">· {r.accountName}</span>{" "}
-                          {r.physical && <Badge>physical</Badge>} {r.kind === "fee" && <Badge>network fee</Badge>}
+                          {r.physical && <Badge>{t("physical")}</Badge>}{" "}
+                          {r.kind === "fee" && <Badge>{t("network fee")}</Badge>}
                         </td>
                         <td className="px-3 py-2 text-right">{num(r.quantity)}</td>
                         <td className="px-3 py-2 text-right">{eur(r.proceedsEur)}</td>

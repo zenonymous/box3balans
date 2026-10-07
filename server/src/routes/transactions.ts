@@ -12,6 +12,7 @@ import type { FxService } from "../prices/fx.js";
 import { AssetResolver } from "../sync/assets.js";
 import { HistoryService } from "../prices/history.js";
 import { localDay } from "../lib/time.js";
+import { tr } from "../i18n/index.js";
 
 const TX_TYPES = [
   "buy",
@@ -50,14 +51,14 @@ const txBody = z
       ctx.addIssue({
         code: "custom",
         path: ["quantity"],
-        message: t.type === "split" ? "Split ratio must be > 0" : "Quantity must be > 0",
+        message: t.type === "split" ? tr("Split ratio must be > 0") : tr("Quantity must be > 0"),
       });
     }
     if (t.type === "dividend" && D(t.amount).lte(0)) {
-      ctx.addIssue({ code: "custom", path: ["amount"], message: "Dividend amount must be > 0" });
+      ctx.addIssue({ code: "custom", path: ["amount"], message: tr("Dividend amount must be > 0") });
     }
     if (t.occurredAt.getTime() > Date.now() + 86_400_000) {
-      ctx.addIssue({ code: "custom", path: ["occurredAt"], message: "Date is in the future" });
+      ctx.addIssue({ code: "custom", path: ["occurredAt"], message: tr("Date is in the future") });
     }
   });
 
@@ -66,7 +67,7 @@ const transferBody = z.object({
   toAccountId: z.number().int().positive(),
   assetId: z.number().int().positive(),
   occurredAt: z.coerce.date(),
-  quantity: decimalString.refine((v) => D(v).gt(0), "Quantity must be > 0"),
+  quantity: decimalString.refine((v) => D(v).gt(0), { error: () => tr("Quantity must be > 0") }),
   // Quantity received may be lower than sent (network fee paid in the asset).
   receivedQuantity: decimalString.optional(),
   feeEur: decimalString.default("0"),
@@ -90,7 +91,13 @@ async function resolveFx(fx: FxService, currency: string, at: Date, given?: stri
   try {
     return str(await fx.eurPerUnit(currency, at.toISOString().slice(0, 10)));
   } catch (err) {
-    throw new HttpError(400, `No FX rate for ${currency}; enter it manually (${(err as Error).message})`);
+    throw new HttpError(
+      400,
+      tr("No FX rate for {currency}; enter it manually ({error})", {
+        currency,
+        error: (err as Error).message,
+      }),
+    );
   }
 }
 
@@ -109,9 +116,9 @@ async function settleAsset(
 
 async function assertRefs(db: DB, accountId: number, assetId: number) {
   const [acc] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.id, accountId));
-  if (!acc) throw new HttpError(400, "Unknown account");
+  if (!acc) throw new HttpError(400, tr("Unknown account"));
   const [asset] = await db.select({ id: assets.id }).from(assets).where(eq(assets.id, assetId));
-  if (!asset) throw new HttpError(400, "Unknown asset");
+  if (!asset) throw new HttpError(400, tr("Unknown asset"));
 }
 
 export async function transactionRoutes(app: FastifyInstance) {
@@ -173,7 +180,7 @@ export async function transactionRoutes(app: FastifyInstance) {
   app.post("/", async (req) => {
     const { settleCash, ...data } = txBody.parse(req.body);
     if (data.type === "transfer_in" || data.type === "transfer_out") {
-      throw new HttpError(400, "Use /api/transactions/transfer to record transfers");
+      throw new HttpError(400, tr("Use /api/transactions/transfer to record transfers"));
     }
     await assertRefs(db, data.accountId, data.assetId);
     const fxRate = await resolveFx(prices.fx, data.currency, data.occurredAt, data.fxRate);
@@ -188,7 +195,7 @@ export async function transactionRoutes(app: FastifyInstance) {
 
   app.post("/transfer", async (req) => {
     const t = transferBody.parse(req.body);
-    if (t.fromAccountId === t.toAccountId) throw new HttpError(400, "Choose two different accounts");
+    if (t.fromAccountId === t.toAccountId) throw new HttpError(400, tr("Choose two different accounts"));
     await assertRefs(db, t.fromAccountId, t.assetId);
     await assertRefs(db, t.toAccountId, t.assetId);
     const group = randomUUID();
@@ -222,13 +229,13 @@ export async function transactionRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!before) throw notFound("Transaction");
+    if (!before) throw notFound(tr("Transaction"));
     if (before.transferGroup) {
       // Keep transfer legs consistent: only date, quantity, fee and notes are editable per leg.
       const patch = z
         .object({
           occurredAt: z.coerce.date().optional(),
-          quantity: decimalString.refine((v) => D(v).gt(0), "Quantity must be > 0").optional(),
+          quantity: decimalString.refine((v) => D(v).gt(0), { error: () => tr("Quantity must be > 0") }).optional(),
           feeEur: decimalString.optional(),
           notes: z.string().max(2000).nullish(),
         })
@@ -255,7 +262,7 @@ export async function transactionRoutes(app: FastifyInstance) {
       occurredAt: (req.body as { occurredAt?: unknown })?.occurredAt ?? before.occurredAt,
     });
     if (data.type === "transfer_in" || data.type === "transfer_out") {
-      throw new HttpError(400, "Use /api/transactions/transfer to record transfers");
+      throw new HttpError(400, tr("Use /api/transactions/transfer to record transfers"));
     }
     await assertRefs(db, data.accountId, data.assetId);
     // Re-resolve the FX rate if currency or date changed and no explicit rate was given.
@@ -279,8 +286,8 @@ export async function transactionRoutes(app: FastifyInstance) {
   app.post("/:id/unlink", async (req) => {
     const { id } = idParam.parse(req.params);
     const [row] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!row) throw notFound("Transaction");
-    if (!row.transferGroup) throw new HttpError(400, "This transaction is not part of a transfer");
+    if (!row) throw notFound(tr("Transaction"));
+    if (!row.transferGroup) throw new HttpError(400, tr("This transaction is not part of a transfer"));
     const legs = await db.select().from(transactions).where(eq(transactions.transferGroup, row.transferGroup));
     const history = new HistoryService(db, prices.fx);
     await db.transaction(async (trx) => {
@@ -306,7 +313,7 @@ export async function transactionRoutes(app: FastifyInstance) {
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!before) throw notFound("Transaction");
+    if (!before) throw notFound(tr("Transaction"));
     // Deleting one leg of a transfer deletes both.
     const victims = before.transferGroup
       ? await db.select().from(transactions).where(eq(transactions.transferGroup, before.transferGroup))

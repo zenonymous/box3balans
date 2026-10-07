@@ -2,6 +2,7 @@ import { D } from "../lib/decimal.js";
 import { getJson } from "../lib/http.js";
 import type { AssetRef, Balance } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 interface EvmChain {
   id: string;
@@ -124,14 +125,14 @@ export function evmAdapter(c: EvmChain): ChainAdapter {
     id: c.id,
     label: c.label,
     nativeSymbol: c.native.symbol,
-    addressHint: "0x… address (same address works on every EVM chain)",
+    addressHint: msg("0x… address (same address works on every EVM chain)"),
     supportsXpub: false,
     evm: true,
 
     normalise(input) {
       const s = input.trim();
       if (!/^0x[0-9a-fA-F]{40}$/.test(s))
-        throw new ChainError("Not a valid EVM address (0x followed by 40 hex characters)");
+        throw new ChainError(tr("Not a valid EVM address (0x followed by 40 hex characters)"));
       return s.toLowerCase();
     },
 

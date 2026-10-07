@@ -1,6 +1,7 @@
 import { D } from "../lib/decimal.js";
 import type { AssetRef } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 const DROPS = D(1_000_000);
 // XRP Ledger timestamps count seconds from 2000-01-01.
@@ -54,12 +55,13 @@ export function xrpAdapter(rpcUrl = "https://xrplcluster.com"): ChainAdapter {
     id: "xrp",
     label: "XRP Ledger",
     nativeSymbol: "XRP",
-    addressHint: "r… classic address",
+    addressHint: msg("r… classic address"),
     supportsXpub: false,
 
     normalise(input) {
       const s = input.trim();
-      if (!/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(s)) throw new ChainError("Not a valid XRP address (starts with r)");
+      if (!/^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(s))
+        throw new ChainError(tr("Not a valid XRP address (starts with r)"));
       return s;
     },
 

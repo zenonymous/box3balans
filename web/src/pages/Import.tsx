@@ -6,6 +6,7 @@ import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Sel
 import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
 import { readText } from "../files";
+import { t, tj, tn } from "../i18n";
 
 // ---- Types mirroring /api/import ----
 
@@ -117,34 +118,43 @@ interface PastImport {
 // ---- Labels ----
 
 const FIELD_INFO: { field: Exclude<Field, "type">; label: string; hint?: string }[] = [
-  { field: "date", label: "Date", hint: "Date, or date and time" },
-  { field: "time", label: "Time", hint: "Only when the time has its own column" },
-  { field: "symbol", label: "Symbol / ticker", hint: "e.g. IWDA or BTC; a currency code for cash rows" },
-  { field: "isin", label: "ISIN", hint: "The surest way to find a stock or ETF" },
-  { field: "name", label: "Name / product", hint: "Used when there's no symbol" },
-  { field: "quantity", label: "Quantity", hint: "Shares, coins or grams; the amount for cash rows" },
-  { field: "price", label: "Price per unit", hint: "In the row's currency" },
-  { field: "total", label: "Total", hint: "Value before fees, used when there's no price" },
-  { field: "currency", label: "Currency", hint: "Of the price and fee" },
-  { field: "fee", label: "Fee" },
-  { field: "amount", label: "Dividend amount", hint: "Gross, before withholding tax" },
-  { field: "tax", label: "Tax withheld" },
-  { field: "assetType", label: "Asset type", hint: "stock, etf, crypto, metal or cash per row" },
-  { field: "notes", label: "Notes / description" },
-  { field: "id", label: "Transaction ID", hint: "Recognises the same rows in later exports" },
+  { field: "date", label: t("Date"), hint: t("Date, or date and time") },
+  { field: "time", label: t("Time"), hint: t("Only when the time has its own column") },
+  { field: "symbol", label: t("Symbol / ticker"), hint: t("e.g. IWDA or BTC; a currency code for cash rows") },
+  { field: "isin", label: t("ISIN"), hint: t("The surest way to find a stock or ETF") },
+  { field: "name", label: t("Name / product"), hint: t("Used when there's no symbol") },
+  { field: "quantity", label: t("Quantity"), hint: t("Shares, coins or grams; the amount for cash rows") },
+  { field: "price", label: t("Price per unit"), hint: t("In the row's currency") },
+  { field: "total", label: t("Total"), hint: t("Value before fees, used when there's no price") },
+  { field: "currency", label: t("Currency"), hint: t("Of the price and fee") },
+  { field: "fee", label: t("Fee") },
+  { field: "amount", label: t("Dividend amount"), hint: t("Gross, before withholding tax") },
+  { field: "tax", label: t("Tax withheld") },
+  { field: "assetType", label: t("Asset type"), hint: t("stock, etf, crypto, metal or cash per row") },
+  { field: "notes", label: t("Notes / description") },
+  { field: "id", label: t("Transaction ID"), hint: t("Recognises the same rows in later exports") },
 ];
 
 const STATUS: Record<RowStatus, { label: string; tone: "neutral" | "warn" | "danger" | "accent" }> = {
-  new: { label: "New", tone: "accent" },
-  duplicate: { label: "Already imported", tone: "neutral" },
-  deleted: { label: "Deleted before", tone: "neutral" },
-  "possible-duplicate": { label: "Possible duplicate", tone: "warn" },
-  skipped: { label: "Skipped", tone: "neutral" },
-  error: { label: "Problem", tone: "danger" },
+  new: { label: t("New"), tone: "accent" },
+  duplicate: { label: t("Already imported"), tone: "neutral" },
+  deleted: { label: t("Deleted before"), tone: "neutral" },
+  "possible-duplicate": { label: t("Possible duplicate"), tone: "warn" },
+  skipped: { label: t("Skipped"), tone: "neutral" },
+  error: { label: t("Problem"), tone: "danger" },
 };
 
-const DELIMITER_LABEL: Record<string, string> = { ",": "comma", ";": "semicolon", "\t": "tab", "|": "pipe" };
-const ORDER_LABEL = { YMD: "year-month-day", DMY: "day-month-year", MDY: "month-day-year" };
+const DELIMITER_LABEL: Record<string, string> = {
+  ",": t("comma"),
+  ";": t("semicolon"),
+  "\t": t("tab"),
+  "|": t("pipe"),
+};
+const ORDER_LABEL = {
+  YMD: t("year-month-day"),
+  DMY: t("day-month-year"),
+  MDY: t("month-day-year"),
+};
 
 const letter = (i: number): string =>
   i < 26 ? String.fromCharCode(65 + i) : `${letter(Math.floor(i / 26) - 1)}${letter(i % 26)}`;
@@ -236,25 +246,25 @@ export function ImportPage() {
   return (
     <>
       <PageHeader
-        title="Import CSV"
-        subtitle="Transactions from a broker or exchange export, or from the Kluishuis template"
+        title={t("Import CSV")}
+        subtitle={t("Transactions from a broker or exchange export, or from the Kluishuis template")}
         actions={
           <a
             href="/api/import/template.csv"
             className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
           >
-            ↓ Template
+            ↓ {t("Template")}
           </a>
         }
       />
 
       <div className="flex flex-col gap-4">
-        <Card title="1 · Account and file">
+        <Card title={t("1 · Account and file")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Import into account" hint="Each file goes into one account.">
+            <Field label={t("Import into account")} hint={t("Each file goes into one account.")}>
               {(id) => (
                 <Select id={id} value={accountId} onChange={(e) => setAccountId(e.target.value)}>
-                  <option value="">Choose…</option>
+                  <option value="">{t("Choose…")}</option>
                   {accounts.data
                     ?.filter((a) => !a.archived)
                     .map((a) => (
@@ -266,11 +276,11 @@ export function ImportPage() {
               )}
             </Field>
             <Field
-              label="CSV file"
+              label={t("CSV file")}
               hint={
                 upload?.preset
-                  ? `Using your saved settings “${upload.preset}”`
-                  : "Exported from your broker, exchange or spreadsheet"
+                  ? t("Using your saved settings “{name}”", { name: upload.preset })
+                  : t("Exported from your broker, exchange or spreadsheet")
               }
             >
               {(id) => (
@@ -292,7 +302,7 @@ export function ImportPage() {
           )}
           {expired && (
             <div className="mt-3">
-              <Alert>The uploaded file has expired. Choose it again.</Alert>
+              <Alert>{t("The uploaded file has expired. Choose it again.")}</Alert>
             </div>
           )}
         </Card>
@@ -321,14 +331,14 @@ export function ImportPage() {
               />
               <div className="flex flex-wrap items-center justify-end gap-3">
                 {plan.data && plan.data.summary.error > 0 && (
-                  <span className="text-sm text-ink-2">Rows with problems are left out.</span>
+                  <span className="text-sm text-ink-2">{t("Rows with problems are left out.")}</span>
                 )}
                 <Button
                   variant="primary"
                   onClick={() => void commit()}
                   disabled={busy || plan.isFetching || toImport === 0}
                 >
-                  {busy ? "Importing…" : `Import ${toImport} transaction${toImport === 1 ? "" : "s"}`}
+                  {busy ? t("Importing…") : tn(toImport, "Import {n} transaction", "Import {n} transactions")}
                 </Button>
               </div>
             </>
@@ -360,13 +370,13 @@ function ColumnSelect({
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
     >
-      <option value="">— not in the file —</option>
+      <option value="">— {t("not in the file")} —</option>
       {headers.map((h, i) => {
         const example = sample.find((r) => r[i])?.[i];
         return (
           <option key={i} value={i}>
-            {letter(i)} · {h || "(no header)"}
-            {example ? ` — e.g. ${example.slice(0, 24)}` : ""}
+            {letter(i)} · {h || t("(no header)")}
+            {example ? ` — ${t("e.g. {example}", { example: example.slice(0, 24) })}` : ""}
           </option>
         );
       })}
@@ -392,7 +402,7 @@ function MappingCard({
   const [showAll, setShowAll] = useState(false);
   const [presetName, setPresetName] = useState("");
   const [saved, setSaved] = useState<string>();
-  const unmappedTypes = plan?.typeValues.filter((t) => !mapping.typeValues[t.value] && !knownWord(t.value)) ?? [];
+  const unmappedTypes = plan?.typeValues.filter((v) => !mapping.typeValues[v.value] && !knownWord(v.value)) ?? [];
 
   const visible = FIELD_INFO.filter(
     (f) =>
@@ -406,12 +416,15 @@ function MappingCard({
   };
 
   return (
-    <Card title="2 · Columns">
+    <Card title={t("2 · Columns")}>
       {plan && (
         <p className="mb-4 text-sm text-ink-2">
-          Read as {DELIMITER_LABEL[plan.detected.delimiter] ?? plan.detected.delimiter}-separated, with{" "}
-          {plan.detected.decimal === "," ? "decimal commas" : "decimal points"} and dates as{" "}
-          {ORDER_LABEL[plan.detected.dateOrder]}. {headers.length} columns, {plan.rows.length} rows.
+          {t("Read as {delimiter}-separated, with {decimal} and dates as {order}.", {
+            delimiter: DELIMITER_LABEL[plan.detected.delimiter] ?? plan.detected.delimiter,
+            decimal: plan.detected.decimal === "," ? t("decimal commas") : t("decimal points"),
+            order: ORDER_LABEL[plan.detected.dateOrder],
+          })}{" "}
+          {tn(headers.length, "{n} column", "{n} columns")}, {tn(plan.rows.length, "{n} row", "{n} rows")}.
         </p>
       )}
 
@@ -432,27 +445,27 @@ function MappingCard({
       </div>
       {!showAll && visible.length < FIELD_INFO.length && (
         <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAll(true)}>
-          More columns: time, fee, dividend, notes, ID…
+          {t("More columns: time, fee, dividend, notes, ID…")}
         </Button>
       )}
 
-      <h3 className="mt-6 mb-2 text-sm font-semibold">Transaction type</h3>
+      <h3 className="mt-6 mb-2 text-sm font-semibold">{t("Transaction type")}</h3>
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-        <Field label="Comes from">
+        <Field label={t("Comes from")}>
           {(id) => (
             <Select
               id={id}
               value={mapping.typeMode}
               onChange={(e) => set("typeMode", e.target.value as Mapping["typeMode"])}
             >
-              <option value="column">A column</option>
-              <option value="fixed">Same for every row</option>
-              <option value="sign">Quantity sign: positive buy, negative sell</option>
+              <option value="column">{t("A column")}</option>
+              <option value="fixed">{t("Same for every row")}</option>
+              <option value="sign">{t("Quantity sign: positive buy, negative sell")}</option>
             </Select>
           )}
         </Field>
         {mapping.typeMode === "column" && (
-          <Field label="Type column">
+          <Field label={t("Type column")}>
             {(id) => (
               <ColumnSelect
                 id={id}
@@ -465,12 +478,12 @@ function MappingCard({
           </Field>
         )}
         {mapping.typeMode === "fixed" && (
-          <Field label="Every row is a">
+          <Field label={t("Every row is a")}>
             {(id) => (
               <Select id={id} value={mapping.fixedType} onChange={(e) => set("fixedType", e.target.value as CsvType)}>
-                {CSV_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {TX_LABEL[t]}
+                {CSV_TYPES.map((ty) => (
+                  <option key={ty} value={ty}>
+                    {TX_LABEL[ty]}
                   </option>
                 ))}
               </Select>
@@ -483,34 +496,34 @@ function MappingCard({
           <table className="w-full max-w-xl text-sm">
             <thead>
               <tr className="text-left text-xs text-ink-2">
-                <th className="py-1 pr-3 font-medium">Value in the file</th>
-                <th className="py-1 pr-3 font-medium">Rows</th>
-                <th className="py-1 font-medium">Means</th>
+                <th className="py-1 pr-3 font-medium">{t("Value in the file")}</th>
+                <th className="py-1 pr-3 font-medium">{t("Rows")}</th>
+                <th className="py-1 font-medium">{t("Means")}</th>
               </tr>
             </thead>
             <tbody>
-              {plan.typeValues.map((t) => {
-                const current = mapping.typeValues[t.value] ?? knownWord(t.value) ?? "";
+              {plan.typeValues.map((v) => {
+                const current = mapping.typeValues[v.value] ?? knownWord(v.value) ?? "";
                 return (
-                  <tr key={t.value} className="border-t border-line">
-                    <td className="py-1.5 pr-3 font-mono text-xs">{t.value || "(empty)"}</td>
-                    <td className="py-1.5 pr-3 tabular text-ink-2">{t.count}</td>
+                  <tr key={v.value} className="border-t border-line">
+                    <td className="py-1.5 pr-3 font-mono text-xs">{v.value || t("(empty)")}</td>
+                    <td className="py-1.5 pr-3 tabular text-ink-2">{v.count}</td>
                     <td className="py-1">
                       <Select
-                        aria-label={`Meaning of ${t.value}`}
+                        aria-label={t("Meaning of {value}", { value: v.value })}
                         value={current}
                         className={cx("py-1", !current && "border-warn")}
                         onChange={(e) =>
-                          set("typeValues", { ...mapping.typeValues, [t.value]: e.target.value as CsvType | "skip" })
+                          set("typeValues", { ...mapping.typeValues, [v.value]: e.target.value as CsvType | "skip" })
                         }
                       >
-                        <option value="">Choose…</option>
+                        <option value="">{t("Choose…")}</option>
                         {CSV_TYPES.map((ty) => (
                           <option key={ty} value={ty}>
                             {TX_LABEL[ty]}
                           </option>
                         ))}
-                        <option value="skip">Skip these rows</option>
+                        <option value="skip">{t("Skip these rows")}</option>
                       </Select>
                     </td>
                   </tr>
@@ -519,28 +532,33 @@ function MappingCard({
             </tbody>
           </table>
           {unmappedTypes.length > 0 && (
-            <p className="mt-2 text-xs text-warn">Choose a meaning for each value; rows without one aren't imported.</p>
+            <p className="mt-2 text-xs text-warn">
+              {t("Choose a meaning for each value; rows without one aren't imported.")}
+            </p>
           )}
         </div>
       )}
 
-      <h3 className="mt-6 mb-2 text-sm font-semibold">Reading the file</h3>
+      <h3 className="mt-6 mb-2 text-sm font-semibold">{t("Reading the file")}</h3>
       <div className="grid gap-x-4 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Field label="Symbols are" hint="Automatic goes by the account kind; an ISIN or asset type column overrides it">
+        <Field
+          label={t("Symbols are")}
+          hint={t("Automatic goes by the account kind; an ISIN or asset type column overrides it")}
+        >
           {(id) => (
             <Select
               id={id}
               value={mapping.assetKind}
               onChange={(e) => set("assetKind", e.target.value as Mapping["assetKind"])}
             >
-              <option value="auto">Automatic</option>
-              <option value="security">Stocks and ETFs</option>
-              <option value="crypto">Crypto</option>
-              <option value="metal">Precious metals (grams)</option>
+              <option value="auto">{t("Automatic")}</option>
+              <option value="security">{t("Stocks and ETFs")}</option>
+              <option value="crypto">{t("Crypto")}</option>
+              <option value="metal">{t("Precious metals (grams)")}</option>
             </Select>
           )}
         </Field>
-        <Field label="Currency" hint="For rows without a currency column">
+        <Field label={t("Currency")} hint={t("For rows without a currency column")}>
           {(id) => (
             <Input
               id={id}
@@ -550,19 +568,19 @@ function MappingCard({
             />
           )}
         </Field>
-        <Field label="Fees are in">
+        <Field label={t("Fees are in")}>
           {(id) => (
             <Select
               id={id}
               value={mapping.feeCurrency}
               onChange={(e) => set("feeCurrency", e.target.value as "trade" | "EUR")}
             >
-              <option value="trade">The trade's currency</option>
-              <option value="EUR">Always EUR</option>
+              <option value="trade">{t("The trade's currency")}</option>
+              <option value="EUR">{t("Always EUR")}</option>
             </Select>
           )}
         </Field>
-        <Field label="Lines before the header">
+        <Field label={t("Lines before the header")}>
           {(id) => (
             <Input
               id={id}
@@ -574,45 +592,45 @@ function MappingCard({
             />
           )}
         </Field>
-        <Field label="Separator">
+        <Field label={t("Separator")}>
           {(id) => (
             <Select
               id={id}
               value={mapping.delimiter ?? ""}
               onChange={(e) => set("delimiter", (e.target.value || null) as Mapping["delimiter"])}
             >
-              <option value="">Automatic</option>
-              <option value=",">Comma</option>
-              <option value=";">Semicolon</option>
-              <option value={"\t"}>Tab</option>
-              <option value="|">Pipe</option>
+              <option value="">{t("Automatic")}</option>
+              <option value=",">{t("Comma")}</option>
+              <option value=";">{t("Semicolon")}</option>
+              <option value={"\t"}>{t("Tab")}</option>
+              <option value="|">{t("Pipe")}</option>
             </Select>
           )}
         </Field>
-        <Field label="Decimal mark">
+        <Field label={t("Decimal mark")}>
           {(id) => (
             <Select
               id={id}
               value={mapping.decimal}
               onChange={(e) => set("decimal", e.target.value as Mapping["decimal"])}
             >
-              <option value="auto">Automatic</option>
-              <option value=",">Comma (1.234,56)</option>
-              <option value=".">Point (1,234.56)</option>
+              <option value="auto">{t("Automatic")}</option>
+              <option value=",">{t("Comma (1.234,56)")}</option>
+              <option value=".">{t("Point (1,234.56)")}</option>
             </Select>
           )}
         </Field>
-        <Field label="Dates">
+        <Field label={t("Dates")}>
           {(id) => (
             <Select
               id={id}
               value={mapping.dateOrder}
               onChange={(e) => set("dateOrder", e.target.value as Mapping["dateOrder"])}
             >
-              <option value="auto">Automatic</option>
-              <option value="DMY">Day-month-year</option>
-              <option value="MDY">Month-day-year</option>
-              <option value="YMD">Year-month-day</option>
+              <option value="auto">{t("Automatic")}</option>
+              <option value="DMY">{t("Day-month-year")}</option>
+              <option value="MDY">{t("Month-day-year")}</option>
+              <option value="YMD">{t("Year-month-day")}</option>
             </Select>
           )}
         </Field>
@@ -624,18 +642,21 @@ function MappingCard({
             onChange={(e) => set("settleCash", e.target.checked)}
           />
           <span>
-            Book cash for buys, sells and dividends
-            <span className="block text-xs text-muted">Only when the file also has the deposits</span>
+            {t("Book cash for buys, sells and dividends")}
+            <span className="block text-xs text-muted">{t("Only when the file also has the deposits")}</span>
           </span>
         </label>
       </div>
 
       <div className="mt-6 flex flex-wrap items-end gap-2 border-t border-line pt-4">
-        <Field label="Save these settings for next time" hint="Files with the same columns then use them automatically">
+        <Field
+          label={t("Save these settings for next time")}
+          hint={t("Files with the same columns then use them automatically")}
+        >
           {(id) => (
             <Input
               id={id}
-              placeholder="e.g. DEGIRO transactions"
+              placeholder={t("e.g. DEGIRO transactions")}
               value={presetName}
               maxLength={60}
               onChange={(e) => setPresetName(e.target.value)}
@@ -643,9 +664,9 @@ function MappingCard({
           )}
         </Field>
         <Button onClick={() => void savePreset()} disabled={!presetName.trim()} className="mb-[1px]">
-          Save
+          {t("Save")}
         </Button>
-        {saved && <span className="mb-2 text-xs text-ink-2">Saved as “{saved}”</span>}
+        {saved && <span className="mb-2 text-xs text-ink-2">{t("Saved as “{name}”", { name: saved })}</span>}
       </div>
     </Card>
   );
@@ -705,15 +726,17 @@ function ReviewCard({
   const assetLabel = useMemo(() => new Map(plan?.assets.map((a) => [a.key, a.match.symbol || a.label]) ?? []), [plan]);
   if (error) {
     return (
-      <Card title="3 · Review">
+      <Card title={t("3 · Review")}>
         <Alert tone="danger">{error}</Alert>
       </Card>
     );
   }
   if (!plan) {
     return (
-      <Card title="3 · Review">
-        <p className="text-sm text-ink-2">{loading ? "Reading the file…" : "Choose an account to see the preview."}</p>
+      <Card title={t("3 · Review")}>
+        <p className="text-sm text-ink-2">
+          {loading ? t("Reading the file…") : t("Choose an account to see the preview.")}
+        </p>
       </Card>
     );
   }
@@ -733,7 +756,10 @@ function ReviewCard({
   const counts = (Object.keys(STATUS) as RowStatus[]).filter((s) => plan.summary[s] > 0);
 
   return (
-    <Card title="3 · Review" actions={loading ? <span className="text-xs text-muted">Updating…</span> : undefined}>
+    <Card
+      title={t("3 · Review")}
+      actions={loading ? <span className="text-xs text-muted">{t("Updating…")}</span> : undefined}
+    >
       <div className="mb-4 flex flex-wrap gap-2">
         {counts.map((s) => (
           <Badge key={s} tone={STATUS[s].tone}>
@@ -749,15 +775,15 @@ function ReviewCard({
 
       {plan.assets.length > 0 && (
         <>
-          <h3 className="mb-2 text-sm font-semibold">Assets</h3>
+          <h3 className="mb-2 text-sm font-semibold">{t("Assets")}</h3>
           <div className="mb-6 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs text-ink-2">
-                  <th className="py-1 pr-3 font-medium">In the file</th>
-                  <th className="py-1 pr-3 font-medium">Rows</th>
-                  <th className="py-1 pr-3 font-medium">Booked on</th>
-                  <th className="py-1 font-medium">Use another asset</th>
+                  <th className="py-1 pr-3 font-medium">{t("In the file")}</th>
+                  <th className="py-1 pr-3 font-medium">{t("Rows")}</th>
+                  <th className="py-1 pr-3 font-medium">{t("Booked on")}</th>
+                  <th className="py-1 font-medium">{t("Use another asset")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -769,23 +795,23 @@ function ReviewCard({
                       <div className="flex flex-wrap items-center gap-1.5">
                         <span className="font-medium">{a.match.name}</span>
                         <span className="text-ink-2">{a.match.symbol}</span>
-                        {a.match.id < 0 ? <Badge tone="accent">new</Badge> : <Badge>existing</Badge>}
+                        {a.match.id < 0 ? <Badge tone="accent">{t("new")}</Badge> : <Badge>{t("existing")}</Badge>}
                       </div>
                       <div className="text-xs text-muted">
                         {CLASS_LABEL[a.match.assetClass] ?? a.match.assetClass} ·{" "}
                         {a.match.priceSource === "manual"
-                          ? "no price feed found (manual price)"
+                          ? t("no price feed found (manual price)")
                           : `${a.match.priceSource} ${a.match.priceRef ?? ""}`}
                       </div>
                     </td>
                     <td className="py-1.5">
                       <Select
-                        aria-label={`Asset for ${a.label}`}
+                        aria-label={t("Asset for {name}", { name: a.label })}
                         value={mapping.assetOverrides[a.key] ?? ""}
                         className="py-1"
                         onChange={(e) => override(a.key, e.target.value)}
                       >
-                        <option value="">As matched</option>
+                        <option value="">{t("As matched")}</option>
                         {assets.data
                           ?.filter((x) => !x.hidden)
                           .map((x) => (
@@ -804,7 +830,7 @@ function ReviewCard({
       )}
 
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Rows</h3>
+        <h3 className="text-sm font-semibold">{t("Rows")}</h3>
         <Tabs
           value={filter}
           onChange={(v) => {
@@ -812,27 +838,27 @@ function ReviewCard({
             setLimit(100);
           }}
           options={[
-            { value: "all" as const, label: `All ${plan.rows.length}` },
+            { value: "all" as const, label: t("All {n}", { n: plan.rows.length }) },
             ...counts.map((s) => ({ value: s, label: `${STATUS[s].label} ${plan.summary[s]}` })),
           ]}
         />
       </div>
       {rows.length === 0 ? (
-        <Empty title="No rows" />
+        <Empty title={t("No rows")} />
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-ink-2">
-                <th className="py-1 pr-2 font-medium">Line</th>
-                <th className="py-1 pr-2 font-medium">Status</th>
-                <th className="py-1 pr-2 font-medium">Date</th>
-                <th className="py-1 pr-2 font-medium">Type</th>
-                <th className="py-1 pr-2 font-medium">Asset</th>
-                <th className="py-1 pr-2 text-right font-medium">Quantity</th>
-                <th className="py-1 pr-2 text-right font-medium">Price</th>
-                <th className="py-1 pr-2 text-right font-medium">Fee</th>
-                <th className="py-1 font-medium">Details</th>
+                <th className="py-1 pr-2 font-medium">{t("Line")}</th>
+                <th className="py-1 pr-2 font-medium">{t("Status")}</th>
+                <th className="py-1 pr-2 font-medium">{t("Date")}</th>
+                <th className="py-1 pr-2 font-medium">{t("Type")}</th>
+                <th className="py-1 pr-2 font-medium">{t("Asset")}</th>
+                <th className="py-1 pr-2 text-right font-medium">{t("Quantity")}</th>
+                <th className="py-1 pr-2 text-right font-medium">{t("Price")}</th>
+                <th className="py-1 pr-2 text-right font-medium">{t("Fee")}</th>
+                <th className="py-1 font-medium">{t("Details")}</th>
               </tr>
             </thead>
             <tbody>
@@ -843,7 +869,7 @@ function ReviewCard({
                     {r.status === "possible-duplicate" ? (
                       <label className="flex items-center gap-1.5 whitespace-nowrap">
                         <input type="checkbox" checked={include.has(r.line)} onChange={() => toggle(r.line)} />
-                        <Badge tone="warn">Import anyway</Badge>
+                        <Badge tone="warn">{t("Import anyway")}</Badge>
                       </label>
                     ) : (
                       <Badge tone={STATUS[r.status].tone}>{STATUS[r.status].label}</Badge>
@@ -866,7 +892,7 @@ function ReviewCard({
           </table>
           {rows.length > limit && (
             <Button variant="ghost" size="sm" className="mt-2" onClick={() => setLimit(limit + 200)}>
-              Show more ({rows.length - limit} left)
+              {t("Show more ({n} left)", { n: rows.length - limit })}
             </Button>
           )}
         </div>
@@ -877,8 +903,8 @@ function ReviewCard({
 
 function Details({ row: r }: { row: PlannedRow }) {
   const parts: ReactNode[] = [];
-  if (r.amount) parts.push(`gross ${eurPrice(r.amount, r.currency)}`);
-  if (r.tax) parts.push(`tax ${eurPrice(r.tax, r.currency)}`);
+  if (r.amount) parts.push(t("gross {amount}", { amount: eurPrice(r.amount, r.currency) }));
+  if (r.tax) parts.push(t("tax {amount}", { amount: eurPrice(r.tax, r.currency) }));
   if (r.message) parts.push(<span className={r.status === "error" ? "text-loss" : undefined}>{r.message}</span>);
   if (r.notes) parts.push(r.notes);
   return (
@@ -903,20 +929,29 @@ function ResultCard({
   onAgain: () => void;
 }) {
   return (
-    <Card title="Imported">
+    <Card title={t("Imported")}>
       <p className="text-sm">
-        {result.inserted} transaction{result.inserted === 1 ? "" : "s"} added to <strong>{accountName}</strong>
+        {result.inserted === 1
+          ? tj("{n} transaction added to <0>{account}</0>", [<strong key="a" />], { n: 1, account: accountName })
+          : tj("{n} transactions added to <0>{account}</0>", [<strong key="a" />], {
+              n: result.inserted,
+              account: accountName,
+            })}
         {result.transfersMatched > 0 &&
-          `, and ${result.transfersMatched} transfer${result.transfersMatched === 1 ? "" : "s"} to or from your other accounts linked`}
+          tn(
+            result.transfersMatched,
+            ", and {n} transfer to or from your other accounts linked",
+            ", and {n} transfers to or from your other accounts linked",
+          )}
         .
       </p>
       {result.newAssets.length > 0 && (
         <p className="mt-2 text-sm text-ink-2">
-          New assets: {result.newAssets.join(", ")}. If one was matched to the wrong price feed, fix it under{" "}
-          <Link to="/assets" className="underline">
-            Assets
-          </Link>
-          .
+          {tj(
+            "New assets: {list}. If one was matched to the wrong price feed, fix it under <0>Assets</0>.",
+            [<Link key="a" to="/assets" className="underline" />],
+            { list: result.newAssets.join(", ") },
+          )}
         </p>
       )}
       {result.warnings.map((w) => (
@@ -929,9 +964,9 @@ function ResultCard({
           to="/transactions"
           className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-ink hover:opacity-90"
         >
-          View transactions
+          {t("View transactions")}
         </Link>
-        <Button onClick={onAgain}>Import another file</Button>
+        <Button onClick={onAgain}>{t("Import another file")}</Button>
       </div>
     </Card>
   );
@@ -959,19 +994,19 @@ function PastImports() {
   };
 
   return (
-    <Card title="Earlier imports" padded={false}>
+    <Card title={t("Earlier imports")} padded={false}>
       <ul className="divide-y divide-line">
         {list.data.map((i) => (
           <li key={i.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 text-sm">
             <div>
               <div className="font-medium">{i.fileName}</div>
               <div className="text-xs text-ink-2">
-                {i.accountName} · {relativeTime(i.createdAt)} · {i.inserted} imported
-                {i.remaining !== i.inserted && `, ${i.remaining} still there`}
+                {i.accountName} · {relativeTime(i.createdAt)} · {t("{n} imported", { n: i.inserted })}
+                {i.remaining !== i.inserted && `, ${t("{n} still there", { n: i.remaining })}`}
               </div>
             </div>
             <Button size="sm" variant="danger" onClick={() => setUndoing(i)}>
-              Undo
+              {t("Undo")}
             </Button>
           </li>
         ))}
@@ -979,20 +1014,21 @@ function PastImports() {
       <Modal
         open={!!undoing}
         onClose={() => setUndoing(null)}
-        title="Undo this import?"
+        title={t("Undo this import?")}
         footer={
           <>
-            <Button onClick={() => setUndoing(null)}>Cancel</Button>
+            <Button onClick={() => setUndoing(null)}>{t("Cancel")}</Button>
             <Button variant="danger" onClick={() => void undo()} disabled={busy}>
-              Delete {undoing?.remaining} transactions
+              {tn(undoing?.remaining ?? 0, "Delete {n} transaction", "Delete {n} transactions")}
             </Button>
           </>
         }
       >
         <p className="text-sm">
-          This deletes the {undoing?.remaining} transactions that “{undoing?.fileName}” added to {undoing?.accountName}.
-          Transfers they were linked to become plain deposits or withdrawals again. You can import the file again
-          afterwards.
+          {t(
+            "This deletes the {n} transactions that “{file}” added to {account}. Transfers they were linked to become plain deposits or withdrawals again. You can import the file again afterwards.",
+            { n: undoing?.remaining ?? 0, file: undoing?.fileName ?? "", account: undoing?.accountName ?? "" },
+          )}
         </p>
       </Modal>
     </Card>

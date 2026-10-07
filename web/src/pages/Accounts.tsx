@@ -435,7 +435,8 @@ function columns(kind: AccountKind) {
   };
 }
 
-function YearsModal({ account, onClose }: { account: Account; onClose: () => void }) {
+/** Values per year of an account, with a bank export reader; also used by the start wizard. */
+export function YearsModal({ account, onClose }: { account: Account; onClose: () => void }) {
   const qc = useQueryClient();
   const invalidate = useInvalidateAll();
   const years = useQuery({

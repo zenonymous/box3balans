@@ -3,11 +3,12 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { accounts, walletAddresses } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { HttpError, notFound, notInDemo } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import { purgeSynced } from "../sync/purge.js";
 import { SCRIPT_TYPES } from "../wallets/registry.js";
 import { ChainError } from "../wallets/types.js";
+import { tr } from "../i18n/index.js";
 
 const createBody = z.object({
   chain: z.string(),
@@ -29,14 +30,14 @@ const updateBody = z.object({
 });
 
 export async function walletRoutes(app: FastifyInstance) {
-  const { db, wallets } = app.deps;
+  const { db, wallets, config } = app.deps;
 
   app.get("/chains", async () =>
     Object.values(wallets.chains).map((c) => ({
       id: c.id,
       label: c.label,
       nativeSymbol: c.nativeSymbol,
-      addressHint: c.addressHint,
+      addressHint: tr(c.addressHint),
       supportsXpub: c.supportsXpub,
       scriptTypes: c.supportsXpub ? SCRIPT_TYPES : [],
       evm: !!c.evm,
@@ -60,23 +61,24 @@ export async function walletRoutes(app: FastifyInstance) {
   });
 
   app.post("/", { config: { rateLimit: { max: 30, timeWindow: "1 minute" } } }, async (req) => {
+    if (config.DEMO) throw notInDemo();
     const body = createBody.parse(req.body);
     const chain = wallets.chains[body.chain];
-    if (!chain) throw new HttpError(400, `Unsupported chain ${body.chain}`);
+    if (!chain) throw new HttpError(400, tr("Unsupported chain {chain}", { chain: body.chain }));
     if (chain.unavailable) throw new HttpError(400, chain.unavailable);
     let address: string;
     try {
       address = chain.normalise(body.address);
     } catch (err) {
-      throw new HttpError(400, err instanceof ChainError ? err.message : "Invalid address");
+      throw new HttpError(400, err instanceof ChainError ? err.message : tr("Invalid address"));
     }
     if (body.scriptType && !chain.supportsXpub)
-      throw new HttpError(400, "Script types only apply to Bitcoin-like chains");
+      throw new HttpError(400, tr("Script types only apply to Bitcoin-like chains"));
 
     let accountId = body.accountId;
     if (accountId) {
       const [acc] = await db.select().from(accounts).where(eq(accounts.id, accountId));
-      if (!acc) throw new HttpError(400, "Unknown account");
+      if (!acc) throw new HttpError(400, tr("Unknown account"));
     } else {
       const [acc] = await db
         .insert(accounts)
@@ -95,7 +97,7 @@ export async function walletRoutes(app: FastifyInstance) {
           eq(walletAddresses.address, address),
         ),
       );
-    if (dupe) throw new HttpError(409, "This address is already tracked in that account");
+    if (dupe) throw new HttpError(409, tr("This address is already tracked in that account"));
 
     const [row] = await db
       .insert(walletAddresses)
@@ -119,7 +121,7 @@ export async function walletRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const body = updateBody.parse(req.body);
     const [before] = await db.select().from(walletAddresses).where(eq(walletAddresses.id, id));
-    if (!before) throw notFound("Address");
+    if (!before) throw notFound(tr("Address"));
     const [row] = await db.update(walletAddresses).set(body).where(eq(walletAddresses.id, id)).returning();
     await audit(db, "wallet_address", id, "update", { ...before, cursor: undefined }, { ...row, cursor: undefined });
     return { ok: true };
@@ -129,8 +131,8 @@ export async function walletRoutes(app: FastifyInstance) {
     const { accountId, chain } = z
       .object({ accountId: z.number().int().positive(), chain: z.string() })
       .parse(req.body);
-    if (!wallets.chains[chain]) throw new HttpError(400, `Unsupported chain ${chain}`);
-    if (!wallets.start(accountId, chain)) throw new HttpError(409, "A sync is already running");
+    if (!wallets.chains[chain]) throw new HttpError(400, tr("Unsupported chain {chain}", { chain }));
+    if (!wallets.start(accountId, chain)) throw new HttpError(409, tr("A sync is already running"));
     return reply.code(202).send({ started: true });
   });
 
@@ -142,8 +144,9 @@ export async function walletRoutes(app: FastifyInstance) {
       .object({ deleteTransactions: z.enum(["true", "false"]).default("false") })
       .parse(req.query);
     const [row] = await db.select().from(walletAddresses).where(eq(walletAddresses.id, id));
-    if (!row) throw notFound("Address");
-    if (wallets.isRunning(row.accountId, row.chain)) throw new HttpError(409, "Wait for the running sync to finish");
+    if (!row) throw notFound(tr("Address"));
+    if (wallets.isRunning(row.accountId, row.chain))
+      throw new HttpError(409, tr("Wait for the running sync to finish"));
     await db.delete(walletAddresses).where(eq(walletAddresses.id, id));
     const remaining = await db
       .select({ id: walletAddresses.id })

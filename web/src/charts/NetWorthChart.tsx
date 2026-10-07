@@ -2,6 +2,7 @@ import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip,
 import type { AssetClass, HistoryPoint } from "../api";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, date, eur, getLocale } from "../format";
 import { Swatch } from "../components/ui";
+import { t } from "../i18n";
 
 const compact = (v: number) =>
   new Intl.NumberFormat(getLocale(), {
@@ -36,7 +37,7 @@ export function NetWorthChart({ points, showInvested }: { points: HistoryPoint[]
 
   return (
     <div>
-      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label={t("Legend")}>
         {classes.map((c) => (
           <li key={c} className="flex items-center gap-1.5">
             <Swatch color={CLASS_COLOR[c]!} /> {CLASS_LABEL[c]}
@@ -44,7 +45,7 @@ export function NetWorthChart({ points, showInvested }: { points: HistoryPoint[]
         ))}
         {showInvested && (
           <li className="flex items-center gap-1.5">
-            <span aria-hidden className="inline-block w-4 border-t-2 border-dashed border-ink-2" /> Invested
+            <span aria-hidden className="inline-block w-4 border-t-2 border-dashed border-ink-2" /> {t("Invested")}
           </li>
         )}
       </ul>
@@ -89,7 +90,7 @@ export function NetWorthChart({ points, showInvested }: { points: HistoryPoint[]
                     )}
                     {showInvested && (
                       <div className="mt-1 flex border-t border-line pt-1 text-ink-2">
-                        Invested <span className="tabular ml-auto pl-3">{eur(p.invested, { decimals: 0 })}</span>
+                        {t("Invested")} <span className="tabular ml-auto pl-3">{eur(p.invested, { decimals: 0 })}</span>
                       </div>
                     )}
                   </div>

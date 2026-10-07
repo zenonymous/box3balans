@@ -18,6 +18,7 @@ import { getCostMethod } from "../domain/settings.js";
 import { staleAfterMs } from "../jobs/scheduler.js";
 import { localToday } from "../lib/time.js";
 import { HistoryService } from "../prices/history.js";
+import { tr } from "../i18n/index.js";
 
 const SERIES_POINTS = 420;
 
@@ -92,8 +93,8 @@ export async function returnRoutes(app: FastifyInstance) {
     return {
       benchmark: {
         id: benchmarkId,
-        label: bench?.label ?? null,
-        options: BENCHMARKS.map((b) => ({ id: b.id, label: b.label })),
+        label: bench ? tr(bench.label) : null,
+        options: BENCHMARKS.map((b) => ({ id: b.id, label: tr(b.label) })),
       },
       allTime: allTime(points),
       ytd: points.length ? periodReturn(points, `${thisYear - 1}-12-31`, today) : null,

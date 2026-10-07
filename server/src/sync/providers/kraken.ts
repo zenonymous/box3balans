@@ -4,6 +4,7 @@ import { D, type Decimal } from "../../lib/decimal.js";
 import { getJson } from "../../lib/http.js";
 import { assetRef, isFiat } from "../assets.js";
 import { type Balance, type ExchangeProvider, ProviderError, type ProviderContext, type SyncEvent } from "../types.js";
+import { msg } from "../../i18n/index.js";
 
 const BASE = "https://api.kraken.com";
 
@@ -275,13 +276,15 @@ export const kraken: ExchangeProvider<Creds> = {
   label: "Kraken",
   accountKind: "exchange",
   fields: [
-    { name: "apiKey", label: "API key", secret: false },
-    { name: "apiSecret", label: "Private key", secret: true },
+    { name: "apiKey", label: msg("API key"), secret: false },
+    { name: "apiSecret", label: msg("Private key"), secret: true },
   ],
   instructions: [
-    "Log in to kraken.com → Settings → API → Create API key.",
-    "Enable only: “Query Funds” and “Query Ledger Entries”. Leave every trading, deposit and withdrawal permission off.",
-    "Copy the API key and the private key.",
+    msg("Log in to kraken.com → Settings → API → Create API key."),
+    msg(
+      "Enable only: “Query Funds” and “Query Ledger Entries”. Leave every trading, deposit and withdrawal permission off.",
+    ),
+    msg("Copy the API key and the private key."),
   ],
   credentials: creds,
   hint: (c) => `…${c.apiKey.slice(-4)}`,

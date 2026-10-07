@@ -9,6 +9,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { eur, getLocale, parseNumberInput, pct, unambiguous } from "../format";
+import { t } from "../i18n";
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
@@ -126,11 +127,12 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement> & { val
         aria-invalid={parsed.value === null || undefined}
         className={cx(inputCls, parsed.value === null && "border-loss", props.className)}
       />
-      {parsed.value === null && <span className="text-xs text-loss">Not a number</span>}
+      {parsed.value === null && <span className="text-xs text-loss">{t("Not a number")}</span>}
       {showReading && (
         <span className={cx("tabular text-xs", parsed.ambiguous ? "text-warn" : "text-muted")}>
           = {unambiguous(parsed.value!)}
-          {parsed.ambiguous && ` (thousands; for decimals use a ${getLocale().startsWith("en") ? "dot" : "comma"})`}
+          {parsed.ambiguous &&
+            ` ${getLocale().startsWith("en") ? t("(thousands; for decimals use a dot)") : t("(thousands; for decimals use a comma)")}`}
         </span>
       )}
     </>
@@ -185,7 +187,7 @@ export function Modal({
               type="button"
               onClick={onClose}
               className="rounded p-1 text-ink-2 hover:bg-surface-2"
-              aria-label="Close"
+              aria-label={t("Close")}
             >
               ✕
             </button>
@@ -279,7 +281,7 @@ export function Empty({ title, children }: { title: string; children?: ReactNode
 }
 
 export function Spinner() {
-  return <div className="py-10 text-center text-sm text-muted">Loading…</div>;
+  return <div className="py-10 text-center text-sm text-muted">{t("Loading…")}</div>;
 }
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {

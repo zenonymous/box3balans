@@ -5,7 +5,7 @@ import { gunzipSync, gzipSync } from "node:zlib";
 import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import * as s from "../db/schema.js";
-import { forgetLanguage } from "../domain/settings.js";
+import { reloadLanguage } from "../domain/settings.js";
 import { decryptBackup, encryptBackup, isEncryptedBackup } from "./crypto.js";
 
 export const BACKUP_FORMAT = "kluishuis-backup";
@@ -135,7 +135,7 @@ export async function restoreBackup(db: DB, b: BackupFile): Promise<Record<strin
       );
     }
   });
-  forgetLanguage();
+  await reloadLanguage(db);
   return counts;
 }
 

@@ -10,6 +10,7 @@ import { REFRESH_STATUS_KEY, type RefreshResult } from "../prices/service.js";
 import type { BackfillResult } from "../jobs/backfill.js";
 import { buildPortfolio } from "./portfolio.js";
 import { loadLedger } from "./portfolio.js";
+import { tr, trn } from "../i18n/index.js";
 
 export type Severity = "problem" | "warning" | "info";
 
@@ -45,10 +46,12 @@ export async function dismiss(db: DB, key: string, fingerprint: string) {
 }
 
 const list = (xs: string[], max = 5) =>
-  xs.length > max ? `${xs.slice(0, max).join(", ")} and ${xs.length - max} more` : xs.join(", ");
+  xs.length > max
+    ? tr("{list} and {n} more", { list: xs.slice(0, max).join(", "), n: xs.length - max })
+    : xs.join(", ");
 const ago = (iso: string) => {
   const h = (Date.now() - Date.parse(iso)) / HOUR;
-  return h < 48 ? `${Math.max(1, Math.round(h))} h ago` : `${Math.round(h / 24)} days ago`;
+  return h < 48 ? tr("{n} h ago", { n: Math.max(1, Math.round(h)) }) : tr("{n} days ago", { n: Math.round(h / 24) });
 };
 
 interface SyncLike {
@@ -86,9 +89,9 @@ export async function collectIssues(
       add({
         key: `${kind}-error:${id}`,
         severity: "problem",
-        title: `${name}: the last sync failed`,
-        detail: String(r.error ?? "Unknown error"),
-        link: { to, label: kind === "wallet" ? "Wallets" : "Connections" },
+        title: tr("{name}: the last sync failed", { name }),
+        detail: String(r.error ?? tr("Unknown error")),
+        link: { to, label: kind === "wallet" ? tr("Wallets") : tr("Connections") },
         fingerprint: String(r.at ?? ""),
       });
     }
@@ -97,9 +100,23 @@ export async function collectIssues(
       add({
         key: `${kind}-mismatch:${id}`,
         severity: "warning",
-        title: `${name}: ${mismatches.length} balance difference${mismatches.length === 1 ? "" : "s"}`,
-        detail: `${list(mismatches.map((m) => `${m.symbol} ${D(m.difference).gt(0) ? "+" : ""}${D(m.difference).toSignificantDigits(6).toFixed()}`))} compared with what the ${kind === "wallet" ? "chain" : "exchange"} reports. Usually missing history; fix it or adjust.`,
-        link: { to, label: "Review" },
+        title: trn(mismatches.length, "{name}: {n} balance difference", "{name}: {n} balance differences", { name }),
+        detail: (() => {
+          const diffs = list(
+            mismatches.map(
+              (m) =>
+                `${m.symbol} ${D(m.difference).gt(0) ? "+" : ""}${D(m.difference).toSignificantDigits(6).toFixed()}`,
+            ),
+          );
+          return kind === "wallet"
+            ? tr("{list} compared with what the chain reports. Usually missing history; fix it or adjust.", {
+                list: diffs,
+              })
+            : tr("{list} compared with what the exchange reports. Usually missing history; fix it or adjust.", {
+                list: diffs,
+              });
+        })(),
+        link: { to, label: tr("Review") },
         fingerprint: mismatches.map((m) => `${m.symbol}:${m.difference}`).join(","),
       });
     }
@@ -107,9 +124,9 @@ export async function collectIssues(
       add({
         key: `${kind}-partial:${id}`,
         severity: "info",
-        title: `${name}: history still importing`,
-        detail: "Rate-limited sources load older history over several syncs.",
-        link: { to, label: "Wallets" },
+        title: tr("{name}: history still importing", { name }),
+        detail: tr("Rate-limited sources load older history over several syncs."),
+        link: { to, label: tr("Wallets") },
         fingerprint: String(r.at ?? ""),
       });
     }
@@ -121,9 +138,9 @@ export async function collectIssues(
       add({
         key: `${kind}-stale:${id}`,
         severity: "warning",
-        title: `${name} hasn't synced for ${ago(s.lastSyncAt.toISOString())}`,
-        detail: `Syncs should run every ${config.SYNC_INTERVAL_HOURS} h.`,
-        link: { to, label: kind === "wallet" ? "Wallets" : "Connections" },
+        title: tr("{name} hasn't synced for {ago}", { name, ago: ago(s.lastSyncAt.toISOString()) }),
+        detail: tr("Syncs should run every {n} h.", { n: config.SYNC_INTERVAL_HOURS }),
+        link: { to, label: kind === "wallet" ? tr("Wallets") : tr("Connections") },
         fingerprint: s.lastSyncAt.toISOString().slice(0, 10),
       });
     }
@@ -137,7 +154,7 @@ export async function collectIssues(
     const id = `${a.accountId}:${a.chain}`;
     if (seenWallets.has(id) || !a.lastResult) continue;
     seenWallets.add(id);
-    checkSync("wallet", id, `${accountName.get(a.accountId) ?? "Wallet"} (${a.chain})`, a, "/wallets");
+    checkSync("wallet", id, `${accountName.get(a.accountId) ?? tr("Wallet")} (${a.chain})`, a, "/wallets");
   }
 
   // ---- Prices ----
@@ -146,9 +163,13 @@ export async function collectIssues(
     add({
       key: "price-failed",
       severity: "warning",
-      title: `Prices couldn't be updated for ${refresh.failed.length} asset${refresh.failed.length === 1 ? "" : "s"}`,
+      title: trn(
+        refresh.failed.length,
+        "Prices couldn't be updated for {n} asset",
+        "Prices couldn't be updated for {n} assets",
+      ),
       detail: list(refresh.failed.map((f) => f.symbol)),
-      link: { to: "/settings", label: "Prices" },
+      link: { to: "/settings", label: tr("Prices") },
       fingerprint: refresh.failed
         .map((f) => f.symbol)
         .sort()
@@ -160,9 +181,9 @@ export async function collectIssues(
     add({
       key: "price-missing",
       severity: "warning",
-      title: `No price for ${summary.missingPrices.length} holding${summary.missingPrices.length === 1 ? "" : "s"}`,
-      detail: `${list(summary.missingPrices)}: valued at €0 until a price is found or entered.`,
-      link: { to: "/assets", label: "Assets" },
+      title: trn(summary.missingPrices.length, "No price for {n} holding", "No price for {n} holdings"),
+      detail: tr("{list}: valued at €0 until a price is found or entered.", { list: list(summary.missingPrices) }),
+      link: { to: "/assets", label: tr("Assets") },
       fingerprint: [...summary.missingPrices].sort().join(","),
     });
   }
@@ -171,9 +192,9 @@ export async function collectIssues(
     add({
       key: "price-stale",
       severity: "warning",
-      title: `Stale price for ${stale.length} holding${stale.length === 1 ? "" : "s"}`,
-      detail: `${list(stale)}: not updated in the last refreshes.`,
-      link: { to: "/settings", label: "Prices" },
+      title: trn(stale.length, "Stale price for {n} holding", "Stale price for {n} holdings"),
+      detail: tr("{list}: not updated in the last refreshes.", { list: list(stale) }),
+      link: { to: "/settings", label: tr("Prices") },
       fingerprint: [...stale].sort().join(","),
     });
   }
@@ -181,9 +202,15 @@ export async function collectIssues(
     add({
       key: "history-failed",
       severity: "info",
-      title: `Price history couldn't be loaded for ${deps.backfill.failed.length} asset${deps.backfill.failed.length === 1 ? "" : "s"}`,
-      detail: `${list(deps.backfill.failed.map((f) => f.symbol))}. Charts value them at cost where history is missing.`,
-      link: { to: "/settings", label: "Prices" },
+      title: trn(
+        deps.backfill.failed.length,
+        "Price history couldn't be loaded for {n} asset",
+        "Price history couldn't be loaded for {n} assets",
+      ),
+      detail: tr("{list}. Charts value them at cost where history is missing.", {
+        list: list(deps.backfill.failed.map((f) => f.symbol)),
+      }),
+      link: { to: "/settings", label: tr("Prices") },
       fingerprint: deps.backfill.failed
         .map((f) => f.symbol)
         .sort()
@@ -204,12 +231,20 @@ export async function collectIssues(
     add({
       key: `negative:${p.accountId}:${p.assetId}`,
       severity: "problem",
-      title: `Negative balance: ${p.quantity.toSignificantDigits(8).toFixed()} ${a?.symbol ?? "?"} in ${acc}`,
+      title: tr("Negative balance: {quantity} {symbol} in {account}", {
+        quantity: p.quantity.toSignificantDigits(8).toFixed(),
+        symbol: a?.symbol ?? "?",
+        account: acc,
+      }),
       detail:
         a?.assetClass === "cash"
-          ? "Buys are paid from cash that was never deposited. Add the deposits, or stop booking cash for these trades."
-          : "More was sold, sent or spent than was bought or received. Some history is missing (an earlier buy or deposit).",
-      link: { to: `/transactions?accountId=${p.accountId}&assetId=${p.assetId}`, label: "Transactions" },
+          ? tr(
+              "Buys are paid from cash that was never deposited. Add the deposits, or stop booking cash for these trades.",
+            )
+          : tr(
+              "More was sold, sent or spent than was bought or received. Some history is missing (an earlier buy or deposit).",
+            ),
+      link: { to: `/transactions?accountId=${p.accountId}&assetId=${p.assetId}`, label: tr("Transactions") },
       fingerprint: p.quantity.toFixed(),
     });
   }
@@ -230,9 +265,12 @@ export async function collectIssues(
       add({
         key: "zero-cost",
         severity: "info",
-        title: `${zero.length} deposit${zero.length === 1 ? "" : "s"} or reward${zero.length === 1 ? "" : "s"} without a value`,
-        detail: `${list([...new Set(zero.map((z) => assetById.get(z.assetId)?.symbol ?? "?"))])}: booked at €0 because no price was known for that day, which overstates gains when sold. Edit them to enter the value.`,
-        link: { to: "/transactions?type=deposit", label: "Transactions" },
+        title: trn(zero.length, "{n} deposit or reward without a value", "{n} deposits or rewards without a value"),
+        detail: tr(
+          "{list}: booked at €0 because no price was known for that day, which overstates gains when sold. Edit them to enter the value.",
+          { list: list([...new Set(zero.map((z) => assetById.get(z.assetId)?.symbol ?? "?"))]) },
+        ),
+        link: { to: "/transactions?type=deposit", label: tr("Transactions") },
         fingerprint: String(zero.length),
       });
     }
@@ -254,9 +292,17 @@ export async function collectIssues(
       add({
         key: `yearly-missing:${thisYear}`,
         severity: "warning",
-        title: `${missing.length} account${missing.length === 1 ? "" : "s"} without a value on 1 January ${thisYear}`,
-        detail: `${list(missing.map((a) => a.name))}. Box 3 counts what you had on 1 January: take it from the year statement (jaaroverzicht) or, for a home, the WOZ assessment.`,
-        link: { to: "/accounts", label: "Accounts" },
+        title: trn(
+          missing.length,
+          "{n} account without a value on 1 January {year}",
+          "{n} accounts without a value on 1 January {year}",
+          { year: thisYear },
+        ),
+        detail: tr(
+          "{list}. Box 3 counts what you had on 1 January: take it from the year statement (jaaroverzicht) or, for a home, the WOZ assessment.",
+          { list: list(missing.map((a) => a.name)) },
+        ),
+        link: { to: "/accounts", label: tr("Accounts") },
         fingerprint: missing
           .map((a) => a.id)
           .sort()
@@ -284,9 +330,16 @@ export async function collectIssues(
       add({
         key: "unlinked-withdrawals",
         severity: "info",
-        title: `${unlinked.length} crypto withdrawal${unlinked.length === 1 ? "" : "s"} from exchanges not linked to a deposit`,
-        detail: `${list([...new Set(unlinked.map((u) => assetById.get(u.assetId)?.symbol ?? "?"))])}. If they went to a wallet of yours, track that wallet so the purchase cost moves along; otherwise they count as disposals.`,
-        link: { to: "/wallets", label: "Wallets" },
+        title: trn(
+          unlinked.length,
+          "{n} crypto withdrawal from exchanges not linked to a deposit",
+          "{n} crypto withdrawals from exchanges not linked to a deposit",
+        ),
+        detail: tr(
+          "{list}. If they went to a wallet of yours, track that wallet so the purchase cost moves along; otherwise they count as disposals.",
+          { list: list([...new Set(unlinked.map((u) => assetById.get(u.assetId)?.symbol ?? "?"))]) },
+        ),
+        link: { to: "/wallets", label: tr("Wallets") },
         fingerprint: String(unlinked.length),
       });
     }
@@ -299,9 +352,9 @@ export async function collectIssues(
     add({
       key: "backup-failed",
       severity: "problem",
-      title: "The last automatic backup failed",
+      title: tr("The last automatic backup failed"),
       detail: status.lastError,
-      link: { to: "/settings", label: "Backups" },
+      link: { to: "/settings", label: tr("Backups") },
       fingerprint: status.lastErrorAt,
     });
   }
@@ -316,28 +369,28 @@ export async function collectIssues(
     add({
       key: "backup-overdue",
       severity: "problem",
-      title: `No automatic backup since ${ago(latestAuto.createdAt)}`,
-      link: { to: "/settings", label: "Backups" },
+      title: tr("No automatic backup since {ago}", { ago: ago(latestAuto.createdAt) }),
+      link: { to: "/settings", label: tr("Backups") },
       fingerprint: latestAuto.name,
     });
   }
-  if (backupInterval === 0 && !backups.length) {
+  if (backupInterval === 0 && !backups.length && !config.DEMO) {
     add({
       key: "backup-none",
       severity: "warning",
-      title: "No backups",
-      detail: "Automatic backups are off (BACKUP_INTERVAL_HOURS=0) and there are no manual ones.",
-      link: { to: "/settings", label: "Backups" },
+      title: tr("No backups"),
+      detail: tr("Automatic backups are off (BACKUP_INTERVAL_HOURS=0) and there are no manual ones."),
+      link: { to: "/settings", label: tr("Backups") },
       fingerprint: "none",
     });
   }
-  if (!config.BACKUP_PASSPHRASE) {
+  if (!config.BACKUP_PASSPHRASE && !config.DEMO) {
     add({
       key: "backup-unencrypted",
       severity: "warning",
-      title: "Backups aren't encrypted",
-      detail: "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and restart.",
-      link: { to: "/settings", label: "Backups" },
+      title: tr("Backups aren't encrypted"),
+      detail: tr("Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and restart."),
+      link: { to: "/settings", label: tr("Backups") },
       fingerprint: "unencrypted",
     });
   }

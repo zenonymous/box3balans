@@ -69,3 +69,9 @@ export function useInvalidateAll() {
   return () =>
     qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "auth" && q.queryKey[0] !== "import-preview" });
 }
+
+/** Demo mode (DEMO=true on the server): example data, made-up prices. Known once signed in. */
+export function useDemo(): boolean {
+  const qc = useQueryClient();
+  return qc.getQueryData<{ demo?: boolean }>(["auth"])?.demo ?? false;
+}

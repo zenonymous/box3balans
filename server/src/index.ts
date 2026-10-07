@@ -1,4 +1,8 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import { buildApp } from "./app.js";
+import { seedDemo } from "./demo.js";
 import { loadConfig } from "./config.js";
 import { setTimeZone } from "./lib/time.js";
 import { openDatabase } from "./db/client.js";
@@ -13,13 +17,19 @@ import { APP_VERSION } from "./lib/version.js";
 
 const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
-const database = await openDatabase({
-  url: config.DATABASE_URL,
-  pgEnv: !!config.PGHOST,
-  password: config.PGPASSWORD,
-  pgliteDir: config.PGLITE_DIR,
-  lock: "take",
-});
+if (config.DEMO) {
+  // Nothing is kept: data in memory, backups in a temporary folder that goes with the process.
+  config.BACKUP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "kluishuis-demo-"));
+}
+const database = config.DEMO
+  ? await openDatabase({})
+  : await openDatabase({
+      url: config.DATABASE_URL,
+      pgEnv: !!config.PGHOST,
+      password: config.PGPASSWORD,
+      pgliteDir: config.PGLITE_DIR,
+      lock: "take",
+    });
 await seed(database.db);
 
 const prices = new PriceService(database.db);
@@ -29,10 +39,14 @@ const wallets = new WalletService(database.db, prices);
 const backfill = new BackfillService(database.db, prices.fx);
 sync.onDone = () => backfill.request();
 wallets.onDone = () => backfill.request();
+// The demo's price history is made up and complete; fetching real history would mix the two.
+if (config.DEMO) backfill.request = () => {};
 const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill });
-const stopScheduler = config.SCHEDULER
-  ? startScheduler(database.db, prices, sync, wallets, backfill, config, app.log)
-  : () => {};
+if (config.DEMO) await seedDemo(app, database.db);
+const stopScheduler =
+  config.SCHEDULER && !config.DEMO
+    ? startScheduler(database.db, prices, sync, wallets, backfill, config, app.log)
+    : () => {};
 
 const shutdown = async (signal: string) => {
   app.log.info(`${signal} received, shutting down`);
@@ -44,5 +58,5 @@ const shutdown = async (signal: string) => {
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));
 
-app.log.info({ version: APP_VERSION }, "Kluishuis starting");
+app.log.info({ version: APP_VERSION, demo: config.DEMO }, "Kluishuis starting");
 await app.listen({ port: config.PORT, host: config.HOST });

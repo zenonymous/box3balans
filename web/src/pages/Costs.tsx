@@ -5,6 +5,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { get } from "../api";
 import { Alert, Card, Empty, Select, Spinner, Stat, Swatch } from "../components/ui";
 import { eur, getLocale, pct } from "../format";
+import { t, tj } from "../i18n";
 
 type Category = "trading" | "network" | "storage" | "account" | "withholding" | "funds" | "premiums";
 
@@ -29,22 +30,22 @@ interface Costs {
 
 // Six groups (trading and account fees are both what the broker charges), each with a fixed colour.
 const GROUPS = [
-  { key: "broker", label: "Broker fees", of: ["trading", "account"], color: "var(--series-1)" },
-  { key: "funds", label: "Fund running costs", of: ["funds"], color: "var(--series-2)" },
-  { key: "withholding", label: "Dividend tax withheld", of: ["withholding"], color: "var(--series-3)" },
-  { key: "network", label: "Network fees", of: ["network"], color: "var(--series-4)" },
-  { key: "storage", label: "Storage fees", of: ["storage"], color: "var(--series-5)" },
-  { key: "premiums", label: "Dealer premiums", of: ["premiums"], color: "var(--series-6)" },
+  { key: "broker", label: t("Broker fees"), of: ["trading", "account"], color: "var(--series-1)" },
+  { key: "funds", label: t("Fund running costs"), of: ["funds"], color: "var(--series-2)" },
+  { key: "withholding", label: t("Dividend tax withheld"), of: ["withholding"], color: "var(--series-3)" },
+  { key: "network", label: t("Network fees"), of: ["network"], color: "var(--series-4)" },
+  { key: "storage", label: t("Storage fees"), of: ["storage"], color: "var(--series-5)" },
+  { key: "premiums", label: t("Dealer premiums"), of: ["premiums"], color: "var(--series-6)" },
 ] as const satisfies readonly { key: string; label: string; of: readonly Category[]; color: string }[];
 
 const CATEGORY_LABEL: Record<Category, string> = {
-  trading: "Trading fees",
-  account: "Account fees",
-  funds: "Fund running costs (estimate)",
-  withholding: "Dividend tax withheld",
-  network: "Network fees",
-  storage: "Storage fees",
-  premiums: "Premium above spot",
+  trading: t("Trading fees"),
+  account: t("Account fees"),
+  funds: t("Fund running costs (estimate)"),
+  withholding: t("Dividend tax withheld"),
+  network: t("Network fees"),
+  storage: t("Storage fees"),
+  premiums: t("Premium above spot"),
 };
 
 const group = (y: CostYear, g: (typeof GROUPS)[number]) => g.of.reduce((a, c) => a + y[c as Category], 0);
@@ -66,7 +67,9 @@ export function CostsView() {
   if (!c.years.length) {
     return (
       <Card>
-        <Empty title="No costs yet">Fees, withheld tax and premiums appear here once you have transactions.</Empty>
+        <Empty title={t("No costs yet")}>
+          {t("Fees, withheld tax and premiums appear here once you have transactions.")}
+        </Empty>
       </Card>
     );
   }
@@ -86,32 +89,36 @@ export function CostsView() {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label={`Costs ${thisYear.year} so far`}
+          label={t("Costs {year} so far", { year: thisYear.year })}
           value={eur(thisYear.total)}
           sub={
             thisYear.pctOfValue != null ? (
-              <span className="text-muted">{pct(thisYear.pctOfValue, { sign: false })} of the average value</span>
+              <span className="text-muted">
+                {t("{pct} of the average value", { pct: pct(thisYear.pctOfValue, { sign: false }) })}
+              </span>
             ) : undefined
           }
         />
         {lastFull && (
           <Stat
-            label={`Costs ${lastFull.year}`}
+            label={t("Costs {year}", { year: lastFull.year })}
             value={eur(lastFull.total)}
             sub={
               lastFull.pctOfValue != null ? (
-                <span className="text-muted">{pct(lastFull.pctOfValue, { sign: false })} of the average value</span>
+                <span className="text-muted">
+                  {t("{pct} of the average value", { pct: pct(lastFull.pctOfValue, { sign: false }) })}
+                </span>
               ) : undefined
             }
           />
         )}
         <Stat
-          label="All costs so far"
+          label={t("All costs so far")}
           value={eur(allTime)}
-          sub={<span className="text-muted">since you started</span>}
+          sub={<span className="text-muted">{t("since you started")}</span>}
         />
         <Stat
-          label="Biggest cost (all time)"
+          label={t("Biggest cost (all time)")}
           value={(() => {
             const totals = GROUPS.map((g) => ({ g, v: c.years.reduce((a, y) => a + group(y, g), 0) })).sort(
               (a, b) => b.v - a.v,
@@ -123,18 +130,17 @@ export function CostsView() {
 
       {c.fundsWithoutTer.length > 0 && (
         <Alert>
-          Fund running costs are missing for {c.fundsWithoutTer.map((f) => f.symbol).join(", ")}: enter their yearly
-          cost (TER) under{" "}
-          <Link to="/assets" className="underline">
-            Assets
-          </Link>
-          .
+          {tj(
+            "Fund running costs are missing for {list}: enter their yearly cost (TER) under <0>Assets</0>.",
+            [<Link key="a" to="/assets" className="underline" />],
+            { list: c.fundsWithoutTer.map((f) => f.symbol).join(", ") },
+          )}
         </Alert>
       )}
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
-        <Card title="Costs per year" className="xl:col-span-2">
-          <ul className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+        <Card title={t("Costs per year")} className="xl:col-span-2">
+          <ul className="mb-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2" aria-label={t("Legend")}>
             {shown.map((g) => (
               <li key={g.key} className="flex items-center gap-1.5">
                 <Swatch color={g.color} /> {g.label}
@@ -195,20 +201,23 @@ export function CostsView() {
           </div>
         </Card>
 
-        <Card title="Per year" className="xl:col-span-3" padded={false}>
+        <Card title={t("Per year")} className="xl:col-span-3" padded={false}>
           <div className="overflow-x-auto">
             <table className="tabular w-full min-w-[620px] text-sm">
               <thead>
                 <tr className="border-b border-line text-xs text-ink-2">
-                  <th className="px-3 py-2 text-left font-medium">Year</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Year")}</th>
                   {shown.map((g) => (
                     <th key={g.key} className="px-3 py-2 text-right font-medium">
                       {g.label}
                     </th>
                   ))}
-                  <th className="px-3 py-2 text-right font-medium">Total</th>
-                  <th className="px-3 py-2 text-right font-medium" title="Of the average portfolio value that year">
-                    % of value
+                  <th className="px-3 py-2 text-right font-medium">{t("Total")}</th>
+                  <th
+                    className="px-3 py-2 text-right font-medium"
+                    title={t("Of the average portfolio value that year")}
+                  >
+                    {t("% of value")}
                   </th>
                 </tr>
               </thead>
@@ -234,11 +243,11 @@ export function CostsView() {
       </div>
 
       <Card
-        title="Where the costs went"
+        title={t("Where the costs went")}
         padded={false}
         actions={
           <Select
-            aria-label="Year"
+            aria-label={t("Year")}
             value={selected}
             onChange={(e) => setYear(e.target.value)}
             className="w-auto py-1 text-xs"
@@ -252,7 +261,7 @@ export function CostsView() {
         }
       >
         {lines.length === 0 ? (
-          <Empty title="No costs that year" />
+          <Empty title={t("No costs that year")} />
         ) : (
           <table className="tabular w-full text-sm">
             <tbody className="divide-y divide-line">
@@ -267,9 +276,9 @@ export function CostsView() {
           </table>
         )}
         <p className="px-4 py-2 text-xs text-muted">
-          Fees paid in a coin or in grams count at what those units cost you. Fund running costs are estimated from the
-          TER and the fund's daily value; they're taken from the fund's price, so they're already inside your results.
-          Dividend tax withheld can often be reclaimed or offset in your tax return.
+          {t(
+            "Fees paid in a coin or in grams count at what those units cost you. Fund running costs are estimated from the TER and the fund's daily value; they're taken from the fund's price, so they're already inside your results. Dividend tax withheld can often be reclaimed or offset in your tax return.",
+          )}
         </p>
       </Card>
     </div>

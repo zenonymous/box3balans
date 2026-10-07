@@ -18,6 +18,7 @@ import {
 import { relativeTime } from "../format";
 import { Mismatches } from "../components/Mismatches";
 import { useAccounts, useInvalidateAll } from "../queries";
+import { t, tj, tn } from "../i18n";
 
 const useIntegrations = () =>
   useQuery({
@@ -44,16 +45,21 @@ export function ConnectionsPage() {
   return (
     <>
       <PageHeader
-        title="Connections"
+        title={t("Connections")}
         subtitle={
-          <>
-            Read-only API access to exchanges and brokers. Transactions are imported automatically
-            {interval ? ` every ${interval} hours` : ""}; you can still edit or delete them.
-          </>
+          interval
+            ? tn(
+                interval,
+                "Read-only API access to exchanges and brokers. Transactions are imported automatically every hour; you can still edit or delete them.",
+                "Read-only API access to exchanges and brokers. Transactions are imported automatically every {n} hours; you can still edit or delete them.",
+              )
+            : t(
+                "Read-only API access to exchanges and brokers. Transactions are imported automatically; you can still edit or delete them.",
+              )
         }
         actions={
           <Button variant="primary" onClick={() => setAdding(true)}>
-            + Connect
+            {t("+ Connect")}
           </Button>
         }
       />
@@ -63,9 +69,10 @@ export function ConnectionsPage() {
         <Alert tone="danger">{(list.error as Error).message}</Alert>
       ) : !list.data?.length ? (
         <Card>
-          <Empty title="No connections yet">
-            Connect Bitvavo, Kraken, Coinbase or Interactive Brokers with a read-only key, and their history is imported
-            for you.
+          <Empty title={t("No connections yet")}>
+            {t(
+              "Connect Bitvavo, Kraken, Coinbase or Interactive Brokers with a read-only key, and their history is imported for you.",
+            )}
           </Empty>
         </Card>
       ) : (
@@ -93,12 +100,12 @@ export function ConnectionsPage() {
 }
 
 function StatusBadge({ i }: { i: Integration }) {
-  if (i.running) return <Badge tone="accent">⟳ syncing…</Badge>;
-  if (!i.enabled) return <Badge>paused</Badge>;
-  if (i.lastStatus === "error") return <Badge tone="danger">⛔ failed</Badge>;
-  if (i.lastStatus === "warning") return <Badge tone="warn">⚠ needs attention</Badge>;
-  if (i.lastStatus === "ok") return <Badge>✓ up to date</Badge>;
-  return <Badge>not synced yet</Badge>;
+  if (i.running) return <Badge tone="accent">⟳ {t("syncing…")}</Badge>;
+  if (!i.enabled) return <Badge>{t("paused")}</Badge>;
+  if (i.lastStatus === "error") return <Badge tone="danger">⛔ {t("failed")}</Badge>;
+  if (i.lastStatus === "warning") return <Badge tone="warn">⚠ {t("needs attention")}</Badge>;
+  if (i.lastStatus === "ok") return <Badge>✓ {t("up to date")}</Badge>;
+  return <Badge>{t("not synced yet")}</Badge>;
 }
 
 function ConnectionCard({
@@ -142,26 +149,27 @@ function ConnectionCard({
       actions={
         <>
           <Button size="sm" onClick={onEdit}>
-            Edit
+            {t("Edit")}
           </Button>
           <Button size="sm" variant="primary" onClick={syncNow} disabled={busy || i.running}>
-            {busy || i.running ? "Syncing…" : "↻ Sync now"}
+            {busy || i.running ? t("Syncing…") : t("↻ Sync now")}
           </Button>
         </>
       }
     >
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-        <dt className="text-ink-2">Key</dt>
+        <dt className="text-ink-2">{t("Key")}</dt>
         <dd className="font-mono text-xs leading-5">{i.keyHint ?? "—"}</dd>
-        <dt className="text-ink-2">Last sync</dt>
+        <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={i.lastSyncAt ?? undefined}>{relativeTime(i.lastSyncAt)}</dd>
         {r && !r.error && (
           <>
-            <dt className="text-ink-2">Imported</dt>
+            <dt className="text-ink-2">{t("Imported")}</dt>
             <dd>
-              {r.inserted} new <span className="text-muted">of {r.fetched}</span>
+              {t("{n} new", { n: r.inserted })}{" "}
+              <span className="text-muted">{t("of {total}", { total: r.fetched })}</span>
             </dd>
-            <dt className="text-ink-2">Transfers linked</dt>
+            <dt className="text-ink-2">{t("Transfers linked")}</dt>
             <dd>{r.transfersMatched}</dd>
           </>
         )}
@@ -171,7 +179,7 @@ function ConnectionCard({
         {error && <Alert tone="danger">{error}</Alert>}
         {r?.error && <Alert tone="danger">{r.error}</Alert>}
         {r?.newAssets && r.newAssets.length > 0 && (
-          <p className="text-xs text-ink-2">New assets added: {r.newAssets.join(", ")}</p>
+          <p className="text-xs text-ink-2">{t("New assets added: {list}", { list: r.newAssets.join(", ") })}</p>
         )}
         {r?.warnings?.map((w) => (
           <Alert key={w}>{w}</Alert>
@@ -278,7 +286,7 @@ function ConnectModal({ providers, onClose }: { providers: ProviderInfo[]; onClo
           !list.find((x) => x.id === created.id)?.running && !!list.find((x) => x.id === created.id)?.lastResult,
       );
       const r = done.find((x) => x.id === created.id)?.lastResult;
-      if (!r) throw new Error("The first sync is still running; check back on this page shortly.");
+      if (!r) throw new Error(t("The first sync is still running; check back on this page shortly."));
       setResult(r);
       setStage("done");
       await invalidate();
@@ -293,11 +301,11 @@ function ConnectModal({ providers, onClose }: { providers: ProviderInfo[]; onClo
       open
       onClose={onClose}
       wide
-      title={provider ? `Connect ${provider.label}` : "Connect an exchange or broker"}
+      title={provider ? t("Connect {name}", { name: provider.label }) : t("Connect an exchange or broker")}
       footer={
         stage === "done" ? (
           <Button variant="primary" onClick={onClose}>
-            Done
+            {t("Done")}
           </Button>
         ) : provider ? (
           <>
@@ -306,11 +314,15 @@ function ConnectModal({ providers, onClose }: { providers: ProviderInfo[]; onClo
               disabled={stage !== "form"}
               className="mr-auto"
             >
-              ← Back
+              {t("← Back")}
             </Button>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>{t("Cancel")}</Button>
             <Button variant="primary" type="submit" form="connect-form" disabled={stage !== "form"}>
-              {stage === "verifying" ? "Checking key…" : stage === "syncing" ? "Importing history…" : "Connect"}
+              {stage === "verifying"
+                ? t("Checking key…")
+                : stage === "syncing"
+                  ? t("Importing history…")
+                  : t("Connect")}
             </Button>
           </>
         ) : undefined
@@ -330,27 +342,45 @@ function ConnectModal({ providers, onClose }: { providers: ProviderInfo[]; onClo
               className="rounded-lg border border-line px-4 py-3 text-left hover:bg-surface-2"
             >
               <div className="font-medium">{p.label}</div>
-              <div className="text-xs text-muted">{p.accountKind === "broker" ? "Broker" : "Crypto exchange"}</div>
+              <div className="text-xs text-muted">
+                {p.accountKind === "broker" ? t("Broker") : t("Crypto exchange")}
+              </div>
             </button>
           ))}
         </div>
       ) : stage === "done" && result ? (
         <div className="flex flex-col gap-3 text-sm">
           {result.error ? (
-            <Alert tone="danger">Connected, but the first sync failed: {result.error}</Alert>
+            <Alert tone="danger">{t("Connected, but the first sync failed: {error}", { error: result.error })}</Alert>
           ) : (
             <p>
-              <span className="text-gain">✓</span> Connected. Imported <strong>{result.inserted}</strong> transactions
-              {result.transfersMatched ? `, linked ${result.transfersMatched} transfer(s) to your other accounts` : ""}.
+              <span className="text-gain">✓</span>{" "}
+              {result.inserted === 1
+                ? tj("Connected. Imported <0>{n}</0> transaction", [<strong key="n" />], { n: 1 })
+                : tj("Connected. Imported <0>{n}</0> transactions", [<strong key="n" />], { n: result.inserted })}
+              {result.transfersMatched
+                ? tn(
+                    result.transfersMatched,
+                    ", linked {n} transfer to your other accounts",
+                    ", linked {n} transfers to your other accounts",
+                  )
+                : ""}
+              .
             </p>
           )}
-          {result.newAssets.length > 0 && <p className="text-ink-2">New assets: {result.newAssets.join(", ")}</p>}
+          {result.newAssets.length > 0 && (
+            <p className="text-ink-2">{t("New assets added: {list}", { list: result.newAssets.join(", ") })}</p>
+          )}
           {result.warnings.map((w) => (
             <Alert key={w}>{w}</Alert>
           ))}
           {result.mismatches.length > 0 && (
             <Alert>
-              {result.mismatches.length} balance(s) don’t match the exchange yet. Review them on the Connections page.
+              {tn(
+                result.mismatches.length,
+                "{n} balance doesn’t match the exchange yet. Review it on the Connections page.",
+                "{n} balances don’t match the exchange yet. Review them on the Connections page.",
+              )}
             </Alert>
           )}
         </div>
@@ -362,39 +392,44 @@ function ConnectModal({ providers, onClose }: { providers: ProviderInfo[]; onClo
             ))}
           </ol>
           <p className="text-xs text-muted">
-            🔒 Keys are checked with a read-only call, stored encrypted, and never shown again. Use read-only keys only.
+            🔒{" "}
+            {t(
+              "Keys are checked with a read-only call, stored encrypted, and never shown again. Use read-only keys only.",
+            )}
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Account">
+            <Field label={t("Account")}>
               {(id) => (
                 <Select id={id} value={accountChoice} onChange={(e) => setAccountChoice(e.target.value)}>
-                  <option value="new">Create a new account</option>
+                  <option value="new">{t("Create a new account")}</option>
                   {candidates.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.name} (existing)
+                      {t("{name} (existing)", { name: a.name })}
                     </option>
                   ))}
                 </Select>
               )}
             </Field>
             {accountChoice === "new" ? (
-              <Field label="Account name">
+              <Field label={t("Account name")}>
                 {(id) => (
                   <Input id={id} value={accountName} onChange={(e) => setAccountName(e.target.value)} required />
                 )}
               </Field>
             ) : (
               <p className="self-end text-xs text-muted">
-                Transactions you already entered by hand stay; imported ones are added next to them, so check for
-                duplicates.
+                {t(
+                  "Transactions you entered by hand for this account stay; imported ones are added next to them, so check for duplicates.",
+                )}
               </p>
             )}
           </div>
           <CredentialFields provider={provider} values={creds} onChange={setCreds} />
           {stage === "syncing" && (
             <p className="text-sm text-ink-2">
-              Key accepted. Importing your history; large accounts can take a few minutes. You can close this dialog,
-              and the import continues in the background.
+              {t(
+                "Key accepted. Importing your history; large accounts can take a few minutes. You can close this dialog, and the import continues in the background.",
+              )}
             </p>
           )}
           {error && <Alert tone="danger">{error}</Alert>}
@@ -438,8 +473,10 @@ function EditModal({
   };
 
   const remove = async () => {
-    const what = removeTx ? " and delete all transactions it imported" : "; imported transactions are kept";
-    if (!confirm(`Remove the ${provider.label} connection${what}?`)) return;
+    const question = removeTx
+      ? t("Remove the {name} connection and delete all transactions it imported?", { name: provider.label })
+      : t("Remove the {name} connection? Imported transactions are kept.", { name: provider.label });
+    if (!confirm(question)) return;
     try {
       await del(`/api/integrations/${integration.id}?deleteTransactions=${removeTx}`);
       await invalidate();
@@ -457,28 +494,30 @@ function EditModal({
       footer={
         <>
           <Button variant="danger" onClick={remove} className="mr-auto">
-            Remove
+            {t("Remove")}
           </Button>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="edit-conn" disabled={busy}>
-            {busy ? "Checking…" : "Save"}
+            {busy ? t("Checking…") : t("Save")}
           </Button>
         </>
       }
     >
       <form id="edit-conn" onSubmit={save} className="flex flex-col gap-3">
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} /> Sync automatically
+          <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)} />{" "}
+          {t("Sync automatically")}
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} /> Replace API key
-          <span className="text-muted">(current {integration.keyHint})</span>
+          <input type="checkbox" checked={replace} onChange={(e) => setReplace(e.target.checked)} />{" "}
+          {t("Replace API key")}
+          <span className="text-muted">{t("(current {hint})", { hint: integration.keyHint ?? "—" })}</span>
         </label>
         {replace && <CredentialFields provider={provider} values={creds} onChange={setCreds} />}
         <hr className="border-line" />
         <label className="flex items-center gap-2 text-sm text-ink-2">
-          <input type="checkbox" checked={removeTx} onChange={(e) => setRemoveTx(e.target.checked)} /> When removing,
-          also delete the transactions it imported
+          <input type="checkbox" checked={removeTx} onChange={(e) => setRemoveTx(e.target.checked)} />{" "}
+          {t("When removing, also delete the transactions it imported")}
         </label>
         {error && <Alert tone="danger">{error}</Alert>}
       </form>

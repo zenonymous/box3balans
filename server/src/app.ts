@@ -10,12 +10,14 @@ import type { Config } from "./config.js";
 import type { DB } from "./db/client.js";
 import { HttpError, pgErrorCode } from "./lib/errors.js";
 import { APP_VERSION } from "./lib/version.js";
+import { getLanguage } from "./domain/settings.js";
 import type { PriceService } from "./prices/service.js";
 import type { SecretBox } from "./lib/secrets.js";
 import type { SyncService } from "./sync/service.js";
 import type { WalletService } from "./wallets/service.js";
 import type { BackfillService } from "./jobs/backfill.js";
-import { SESSION_COOKIE, sessionUser } from "./auth/service.js";
+import { SESSION_COOKIE, createSession, sessionUser } from "./auth/service.js";
+import { users } from "./db/schema.js";
 import { authRoutes } from "./routes/auth.js";
 import { accountRoutes } from "./routes/accounts.js";
 import { assetRoutes } from "./routes/assets.js";
@@ -34,6 +36,7 @@ import { attentionRoutes } from "./routes/attention.js";
 import { returnRoutes } from "./routes/returns.js";
 import { dividendRoutes } from "./routes/dividends.js";
 import { householdRoutes } from "./routes/household.js";
+import { tr } from "./i18n/index.js";
 
 export interface AppDeps {
   db: DB;
@@ -61,6 +64,8 @@ export const CSRF_HEADER = "x-requested-with";
 const PUBLIC_ROUTES = new Set(["/api/health", "/api/auth/state", "/api/auth/login", "/api/auth/setup"]);
 
 export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
+  // Messages made before anyone asks for the settings (background syncs) use the right language.
+  await getLanguage(deps.db);
   const app = Fastify({
     logger: {
       level: deps.config.LOG_LEVEL,
@@ -91,11 +96,26 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
     if (!req.url.startsWith("/api/")) return;
     const pathOnly = req.url.split("?")[0]!;
     if (req.method !== "GET" && req.method !== "HEAD" && req.headers[CSRF_HEADER] !== "portfolio") {
-      return reply.code(403).send({ error: "Missing CSRF header" });
+      return reply.code(403).send({ error: tr("Missing CSRF header") });
     }
     req.user = await sessionUser(deps.db, req.cookies[SESSION_COOKIE]);
+    // The demo signs every visitor in as its one user.
+    if (!req.user && deps.config.DEMO) {
+      const [demo] = await deps.db.select({ id: users.id, username: users.username }).from(users).limit(1);
+      if (demo) {
+        const { token, expiresAt } = await createSession(deps.db, demo.id, 1);
+        reply.setCookie(SESSION_COOKIE, token, {
+          path: "/",
+          httpOnly: true,
+          sameSite: "strict",
+          secure: deps.config.COOKIE_SECURE,
+          expires: expiresAt,
+        });
+        req.user = demo;
+      }
+    }
     if (!req.user && !PUBLIC_ROUTES.has(pathOnly)) {
-      return reply.code(401).send({ error: "Not logged in" });
+      return reply.code(401).send({ error: tr("Not logged in") });
     }
   });
 
@@ -131,19 +151,19 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
 
   app.setErrorHandler((err, req, reply) => {
     if (err instanceof ZodError) {
-      return reply.code(400).send({ error: "Invalid input", issues: err.issues });
+      return reply.code(400).send({ error: tr("Invalid input"), issues: err.issues });
     }
     if (err instanceof HttpError) {
       return reply.code(err.statusCode).send({ error: err.message });
     }
     // Safety net for constraint violations not caught by explicit checks.
     const code = pgErrorCode(err);
-    if (code === "23505") return reply.code(409).send({ error: "That already exists" });
-    if (code === "23503") return reply.code(409).send({ error: "It is still used by other records" });
+    if (code === "23505") return reply.code(409).send({ error: tr("That already exists") });
+    if (code === "23503") return reply.code(409).send({ error: tr("It is still used by other records") });
     const status = (err as { statusCode?: number }).statusCode;
     if (status && status < 500) return reply.code(status).send({ error: (err as Error).message });
     req.log.error(err);
-    return reply.code(500).send({ error: "Internal error" });
+    return reply.code(500).send({ error: tr("Internal error") });
   });
 
   // Liveness for Docker: the app answers and the database is reachable.
@@ -152,7 +172,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       await deps.db.execute(sql`select 1`);
       return { ok: true };
     } catch {
-      return reply.code(503).send({ ok: false, error: "Database unavailable" });
+      return reply.code(503).send({ ok: false, error: tr("Database unavailable") });
     }
   });
 
@@ -195,7 +215,8 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
       const pathOnly = req.url.split("?")[0]!;
       // Missing API routes and missing files (anything with an extension) are real 404s;
       // everything else is a client-side route of the single-page app.
-      if (pathOnly.startsWith("/api/") || path.extname(pathOnly)) return reply.code(404).send({ error: "Not found" });
+      if (pathOnly.startsWith("/api/") || path.extname(pathOnly))
+        return reply.code(404).send({ error: tr("Not found") });
       return reply.header("cache-control", "no-cache").sendFile("index.html");
     });
   }

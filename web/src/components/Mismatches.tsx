@@ -4,6 +4,20 @@ import { post, type Mismatch } from "../api";
 import { num, todayIso } from "../format";
 import { useAssets, useInvalidateAll } from "../queries";
 import { Alert, Button } from "./ui";
+import { t } from "../i18n";
+
+const question = (
+  diff: number,
+  source: "exchange" | "blockchain",
+  p: { amount: string; symbol: string; account: string },
+) =>
+  diff > 0
+    ? source === "exchange"
+      ? t("Record a deposit of {amount} {symbol} in {account} so it matches the exchange?", p)
+      : t("Record a deposit of {amount} {symbol} in {account} so it matches the blockchain?", p)
+    : source === "exchange"
+      ? t("Record a withdrawal of {amount} {symbol} in {account} so it matches the exchange?", p)
+      : t("Record a withdrawal of {amount} {symbol} in {account} so it matches the blockchain?", p);
 
 /** Balances that don't add up, with a one-click adjustment transaction per row. */
 export function Mismatches({
@@ -30,9 +44,7 @@ export function Mismatches({
     const diff = Number(m.difference);
     if (
       !asset ||
-      !confirm(
-        `Record a ${diff > 0 ? "deposit" : "withdrawal"} of ${num(Math.abs(diff))} ${m.symbol} in ${accountName} so it matches the ${source}?`,
-      )
+      !confirm(question(diff, source, { amount: num(Math.abs(diff)), symbol: m.symbol, account: accountName }))
     )
       return;
     try {
@@ -45,7 +57,10 @@ export function Mismatches({
         quantity: m.difference.replace("-", ""),
         price: cash ? "1" : "0",
         currency: cash ? asset.currency : "EUR",
-        notes: `Balance adjustment to match ${accountName}${diff > 0 && !cash ? " (cost basis unknown)" : ""}`,
+        notes:
+          diff > 0 && !cash
+            ? t("Balance adjustment to match {account} (cost basis unknown)", { account: accountName })
+            : t("Balance adjustment to match {account}", { account: accountName }),
       });
       setDone((s) => new Set(s).add(m.assetId));
       await invalidate();
@@ -58,22 +73,22 @@ export function Mismatches({
   return (
     <div className="rounded-lg border border-line">
       <div className="border-b border-line px-3 py-2 text-xs text-ink-2">
-        <span aria-hidden>⚠</span> These balances differ from what the imported transactions add up to.{" "}
+        <span aria-hidden>⚠</span> {t("These balances differ from what the imported transactions add up to.")}{" "}
         {source === "exchange"
-          ? " Usually history the API doesn’t expose (very old trades, internal moves)."
-          : " Usually staked or locked funds, or activity the explorer doesn’t report."}{" "}
-        Fix the history, or record an adjustment.
+          ? t("Usually history the API doesn't expose (very old trades, internal moves).")
+          : t("Usually staked or locked funds, or activity the explorer doesn't report.")}{" "}
+        {t("Fix the history, or record an adjustment.")}
       </div>
       <div className="overflow-x-auto">
         <table className="tabular w-full min-w-[480px] text-sm">
           <thead>
             <tr className="text-xs text-ink-2">
-              <th className="px-3 py-1.5 text-left font-medium">Asset</th>
+              <th className="px-3 py-1.5 text-left font-medium">{t("Asset")}</th>
               <th className="px-3 py-1.5 text-right font-medium">
-                {source === "exchange" ? "Exchange says" : "Blockchain says"}
+                {source === "exchange" ? t("Exchange says") : t("Blockchain says")}
               </th>
-              <th className="px-3 py-1.5 text-right font-medium">Transactions say</th>
-              <th className="px-3 py-1.5 text-right font-medium">Difference</th>
+              <th className="px-3 py-1.5 text-right font-medium">{t("Transactions say")}</th>
+              <th className="px-3 py-1.5 text-right font-medium">{t("Difference")}</th>
               <th />
             </tr>
           </thead>
@@ -89,10 +104,10 @@ export function Mismatches({
                 </td>
                 <td className="px-3 py-1.5 text-right">
                   {done.has(m.assetId) ? (
-                    <span className="text-xs text-gain">✓ adjusted</span>
+                    <span className="text-xs text-gain">✓ {t("adjusted")}</span>
                   ) : (
                     <Button size="sm" onClick={() => adjust(m)}>
-                      Adjust
+                      {t("Adjust")}
                     </Button>
                   )}
                 </td>

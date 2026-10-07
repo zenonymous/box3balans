@@ -10,6 +10,7 @@ import { audit } from "../lib/audit.js";
 import { D, Decimal, TROY_OUNCE_G, ZERO, money2, str } from "../lib/decimal.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import { decimalString, idParam, isoDay } from "../lib/validation.js";
+import { tr } from "../i18n/index.js";
 
 const METALS = ["gold", "silver", "platinum", "palladium"] as const;
 type MetalName = (typeof METALS)[number];
@@ -18,8 +19,10 @@ const itemBody = z.object({
   accountId: z.number().int().positive(),
   metal: z.enum(METALS),
   product: z.string().trim().min(1).max(200),
-  grossWeightG: decimalString.refine((v) => D(v).gt(0), "Weight must be > 0"),
-  purity: decimalString.refine((v) => D(v).gt(0) && D(v).lte(1), "Purity must be between 0 and 1 (e.g. 0.9999)"),
+  grossWeightG: decimalString.refine((v) => D(v).gt(0), { error: () => tr("Weight must be > 0") }),
+  purity: decimalString.refine((v) => D(v).gt(0) && D(v).lte(1), {
+    error: () => tr("Purity must be between 0 and 1 (e.g. 0.9999)"),
+  }),
   quantity: z.number().int().positive().default(1),
   purchaseDate: isoDay,
   purchasePriceEur: decimalString,
@@ -251,7 +254,7 @@ export async function metalRoutes(app: FastifyInstance) {
 
   const assertAccount = async (id: number) => {
     const [acc] = await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.id, id));
-    if (!acc) throw new HttpError(400, "Unknown storage location");
+    if (!acc) throw new HttpError(400, tr("Unknown storage location"));
   };
 
   app.post("/items", async (req) => {
@@ -268,10 +271,10 @@ export async function metalRoutes(app: FastifyInstance) {
   app.put("/items/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!before) throw notFound("Item");
+    if (!before) throw notFound(tr("Item"));
     const data = itemBody.parse({ ...before, ...(req.body as object) });
     if ((data.soldDate == null) !== (data.salePriceEur == null)) {
-      throw new HttpError(400, "Sale date and sale price must be given together");
+      throw new HttpError(400, tr("Sale date and sale price must be given together"));
     }
     await assertAccount(data.accountId);
     const purchaseChanged =
@@ -301,12 +304,12 @@ export async function metalRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const { mime, data } = photoBody.parse(req.body);
     const [item] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!item) throw notFound("Item");
+    if (!item) throw notFound(tr("Item"));
     const buf = Buffer.from(data, "base64");
-    if (buf.length > MAX_PHOTO_BYTES) throw new HttpError(413, "Photo is too large (max 4 MB)");
-    if (sniffImage(buf) !== mime) throw new HttpError(400, "That isn't a JPEG, PNG or WebP image");
+    if (buf.length > MAX_PHOTO_BYTES) throw new HttpError(413, tr("Photo is too large (max 4 MB)"));
+    if (sniffImage(buf) !== mime) throw new HttpError(400, tr("That isn't a JPEG, PNG or WebP image"));
     const existing = await db.select({ id: metalPhotos.id }).from(metalPhotos).where(eq(metalPhotos.itemId, id));
-    if (existing.length >= MAX_PHOTOS) throw new HttpError(400, `At most ${MAX_PHOTOS} photos per item`);
+    if (existing.length >= MAX_PHOTOS) throw new HttpError(400, tr("At most {n} photos per item", { n: MAX_PHOTOS }));
     const [row] = await db
       .insert(metalPhotos)
       .values({ itemId: id, mime, data: buf.toString("base64"), bytes: buf.length })
@@ -318,7 +321,7 @@ export async function metalRoutes(app: FastifyInstance) {
   app.get("/photos/:id", async (req, reply) => {
     const { id } = idParam.parse(req.params);
     const [p] = await db.select().from(metalPhotos).where(eq(metalPhotos.id, id));
-    if (!p) throw notFound("Photo");
+    if (!p) throw notFound(tr("Photo"));
     // A photo never changes under its id.
     reply.header("content-type", p.mime).header("cache-control", "private, max-age=31536000, immutable");
     return Buffer.from(p.data, "base64");
@@ -331,7 +334,7 @@ export async function metalRoutes(app: FastifyInstance) {
       .from(metalPhotos)
       .innerJoin(metalItems, eq(metalItems.id, metalPhotos.itemId))
       .where(eq(metalPhotos.id, id));
-    if (!p) throw notFound("Photo");
+    if (!p) throw notFound(tr("Photo"));
     await db.delete(metalPhotos).where(eq(metalPhotos.id, id));
     await audit(db, "metal_photo", id, "delete", { itemId: p.itemId, product: p.product }, null);
     return { ok: true };
@@ -340,7 +343,7 @@ export async function metalRoutes(app: FastifyInstance) {
   app.delete("/items/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!before) throw notFound("Item");
+    if (!before) throw notFound(tr("Item"));
     await db.delete(metalItems).where(eq(metalItems.id, id));
     await audit(db, "metal_item", id, "delete", before, null);
     return { ok: true };

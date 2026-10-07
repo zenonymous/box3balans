@@ -8,6 +8,7 @@ import { type Box3Config, type Category, categoryOf } from "./box3.js";
 import { attribute, loadHousehold } from "./household.js";
 import { holdingsOn } from "./valuation.js";
 import { incomeStaysInAccount, loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
+import { tr } from "../i18n/index.js";
 
 /** Where an amount of the actual return sits, as the Opgaaf werkelijk rendement groups it. */
 export type Kind = "bank" | "investments" | "crypto" | "metals" | "cash" | "other";
@@ -269,9 +270,11 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
     const end = yearlyValue(acc.kind, byYear?.get(year + 1)) ?? (complete ? null : start);
     if (start == null || end == null) {
       warnings.push(
-        start == null
-          ? `${acc.name}: no value on 1 January ${year}, so its return for ${year} is left out.`
-          : `${acc.name}: no value on 1 January ${year + 1}, so its return for ${year} is left out.`,
+        tr("{name}: no value on 1 January {day}, so its return for {year} is left out.", {
+          name: acc.name,
+          day: start == null ? year : year + 1,
+          year,
+        }),
       );
       continue;
     }

@@ -14,6 +14,7 @@ import { actualReturn } from "../domain/box3Actual.js";
 import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
+import { tr } from "../i18n/index.js";
 
 export async function box3Routes(app: FastifyInstance) {
   const { db } = app.deps;
@@ -32,7 +33,8 @@ export async function box3Routes(app: FastifyInstance) {
 
   app.get("/:year", async (req) => {
     const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
-    if (year > new Date().getUTCFullYear()) throw new HttpError(400, "The peildatum of that year hasn't happened yet");
+    if (year > new Date().getUTCFullYear())
+      throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
     const config = await loadConfig(db);
     const [result, actual] = await Promise.all([computeBox3Year(db, year, config), actualReturn(db, year, config)]);
     // Tegenbewijsregeling: the actual return of the calendar year against the deemed-return tax.

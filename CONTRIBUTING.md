@@ -42,7 +42,7 @@ De GitHub-workflow doet hetzelfde en bouwt daarna het Docker-image.
 - **Berekeningen krijgen een test met een uitgerekend voorbeeld**, met in een commentaar hoe je op het verwachte getal komt.
 - **Belastingregels krijgen een bron** in `docs/box3-sources.md`: wat de regel is, waar het staat, en per wanneer het geldt. Tarieven die nog niet definitief zijn, komen er pas in als ze vaststaan.
 - **Databasewijzigingen:** pas `server/src/db/schema.ts` aan en maak een migratie met `npm run db:generate -w server`. Migraties draaien automatisch bij het opstarten en moeten oude back-ups kunnen blijven terugzetten.
-- **Teksten in de app** zijn nu nog Engels; de Nederlandse vertaling staat op de roadmap. Houd teksten kort en concreet.
+- **Teksten in de app** schrijf je in het Engels in `t("…")` (web) of `tr("…")` (server), met de Nederlandse vertaling in `web/src/i18n/nl.ts` of `server/src/i18n/nl.ts`. Gebruik de termen uit de aangifte (banktegoeden, overige bezittingen, schulden, peildatum, heffingsvrij vermogen). De tekst moet letterlijk tussen dubbele aanhalingstekens staan, zodat de test die op ontbrekende vertalingen controleert hem vindt; aantallen gaan met `tn()`/`trn()`. Houd teksten kort en concreet.
 - **Privacy:** Kluishuis stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Nieuwe externe diensten alleen voor openbare gegevens (zoals koersen), en vermeld ze in de README.
 - **Geen persoonlijke gegevens** in testbestanden, voorbeelden of screenshots.
 

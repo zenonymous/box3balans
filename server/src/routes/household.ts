@@ -4,8 +4,9 @@ import { z } from "zod";
 import { accounts, persons } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
+import { tr } from "../i18n/index.js";
 
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
+const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: () => tr("Use YYYY-MM-DD") });
 
 const body = z.object({
   name: z.string().trim().min(1).max(100),
@@ -29,7 +30,7 @@ export async function householdRoutes(app: FastifyInstance) {
       if (exists)
         throw new HttpError(
           409,
-          data.role === "self" ? "You're already in the household" : "There's already a partner",
+          data.role === "self" ? tr("You're already in the household") : tr("There's already a partner"),
         );
     }
     const [row] = await db
@@ -44,7 +45,7 @@ export async function householdRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const data = body.omit({ role: true }).partial().parse(req.body);
     const [before] = await db.select().from(persons).where(eq(persons.id, id));
-    if (!before) throw notFound("Person");
+    if (!before) throw notFound(tr("Person"));
     const [row] = await db.update(persons).set(data).where(eq(persons.id, id)).returning();
     await audit(db, "person", id, "update", before, row);
     return row;
@@ -53,7 +54,7 @@ export async function householdRoutes(app: FastifyInstance) {
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(persons).where(eq(persons.id, id));
-    if (!before) throw notFound("Person");
+    if (!before) throw notFound(tr("Person"));
     await db.transaction(async (trx) => {
       // Accounts of a removed child or partner become yours, rather than counting for nobody.
       if (before.role === "child")

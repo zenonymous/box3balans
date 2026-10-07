@@ -6,6 +6,7 @@ import { getJson, HttpRequestError, type FetchFn } from "../lib/http.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
 import { yahooQuote, yahooSearch } from "../prices/yahoo.js";
 import type { AssetRef } from "./types.js";
+import { tr } from "../i18n/index.js";
 
 type Asset = typeof assets.$inferSelect;
 
@@ -296,7 +297,7 @@ export class AssetResolver {
     } catch {
       // fall through to a manual asset
     }
-    this.warnings.push(`No price feed found for ${symbol}; created it as a manually priced asset.`);
+    this.warnings.push(tr("No price feed found for {symbol}; created it as a manually priced asset.", { symbol }));
     return this.create({
       assetClass: "crypto",
       name: symbol,
@@ -391,7 +392,9 @@ export class AssetResolver {
       // search failed; fall through
     }
     this.warnings.push(
-      `No price feed found for ${ref.symbol}${ref.isin ? ` (${ref.isin})` : ""}; created it as a manually priced asset.`,
+      tr("No price feed found for {symbol}; created it as a manually priced asset.", {
+        symbol: ref.isin ? `${ref.symbol} (${ref.isin})` : ref.symbol,
+      }),
     );
     return this.create({
       assetClass,

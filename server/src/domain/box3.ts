@@ -7,6 +7,7 @@ import { holdingsOn } from "./valuation.js";
 import { localDay } from "../lib/time.js";
 import { type AttributionNote, attribute, loadHousehold } from "./household.js";
 import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
+import { tr } from "../i18n/index.js";
 
 /**
  * Dutch box 3 ("sparen en beleggen"), forfaitaire spaarvariant (tax years 2023 onwards):
@@ -21,7 +22,7 @@ export type Category = (typeof CATEGORIES)[number];
 const decimalStr = z
   .union([z.string(), z.number()])
   .transform((v) => String(v).trim().replace(",", "."))
-  .refine((v) => /^-?\d+(\.\d+)?$/.test(v), "Must be a number");
+  .refine((v) => /^-?\d+(\.\d+)?$/.test(v), { error: () => tr("Must be a number") });
 
 const ratesSchema = z.object({
   // Deemed returns, in percent.
@@ -418,12 +419,27 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     const cat = categoryOf(config, h);
     const c = count(h.accountId, cat, h.assetClass, h.valueEur);
     const missing = h.priceEur === null;
-    if (missing) warnings.push(`No price for ${h.symbol} on or before ${valuedAt}; it is counted as €0.`);
+    if (missing)
+      warnings.push(
+        tr("No price for {symbol} on or before {day}; it is counted as €0.", { symbol: h.symbol, day: valuedAt }),
+      );
     else if (h.priceDay && Date.parse(valuedAt) - Date.parse(h.priceDay) > 10 * 86_400_000) {
-      warnings.push(`${h.symbol} is valued at its close of ${h.priceDay}, the latest price before ${valuedAt}.`);
+      warnings.push(
+        tr("{symbol} is valued at its close of {priceDay}, the latest price before {day}.", {
+          symbol: h.symbol,
+          priceDay: String(h.priceDay),
+          day: valuedAt,
+        }),
+      );
     }
     if (h.quantity.lt(0))
-      warnings.push(`${h.accountName} has a negative ${h.symbol} balance on ${valuedAt}; check its history.`);
+      warnings.push(
+        tr("{account} has a negative {symbol} balance on {day}; check its history.", {
+          account: h.accountName,
+          symbol: h.symbol,
+          day: valuedAt,
+        }),
+      );
     rows.push({
       accountId: h.accountId,
       accountName: h.accountName,
@@ -458,7 +474,12 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     if (value == null) {
       // Only worth a warning while the account existed: it has values for this year's neighbours.
       if (byYear && [...byYear.keys()].some((y) => y < year) && !acc.archived)
-        warnings.push(`${acc.name}: no value on 1 January ${year}. Enter it under Accounts → Values per year.`);
+        warnings.push(
+          tr("{name}: no value on 1 January {year}. Enter it under Accounts → Values per year.", {
+            name: acc.name,
+            year,
+          }),
+        );
       continue;
     }
     const cls = yearlyClass(acc.kind);
@@ -501,9 +522,12 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
   person.self.debts = person.self.debts.plus(extraDebts);
   other.other = other.other.plus(extraOther);
   const rates = ratesFor(config, year);
-  if (!rates) warnings.push(`No box 3 rates for ${year}. Add them under "Rules & rates" to estimate the tax.`);
+  if (!rates)
+    warnings.push(tr("No box 3 rates for {year}. Add them under “Rules & rates” to estimate the tax.", { year }));
   else if (!rates.final)
-    warnings.push(`The ${year} rates are provisional; the final bank and debt percentages follow after the year.`);
+    warnings.push(
+      tr("The {year} rates are provisional; the final bank and debt percentages follow after the year.", { year }),
+    );
   const calculation = rates
     ? calculateBox3(
         {

@@ -9,6 +9,7 @@ import {
   type ProviderContext,
   type SyncEvent,
 } from "../types.js";
+import { msg, tr, trn } from "../../i18n/index.js";
 
 const BASE = "https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService";
 
@@ -76,7 +77,7 @@ async function fetchStatement(c: Creds, ctx: ProviderContext): Promise<string> {
       `IBKR: ${r?.ErrorMessage ?? "unexpected GetStatement response"}${r?.ErrorCode ? ` (code ${r.ErrorCode})` : ""}`,
     );
   }
-  throw new ProviderError("IBKR: the statement was not ready after a minute; try again later.");
+  throw new ProviderError(tr("IBKR: the statement was not ready after a minute; try again later."));
 }
 
 type Attrs = Record<string, string | undefined>;
@@ -278,7 +279,15 @@ export function parseFlexStatement(xml: string): ParsedFlex {
       });
     }
   }
-  for (const [cat, n] of skipped) warnings.push(`Skipped ${n} ${cat} trade(s): only stocks and ETFs are tracked.`);
+  for (const [cat, n] of skipped)
+    warnings.push(
+      trn(
+        n,
+        "Skipped {n} {category} trade: only stocks and ETFs are tracked.",
+        "Skipped {n} {category} trades: only stocks and ETFs are tracked.",
+        { category: cat },
+      ),
+    );
   return { events, balances, hasCashReport, warnings };
 }
 
@@ -287,15 +296,17 @@ export const ibkr: ExchangeProvider<Creds> = {
   label: "Interactive Brokers (Flex)",
   accountKind: "broker",
   fields: [
-    { name: "token", label: "Flex Web Service token", secret: true },
-    { name: "queryId", label: "Flex Query ID", secret: false },
+    { name: "token", label: msg("Flex Web Service token"), secret: true },
+    { name: "queryId", label: msg("Flex Query ID"), secret: false },
   ],
   instructions: [
-    "Client Portal → Performance & Reports → Flex Queries → create an Activity Flex Query.",
-    "Sections: Trades (Execution level), Cash Transactions (Detail), Open Positions (Summary) and Cash Report. Select all fields in each.",
-    "Format XML, period “Last 365 Calendar Days”. Save and note the Query ID.",
-    "Flex Queries page → Flex Web Service Configuration → enable it and generate a token.",
-    "The Flex service only covers up to 365 days per query; import older history via CSV.",
+    msg("Client Portal → Performance & Reports → Flex Queries → create an Activity Flex Query."),
+    msg(
+      "Sections: Trades (Execution level), Cash Transactions (Detail), Open Positions (Summary) and Cash Report. Select all fields in each.",
+    ),
+    msg("Format XML, period “Last 365 Calendar Days”. Save and note the Query ID."),
+    msg("Flex Queries page → Flex Web Service Configuration → enable it and generate a token."),
+    msg("The Flex service only covers up to 365 days per query; import older history via CSV."),
   ],
   credentials: creds,
   hint: (c) => `query ${c.queryId}`,

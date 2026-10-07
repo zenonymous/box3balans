@@ -1,6 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { D, type Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { type DecimalMark, detectDateOrder, detectDecimal, detectDelimiter, parseCsv, parseNumber } from "./parse.js";
+import { tr } from "../i18n/index.js";
 
 /**
  * Reads a bank's transaction export (CSV, ABN AMRO's TAB file or CAMT.053) and turns it into what
@@ -78,7 +79,8 @@ function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
   const headerIdx = rows.findIndex(
     (r) => r.some((c) => HEADERS.date.test(c.trim())) && r.some((c) => HEADERS.amount.test(c.trim())),
   );
-  if (headerIdx < 0) throw new Error("No date and amount columns found. Is this a transaction export from your bank?");
+  if (headerIdx < 0)
+    throw new Error(tr("No date and amount columns found. Is this a transaction export from your bank?"));
   const header = rows[headerIdx]!.map((c) => c.trim());
   const col = (re: RegExp) => header.findIndex((h) => re.test(h));
   const iDate = col(HEADERS.date);
@@ -99,7 +101,7 @@ function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
     const day = toDay(r[iDate] ?? "", dmy);
     const raw = parseNumber(r[iAmount] ?? "", decimal);
     if (!day || raw == null) {
-      warnings.push(`Skipped a line that couldn't be read: ${r.join(" ").slice(0, 80)}`);
+      warnings.push(tr("Skipped a line that couldn't be read: {line}", { line: r.join(" ").slice(0, 80) }));
       continue;
     }
     let amount = D(raw);
@@ -165,7 +167,7 @@ function fromCamt(xml: string): { lines: BankLine[]; warnings: string[] } {
     string,
     unknown
   >[];
-  if (!statements.length) throw new Error("No statements found in this CAMT.053 file");
+  if (!statements.length) throw new Error(tr("No statements found in this CAMT.053 file"));
   const signed = (amt: unknown, ind: unknown) => {
     const v = D(text(amt) || 0);
     return text(ind) === "DBIT" ? v.neg() : v;
@@ -218,7 +220,12 @@ function fromCamt(xml: string): { lines: BankLine[]; warnings: string[] } {
     }
     if (bal != null && st.closing && !bal.eq(st.closing.amount))
       warnings.push(
-        `Statement for ${st.account || "the account"} up to ${st.closing.day} doesn't add up to its closing balance.`,
+        st.account
+          ? tr("Statement for {account} up to {day} doesn't add up to its closing balance.", {
+              account: st.account,
+              day: st.closing.day,
+            })
+          : tr("Statement for the account up to {day} doesn't add up to its closing balance.", { day: st.closing.day }),
       );
   }
   return { lines, warnings };
@@ -311,7 +318,7 @@ export function readBankExport(content: string, opts: { closingBalance?: string;
     format = "csv";
     parsed = fromCsv(trimmed);
   }
-  if (!parsed.lines.length) throw new Error("No transactions found in this file");
+  if (!parsed.lines.length) throw new Error(tr("No transactions found in this file"));
 
   const byAccount = new Map<string, BankLine[]>();
   for (const l of parsed.lines) byAccount.set(l.account, [...(byAccount.get(l.account) ?? []), l]);

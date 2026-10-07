@@ -21,6 +21,43 @@ import {
   parseDate,
   parseNumber,
 } from "./parse.js";
+import { tr } from "../i18n/index.js";
+
+/** The name of a number column, for "… is not a number". */
+function numberField(f: string): string {
+  switch (f) {
+    case "quantity":
+      return tr("Quantity");
+    case "price":
+      return tr("Price");
+    case "total":
+      return tr("Total");
+    case "fee":
+      return tr("Fee");
+    case "amount":
+      return tr("Dividend amount");
+    case "tax":
+      return tr("Tax withheld");
+    default:
+      return f;
+  }
+}
+
+/** Where an existing transaction came from, for "Looks like transaction #…". */
+function sourceName(source: string): string {
+  switch (source) {
+    case "csv":
+      return tr("an earlier import");
+    case "api":
+      return tr("an exchange sync");
+    case "chain":
+      return tr("a wallet sync");
+    case "manual":
+      return tr("entered by hand");
+    default:
+      return source;
+  }
+}
 
 type Asset = typeof assets.$inferSelect;
 type TxInsert = typeof transactions.$inferInsert;
@@ -169,33 +206,35 @@ function parseRows(
       const s = cell(f);
       if (!s) return null;
       const v = parseNumber(s, decimal);
-      if (v == null) throw new RowError(`${f} "${s}" is not a number`);
+      if (v == null) throw new RowError(tr("{field} “{value}” is not a number", { field: numberField(f), value: s }));
       return D(v);
     };
     try {
-      if (m.columns.date == null) throw new RowError("No date column chosen");
+      if (m.columns.date == null) throw new RowError(tr("No date column chosen"));
       const at = parseDate(cell("date"), dateOrder, cell("time") || undefined);
-      if (!at) throw new RowError(`Date "${cell("date")}" can't be read`);
+      if (!at) throw new RowError(tr("Date “{value}” can't be read", { value: cell("date") }));
 
       const qtyRaw = num("quantity");
       let type: CsvType;
       if (m.typeMode === "fixed") type = m.fixedType;
       else if (m.typeMode === "sign") {
-        if (!qtyRaw || qtyRaw.isZero()) throw new RowError("No quantity to tell buy from sell");
+        if (!qtyRaw || qtyRaw.isZero()) throw new RowError(tr("No quantity to tell buy from sell"));
         type = qtyRaw.isNeg() ? "sell" : "buy";
       } else {
         const v = cell("type");
         const t = m.typeValues[v] ?? knownType(v);
         if (t === "skip") {
-          rejected.push({ line, status: "skipped", message: `Type "${v}" is skipped` });
+          rejected.push({ line, status: "skipped", message: tr("Type “{value}” is skipped", { value: v }) });
           return;
         }
-        if (!t) throw new RowError(v ? `Unknown type "${v}": choose what it means` : "No type");
+        if (!t)
+          throw new RowError(v ? tr("Unknown type “{value}”: choose what it means", { value: v }) : tr("No type"));
         type = t;
       }
 
       const currency = (cell("currency") || m.defaultCurrency).toUpperCase();
-      if (!/^[A-Z]{3,5}$/.test(currency)) throw new RowError(`Currency "${currency}" isn't a currency code`);
+      if (!/^[A-Z]{3,5}$/.test(currency))
+        throw new RowError(tr("Currency “{value}” isn't a currency code", { value: currency }));
       const abs = (v: Decimal | null) => (v ? v.abs() : null);
       const price = abs(num("price"));
       const total = abs(num("total"));
@@ -221,25 +260,29 @@ function parseRows(
       let key: string;
       if (kind === "fiat") {
         const code = (symbol || currency).toUpperCase();
-        if (!isFiat(code)) throw new RowError(`"${code}" isn't a currency`);
+        if (!isFiat(code)) throw new RowError(tr("“{value}” isn't a currency", { value: code }));
         ref = { kind: "fiat", currency: code };
         key = `fiat:${code}`;
       } else if (kind === "metal") {
         const code = METALS[(symbol || name || "").toLowerCase()];
-        if (!code) throw new RowError(`"${symbol || name || ""}" isn't gold, silver, platinum or palladium`);
+        if (!code)
+          throw new RowError(
+            tr("“{value}” isn't gold, silver, platinum or palladium", { value: symbol || name || "" }),
+          );
         ref = { kind: "metal", code };
         key = `metal:${code}`;
       } else if (kind === "crypto") {
         const sym = (symbol || name || "").toUpperCase();
-        if (!sym) throw new RowError("No asset symbol");
+        if (!sym) throw new RowError(tr("No asset symbol"));
         if (type === "buy" || type === "sell") {
-          if (!isFiat(currency)) throw new RowError(`Price in ${currency}: only trades priced in a currency like EUR`);
+          if (!isFiat(currency))
+            throw new RowError(tr("Price in {currency}: only trades priced in a currency like EUR", { currency }));
         }
         ref = { kind: "crypto", symbol: sym, name };
         key = `crypto:${sym}`;
       } else {
         const sym = symbol || name || isin || "";
-        if (!sym) throw new RowError("No asset symbol or ISIN");
+        if (!sym) throw new RowError(tr("No asset symbol or ISIN"));
         ref = { kind: "security", symbol: sym, isin, currency, name, etf: hint === "etf" };
         key = `security:${isin ?? sym.toUpperCase()}`;
       }
@@ -250,21 +293,21 @@ function parseRows(
       let amount = ZERO;
       let unit = price;
       if (type === "buy" || type === "sell") {
-        if (!quantity || quantity.isZero()) throw new RowError("No quantity");
+        if (!quantity || quantity.isZero()) throw new RowError(tr("No quantity"));
         if (!unit && total) unit = total.div(quantity);
-        if (!unit) throw new RowError("Needs a price or a total");
-        if (cash) throw new RowError("Buying or selling a currency isn't supported; use deposit/withdrawal");
+        if (!unit) throw new RowError(tr("Needs a price or a total"));
+        if (cash) throw new RowError(tr("Buying or selling a currency isn't supported; use deposit/withdrawal"));
       } else if (type === "dividend") {
         amount = amountCol ?? total ?? (quantity && price ? quantity.mul(price) : ZERO);
-        if (amount.isZero()) throw new RowError("Dividend without an amount");
-        if (cash) throw new RowError("A dividend needs the security it was paid on");
+        if (amount.isZero()) throw new RowError(tr("Dividend without an amount"));
+        if (cash) throw new RowError(tr("A dividend needs the security it was paid on"));
         quantity = ZERO;
       } else if (type === "split") {
         if (!quantity || quantity.isZero())
-          throw new RowError("Split needs the ratio as quantity (e.g. 4 for 4-for-1)");
+          throw new RowError(tr("Split needs the ratio as quantity (e.g. 4 for 4-for-1)"));
       } else {
         quantity = quantity && !quantity.isZero() ? quantity : cash ? (amountCol ?? total) : null;
-        if (!quantity || quantity.isZero()) throw new RowError("No quantity");
+        if (!quantity || quantity.isZero()) throw new RowError(tr("No quantity"));
         if (!unit && total && !cash) unit = total.div(quantity);
       }
 
@@ -441,11 +484,11 @@ async function classify(
   for (const r of rows) {
     const storedId = stored.get(r.externalId);
     if (storedId) {
-      out.set(r.line, { status: "duplicate", duplicateOf: storedId, message: "Already imported" });
+      out.set(r.line, { status: "duplicate", duplicateOf: storedId, message: tr("Already imported") });
       continue;
     }
     if (deleted.has(r.externalId)) {
-      out.set(r.line, { status: "deleted", message: "Imported before and deleted since" });
+      out.set(r.line, { status: "deleted", message: tr("Imported before and deleted since") });
       continue;
     }
     const asset = assetOf.get(r.key)?.asset;
@@ -463,7 +506,7 @@ async function classify(
       out.set(r.line, {
         status: "possible-duplicate",
         duplicateOf: twin.id,
-        message: `Looks like transaction #${twin.id} (${twin.source === "csv" ? "an earlier import" : twin.source})`,
+        message: tr("Looks like transaction #{id} ({source})", { id: twin.id, source: sourceName(twin.source) }),
       });
       continue;
     }
@@ -646,7 +689,7 @@ export async function commitImport(
     try {
       return await deps.fx.eurPerUnit(currency, localDay(at));
     } catch {
-      throw new Error(`No exchange rate for ${currency} on ${localDay(at)}`);
+      throw new Error(tr("No exchange rate for {currency} on {day}", { currency, day: localDay(at) }));
     }
   };
 
@@ -701,7 +744,13 @@ export async function commitImport(
         // No price in the file: value at that day's market close.
         price = await history.eurOn(asset.id, localDay(r.at));
         if (!price)
-          warnings.push(`Line ${r.line}: no market price for ${asset.symbol} on ${localDay(r.at)}; booked at €0.`);
+          warnings.push(
+            tr("Line {line}: no market price for {symbol} on {day}; booked at €0.", {
+              line: r.line,
+              symbol: asset.symbol,
+              day: localDay(r.at),
+            }),
+          );
         currency = "EUR";
         fxRate = D(1);
       }
@@ -715,7 +764,7 @@ export async function commitImport(
         settleAssetId: settle,
       });
     } catch (err) {
-      warnings.push(`Line ${r.line} skipped: ${(err as Error).message}`);
+      warnings.push(tr("Line {line} skipped: {error}", { line: r.line, error: (err as Error).message }));
     }
   }
 

@@ -50,6 +50,6 @@ describe("helpers", () => {
   it("formats without ambiguity and rejects bad input with a readable error", () => {
     expect(unambiguous("5000", "nl-NL")).toBe("5\u202f000");
     expect(unambiguous("1234.56", "nl-NL")).toBe("1\u202f234,56");
-    expect(() => toApiNumber("1.2.3,4", "Quantity")).toThrow("Quantity: “1.2.3,4” is not a number");
+    expect(() => toApiNumber("1.2.3,4", "Quantity")).toThrow(/“1\.2\.3,4”/);
   });
 });

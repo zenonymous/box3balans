@@ -3,11 +3,12 @@ import { asc, eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { accounts, integrations } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { HttpError, notFound, notInDemo } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import { PROVIDERS } from "../sync/service.js";
 import { purgeSynced } from "../sync/purge.js";
 import { ProviderError } from "../sync/types.js";
+import { tr } from "../i18n/index.js";
 
 const PROVIDER_IDS = ["bitvavo", "kraken", "coinbase", "ibkr"] as const;
 
@@ -47,7 +48,10 @@ export async function integrationRoutes(app: FastifyInstance) {
       return await sync.testCredentials(provider, raw);
     } catch (err) {
       if (err instanceof ZodError) throw err;
-      const msg = err instanceof ProviderError ? err.message : `Could not reach ${provider}: ${(err as Error).message}`;
+      const msg =
+        err instanceof ProviderError
+          ? err.message
+          : tr("Could not reach {provider}: {error}", { provider, error: (err as Error).message });
       throw new HttpError(400, msg);
     }
   };
@@ -57,8 +61,8 @@ export async function integrationRoutes(app: FastifyInstance) {
       id: p.id,
       label: p.label,
       accountKind: p.accountKind,
-      fields: p.fields,
-      instructions: p.instructions,
+      fields: p.fields.map((f) => ({ ...f, label: tr(f.label) })),
+      instructions: p.instructions.map((s) => tr(s)),
     })),
   );
 
@@ -72,18 +76,19 @@ export async function integrationRoutes(app: FastifyInstance) {
   });
 
   app.post("/", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } }, async (req) => {
+    if (config.DEMO) throw notInDemo();
     const body = createBody.parse(req.body);
     const { provider, creds } = await verify(body.provider, body.credentials);
 
     let accountId = body.accountId;
     if (accountId) {
       const [acc] = await db.select().from(accounts).where(eq(accounts.id, accountId));
-      if (!acc) throw new HttpError(400, "Unknown account");
+      if (!acc) throw new HttpError(400, tr("Unknown account"));
       const [taken] = await db
         .select({ id: integrations.id })
         .from(integrations)
         .where(eq(integrations.accountId, accountId));
-      if (taken) throw new HttpError(409, "This account already has a connection");
+      if (taken) throw new HttpError(409, tr("This account already has a connection"));
     } else {
       const [acc] = await db
         .insert(accounts)
@@ -107,7 +112,7 @@ export async function integrationRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const body = updateBody.parse(req.body);
     const [row] = await db.select().from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound("Connection");
+    if (!row) throw notFound(tr("Connection"));
     const patch: Partial<typeof integrations.$inferInsert> = {};
     if (body.enabled !== undefined) patch.enabled = body.enabled;
     if (body.credentials) {
@@ -131,8 +136,8 @@ export async function integrationRoutes(app: FastifyInstance) {
   app.post("/:id/sync", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { id } = idParam.parse(req.params);
     const [row] = await db.select({ id: integrations.id }).from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound("Connection");
-    if (!sync.start(id)) throw new HttpError(409, "A sync is already running");
+    if (!row) throw notFound(tr("Connection"));
+    if (!sync.start(id)) throw new HttpError(409, tr("A sync is already running"));
     return reply.code(202).send({ started: true });
   });
 
@@ -143,8 +148,8 @@ export async function integrationRoutes(app: FastifyInstance) {
       .object({ deleteTransactions: z.enum(["true", "false"]).default("false") })
       .parse(req.query);
     const [row] = await db.select().from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound("Connection");
-    if (sync.isRunning(id)) throw new HttpError(409, "Wait for the running sync to finish");
+    if (!row) throw notFound(tr("Connection"));
+    if (sync.isRunning(id)) throw new HttpError(409, tr("Wait for the running sync to finish"));
     let removed = 0;
     if (deleteTransactions === "true") removed = await purgeSynced(db, row.accountId, "api");
     await db.delete(integrations).where(eq(integrations.id, id));

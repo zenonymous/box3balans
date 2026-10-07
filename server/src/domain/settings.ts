@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { settings } from "../db/schema.js";
 import type { CostMethod } from "./ledger.js";
+import { useMessageLanguage } from "../i18n/index.js";
 
 export const COST_METHOD_KEY = "cost_basis_method";
 
@@ -27,6 +28,7 @@ export async function getLanguage(db: DB): Promise<Language> {
   if (cachedLanguage) return cachedLanguage;
   const [row] = await db.select().from(settings).where(eq(settings.key, LANGUAGE_KEY));
   cachedLanguage = row?.value === "en" ? "en" : "nl";
+  useMessageLanguage(cachedLanguage);
   return cachedLanguage;
 }
 
@@ -36,9 +38,11 @@ export async function setLanguage(db: DB, language: Language): Promise<void> {
     .values({ key: LANGUAGE_KEY, value: language })
     .onConflictDoUpdate({ target: settings.key, set: { value: language } });
   cachedLanguage = language;
+  useMessageLanguage(language);
 }
 
-/** After a restore the stored language may differ. */
-export const forgetLanguage = () => {
+/** After a restore the stored language may differ: reads it again. */
+export async function reloadLanguage(db: DB): Promise<Language> {
   cachedLanguage = null;
-};
+  return getLanguage(db);
+}

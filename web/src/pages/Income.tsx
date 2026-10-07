@@ -6,15 +6,16 @@ import { downloadCsv } from "../csv";
 import { Alert, Button, Card, Empty, PageHeader, Select, Spinner, Stat, Swatch } from "../components/ui";
 import { date, eur, getLocale } from "../format";
 import { DividendForecastCard, WithholdingCard } from "./DividendOutlook";
+import { dateLocale, t } from "../i18n";
 
 // Categorical slots in fixed order: colour follows the income kind.
 const KINDS = [
-  { key: "dividendsEur", label: "Dividends", color: "var(--series-1)" },
-  { key: "rewardsEur", label: "Staking & rewards", color: "var(--series-2)" },
-  { key: "interestEur", label: "Interest", color: "var(--series-3)" },
+  { key: "dividendsEur", label: t("Dividends"), color: "var(--series-1)" },
+  { key: "rewardsEur", label: t("Staking and rewards"), color: "var(--series-2)" },
+  { key: "interestEur", label: t("Interest"), color: "var(--series-3)" },
 ] as const;
 
-const KIND_LABEL: Record<string, string> = { dividend: "Dividend", reward: "Reward", interest: "Interest" };
+const KIND_LABEL: Record<string, string> = { dividend: t("Dividend"), reward: t("Reward"), interest: t("Interest") };
 
 const compact = (v: number) =>
   new Intl.NumberFormat(getLocale(), {
@@ -48,7 +49,7 @@ export function IncomePage() {
       const m = `${year}-${String(i + 1).padStart(2, "0")}`;
       const row = d.byMonth.find((x) => x.month === m);
       return {
-        label: new Intl.DateTimeFormat(getLocale(), { month: "short" }).format(new Date(`${m}-01T00:00:00`)),
+        label: new Intl.DateTimeFormat(dateLocale(), { month: "short" }).format(new Date(`${m}-01T00:00:00`)),
         dividendsEur: row ? +row.dividendsEur : 0,
         rewardsEur: row ? +row.rewardsEur : 0,
         interestEur: row ? +row.interestEur : 0,
@@ -62,10 +63,10 @@ export function IncomePage() {
   if (d.events.length === 0) {
     return (
       <>
-        <PageHeader title="Income" />
+        <PageHeader title={t("Income")} />
         <Card>
-          <Empty title="No income yet">
-            Dividends, staking rewards and interest show up here once recorded or synced.
+          <Empty title={t("No income yet")}>
+            {t("Dividends, staking rewards and interest show up here once recorded or synced.")}
           </Empty>
         </Card>
         <div className="mt-4">
@@ -116,34 +117,39 @@ export function IncomePage() {
   return (
     <>
       <PageHeader
-        title="Income"
-        subtitle="Dividends (after withholding tax), staking rewards and interest, valued in EUR when received."
+        title={t("Income")}
+        subtitle={t("Dividends (after withholding tax), staking rewards and interest, valued in EUR when received.")}
         actions={
-          <Select value={year} onChange={(e) => setSelected(e.target.value)} aria-label="Year" className="max-w-36">
+          <Select
+            value={year}
+            onChange={(e) => setSelected(e.target.value)}
+            aria-label={t("Year")}
+            className="max-w-36"
+          >
             {years.map((y) => (
               <option key={y} value={y}>
                 {y}
               </option>
             ))}
-            <option value="all">All years</option>
+            <option value="all">{t("All years")}</option>
           </Select>
         }
       />
 
       <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Stat label="Net income" value={eur(totals.total)} />
-        <Stat label="Dividends" value={eur(totals.dividends)} />
-        <Stat label="Staking & rewards" value={eur(totals.rewards)} />
-        <Stat label="Interest" value={eur(totals.interest)} />
+        <Stat label={t("Net income")} value={eur(totals.total)} />
+        <Stat label={t("Dividends")} value={eur(totals.dividends)} />
+        <Stat label={t("Staking and rewards")} value={eur(totals.rewards)} />
+        <Stat label={t("Interest")} value={eur(totals.interest)} />
         <Stat
-          label="Tax withheld"
+          label={t("Tax withheld")}
           value={eur(totals.tax)}
-          sub={<span className="text-muted">may be reclaimable</span>}
+          sub={<span className="text-muted">{t("may be reclaimable")}</span>}
         />
       </div>
 
-      <Card title={year === "all" ? "Income per year" : `Income per month, ${year}`}>
-        <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+      <Card title={year === "all" ? t("Income per year") : t("Income per month, {year}", { year })}>
+        <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label={t("Legend")}>
           {kinds.map((k) => (
             <li key={k.key} className="flex items-center gap-1.5">
               <Swatch color={k.color} /> {k.label}
@@ -209,13 +215,13 @@ export function IncomePage() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-5">
-        <Card title="By asset" padded={false} className="xl:col-span-2">
+        <Card title={t("By asset")} padded={false} className="xl:col-span-2">
           <table className="tabular w-full text-sm">
             <thead>
               <tr className="border-b border-line text-xs text-ink-2">
-                <th className="px-3 py-2 text-left font-medium">Asset</th>
-                <th className="px-3 py-2 text-right font-medium">Payments</th>
-                <th className="px-3 py-2 text-right font-medium">Net</th>
+                <th className="px-3 py-2 text-left font-medium">{t("Asset")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Payments")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Net")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-line">
@@ -225,7 +231,10 @@ export function IncomePage() {
                     {a.name} <span className="text-xs text-muted">{a.symbol}</span>
                   </td>
                   <td className="px-3 py-2 text-right text-ink-2">{a.count}</td>
-                  <td className="px-3 py-2 text-right" title={`Gross ${eur(a.gross)} · tax ${eur(a.tax)}`}>
+                  <td
+                    className="px-3 py-2 text-right"
+                    title={t("Gross {gross} · tax {tax}", { gross: eur(a.gross), tax: eur(a.tax) })}
+                  >
                     {eur(a.net)}
                   </td>
                 </tr>
@@ -235,7 +244,7 @@ export function IncomePage() {
         </Card>
 
         <Card
-          title="Payments"
+          title={t("Payments")}
           padded={false}
           className="xl:col-span-3"
           actions={
@@ -243,14 +252,14 @@ export function IncomePage() {
               size="sm"
               onClick={() =>
                 downloadCsv(`income-${year}.csv`, events, [
-                  { header: "Date", value: (e) => e.date },
-                  { header: "Type", value: (e) => KIND_LABEL[e.kind] ?? e.kind },
-                  { header: "Asset", value: (e) => e.name },
-                  { header: "Symbol", value: (e) => e.symbol },
-                  { header: "Account", value: (e) => e.accountName },
-                  { header: "Gross EUR", value: (e) => e.grossEur },
-                  { header: "Tax withheld EUR", value: (e) => e.taxEur },
-                  { header: "Net EUR", value: (e) => e.netEur },
+                  { header: t("Date"), value: (e) => e.date },
+                  { header: t("Type"), value: (e) => KIND_LABEL[e.kind] ?? e.kind },
+                  { header: t("Asset"), value: (e) => e.name },
+                  { header: t("Symbol"), value: (e) => e.symbol },
+                  { header: t("Account"), value: (e) => e.accountName },
+                  { header: t("Gross EUR"), value: (e) => e.grossEur },
+                  { header: t("Tax withheld EUR"), value: (e) => e.taxEur },
+                  { header: t("Net EUR"), value: (e) => e.netEur },
                 ])
               }
             >
@@ -262,11 +271,11 @@ export function IncomePage() {
             <table className="tabular w-full min-w-[520px] text-sm">
               <thead className="sticky top-0 bg-surface">
                 <tr className="border-b border-line text-xs text-ink-2">
-                  <th className="px-3 py-2 text-left font-medium">Date</th>
-                  <th className="px-3 py-2 text-left font-medium">Asset</th>
-                  <th className="px-3 py-2 text-right font-medium">Gross</th>
-                  <th className="px-3 py-2 text-right font-medium">Tax</th>
-                  <th className="px-3 py-2 text-right font-medium">Net</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Date")}</th>
+                  <th className="px-3 py-2 text-left font-medium">{t("Asset")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Gross")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Tax")}</th>
+                  <th className="px-3 py-2 text-right font-medium">{t("Net")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">

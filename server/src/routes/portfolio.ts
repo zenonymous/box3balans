@@ -4,7 +4,7 @@ import { z } from "zod";
 import { settings } from "../db/schema.js";
 import { buildPortfolio } from "../domain/portfolio.js";
 import { str } from "../lib/decimal.js";
-import { HttpError } from "../lib/errors.js";
+import { HttpError, notInDemo } from "../lib/errors.js";
 import { currencyCode, isoDay } from "../lib/validation.js";
 import { REFRESH_STATUS_KEY } from "../prices/service.js";
 import { refreshAndSnapshot, staleAfterMs } from "../jobs/scheduler.js";
@@ -23,6 +23,8 @@ export async function portfolioRoutes(app: FastifyInstance) {
   });
 
   app.post("/prices/refresh", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async () => {
+    // The demo's prices are made up; real ones would clash with their history.
+    if (config.DEMO) throw notInDemo();
     return refreshAndSnapshot(db, prices, config);
   });
 

@@ -7,6 +7,7 @@ import { accounts, assets, auditLog, imports, metalItems, syncIgnored, transacti
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
+import { msg, tr } from "../i18n/index.js";
 
 type Snapshot = Record<string, unknown>;
 
@@ -35,16 +36,16 @@ const listQuery = z.object({
 const IGNORED = new Set(["updatedAt", "createdAt", "cursor", "lastResult", "lastSyncAt", "lastStatus", "id"]);
 
 const TX_LABEL: Record<string, string> = {
-  buy: "Buy",
-  sell: "Sell",
-  deposit: "Deposit",
-  withdrawal: "Withdrawal",
-  transfer_in: "Transfer in",
-  transfer_out: "Transfer out",
-  dividend: "Dividend",
-  reward: "Reward",
-  fee: "Fee",
-  split: "Split",
+  buy: msg("Buy"),
+  sell: msg("Sell"),
+  deposit: msg("Deposit"),
+  withdrawal: msg("Withdrawal"),
+  transfer_in: msg("Transfer in"),
+  transfer_out: msg("Transfer out"),
+  dividend: msg("Dividend"),
+  reward: msg("Reward"),
+  fee: msg("Fee"),
+  split: msg("Split"),
 };
 
 /** "10.000000000000000000" → "10"; other values as they are. */
@@ -63,31 +64,34 @@ function title(entity: string, s: Snapshot | null, names: Names, entityId: numbe
   const n = (v: unknown) => Number(v);
   switch (entity) {
     case "account_years":
-      return `Values per year · ${names.account.get(entityId) ?? `account #${entityId}`}`;
+      return tr("Values per year · {account}", {
+        account: names.account.get(entityId) ?? tr("account #{id}", { id: entityId }),
+      });
     case "person":
-      return `${s.name ?? "Person"} (${s.role === "self" ? "you" : (s.role ?? "")})`;
+      return `${s.name ?? tr("Person")} (${s.role === "self" ? tr("you") : s.role === "partner" ? tr("partner") : tr("child")})`;
     case "transaction": {
-      const asset = names.asset.get(n(s.assetId)) ?? `asset #${s.assetId}`;
-      const account = names.account.get(n(s.accountId)) ?? `account #${s.accountId}`;
-      const type = TX_LABEL[String(s.type)] ?? String(s.type ?? "Transaction");
+      const asset = names.asset.get(n(s.assetId)) ?? tr("asset #{id}", { id: String(s.assetId) });
+      const account = names.account.get(n(s.accountId)) ?? tr("account #{id}", { id: String(s.accountId) });
+      const label = TX_LABEL[String(s.type)];
+      const type = label ? tr(label) : String(s.type ?? tr("Transaction"));
       const qty = s.type === "dividend" ? "" : ` ${tidy(s.quantity) ?? ""}`;
       return `${type}${qty} ${asset} · ${account}`.replace(/\s+/g, " ");
     }
     case "asset":
-      return [s.symbol, s.name].filter(Boolean).join(" · ") || "Asset";
+      return [s.symbol, s.name].filter(Boolean).join(" · ") || tr("Asset");
     case "account":
-      return String(s.name ?? "Account");
+      return String(s.name ?? tr("Account"));
     case "metal_item":
-      return `${s.quantity ?? 1}× ${s.product ?? "item"}`;
+      return `${s.quantity ?? 1}× ${s.product ?? tr("item")}`;
     case "metal_photo":
-      return `Photo of ${s.product ?? "an item"}`;
+      return s.product ? tr("Photo of {product}", { product: String(s.product) }) : tr("Photo of an item");
     case "import":
-      return String(s.fileName ?? "CSV import");
+      return String(s.fileName ?? tr("CSV import"));
     case "integration":
-      return `Connection ${s.provider ?? ""}`.trim();
+      return tr("Connection {provider}", { provider: String(s.provider ?? "") }).trim();
     case "wallet_address": {
       const a = String(s.address ?? "");
-      return `${s.chain ?? "Wallet"} ${a.length > 16 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a}`;
+      return `${s.chain ?? tr("Wallet")} ${a.length > 16 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a}`;
     }
     default:
       return entity;
@@ -213,10 +217,10 @@ export async function activityRoutes(app: FastifyInstance) {
   app.post("/:id/restore", async (req) => {
     const { id } = idParam.parse(req.params);
     const [entry] = await db.select().from(auditLog).where(eq(auditLog.id, id));
-    if (!entry) throw notFound("History entry");
+    if (!entry) throw notFound(tr("History entry"));
     const table = RESTORABLE[entry.entity];
     if (entry.action !== "delete" || !table || !entry.before) {
-      throw new HttpError(400, "Only deleted transactions and metal items can be restored");
+      throw new HttpError(400, tr("Only deleted transactions and metal items can be restored"));
     }
     const snapshots = [entry.before as Snapshot];
     const group = (entry.before as Snapshot).transferGroup;
@@ -237,13 +241,13 @@ export async function activityRoutes(app: FastifyInstance) {
     const idCol = getTableColumns(table).id!;
     const ids = snapshots.map((s) => Number(s.id));
     const existing = await db.select({ id: idCol }).from(table).where(inArray(idCol, ids));
-    if (existing.length === ids.length) throw new HttpError(409, "It's already there");
+    if (existing.length === ids.length) throw new HttpError(409, tr("It's already there"));
     const todo = snapshots.filter((s) => !existing.some((e) => e.id === Number(s.id)));
 
     // The account and asset must still exist; a vanished cash settlement or import is dropped.
     const accountIds = [...new Set(todo.map((s) => Number(s.accountId)))];
     const liveAccounts = await db.select({ id: accounts.id }).from(accounts).where(inArray(accounts.id, accountIds));
-    if (liveAccounts.length !== accountIds.length) throw new HttpError(409, "Its account no longer exists");
+    if (liveAccounts.length !== accountIds.length) throw new HttpError(409, tr("Its account no longer exists"));
     const assetIds = [
       ...new Set(todo.flatMap((s) => [s.assetId, s.settleAssetId].filter((v) => v != null).map(Number))),
     ];
@@ -253,7 +257,7 @@ export async function activityRoutes(app: FastifyInstance) {
         : [],
     );
     if (todo.some((s) => s.assetId != null && !liveAssets.has(Number(s.assetId)))) {
-      throw new HttpError(409, "Its asset no longer exists");
+      throw new HttpError(409, tr("Its asset no longer exists"));
     }
     const importIds = todo.map((s) => s.importId).filter((v): v is number => typeof v === "number");
     const liveImports = new Set(

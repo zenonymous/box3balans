@@ -3,6 +3,7 @@ import { z } from "zod";
 import { D, type Decimal } from "../../lib/decimal.js";
 import { assetRef, isFiat } from "../assets.js";
 import { type Balance, type ExchangeProvider, ProviderError, type ProviderContext, type SyncEvent } from "../types.js";
+import { msg, tr } from "../../i18n/index.js";
 
 const HOST = "api.coinbase.com";
 
@@ -56,7 +57,7 @@ async function call<T>(c: Creds, ctx: ProviderContext, path: string): Promise<T>
     key = createPrivateKey(c.privateKey);
   } catch {
     throw new ProviderError(
-      "Coinbase: the private key could not be read. Paste the full PEM including the BEGIN/END lines.",
+      tr("Coinbase: the private key could not be read. Paste the full PEM including the BEGIN/END lines."),
     );
   }
   for (let attempt = 0; ; attempt++) {
@@ -250,20 +251,24 @@ export const coinbase: ExchangeProvider<Creds> = {
   label: "Coinbase",
   accountKind: "exchange",
   fields: [
-    { name: "keyName", label: "API key name", secret: false, placeholder: "organizations/…/apiKeys/…" },
+    { name: "keyName", label: msg("API key name"), secret: false, placeholder: "organizations/…/apiKeys/…" },
     {
       name: "privateKey",
-      label: "Private key",
+      label: msg("Private key"),
       secret: true,
       multiline: true,
       placeholder: "-----BEGIN EC PRIVATE KEY-----",
     },
   ],
   instructions: [
-    "Open the Coinbase Developer Platform (portal.cdp.coinbase.com) → API Keys → Create API key, signed in with your Coinbase account.",
-    "Under advanced settings choose the ECDSA signature algorithm (Ed25519 keys are not accepted by the Coinbase App API).",
-    "Grant only “View” permissions on your Coinbase App portfolio. No trade or transfer permissions.",
-    "Paste the key name (organizations/…/apiKeys/…) and the full private key including the BEGIN/END lines.",
+    msg(
+      "Open the Coinbase Developer Platform (portal.cdp.coinbase.com) → API Keys → Create API key, signed in with your Coinbase account.",
+    ),
+    msg(
+      "Under advanced settings choose the ECDSA signature algorithm (Ed25519 keys are not accepted by the Coinbase App API).",
+    ),
+    msg("Grant only “View” permissions on your Coinbase App portfolio. No trade or transfer permissions."),
+    msg("Paste the key name (organizations/…/apiKeys/…) and the full private key including the BEGIN/END lines."),
   ],
   credentials: creds,
   hint: (c) => `…${c.keyName.slice(-6)}`,
@@ -308,7 +313,9 @@ export const coinbase: ExchangeProvider<Creds> = {
     const { events, dropped } = mapCoinbaseTxs(list.filter(({ tx }) => !known.has(tx.id) && !skipped.has(tx.id)));
     if (nonEurNative) {
       warnings.push(
-        "Your Coinbase native currency is not EUR; set it to EUR in Coinbase settings so trades can be valued exactly.",
+        tr(
+          "Your Coinbase native currency is not EUR; set it to EUR in Coinbase settings so trades can be valued exactly.",
+        ),
       );
     }
 

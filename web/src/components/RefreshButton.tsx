@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { post, type RefreshStatus } from "../api";
 import { relativeTime } from "../format";
-import { useInvalidateAll, usePriceStatus } from "../queries";
+import { useDemo, useInvalidateAll, usePriceStatus } from "../queries";
 import { Button } from "./ui";
+import { t } from "../i18n";
 
 export function RefreshButton() {
+  const demo = useDemo();
   const status = usePriceStatus();
   const invalidate = useInvalidateAll();
   const [busy, setBusy] = useState(false);
@@ -24,6 +26,9 @@ export function RefreshButton() {
     }
   };
 
+  // The demo's prices are made up and stay that way.
+  if (demo) return <span className="text-xs text-muted">{t("Example prices")}</span>;
+
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-muted" title={s?.at}>
@@ -31,12 +36,14 @@ export function RefreshButton() {
           <span className="text-loss">{error}</span>
         ) : status.isLoading ? (
           ""
+        ) : s?.at ? (
+          t("Prices updated {time}", { time: relativeTime(s.at) })
         ) : (
-          `Prices updated ${relativeTime(s?.at)}`
+          t("Prices not refreshed yet")
         )}
       </span>
       <Button size="sm" onClick={refresh} disabled={busy}>
-        {busy ? "Refreshing…" : "↻ Refresh"}
+        {busy ? t("Refreshing…") : `↻ ${t("Refresh")}`}
       </Button>
     </div>
   );

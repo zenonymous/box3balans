@@ -7,6 +7,8 @@ import { HttpError, notFound } from "../lib/errors.js";
 import { currencyCode, decimalString, idParam } from "../lib/validation.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
 import { yahooQuote, yahooSearch } from "../prices/yahoo.js";
+import { tr } from "../i18n/index.js";
+import { displayName, isBuiltin } from "../db/seed.js";
 
 const createBody = z.object({
   assetClass: z.enum(["stock", "etf", "crypto", "metal", "cash", "other"]),
@@ -36,7 +38,9 @@ const updateBody = z.object({
   terPct: z
     .union([z.string(), z.number(), z.null()])
     .transform((v) => (v === null || String(v).trim() === "" ? null : String(v).trim().replace(",", ".")))
-    .refine((v) => v === null || (/^\d+(\.\d+)?$/.test(v) && Number(v) <= 5), "Running costs must be between 0 and 5%")
+    .refine((v) => v === null || (/^\d+(\.\d+)?$/.test(v) && Number(v) <= 5), {
+      error: () => tr("Running costs must be between 0 and 5%"),
+    })
     .optional(),
 });
 
@@ -49,7 +53,7 @@ export async function assetRoutes(app: FastifyInstance) {
       .from(assets)
       .leftJoin(pricesLatest, eq(pricesLatest.assetId, assets.id))
       .orderBy(asc(assets.assetClass), asc(assets.name));
-    return rows.map((r) => ({ ...r.asset, price: r.price }));
+    return rows.map((r) => ({ ...r.asset, name: displayName(r.asset), price: r.price }));
   });
 
   // Look up instruments by name, ticker or ISIN (Yahoo) or coin name/symbol (CoinGecko).
@@ -60,7 +64,7 @@ export async function assetRoutes(app: FastifyInstance) {
     try {
       return kind === "crypto" ? await coingeckoSearch(q, prices.fetchFn) : await yahooSearch(q, prices.fetchFn);
     } catch (err) {
-      throw new HttpError(502, `Search failed: ${(err as Error).message}`);
+      throw new HttpError(502, tr("Search failed: {error}", { error: (err as Error).message }));
     }
   });
 
@@ -71,14 +75,20 @@ export async function assetRoutes(app: FastifyInstance) {
     let unit = data.unit ?? "unit";
 
     if (data.priceSource === "yahoo") {
-      if (!priceRef) throw new HttpError(400, "A Yahoo ticker is required");
+      if (!priceRef) throw new HttpError(400, tr("A Yahoo ticker is required"));
       try {
         currency = (await yahooQuote(priceRef, prices.fetchFn)).currency;
       } catch (err) {
-        throw new HttpError(400, `Could not price ${priceRef} on Yahoo: ${(err as Error).message}`);
+        throw new HttpError(
+          400,
+          tr("Could not price {ref} on Yahoo: {error}", {
+            ref: priceRef,
+            error: (err as Error).message,
+          }),
+        );
       }
     } else if (data.priceSource === "coingecko") {
-      if (!priceRef) throw new HttpError(400, "A CoinGecko id is required");
+      if (!priceRef) throw new HttpError(400, tr("A CoinGecko id is required"));
       currency = "EUR";
     } else if (data.priceSource === "fx") {
       // Cash in a currency: priced at its EUR exchange rate.
@@ -88,7 +98,7 @@ export async function assetRoutes(app: FastifyInstance) {
 
     if (priceRef) {
       const [dupe] = await db.select({ id: assets.id }).from(assets).where(eq(assets.priceRef, priceRef));
-      if (dupe) throw new HttpError(409, "This asset already exists");
+      if (dupe) throw new HttpError(409, tr("This asset already exists"));
     }
 
     const [row] = await db
@@ -104,13 +114,19 @@ export async function assetRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const data = updateBody.parse(req.body);
     const [before] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!before) throw notFound("Asset");
+    if (!before) throw notFound(tr("Asset"));
+    // Built-in assets keep their (English) name and symbol; they're shown translated.
+    if (displayName(before) !== before.name || isBuiltin(before)) {
+      delete data.name;
+      delete data.symbol;
+    }
     if (data.priceRef && data.priceRef !== before.priceRef) {
       const [taken] = await db
         .select({ id: assets.id, name: assets.name })
         .from(assets)
         .where(and(eq(assets.priceSource, before.priceSource), eq(assets.priceRef, data.priceRef), ne(assets.id, id)));
-      if (taken) throw new HttpError(409, `${data.priceRef} is already used by “${taken.name}”`);
+      if (taken)
+        throw new HttpError(409, tr("{ref} is already used by “{name}”", { ref: data.priceRef, name: taken.name }));
     }
     const [row] = await db.update(assets).set(data).where(eq(assets.id, id)).returning();
     await audit(db, "asset", id, "update", before, row);
@@ -121,8 +137,8 @@ export async function assetRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const { price, currency } = z.object({ price: decimalString, currency: currencyCode }).parse(req.body);
     const [asset] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!asset) throw notFound("Asset");
-    if (asset.priceSource !== "manual") throw new HttpError(400, "Only manually priced assets accept a price");
+    if (!asset) throw notFound(tr("Asset"));
+    if (asset.priceSource !== "manual") throw new HttpError(400, tr("Only manually priced assets accept a price"));
     await prices.setManual(id, price, currency);
     return { ok: true };
   });
@@ -130,21 +146,21 @@ export async function assetRoutes(app: FastifyInstance) {
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!before) throw notFound("Asset");
-    if (before.priceSource === "metal") throw new HttpError(400, "Built-in metal assets cannot be deleted");
+    if (!before) throw notFound(tr("Asset"));
+    if (before.priceSource === "metal") throw new HttpError(400, tr("Built-in metal assets cannot be deleted"));
     const [used] = await db
       .select({ id: transactions.id })
       .from(transactions)
       .where(eq(transactions.assetId, id))
       .limit(1);
-    if (used) throw new HttpError(409, "Asset has transactions; hide it instead");
+    if (used) throw new HttpError(409, tr("Asset has transactions; hide it instead"));
     // A cash asset may only be referenced as the cash side of trades (settlement).
     const [settles] = await db
       .select({ id: transactions.id })
       .from(transactions)
       .where(eq(transactions.settleAssetId, id))
       .limit(1);
-    if (settles) throw new HttpError(409, "This cash balance is used to settle trades; hide it instead");
+    if (settles) throw new HttpError(409, tr("This cash balance is used to settle trades; hide it instead"));
     await db.delete(assets).where(eq(assets.id, id));
     await audit(db, "asset", id, "delete", before, null);
     return { ok: true };

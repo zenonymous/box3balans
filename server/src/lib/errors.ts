@@ -1,3 +1,4 @@
+import { tr } from "../i18n/index.js";
 export class HttpError extends Error {
   constructor(
     public statusCode: number,
@@ -7,8 +8,10 @@ export class HttpError extends Error {
   }
 }
 
-export const notFound = (what: string) => new HttpError(404, `${what} not found`);
+/** `what` is already translated, e.g. notFound(tr("Account")). */
+export const notFound = (what: string) => new HttpError(404, tr("{what} not found", { what }));
 export const badRequest = (msg: string) => new HttpError(400, msg);
+export const notInDemo = () => new HttpError(403, tr("Not available in the demo"));
 
 /** Postgres SQLSTATE of a database error, looking through driver/ORM wrappers. */
 export function pgErrorCode(err: unknown): string | undefined {

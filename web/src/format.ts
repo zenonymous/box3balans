@@ -1,3 +1,5 @@
+import { dateLocale, t } from "./i18n";
+
 const LOCALE_KEY = "numberLocale";
 
 export const NUMBER_LOCALES = {
@@ -71,16 +73,16 @@ export function pct(v: string | number | null | undefined, opts: { sign?: boolea
 export function date(v: string | Date | null | undefined): string {
   if (!v) return "—";
   const d = typeof v === "string" ? new Date(v.length === 10 ? `${v}T00:00:00` : v) : v;
-  return new Intl.DateTimeFormat(getLocale(), { year: "numeric", month: "short", day: "numeric" }).format(d);
+  return new Intl.DateTimeFormat(dateLocale(), { year: "numeric", month: "short", day: "numeric" }).format(d);
 }
 
 export function relativeTime(v: string | null | undefined): string {
-  if (!v) return "never";
+  if (!v) return t("never");
   const s = Math.round((Date.now() - new Date(v).getTime()) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return `${Math.round(s / 60)} min ago`;
-  if (s < 86400) return `${Math.round(s / 3600)} h ago`;
-  return `${Math.round(s / 86400)} d ago`;
+  if (s < 60) return t("just now");
+  if (s < 3600) return t("{n} min ago", { n: Math.round(s / 60) });
+  if (s < 86400) return t("{n} h ago", { n: Math.round(s / 3600) });
+  return t("{n} d ago", { n: Math.round(s / 86400) });
 }
 
 export const todayIso = () => {
@@ -89,12 +91,12 @@ export const todayIso = () => {
 };
 
 export const CLASS_LABEL: Record<string, string> = {
-  stock: "Stocks",
-  etf: "ETFs & funds",
-  crypto: "Crypto",
-  metal: "Precious metals",
-  cash: "Cash",
-  other: "Other",
+  stock: t("Stocks"),
+  etf: t("ETFs and funds"),
+  crypto: t("Crypto"),
+  metal: t("Precious metals"),
+  cash: t("Cash"),
+  other: t("Other"),
 };
 
 // Fixed categorical slot per asset class: colour follows the entity, never its rank.
@@ -110,23 +112,23 @@ export const CLASS_COLOR: Record<string, string> = {
 export const CLASS_ORDER = ["stock", "etf", "crypto", "metal", "cash", "other"] as const;
 
 export const TX_LABEL: Record<string, string> = {
-  buy: "Buy",
-  sell: "Sell",
-  deposit: "Deposit",
-  withdrawal: "Withdrawal",
-  transfer_in: "Transfer in",
-  transfer_out: "Transfer out",
-  dividend: "Dividend",
-  reward: "Reward / staking",
-  fee: "Fee (in asset)",
-  split: "Split",
+  buy: t("Buy"),
+  sell: t("Sell"),
+  deposit: t("Deposit"),
+  withdrawal: t("Withdrawal"),
+  transfer_in: t("Transfer in"),
+  transfer_out: t("Transfer out"),
+  dividend: t("Dividend"),
+  reward: t("Reward / staking"),
+  fee: t("Fee (in asset)"),
+  split: t("Split"),
 };
 
 export const METAL_LABEL: Record<string, string> = {
-  gold: "Gold",
-  silver: "Silver",
-  platinum: "Platinum",
-  palladium: "Palladium",
+  gold: t("Gold"),
+  silver: t("Silver"),
+  platinum: t("Platinum"),
+  palladium: t("Palladium"),
 };
 
 // ---- Number input ----
@@ -205,9 +207,9 @@ function validGroups(s: string, sep: string): boolean {
 }
 
 /** Canonical number for the API, or throws a readable error. Empty input gives "" (optional fields). */
-export function toApiNumber(raw: string, label = "Amount"): string {
+export function toApiNumber(raw: string, label = t("Amount")): string {
   const p = parseNumberInput(raw);
-  if (p.value === null) throw new Error(`${label}: “${raw}” is not a number`);
+  if (p.value === null) throw new Error(t("{label}: “{raw}” is not a number", { label, raw }));
   return p.value;
 }
 

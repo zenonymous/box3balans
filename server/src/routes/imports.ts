@@ -20,6 +20,7 @@ import {
 import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
+import { tr } from "../i18n/index.js";
 
 const PRESETS_KEY = "csv_import_presets";
 // CSV exports of a few years are well under this; the limit keeps a wrong file from eating memory.
@@ -106,7 +107,7 @@ export async function importRoutes(app: FastifyInstance) {
   const upload = (id: string) => {
     for (const [k, v] of uploads) if (Date.now() - v.at > UPLOAD_TTL_MS) uploads.delete(k);
     const u = uploads.get(id);
-    if (!u) throw new HttpError(410, "The uploaded file has expired; choose it again");
+    if (!u) throw new HttpError(410, tr("The uploaded file has expired; choose it again"));
     u.at = Date.now();
     return u;
   };
@@ -120,7 +121,7 @@ export async function importRoutes(app: FastifyInstance) {
 
   app.post("/import/upload", { bodyLimit: MAX_FILE_BYTES * 2 }, async (req) => {
     const { fileName, content } = uploadBody.parse(req.body);
-    if (content.includes("\u0000")) throw new HttpError(400, "That isn't a CSV text file");
+    if (content.includes("\u0000")) throw new HttpError(400, tr("That isn't a CSV text file"));
     const id = randomUUID();
     uploads.set(id, { fileName, content, at: Date.now() });
     while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
@@ -133,7 +134,7 @@ export async function importRoutes(app: FastifyInstance) {
     try {
       return await planImport(deps, u.content, b.accountId, b.mapping);
     } catch (err) {
-      if ((err as Error).message === "Unknown account") throw new HttpError(400, "Unknown account");
+      if ((err as Error).message === "Unknown account") throw new HttpError(400, tr("Unknown account"));
       throw err;
     }
   });
@@ -199,7 +200,7 @@ export async function importRoutes(app: FastifyInstance) {
   app.delete("/imports/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [imp] = await db.select().from(imports).where(eq(imports.id, id));
-    if (!imp) throw notFound("Import");
+    if (!imp) throw notFound(tr("Import"));
     const rows = await db.select().from(transactions).where(eq(transactions.importId, id));
     const groups = [...new Set(rows.map((r) => r.transferGroup).filter((g): g is string => !!g))];
     const partners = groups.length

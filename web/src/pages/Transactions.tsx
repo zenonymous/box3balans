@@ -32,6 +32,7 @@ import {
 } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
 import { ActivityList } from "./Activity";
+import { t, tj, tn } from "../i18n";
 
 const PAGE = 50;
 const ENTRY_TYPES: TxType[] = ["buy", "sell", "deposit", "withdrawal", "dividend", "reward", "fee", "split"];
@@ -68,21 +69,21 @@ export function TransactionsPage() {
   return (
     <>
       <PageHeader
-        title="Transactions"
-        subtitle={list.data ? `${list.data.total} transactions` : undefined}
+        title={t("Transactions")}
+        subtitle={list.data ? tn(list.data.total, "{n} transaction", "{n} transactions") : undefined}
         actions={
           <>
             <Link
               to="/transactions/import"
               className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
             >
-              ↑ Import CSV
+              ↑ {t("Import CSV")}
             </Link>
             <Button onClick={() => setTransferOpen(true)} disabled={noSetup}>
-              ⇄ Transfer
+              ⇄ {t("Transfer")}
             </Button>
             <Button variant="primary" onClick={() => setEditing("new")} disabled={noSetup}>
-              + Add transaction
+              {t("+ Add transaction")}
             </Button>
           </>
         }
@@ -90,30 +91,26 @@ export function TransactionsPage() {
       {noSetup && (
         <div className="mb-4">
           <Alert>
-            Create an{" "}
-            <Link to="/accounts" className="underline">
-              account
-            </Link>{" "}
-            first.
+            {tj("Create an <0>account</0> first.", [<Link key="a" to="/accounts" className="underline" />])}
           </Alert>
         </div>
       )}
 
       <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Input
-          placeholder="Search…"
+          placeholder={t("Search…")}
           value={filters.q}
           onChange={(e) => setFilter("q", e.target.value)}
           className="col-span-2 sm:max-w-56"
-          aria-label="Search"
+          aria-label={t("Search")}
         />
         <Select
           value={filters.accountId}
           onChange={(e) => setFilter("accountId", e.target.value)}
           className="sm:max-w-48"
-          aria-label="Account"
+          aria-label={t("Account")}
         >
-          <option value="">All accounts</option>
+          <option value="">{t("All accounts")}</option>
           {accounts.data?.map((a) => (
             <option key={a.id} value={a.id}>
               {a.name}
@@ -124,9 +121,9 @@ export function TransactionsPage() {
           value={filters.assetId}
           onChange={(e) => setFilter("assetId", e.target.value)}
           className="sm:max-w-48"
-          aria-label="Asset"
+          aria-label={t("Asset")}
         >
-          <option value="">All assets</option>
+          <option value="">{t("All assets")}</option>
           {assets.data?.map((a) => (
             <option key={a.id} value={a.id}>
               {a.symbol} — {a.name}
@@ -137,9 +134,9 @@ export function TransactionsPage() {
           value={filters.type}
           onChange={(e) => setFilter("type", e.target.value)}
           className="sm:max-w-40"
-          aria-label="Type"
+          aria-label={t("Type")}
         >
-          <option value="">All types</option>
+          <option value="">{t("All types")}</option>
           {Object.entries(TX_LABEL).map(([k, v]) => (
             <option key={k} value={k}>
               {v}
@@ -156,34 +153,34 @@ export function TransactionsPage() {
             <Alert tone="danger">{(list.error as Error).message}</Alert>
           </div>
         ) : list.data!.items.length === 0 ? (
-          <Empty title="No transactions yet">Add a buy, deposit or dividend to get started.</Empty>
+          <Empty title={t("No transactions yet")}>{t("Add a buy, deposit or dividend to get started.")}</Empty>
         ) : (
           <ul className="divide-y divide-line">
-            {list.data!.items.map((t) => (
-              <li key={t.id}>
+            {list.data!.items.map((x) => (
+              <li key={x.id}>
                 <button
                   type="button"
-                  onClick={() => setEditing(t)}
+                  onClick={() => setEditing(x)}
                   className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-surface-2"
                 >
-                  <div className="w-20 shrink-0 text-xs text-ink-2 sm:w-24">{date(t.occurredAt)}</div>
+                  <div className="w-20 shrink-0 text-xs text-ink-2 sm:w-24">{date(x.occurredAt)}</div>
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-ink">
-                      <span className="font-medium">{TX_LABEL[t.type]}</span> {t.assetSymbol}
-                      <span className="text-ink-2"> · {t.accountName}</span>
+                      <span className="font-medium">{TX_LABEL[x.type]}</span> {x.assetSymbol}
+                      <span className="text-ink-2"> · {x.accountName}</span>
                     </div>
                     <div className="truncate text-xs text-muted">
-                      {describe(t)}
-                      {t.source !== "manual" && (
+                      {describe(x)}
+                      {x.source !== "manual" && (
                         <>
                           {" "}
-                          · <Badge>{t.source}</Badge>
+                          · <Badge>{SOURCE_BADGE[x.source]}</Badge>
                         </>
                       )}
-                      {t.notes && <> · {t.notes}</>}
+                      {x.notes && <> · {x.notes}</>}
                     </div>
                   </div>
-                  <div className="tabular shrink-0 text-right text-ink">{eurValue(t)}</div>
+                  <div className="tabular shrink-0 text-right text-ink">{eurValue(x)}</div>
                 </button>
               </li>
             ))}
@@ -194,13 +191,17 @@ export function TransactionsPage() {
       {list.data && list.data.total > PAGE && (
         <div className="mt-3 flex items-center justify-end gap-2 text-sm text-ink-2">
           <Button size="sm" disabled={page === 0} onClick={() => setPage(page - 1)}>
-            ← Newer
+            {t("← Newer")}
           </Button>
           <span>
-            {page * PAGE + 1}–{Math.min((page + 1) * PAGE, list.data.total)} of {list.data.total}
+            {t("{from}–{to} of {total}", {
+              from: page * PAGE + 1,
+              to: Math.min((page + 1) * PAGE, list.data.total),
+              total: list.data.total,
+            })}
           </span>
           <Button size="sm" disabled={(page + 1) * PAGE >= list.data.total} onClick={() => setPage(page + 1)}>
-            Older →
+            {t("Older →")}
           </Button>
         </div>
       )}
@@ -211,29 +212,35 @@ export function TransactionsPage() {
   );
 }
 
-function describe(t: Transaction): string {
-  switch (t.type) {
+function describe(x: Transaction): string {
+  switch (x.type) {
     case "dividend":
-      return `${num(t.amount, 2)} ${t.currency} gross${Number(t.taxWithheld) ? `, ${num(t.taxWithheld, 2)} tax` : ""}`;
+      return Number(x.taxWithheld)
+        ? t("{amount} {currency} gross, {tax} tax", {
+            amount: num(x.amount, 2),
+            currency: x.currency,
+            tax: num(x.taxWithheld, 2),
+          })
+        : t("{amount} {currency} gross", { amount: num(x.amount, 2), currency: x.currency });
     case "split":
-      return `${num(t.quantity)} : 1`;
+      return `${num(x.quantity)} : 1`;
     case "transfer_in":
     case "transfer_out":
     case "fee":
     case "withdrawal":
-      return `${num(t.quantity)}`;
+      return `${num(x.quantity)}`;
     default:
-      return `${num(t.quantity)} × ${eurPrice(t.price, t.currency)}${Number(t.feeEur) ? ` + ${eur(t.feeEur)} fee` : ""}`;
+      return `${num(x.quantity)} × ${eurPrice(x.price, x.currency)}${Number(x.feeEur) ? ` + ${t("{amount} fee", { amount: eur(x.feeEur) })}` : ""}`;
   }
 }
 
-function eurValue(t: Transaction): string {
-  const fx = Number(t.fxRate);
-  if (t.type === "dividend") return eur((Number(t.amount) - Number(t.taxWithheld)) * fx);
-  if (["buy", "sell", "deposit", "reward"].includes(t.type) && Number(t.price)) {
-    const v = Number(t.quantity) * Number(t.price) * fx;
-    return eur(t.type === "buy" ? -(v + Number(t.feeEur)) : t.type === "sell" ? v - Number(t.feeEur) : v, {
-      sign: t.type === "buy" || t.type === "sell",
+function eurValue(x: Transaction): string {
+  const fx = Number(x.fxRate);
+  if (x.type === "dividend") return eur((Number(x.amount) - Number(x.taxWithheld)) * fx);
+  if (["buy", "sell", "deposit", "reward"].includes(x.type) && Number(x.price)) {
+    const v = Number(x.quantity) * Number(x.price) * fx;
+    return eur(x.type === "buy" ? -(v + Number(x.feeEur)) : x.type === "sell" ? v - Number(x.feeEur) : v, {
+      sign: x.type === "buy" || x.type === "sell",
     });
   }
   return "";
@@ -252,7 +259,7 @@ function AssetSelect({
 }) {
   return (
     <Select id={id} value={value} onChange={(e) => onChange(e.target.value)} required>
-      <option value="">Choose asset…</option>
+      <option value="">{t("Choose asset…")}</option>
       {CLASS_ORDER.map((c) => {
         const list = assets.filter((a) => a.assetClass === c && (!a.hidden || String(a.id) === value));
         if (!list.length) return null;
@@ -314,13 +321,17 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
     staleTime: Infinity,
   });
 
-  const t = f.type;
-  const usesPrice = ["buy", "sell", "deposit", "reward"].includes(t);
-  const usesCurrency = usesPrice || t === "dividend";
-  const usesFee = ["buy", "sell", "dividend", "withdrawal"].includes(t);
-  const settles = ["buy", "sell", "dividend"].includes(t);
+  const kind = f.type;
+  const usesPrice = ["buy", "sell", "deposit", "reward"].includes(kind);
+  const usesCurrency = usesPrice || kind === "dividend";
+  const usesFee = ["buy", "sell", "dividend", "withdrawal"].includes(kind);
+  const settles = ["buy", "sell", "dividend"].includes(kind);
   const qtyLabel =
-    t === "split" ? "Split ratio (new shares per old share)" : `Quantity${asset?.unit === "g" ? " (grams)" : ""}`;
+    kind === "split"
+      ? t("Split ratio (new shares per old share)")
+      : asset?.unit === "g"
+        ? t("Quantity (grams)")
+        : t("Quantity");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -334,8 +345,8 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
       if (isTransfer) {
         await put(`/api/transactions/${tx!.id}`, {
           occurredAt,
-          quantity: toApiNumber(f.quantity, "Quantity"),
-          feeEur: toApiNumber(f.feeEur, "Fee") || "0",
+          quantity: toApiNumber(f.quantity, t("Quantity")),
+          feeEur: toApiNumber(f.feeEur, t("Fee")) || "0",
           notes: f.notes || null,
         });
       } else {
@@ -344,13 +355,13 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
           accountId: Number(f.accountId),
           assetId: Number(f.assetId),
           occurredAt,
-          quantity: t === "dividend" ? "0" : toApiNumber(f.quantity, "Quantity"),
-          price: usesPrice ? toApiNumber(f.price, "Price") || "0" : "0",
+          quantity: kind === "dividend" ? "0" : toApiNumber(f.quantity, t("Quantity")),
+          price: usesPrice ? toApiNumber(f.price, t("Price")) || "0" : "0",
           currency: usesCurrency ? f.currency : "EUR",
-          ...(usesCurrency && f.currency !== "EUR" && f.fxRate ? { fxRate: toApiNumber(f.fxRate, "FX rate") } : {}),
-          feeEur: usesFee ? toApiNumber(f.feeEur, "Fee") || "0" : "0",
-          amount: t === "dividend" ? toApiNumber(f.amount, "Gross amount") : "0",
-          taxWithheld: t === "dividend" ? toApiNumber(f.taxWithheld, "Tax withheld") || "0" : "0",
+          ...(usesCurrency && f.currency !== "EUR" && f.fxRate ? { fxRate: toApiNumber(f.fxRate, t("FX rate")) } : {}),
+          feeEur: usesFee ? toApiNumber(f.feeEur, t("Fee")) || "0" : "0",
+          amount: kind === "dividend" ? toApiNumber(f.amount, t("Gross amount")) : "0",
+          taxWithheld: kind === "dividend" ? toApiNumber(f.taxWithheld, t("Tax withheld")) || "0" : "0",
           settleCash: settles && settleCash,
           notes: f.notes || null,
         };
@@ -367,7 +378,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
   };
 
   const remove = async () => {
-    if (!confirm(isTransfer ? "Delete both legs of this transfer?" : "Delete this transaction?")) return;
+    if (!confirm(isTransfer ? t("Delete both legs of this transfer?") : t("Delete this transaction?"))) return;
     try {
       await del(`/api/transactions/${tx!.id}`);
       await invalidate();
@@ -382,7 +393,9 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
   const unlink = async () => {
     if (
       !confirm(
-        "Unlink this transfer? Both legs become a separate withdrawal and deposit, and they won't be linked automatically again.",
+        t(
+          "Unlink this transfer? Both legs become a separate withdrawal and deposit, and they won't be linked automatically again.",
+        ),
       )
     )
       return;
@@ -401,26 +414,32 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
     const p = num(f.price);
     const fx = f.currency === "EUR" ? 1 : num(f.fxRate) || Number(ecb.data?.eurPerUnit || 0);
     if (!usesPrice || !q || !p || !fx) return null;
-    return q * p * fx + (t === "buy" ? num(f.feeEur) : t === "sell" ? -num(f.feeEur) : 0);
-  }, [f, ecb.data, usesPrice, t]);
+    return q * p * fx + (kind === "buy" ? num(f.feeEur) : kind === "sell" ? -num(f.feeEur) : 0);
+  }, [f, ecb.data, usesPrice, kind]);
 
   return (
     <Modal
       open
       onClose={onClose}
-      title={tx ? (isTransfer ? `Edit ${TX_LABEL[tx.type]?.toLowerCase()}` : "Edit transaction") : "Add transaction"}
+      title={
+        tx
+          ? isTransfer
+            ? t("Edit {name}", { name: TX_LABEL[tx.type]?.toLowerCase() ?? tx.type })
+            : t("Edit transaction")
+          : t("Add transaction")
+      }
       wide
       footer={
         <>
           {tx && (
             <Button variant="danger" onClick={remove} className="mr-auto">
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          {isTransfer && <Button onClick={unlink}>Unlink</Button>}
-          <Button onClick={onClose}>Cancel</Button>
+          {isTransfer && <Button onClick={unlink}>{t("Unlink")}</Button>}
+          <Button onClick={onClose}>{t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="tx-form" disabled={busy}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? t("Saving…") : t("Save")}
           </Button>
         </>
       }
@@ -428,11 +447,15 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
       <form id="tx-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {isTransfer ? (
           <p className="text-sm text-ink-2 sm:col-span-2">
-            {TX_LABEL[tx!.type]} of {tx!.assetSymbol} at {tx!.accountName}. Changing the date moves both legs.
+            {t("{type} of {asset} at {account}. Changing the date moves both legs.", {
+              type: TX_LABEL[tx!.type] ?? tx!.type,
+              asset: tx!.assetSymbol,
+              account: tx!.accountName,
+            })}
           </p>
         ) : (
           <>
-            <Field label="Type">
+            <Field label={t("Type")}>
               {(id) => (
                 <Select id={id} value={f.type} onChange={(e) => set("type")(e.target.value)}>
                   {ENTRY_TYPES.map((k) => (
@@ -443,7 +466,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
                 </Select>
               )}
             </Field>
-            <Field label="Date">
+            <Field label={t("Date")}>
               {(id) => (
                 <Input
                   id={id}
@@ -455,10 +478,10 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
                 />
               )}
             </Field>
-            <Field label="Account">
+            <Field label={t("Account")}>
               {(id) => (
                 <Select id={id} value={f.accountId} onChange={(e) => set("accountId")(e.target.value)} required>
-                  <option value="">Choose account…</option>
+                  <option value="">{t("Choose account…")}</option>
                   {accounts.data
                     ?.filter((a) => !a.archived || String(a.id) === f.accountId)
                     .map((a) => (
@@ -470,15 +493,10 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
               )}
             </Field>
             <Field
-              label="Asset"
-              hint={
-                <>
-                  Missing?{" "}
-                  <Link to="/assets" className="text-accent underline" onClick={onClose}>
-                    Add an asset
-                  </Link>
-                </>
-              }
+              label={t("Asset")}
+              hint={tj("Missing? <0>Add an asset</0>", [
+                <Link key="a" to="/assets" className="text-accent underline" onClick={onClose} />,
+              ])}
             >
               {(id) => <AssetSelect id={id} assets={assets.data ?? []} value={f.assetId} onChange={pickAsset} />}
             </Field>
@@ -486,12 +504,12 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
         )}
 
         {isTransfer && (
-          <Field label="Date">
+          <Field label={t("Date")}>
             {(id) => <Input id={id} type="date" value={f.day} onChange={(e) => set("day")(e.target.value)} required />}
           </Field>
         )}
 
-        {t !== "dividend" && (
+        {kind !== "dividend" && (
           <Field label={qtyLabel}>
             {(id) => (
               <AmountInput
@@ -508,11 +526,11 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
         {usesPrice && !isTransfer && (
           <Field
             label={
-              t === "reward"
-                ? "Market price per unit at receipt"
-                : t === "deposit"
-                  ? "Cost per unit (optional)"
-                  : "Price per unit"
+              kind === "reward"
+                ? t("Market price per unit at receipt")
+                : kind === "deposit"
+                  ? t("Cost per unit (optional)")
+                  : t("Price per unit")
             }
           >
             {(id) => (
@@ -521,15 +539,15 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
 
                 value={f.price}
                 onChange={(e) => set("price")(e.target.value)}
-                required={t === "buy" || t === "sell"}
+                required={kind === "buy" || kind === "sell"}
               />
             )}
           </Field>
         )}
 
-        {t === "dividend" && (
+        {kind === "dividend" && (
           <>
-            <Field label="Gross amount">
+            <Field label={t("Gross amount")}>
               {(id) => (
                 <AmountInput
                   id={id}
@@ -540,7 +558,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
                 />
               )}
             </Field>
-            <Field label="Tax withheld">
+            <Field label={t("Tax withheld")}>
               {(id) => (
                 <AmountInput
                   id={id}
@@ -556,7 +574,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
 
         {usesCurrency && !isTransfer && (
           <>
-            <Field label="Currency">
+            <Field label={t("Currency")}>
               {(id) => (
                 <Input
                   id={id}
@@ -569,13 +587,15 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
             </Field>
             {f.currency !== "EUR" && (
               <Field
-                label={`FX rate (EUR per 1 ${f.currency})`}
+                label={t("FX rate (EUR per 1 {currency})", { currency: f.currency })}
                 hint={
                   ecb.data
-                    ? `ECB rate on this date: ${toInputNumber(Number(ecb.data.eurPerUnit).toFixed(6))} — leave empty to use it`
+                    ? t("ECB rate on this date: {rate} — leave empty to use it", {
+                        rate: toInputNumber(Number(ecb.data.eurPerUnit).toFixed(6)),
+                      })
                     : ecb.isError
-                      ? "No ECB rate found; enter it manually"
-                      : "Looking up ECB rate…"
+                      ? t("No ECB rate found; enter it manually")
+                      : t("Looking up ECB rate…")
                 }
               >
                 {(id) => (
@@ -593,7 +613,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
         )}
 
         {(usesFee || isTransfer) && (
-          <Field label="Fee (EUR)">
+          <Field label={t("Fee (EUR)")}>
             {(id) => (
               <AmountInput
                 id={id}
@@ -615,21 +635,23 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
               onChange={(e) => setSettleCash(e.target.checked)}
             />
             <span>
-              {t === "buy" ? "Pay from" : "Credit to"} this account’s {f.currency || "EUR"} cash balance
+              {kind === "buy"
+                ? t("Pay from this account’s {currency} cash balance", { currency: f.currency || "EUR" })
+                : t("Credit to this account’s {currency} cash balance", { currency: f.currency || "EUR" })}
               <span className="block text-xs text-muted">
-                Keeps the cash balance right when you also track deposits and withdrawals here.
+                {t("Keeps the cash balance right when you also track deposits and withdrawals here.")}
               </span>
             </span>
           </label>
         )}
 
-        <Field label="Notes" className="sm:col-span-2">
+        <Field label={t("Notes")} className="sm:col-span-2">
           {(id) => <Textarea id={id} value={f.notes} onChange={(e) => set("notes")(e.target.value)} />}
         </Field>
 
         {total != null && (
           <p className="text-sm text-ink-2 sm:col-span-2">
-            {t === "buy" ? "Total cost" : t === "sell" ? "Net proceeds" : "Value"}:{" "}
+            {kind === "buy" ? t("Total cost") : kind === "sell" ? t("Net proceeds") : t("Value")}:{" "}
             <span className="tabular font-medium text-ink">{eur(total)}</span>
           </p>
         )}
@@ -642,7 +664,8 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
       {tx && (
         <details className="mt-4 border-t border-line pt-3">
           <summary className="cursor-pointer text-sm font-medium text-ink-2">
-            History{tx.source !== "manual" && ` · came from ${SOURCE_LABEL[tx.source]}`}
+            {t("History")}
+            {tx.source !== "manual" && ` · ${t("came from {source}", { source: SOURCE_LABEL[tx.source] })}`}
           </summary>
           <div className="mt-2">
             <ActivityList entity="transaction" entityId={tx.id} compact />
@@ -654,10 +677,17 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
 }
 
 const SOURCE_LABEL: Record<Transaction["source"], string> = {
-  manual: "manual entry",
-  csv: "a CSV import",
-  api: "an exchange sync",
-  chain: "a wallet sync",
+  manual: t("manual entry"),
+  csv: t("a CSV import"),
+  api: t("an exchange sync"),
+  chain: t("a wallet sync"),
+};
+
+const SOURCE_BADGE: Record<Transaction["source"], string> = {
+  manual: t("manual"),
+  csv: "csv",
+  api: t("sync"),
+  chain: t("wallet"),
 };
 
 function TransferModal({ onClose }: { onClose: () => void }) {
@@ -689,9 +719,9 @@ function TransferModal({ onClose }: { onClose: () => void }) {
         toAccountId: Number(f.toAccountId),
         assetId: Number(f.assetId),
         occurredAt: new Date(`${f.day}T12:00:00`).toISOString(),
-        quantity: toApiNumber(f.quantity, "Quantity sent"),
-        ...(f.receivedQuantity ? { receivedQuantity: toApiNumber(f.receivedQuantity, "Quantity received") } : {}),
-        feeEur: toApiNumber(f.feeEur, "Fee") || "0",
+        quantity: toApiNumber(f.quantity, t("Quantity sent")),
+        ...(f.receivedQuantity ? { receivedQuantity: toApiNumber(f.receivedQuantity, t("Quantity received")) } : {}),
+        feeEur: toApiNumber(f.feeEur, t("Fee")) || "0",
         notes: f.notes || null,
       });
       await invalidate();
@@ -707,24 +737,24 @@ function TransferModal({ onClose }: { onClose: () => void }) {
     <Modal
       open
       onClose={onClose}
-      title="Transfer between accounts"
+      title={t("Transfer between accounts")}
       footer={
         <>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="transfer-form" disabled={busy}>
-            {busy ? "Saving…" : "Save transfer"}
+            {busy ? t("Saving…") : t("Save transfer")}
           </Button>
         </>
       }
     >
       <form id="transfer-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <p className="text-sm text-ink-2 sm:col-span-2">
-          Moves an asset and its cost basis, e.g. from an exchange to your hardware wallet. No gain is realized.
+          {t("Moves an asset and its cost basis, e.g. from an exchange to your hardware wallet. No gain is realized.")}
         </p>
-        <Field label="From">
+        <Field label={t("From")}>
           {(id) => (
             <Select id={id} value={f.fromAccountId} onChange={(e) => set("fromAccountId")(e.target.value)} required>
-              <option value="">Choose…</option>
+              <option value="">{t("Choose…")}</option>
               {active.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -733,10 +763,10 @@ function TransferModal({ onClose }: { onClose: () => void }) {
             </Select>
           )}
         </Field>
-        <Field label="To">
+        <Field label={t("To")}>
           {(id) => (
             <Select id={id} value={f.toAccountId} onChange={(e) => set("toAccountId")(e.target.value)} required>
-              <option value="">Choose…</option>
+              <option value="">{t("Choose…")}</option>
               {active
                 .filter((a) => String(a.id) !== f.fromAccountId)
                 .map((a) => (
@@ -747,10 +777,10 @@ function TransferModal({ onClose }: { onClose: () => void }) {
             </Select>
           )}
         </Field>
-        <Field label="Asset">
+        <Field label={t("Asset")}>
           {(id) => <AssetSelect id={id} assets={assets.data ?? []} value={f.assetId} onChange={set("assetId")} />}
         </Field>
-        <Field label="Date">
+        <Field label={t("Date")}>
           {(id) => (
             <Input
               id={id}
@@ -762,7 +792,7 @@ function TransferModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </Field>
-        <Field label="Quantity sent">
+        <Field label={t("Quantity sent")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -773,18 +803,18 @@ function TransferModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </Field>
-        <Field label="Quantity received" hint="If a network fee was deducted">
+        <Field label={t("Quantity received")} hint={t("If a network fee was deducted")}>
           {(id) => (
             <AmountInput
               id={id}
 
               value={f.receivedQuantity}
               onChange={(e) => set("receivedQuantity")(e.target.value)}
-              placeholder={f.quantity || "same as sent"}
+              placeholder={f.quantity || t("same as sent")}
             />
           )}
         </Field>
-        <Field label="Fee (EUR)">
+        <Field label={t("Fee (EUR)")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -795,7 +825,7 @@ function TransferModal({ onClose }: { onClose: () => void }) {
             />
           )}
         </Field>
-        <Field label="Notes">
+        <Field label={t("Notes")}>
           {(id) => <Input id={id} value={f.notes} onChange={(e) => set("notes")(e.target.value)} />}
         </Field>
         {error && (

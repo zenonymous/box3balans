@@ -4,6 +4,8 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { get, put } from "../api";
 import { Alert, Card, Empty, Spinner, Stat, Swatch, Tabs, cx } from "../components/ui";
 import { date, eur, getLocale, pct } from "../format";
+import { t } from "../i18n";
+import { kindLabel } from "../labels";
 
 interface PeriodReturn {
   from: string;
@@ -67,7 +69,7 @@ export function ReturnPct({
       )}
     >
       {pct(value)}
-      {annualised && <span className="ml-0.5 text-[0.85em] text-muted"> p.a.</span>}
+      {annualised && <span className="ml-0.5 text-[0.85em] text-muted"> {t("p.a.")}</span>}
     </span>
   );
 }
@@ -93,7 +95,7 @@ function GrowthChart({ r, view }: { r: Returns; view: "index" | "euros" }) {
           : s.benchmarkEur,
     invested: s.netInvestedEur,
   }));
-  if (data.length < 2) return <p className="py-8 text-center text-sm text-muted">Not enough history yet.</p>;
+  if (data.length < 2) return <p className="py-8 text-center text-sm text-muted">{t("Not enough history yet.")}</p>;
   const span = (Date.parse(data.at(-1)!.day) - Date.parse(data[0]!.day)) / 86_400_000;
   const fmt = (v: number) =>
     view === "index"
@@ -107,19 +109,20 @@ function GrowthChart({ r, view }: { r: Returns; view: "index" | "euros" }) {
   const hasBench = data.some((d) => d.bench != null);
   return (
     <div>
-      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+      <ul className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-2" aria-label={t("Legend")}>
         <li className="flex items-center gap-1.5">
-          <Swatch color={PORTFOLIO} /> Your portfolio
+          <Swatch color={PORTFOLIO} /> {t("Your portfolio")}
         </li>
         {hasBench && (
           <li className="flex items-center gap-1.5">
             <Swatch color={BENCHMARK} /> {r.benchmark.label}
-            {view === "euros" && " (same money in and out)"}
+            {view === "euros" && ` ${t("(same money in and out)")}`}
           </li>
         )}
         {view === "euros" && (
           <li className="flex items-center gap-1.5">
-            <span aria-hidden className="inline-block w-4 border-t-2 border-dashed border-ink-2" /> Money put in (net)
+            <span aria-hidden className="inline-block w-4 border-t-2 border-dashed border-ink-2" />{" "}
+            {t("Money put in (net)")}
           </li>
         )}
       </ul>
@@ -152,7 +155,8 @@ function GrowthChart({ r, view }: { r: Returns; view: "index" | "euros" }) {
                     {payload.map((p) => (
                       <div key={String(p.dataKey)} className="flex items-center gap-1.5 text-ink-2">
                         <Swatch color={String(p.color)} />
-                        {p.dataKey === "you" ? "You" : p.dataKey === "bench" ? r.benchmark.label : "Money put in"}:{" "}
+                        {p.dataKey === "you" ? t("You") : p.dataKey === "bench" ? r.benchmark.label : t("Money put in")}
+                        :{" "}
                         <span className="tabular text-ink">
                           {view === "index"
                             ? new Intl.NumberFormat(getLocale(), { maximumFractionDigits: 1 }).format(Number(p.value))
@@ -199,8 +203,12 @@ function GrowthChart({ r, view }: { r: Returns; view: "index" | "euros" }) {
       </div>
       <p className="mt-2 text-xs text-muted">
         {view === "index"
-          ? "Growth of €100 at the time-weighted return: what your investment choices did, whatever the timing of your deposits."
-          : `Your net worth, and what the same deposits and withdrawals would be worth in ${r.benchmark.label ?? "the benchmark"}.`}
+          ? t(
+              "Growth of €100 at the time-weighted return: what your investment choices did, whatever the timing of your deposits.",
+            )
+          : t("Your net worth, and what the same deposits and withdrawals would be worth in {benchmark}.", {
+              benchmark: r.benchmark.label ?? t("the benchmark"),
+            })}
       </p>
     </div>
   );
@@ -217,7 +225,7 @@ export function ReturnsView() {
   if (!r.allTime) {
     return (
       <Card>
-        <Empty title="No history yet">Add transactions to see your returns.</Empty>
+        <Empty title={t("No history yet")}>{t("Add transactions to see your returns.")}</Empty>
       </Card>
     );
   }
@@ -238,50 +246,50 @@ export function ReturnsView() {
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label={`Time-weighted, since ${date(a.from)}`}
+          label={t("Time-weighted, since {date}", { date: date(a.from) })}
           value={<ReturnPct value={a.twrPct} />}
           sub={a.twrAnnualPct != null ? <ReturnPct value={a.twrAnnualPct} annualised /> : undefined}
         />
         <Stat
-          label="Your return (money-weighted)"
+          label={t("Your return (money-weighted)")}
           value={<ReturnPct value={a.xirrPct ?? a.mwrPct} annualised={a.xirrPct != null} />}
-          sub={<span className="text-muted">includes the timing of your deposits</span>}
+          sub={<span className="text-muted">{t("includes the timing of your deposits")}</span>}
         />
         <Stat
-          label="This year (time-weighted)"
+          label={t("This year (time-weighted)")}
           value={<ReturnPct value={r.ytd?.twrPct ?? null} />}
           sub={
             r.ytd ? (
               <span className="text-muted">
-                money-weighted <ReturnPct value={r.ytd.mwrPct} />
+                {t("money-weighted")} <ReturnPct value={r.ytd.mwrPct} />
               </span>
             ) : undefined
           }
         />
         <Stat
-          label={b ? `${r.benchmark.label}, same period` : "Benchmark"}
-          value={b ? <ReturnPct value={b.twrPct} /> : <span className="text-muted">off</span>}
+          label={b ? t("{benchmark}, same period", { benchmark: r.benchmark.label ?? "" }) : t("Benchmark")}
+          value={b ? <ReturnPct value={b.twrPct} /> : <span className="text-muted">{t("off")}</span>}
           sub={b?.twrAnnualPct != null ? <ReturnPct value={b.twrAnnualPct} annualised /> : undefined}
         />
       </div>
 
       <Card
-        title="Growth"
+        title={t("Growth")}
         actions={
           <Tabs
             value={view}
             onChange={setView}
             options={[
-              { value: "index", label: "€100 invested" },
-              { value: "euros", label: "In euros" },
+              { value: "index", label: t("€100 invested") },
+              { value: "euros", label: t("In euros") },
             ]}
           />
         }
       >
         <label className="mb-3 flex flex-wrap items-center gap-2 text-xs text-ink-2">
-          Compare with
+          {t("Compare with")}
           <select
-            aria-label="Benchmark"
+            aria-label={t("Benchmark")}
             value={r.benchmark.id}
             disabled={saving}
             onChange={(e) => void choose(e.target.value)}
@@ -292,32 +300,32 @@ export function ReturnsView() {
                 {o.label}
               </option>
             ))}
-            <option value="none">nothing</option>
+            <option value="none">{t("nothing")}</option>
           </select>
         </label>
         {saving ? <Spinner /> : <GrowthChart r={r} view={view} />}
       </Card>
 
-      <Card title="Per year" padded={false}>
+      <Card title={t("Per year")} padded={false}>
         <div className="overflow-x-auto">
           <table className="tabular w-full text-sm">
             <thead>
               <tr className="border-b border-line text-xs text-ink-2">
-                <th className="px-3 py-2 text-left font-medium">Year</th>
-                <th className="px-3 py-2 text-right font-medium">Start</th>
-                <th className="px-3 py-2 text-right font-medium" title="Deposits minus withdrawals">
-                  Money in/out
+                <th className="px-3 py-2 text-left font-medium">{t("Year")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Start")}</th>
+                <th className="px-3 py-2 text-right font-medium" title={t("Deposits minus withdrawals")}>
+                  {t("Money in/out")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">Result</th>
-                <th className="px-3 py-2 text-right font-medium">Time-weighted</th>
-                <th className="px-3 py-2 text-right font-medium">Money-weighted</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Result")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Time-weighted")}</th>
+                <th className="px-3 py-2 text-right font-medium">{t("Money-weighted")}</th>
                 {b && <th className="px-3 py-2 text-right font-medium">{r.benchmark.label}</th>}
                 {b && (
                   <th
                     className="px-3 py-2 text-right font-medium"
-                    title="Your time-weighted return minus the benchmark's"
+                    title={t("Your time-weighted return minus the benchmark's")}
                   >
-                    Difference
+                    {t("Difference")}
                   </th>
                 )}
               </tr>
@@ -330,7 +338,7 @@ export function ReturnsView() {
                     <td className="px-3 py-2 font-medium">
                       {y.year}
                       {y.from > `${y.year - 1}-12-31` && (
-                        <span className="ml-1 text-xs text-muted">from {date(y.from)}</span>
+                        <span className="ml-1 text-xs text-muted">{t("from {date}", { date: date(y.from) })}</span>
                       )}
                     </td>
                     <td className="px-3 py-2 text-right text-ink-2">{eur(y.startEur, { decimals: 0 })}</td>
@@ -359,13 +367,13 @@ export function ReturnsView() {
           </table>
         </div>
         <p className="px-3 py-2 text-xs text-muted">
-          Time-weighted: how the investments did, as funds report it. Money-weighted: your own return, which also
-          depends on when you added or took out money. Benchmarks are accumulating funds (or gold, bitcoin), so their
-          price return is their whole return.
+          {t(
+            "Time-weighted: how the investments did, as funds report it. Money-weighted: your own return, which also depends on when you added or took out money. Benchmarks are accumulating funds (or gold, bitcoin), so their price return is their whole return.",
+          )}
         </p>
       </Card>
 
-      <Card title="Per account" padded={false}>
+      <Card title={t("Per account")} padded={false}>
         <ul className="divide-y divide-line">
           {r.byAccount
             .filter((x) => Number(x.valueEur) > 0 || x.return.pct != null)
@@ -373,7 +381,7 @@ export function ReturnsView() {
               <li key={x.accountId} className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm">
                 <div>
                   <div className="text-ink">{x.name}</div>
-                  <div className="text-xs capitalize text-muted">{x.kind}</div>
+                  <div className="text-xs text-muted">{kindLabel(x.kind)}</div>
                 </div>
                 <div className="text-right">
                   <ReturnPct value={x.return.pct} annualised={x.return.annualised} />
@@ -383,8 +391,9 @@ export function ReturnsView() {
             ))}
         </ul>
         <p className="px-4 pb-3 text-xs text-muted">
-          Money-weighted per account, counting money and assets moved in and out (including transfers between your
-          accounts). Under a year: over the period, not annualised.
+          {t(
+            "Money-weighted per account, counting money and assets moved in and out (including transfers between your accounts). Under a year: over the period, not annualised.",
+          )}
         </p>
       </Card>
     </div>

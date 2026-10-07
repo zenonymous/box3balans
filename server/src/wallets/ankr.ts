@@ -1,6 +1,7 @@
 import { D, type Decimal } from "../lib/decimal.js";
 import type { AssetRef, Balance } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 /**
  * EVM chains without a free explorer API, read through Ankr's Advanced API (a free account, 50
@@ -73,9 +74,11 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
     coingeckoId: c.native.coingeckoId,
     name: c.native.name,
   };
-  const unavailable = apiKey
-    ? undefined
-    : `${c.label} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.`;
+  // Read when shown, so it follows the language.
+  const unavailable = () =>
+    apiKey
+      ? undefined
+      : tr("{chain} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.", { chain: c.label });
   let id = 0;
 
   async function rpc<T>(ctx: ChainContext, method: string, params: Record<string, unknown>): Promise<T> {
@@ -98,7 +101,7 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
         continue;
       }
       if (res.status === 401 || res.status === 403 || /api key|unauthori[sz]ed|forbidden/i.test(message))
-        throw new ChainError(`Ankr refused the API key (${message}). Check ANKR_API_KEY.`);
+        throw new ChainError(tr("Ankr refused the API key ({error}). Check ANKR_API_KEY.", { error: message }));
       throw new ChainError(`Ankr: ${message}`);
     }
   }
@@ -129,20 +132,23 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
     id: c.id,
     label: c.label,
     nativeSymbol: c.native.symbol,
-    addressHint: "0x… address (same address works on every EVM chain)",
+    addressHint: msg("0x… address (same address works on every EVM chain)"),
     supportsXpub: false,
     evm: true,
-    unavailable,
+    get unavailable() {
+      return unavailable();
+    },
 
     normalise(input) {
       const s = input.trim();
       if (!/^0x[0-9a-fA-F]{40}$/.test(s))
-        throw new ChainError("Not a valid EVM address (0x followed by 40 hex characters)");
+        throw new ChainError(tr("Not a valid EVM address (0x followed by 40 hex characters)"));
       return s.toLowerCase();
     },
 
     async fetch(inputs, ctx) {
-      if (unavailable) throw new ChainError(unavailable);
+      const why = unavailable();
+      if (why) throw new ChainError(why);
       const ours = new Set(inputs.map((i) => lc(i.address)));
       const lastBlocks = (ctx.cursor?.lastBlock as Record<string, number> | undefined) ?? {};
       const newLastBlocks: Record<string, number> = {};

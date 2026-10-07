@@ -1,5 +1,5 @@
 import { Fragment, useState, type FormEvent, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, put, type Box3Category, type Box3Config, type Box3Overview, type Box3Rates, type Box3Year } from "../api";
 import { downloadCsv } from "../csv";
@@ -47,7 +47,9 @@ const pctFmt = (v: string) => `${num(v, 2)}%`;
 
 export function Box3Page() {
   const overview = useQuery({ queryKey: ["box3"], queryFn: () => get<Box3Overview>("/api/box3") });
-  const [selected, setSelected] = useState<number | null>(null);
+  // Links (e.g. from the start wizard) can open a year.
+  const [search] = useSearchParams();
+  const [selected, setSelected] = useState<number | null>(() => Number(search.get("year")) || null);
   const year = selected ?? overview.data?.years[0] ?? null;
   const detail = useQuery({
     queryKey: ["box3", year],

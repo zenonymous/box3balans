@@ -3,6 +3,7 @@ import type { DB } from "../db/client.js";
 import { assets, priceHistory, settings } from "../db/schema.js";
 import type { HistoryService } from "../prices/history.js";
 import type { HistoryPoint } from "./history.js";
+import { msg } from "../i18n/index.js";
 
 /**
  * Benchmarks: what your money would have done in one investment instead. Accumulating funds, so
@@ -11,7 +12,7 @@ import type { HistoryPoint } from "./history.js";
 export const BENCHMARKS = [
   {
     id: "msci-world",
-    label: "MSCI World (iShares IWDA)",
+    label: msg("MSCI World (iShares IWDA)"),
     assetClass: "etf",
     source: "yahoo",
     ref: "IWDA.AS",
@@ -19,15 +20,22 @@ export const BENCHMARKS = [
   },
   {
     id: "all-world",
-    label: "FTSE All-World (Vanguard VWCE)",
+    label: msg("FTSE All-World (Vanguard VWCE)"),
     assetClass: "etf",
     source: "yahoo",
     ref: "VWCE.DE",
     symbol: "VWCE",
   },
-  { id: "sp500", label: "S&P 500 (iShares CSPX)", assetClass: "etf", source: "yahoo", ref: "CSPX.AS", symbol: "CSPX" },
-  { id: "gold", label: "Gold", assetClass: "metal", source: "metal", ref: "XAU", symbol: "XAU" },
-  { id: "bitcoin", label: "Bitcoin", assetClass: "crypto", source: "coingecko", ref: "bitcoin", symbol: "BTC" },
+  {
+    id: "sp500",
+    label: msg("S&P 500 (iShares CSPX)"),
+    assetClass: "etf",
+    source: "yahoo",
+    ref: "CSPX.AS",
+    symbol: "CSPX",
+  },
+  { id: "gold", label: msg("Gold"), assetClass: "metal", source: "metal", ref: "XAU", symbol: "XAU" },
+  { id: "bitcoin", label: msg("Bitcoin"), assetClass: "crypto", source: "coingecko", ref: "bitcoin", symbol: "BTC" },
 ] as const;
 export type BenchmarkId = (typeof BENCHMARKS)[number]["id"] | "none";
 

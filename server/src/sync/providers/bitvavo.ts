@@ -3,6 +3,7 @@ import { z } from "zod";
 import { D, type Decimal } from "../../lib/decimal.js";
 import { assetRef, isFiat } from "../assets.js";
 import { type Balance, type ExchangeProvider, ProviderError, type ProviderContext, type SyncEvent } from "../types.js";
+import { msg, tr } from "../../i18n/index.js";
 
 const BASE = "https://api.bitvavo.com/v2";
 
@@ -259,14 +260,14 @@ export const bitvavo: ExchangeProvider<Creds> = {
   label: "Bitvavo",
   accountKind: "exchange",
   fields: [
-    { name: "apiKey", label: "API key", secret: false },
-    { name: "apiSecret", label: "API secret", secret: true },
+    { name: "apiKey", label: msg("API key"), secret: false },
+    { name: "apiSecret", label: msg("API secret"), secret: true },
   ],
   instructions: [
-    "Log in to bitvavo.com → Settings → API → Create new API key.",
-    "Give it only the “View” permission. Do not enable trading or withdrawals.",
-    "Optionally restrict it to your server's public IP address.",
-    "Copy the key and the secret (the secret is shown only once).",
+    msg("Log in to bitvavo.com → Settings → API → Create new API key."),
+    msg("Give it only the “View” permission. Do not enable trading or withdrawals."),
+    msg("Optionally restrict it to your server's public IP address."),
+    msg("Copy the key and the secret (the secret is shown only once)."),
   ],
   credentials: creds,
   hint: (c) => `…${c.apiKey.slice(-4)}`,
@@ -321,7 +322,9 @@ export const bitvavo: ExchangeProvider<Creds> = {
       for (const s of staked) add(s.symbol, D(s.amount || 0));
     } catch (err) {
       warnings.push(
-        `Couldn't read the fixed-staking balance (${(err as Error).message}); staked assets may show as a difference.`,
+        tr("Couldn't read the fixed-staking balance ({error}); staked assets may show as a difference.", {
+          error: (err as Error).message,
+        }),
       );
     }
     const balances: Balance[] = [...totals]

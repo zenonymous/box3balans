@@ -223,7 +223,7 @@ describe("CSV import", () => {
       { value: "Koop", count: 1 },
       { value: "Airdrop", count: 1 },
     ]);
-    expect(plan.rows[1]).toMatchObject({ status: "error", message: 'Unknown type "Airdrop": choose what it means' });
+    expect(plan.rows[1]).toMatchObject({ status: "error", message: "Unknown type “Airdrop”: choose what it means" });
     const skip = { ...up.mapping, typeValues: { Koop: "buy", Airdrop: "skip" } };
     expect((await preview(up.uploadId, acc, skip)).summary).toMatchObject({ new: 1, skipped: 1, error: 0 });
     const reward = { ...up.mapping, typeValues: { Koop: "buy", Airdrop: "reward" } };
@@ -369,8 +369,8 @@ describe("CSV import", () => {
     const up = await upload("date,type,symbol,quantity,price\nnot a date,buy,BTC,1,1\n2024-01-01,buy,BTC,x,1\n");
     const plan = await preview(up.uploadId, acc, up.mapping);
     expect(plan.rows.map((r: any) => r.message)).toEqual([
-      'Date "not a date" can\'t be read',
-      'quantity "x" is not a number',
+      "Date “not a date” can't be read",
+      "Quantity “x” is not a number",
     ]);
   });
 });

@@ -5,6 +5,7 @@ import { get } from "../api";
 import { downloadCsv } from "../csv";
 import { Button, Card, Empty, Select, Spinner } from "../components/ui";
 import { date, eur, getLocale, pct } from "../format";
+import { dateLocale, t } from "../i18n";
 
 interface Forecast {
   months: { month: string; grossEur: number; netEur: number }[];
@@ -35,7 +36,7 @@ interface WithholdingRow {
 }
 
 const monthLabel = (m: string) =>
-  new Intl.DateTimeFormat(getLocale(), { month: "short" }).format(new Date(`${m}-01T00:00:00`));
+  new Intl.DateTimeFormat(dateLocale(), { month: "short" }).format(new Date(`${m}-01T00:00:00`));
 const compact = (v: number) =>
   new Intl.NumberFormat(getLocale(), {
     style: "currency",
@@ -49,18 +50,18 @@ export function DividendForecastCard() {
   const f = useQuery({ queryKey: ["dividend-forecast"], queryFn: () => get<Forecast>("/api/dividends/forecast") });
   if (f.isLoading)
     return (
-      <Card title="Expected dividends, next 12 months">
+      <Card title={t("Expected dividends, next 12 months")}>
         <Spinner />
       </Card>
     );
   const d = f.data;
   if (!d || d.byAsset.length === 0) {
     return (
-      <Card title="Expected dividends, next 12 months">
-        <Empty title="No dividends expected">
+      <Card title={t("Expected dividends, next 12 months")}>
+        <Empty title={t("No dividends expected")}>
           {d?.noDividends.length
-            ? `${d.noDividends.join(", ")} paid no dividends in the last year (accumulating).`
-            : "None of your holdings paid a dividend in the last year."}
+            ? t("{list} paid no dividends in the last year (accumulating).", { list: d.noDividends.join(", ") })
+            : t("None of your holdings paid a dividend in the last year.")}
         </Empty>
       </Card>
     );
@@ -68,10 +69,11 @@ export function DividendForecastCard() {
   const data = d.months.map((m) => ({ ...m, label: monthLabel(m.month) }));
   return (
     <Card
-      title="Expected dividends, next 12 months"
+      title={t("Expected dividends, next 12 months")}
       actions={
         <span className="tabular text-sm">
-          {eur(d.totalNetEur)} <span className="text-xs text-muted">net · {eur(d.totalGrossEur)} gross</span>
+          {eur(d.totalNetEur)}{" "}
+          <span className="text-xs text-muted">{t("net · {gross} gross", { gross: eur(d.totalGrossEur) })}</span>
         </span>
       }
     >
@@ -101,12 +103,14 @@ export function DividendForecastCard() {
                 return (
                   <div className="rounded-lg border border-line bg-surface px-3 py-2 text-xs shadow-lg">
                     <div className="text-ink-2">
-                      {new Intl.DateTimeFormat(getLocale(), { month: "long", year: "numeric" }).format(
+                      {new Intl.DateTimeFormat(dateLocale(), { month: "long", year: "numeric" }).format(
                         new Date(`${m.month}-01T00:00:00`),
                       )}
                     </div>
-                    <div className="tabular mt-0.5 font-medium text-ink">{eur(m.netEur)} net</div>
-                    <div className="tabular text-ink-2">{eur(m.grossEur)} gross</div>
+                    <div className="tabular mt-0.5 font-medium text-ink">
+                      {t("{amount} net", { amount: eur(m.netEur) })}
+                    </div>
+                    <div className="tabular text-ink-2">{t("{amount} gross", { amount: eur(m.grossEur) })}</div>
                   </div>
                 );
               }}
@@ -125,11 +129,11 @@ export function DividendForecastCard() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-xs text-ink-2">
-              <th className="py-2 pr-3 text-left font-medium">Holding</th>
-              <th className="px-3 py-2 text-right font-medium">Next ex-date</th>
-              <th className="px-3 py-2 text-right font-medium">Gross</th>
-              <th className="px-3 py-2 text-right font-medium">Tax</th>
-              <th className="py-2 pl-3 text-right font-medium">Net</th>
+              <th className="py-2 pr-3 text-left font-medium">{t("Holding")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Next ex-date")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Gross")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Tax")}</th>
+              <th className="py-2 pl-3 text-right font-medium">{t("Net")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -137,7 +141,7 @@ export function DividendForecastCard() {
               <tr key={a.assetId}>
                 <td className="py-2 pr-3">
                   <span className="font-medium">{a.symbol}</span>{" "}
-                  <span className="text-xs text-muted">{a.payments}× a year</span>
+                  <span className="text-xs text-muted">{t("{n}× a year", { n: a.payments })}</span>
                 </td>
                 <td className="px-3 py-2 text-right text-ink-2">{a.nextExDate ? date(a.nextExDate) : "—"}</td>
                 <td className="px-3 py-2 text-right">{eur(a.grossEur)}</td>
@@ -145,10 +149,10 @@ export function DividendForecastCard() {
                   className="px-3 py-2 text-right text-ink-2"
                   title={
                     a.taxSource === "yours"
-                      ? "What you were withheld on it recently"
+                      ? t("What you were withheld on it recently")
                       : a.taxSource === "default"
-                        ? "Usual rate for its country (you have no payments of it yet)"
-                        : "Unknown: no payments yet and no usual rate for its country"
+                        ? t("Usual rate for its country (you have no payments of it yet)")
+                        : t("Unknown: no payments yet and no usual rate for its country")
                   }
                 >
                   {a.taxPct != null ? pct(a.taxPct, { sign: false }) : "?"}
@@ -161,31 +165,35 @@ export function DividendForecastCard() {
         </table>
       </div>
       <p className="mt-2 text-xs text-muted">
-        Last year's dividends per share, for what you hold now, at today's exchange rates. Dates are ex-dividend dates;
-        payment usually follows a few weeks later. * usual rate for the country, until you've had a payment.
-        {d.noDividends.length > 0 && ` No dividends in the last year: ${d.noDividends.join(", ")}.`}
-        {d.failed.length > 0 && ` Couldn't load dividends for ${d.failed.join(", ")}.`}
+        {t(
+          "Last year's dividends per share, for what you hold now, at today's exchange rates. Dates are ex-dividend dates; payment usually follows a few weeks later. * usual rate for the country, until you've had a payment.",
+        )}
+        {d.noDividends.length > 0 &&
+          ` ${t("No dividends in the last year: {list}.", { list: d.noDividends.join(", ") })}`}
+        {d.failed.length > 0 && ` ${t("Couldn't load dividends for {list}.", { list: d.failed.join(", ") })}`}
       </p>
     </Card>
   );
 }
 
 const countryName = (code: string) => {
-  if (code === "??") return "Unknown (no ISIN)";
+  if (code === "??") return t("Unknown (no ISIN)");
   try {
-    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code;
+    return new Intl.DisplayNames([dateLocale()], { type: "region" }).of(code) ?? code;
   } catch {
     return code;
   }
 };
 
 function note(r: WithholdingRow): string {
-  if (!r.taxEur) return "Nothing withheld.";
+  if (!r.taxEur) return t("Nothing withheld.");
   if (r.country === "NL")
-    return "Dutch dividend tax: offset in full in your tax return (ingehouden dividendbelasting).";
+    return t("Dutch dividend tax: offset in full in your tax return (ingehouden dividendbelasting).");
   if (r.country === "US" && (r.ratePct ?? 0) > 15.5)
-    return "Above the 15% treaty rate: give your broker a W-8BEN form; the extra is hard to reclaim.";
-  return "Foreign tax: offset in your tax return up to the treaty rate (often 15%); more must be reclaimed from that country.";
+    return t("Above the 15% treaty rate: give your broker a W-8BEN form; the extra is hard to reclaim.");
+  return t(
+    "Foreign tax: offset in your tax return up to the treaty rate (often 15%); more must be reclaimed from that country.",
+  );
 }
 
 /** Dividends and tax withheld per country and year, for the tax return. */
@@ -200,12 +208,12 @@ export function WithholdingCard() {
   const total = rows.reduce((a, r) => ({ gross: a.gross + r.grossEur, tax: a.tax + r.taxEur }), { gross: 0, tax: 0 });
   return (
     <Card
-      title="Tax withheld by country"
+      title={t("Tax withheld by country")}
       padded={false}
       actions={
         <div className="flex items-center gap-2">
           <Select
-            aria-label="Year"
+            aria-label={t("Year")}
             value={year}
             onChange={(e) => setSelected(e.target.value)}
             className="w-auto py-1 text-xs"
@@ -218,11 +226,11 @@ export function WithholdingCard() {
             size="sm"
             onClick={() =>
               downloadCsv(`dividend-tax-${year}.csv`, rows, [
-                { header: "Country", value: (r) => r.country },
-                { header: "Payments", value: (r) => r.payments },
-                { header: "Gross EUR", value: (r) => r.grossEur.toFixed(2) },
-                { header: "Tax withheld EUR", value: (r) => r.taxEur.toFixed(2) },
-                { header: "Rate %", value: (r) => (r.ratePct == null ? "" : r.ratePct.toFixed(2)) },
+                { header: t("Country"), value: (r) => r.country },
+                { header: t("Payments"), value: (r) => r.payments },
+                { header: t("Gross EUR"), value: (r) => r.grossEur.toFixed(2) },
+                { header: t("Tax withheld EUR"), value: (r) => r.taxEur.toFixed(2) },
+                { header: t("Rate %"), value: (r) => (r.ratePct == null ? "" : r.ratePct.toFixed(2)) },
               ])
             }
           >
@@ -235,10 +243,10 @@ export function WithholdingCard() {
         <table className="tabular w-full text-sm">
           <thead>
             <tr className="border-b border-line text-xs text-ink-2">
-              <th className="px-3 py-2 text-left font-medium">Country</th>
-              <th className="px-3 py-2 text-right font-medium">Gross</th>
-              <th className="px-3 py-2 text-right font-medium">Withheld</th>
-              <th className="px-3 py-2 text-right font-medium">Rate</th>
+              <th className="px-3 py-2 text-left font-medium">{t("Country")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Gross")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Withheld")}</th>
+              <th className="px-3 py-2 text-right font-medium">{t("Rate")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -258,7 +266,7 @@ export function WithholdingCard() {
               </tr>
             ))}
             <tr className="font-medium">
-              <td className="px-3 py-2">Total</td>
+              <td className="px-3 py-2">{t("Total")}</td>
               <td className="px-3 py-2 text-right">{eur(total.gross)}</td>
               <td className="px-3 py-2 text-right">{eur(total.tax)}</td>
               <td />
@@ -267,8 +275,9 @@ export function WithholdingCard() {
         </table>
       </div>
       <p className="px-3 py-2 text-xs text-muted">
-        Country from each security's ISIN; Irish and Luxembourg funds withhold nothing themselves. An overview to check
-        against your brokers' annual statements, not tax advice.
+        {t(
+          "Country from each security's ISIN; Irish and Luxembourg funds withhold nothing themselves. An overview to check against your brokers' annual statements, not tax advice.",
+        )}
       </p>
     </Card>
   );

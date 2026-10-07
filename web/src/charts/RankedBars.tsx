@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Swatch } from "../components/ui";
 import { eur, pct } from "../format";
+import { t } from "../i18n";
 
 export interface Segment {
   key: string;
@@ -33,7 +34,7 @@ export function RankedBars({ rows, legend }: { rows: RankedRow[]; legend?: { lab
   return (
     <div>
       {legend && legend.length > 1 && (
-        <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2" aria-label="Legend">
+        <ul className="mb-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-2" aria-label={t("Legend")}>
           {legend.map((l) => (
             <li key={l.label} className="flex items-center gap-1.5">
               <Swatch color={l.color} /> {l.label}
@@ -77,7 +78,11 @@ export function RankedBars({ rows, legend }: { rows: RankedRow[]; legend?: { lab
                       <Swatch color={active.color} /> {active.label}
                     </div>
                     <div className="tabular mt-0.5 text-ink-2">
-                      {eur(active.value)} · {pct((active.value / r.value) * 100, { sign: false })} of {r.label}
+                      {eur(active.value)} ·{" "}
+                      {t("{pct} of {label}", {
+                        pct: pct((active.value / r.value) * 100, { sign: false }),
+                        label: r.label,
+                      })}
                     </div>
                   </div>
                 )}

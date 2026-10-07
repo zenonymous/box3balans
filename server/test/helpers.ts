@@ -12,6 +12,7 @@ import { SecretBox } from "../src/lib/secrets.js";
 import { SyncService } from "../src/sync/service.js";
 import { WalletService } from "../src/wallets/service.js";
 import { BackfillService } from "../src/jobs/backfill.js";
+import { setLanguage } from "../src/domain/settings.js";
 
 export type RouteHandler = (url: string, init?: RequestInit) => unknown;
 
@@ -83,7 +84,7 @@ export interface TestApp {
 
 export async function createTestApp(
   routes: Record<string, unknown> = defaultRoutes,
-  opts: { login?: boolean; env?: Record<string, string> } = {},
+  opts: { login?: boolean; env?: Record<string, string>; lang?: "nl" | "en" } = {},
 ): Promise<TestApp> {
   const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "pd-backups-"));
   const config = loadConfig({
@@ -105,6 +106,8 @@ export async function createTestApp(
   // Tests run backfills explicitly; don't let request() fire timers in the background.
   backfill.request = () => {};
   const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill });
+  // Tests read messages in English unless they ask for Dutch.
+  await setLanguage(database.db, opts.lang ?? "en");
 
   const t: TestApp = {
     app,

@@ -4,6 +4,7 @@ import { photoUrl } from "../components/Photos";
 import { Alert, Button, Empty, Spinner } from "../components/ui";
 import { METAL_LABEL, date, eur, num, todayIso } from "../format";
 import { useMetals } from "../queries";
+import { t, tn } from "../i18n";
 
 const sum = (xs: (string | null)[]) => xs.reduce((a, x) => a + Number(x ?? 0), 0);
 
@@ -22,40 +23,45 @@ export function InventoryPage() {
     <div className="text-ink">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden">
         <Link to="/metals" className="text-sm text-accent">
-          ← Precious metals
+          ← {t("Precious metals")}
         </Link>
-        <Button onClick={() => window.print()} title="Use “Save as PDF” in the print dialog">
-          ⎙ Print / PDF
+        <Button onClick={() => window.print()} title={t("Use “Save as PDF” in the print dialog")}>
+          ⎙ {t("Print / PDF")}
         </Button>
       </div>
 
       <header className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">Precious metals inventory</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{t("Precious metals inventory")}</h1>
         <p className="mt-1 text-sm text-ink-2">
-          {date(todayIso())} · {items.reduce((a, i) => a + i.quantity, 0)} pieces in {byLocation.size} location
-          {byLocation.size === 1 ? "" : "s"}
+          {date(todayIso())} ·{" "}
+          {tn(
+            items.reduce((a, i) => a + i.quantity, 0),
+            "{n} piece",
+            "{n} pieces",
+          )}{" "}
+          {tn(byLocation.size, "in {n} location", "in {n} locations")}
         </p>
         <dl className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
           {[...fineByMetal.entries()].map(([metal, g]) => (
             <div key={metal}>
-              <dt className="text-xs text-ink-2">{METAL_LABEL[metal]} (fine)</dt>
+              <dt className="text-xs text-ink-2">{t("{metal} (fine)", { metal: METAL_LABEL[metal] ?? metal })}</dt>
               <dd className="tabular font-medium">
                 {num(g, 2)} g · {num(g / 31.1034768, 3)} oz
               </dd>
             </div>
           ))}
           <div>
-            <dt className="text-xs text-ink-2">Value at spot</dt>
+            <dt className="text-xs text-ink-2">{t("Value at spot")}</dt>
             <dd className="tabular font-medium">{eur(sum(items.map((i) => i.valueEur)))}</dd>
           </div>
           <div>
-            <dt className="text-xs text-ink-2">Paid</dt>
+            <dt className="text-xs text-ink-2">{t("Paid")}</dt>
             <dd className="tabular font-medium">{eur(sum(items.map((i) => i.purchasePriceEur)))}</dd>
           </div>
         </dl>
       </header>
 
-      {items.length === 0 && <Empty title="No physical metal">Items you hold appear here.</Empty>}
+      {items.length === 0 && <Empty title={t("No physical metal")}>{t("Items you hold appear here.")}</Empty>}
 
       {[...byLocation.entries()].map(([location, list]) => (
         <section key={location} className="mb-8 break-inside-auto">
@@ -77,7 +83,7 @@ export function InventoryPage() {
                   ))}
                   {i.photoIds.length === 0 && (
                     <span className="flex size-20 items-center justify-center rounded-md border border-dashed border-line text-xs text-muted print:hidden">
-                      no photo
+                      {t("no photo")}
                     </span>
                   )}
                 </div>
@@ -88,18 +94,26 @@ export function InventoryPage() {
                     <span className="font-normal text-ink-2"> · {METAL_LABEL[i.metal]}</span>
                   </div>
                   <div className="tabular text-xs text-ink-2">
-                    {num(i.grossWeightG, 3)} g{i.quantity > 1 ? " each" : ""} · {num(Number(i.purity) * 1000, 1)}/1000
-                    fine · {num(i.fineWeightG, 3)} g fine in total
+                    {i.quantity > 1
+                      ? t("{weight} g each", { weight: num(i.grossWeightG, 3) })
+                      : t("{weight} g", { weight: num(i.grossWeightG, 3) })}{" "}
+                    · {t("{purity}/1000 fine", { purity: num(Number(i.purity) * 1000, 1) })} ·{" "}
+                    {t("{weight} g fine in total", { weight: num(i.fineWeightG, 3) })}
                   </div>
                   <div className="text-xs text-ink-2">
-                    Bought {date(i.purchaseDate)}
-                    {i.dealer && ` from ${i.dealer}`} for {eur(i.purchasePriceEur)}
+                    {i.dealer
+                      ? t("Bought {date} from {dealer} for {price}", {
+                          date: date(i.purchaseDate),
+                          dealer: i.dealer,
+                          price: eur(i.purchasePriceEur),
+                        })
+                      : t("Bought {date} for {price}", { date: date(i.purchaseDate), price: eur(i.purchasePriceEur) })}
                   </div>
                   {i.notes && <div className="mt-0.5 text-xs text-muted">{i.notes}</div>}
                 </div>
                 <div className="tabular shrink-0 text-right">
                   <div>{i.valueEur ? eur(i.valueEur) : "—"}</div>
-                  <div className="text-xs text-muted">at spot</div>
+                  <div className="text-xs text-muted">{t("at spot")}</div>
                 </div>
               </li>
             ))}
@@ -109,8 +123,9 @@ export function InventoryPage() {
 
       {items.length > 0 && (
         <p className="text-xs text-muted">
-          Values are fine weight × today's spot price. A dealer buying back would usually pay somewhat less; replacing
-          an item would usually cost more (premium).
+          {t(
+            "Values are fine weight × today's spot price. A dealer buying back would usually pay somewhat less; replacing an item would usually cost more (premium).",
+          )}
         </p>
       )}
     </div>

@@ -15,6 +15,7 @@ import {
   type Movement,
   type WalletInput,
 } from "./types.js";
+import { msg, tr, trn } from "../i18n/index.js";
 
 const b58c = createBase58check(sha256);
 const hash160 = (b: Uint8Array) => ripemd160(sha256(b));
@@ -75,15 +76,17 @@ export function parseExtendedKey(c: UtxoChain, key: string): { hd: HDKey; implie
   try {
     raw = b58c.decode(key.trim());
   } catch {
-    throw new ChainError("Not a valid extended public key (checksum failed)");
+    throw new ChainError(tr("Not a valid extended public key (checksum failed)"));
   }
-  if (raw.length !== 78) throw new ChainError("Not a valid extended public key");
+  if (raw.length !== 78) throw new ChainError(tr("Not a valid extended public key"));
   const version = bytesToHex(raw.slice(0, 4));
   const impliedType = c.versions[version];
   if (!impliedType)
-    throw new ChainError(`Unsupported extended key type for ${c.label} (multisig and private keys are not accepted)`);
+    throw new ChainError(
+      tr("Unsupported extended key type for {chain} (multisig and private keys are not accepted)", { chain: c.label }),
+    );
   const hd = HDKey.fromExtendedKey(b58c.encode(concatBytes(STANDARD_XPUB, raw.slice(4))));
-  if (hd.privateKey) throw new ChainError("That is a private key. Only paste the public key (xpub/ypub/zpub).");
+  if (hd.privateKey) throw new ChainError(tr("That is a private key. Only paste the public key (xpub/ypub/zpub)."));
   return { hd, impliedType };
 }
 
@@ -222,7 +225,10 @@ export function utxoAdapter(c: UtxoChain): ChainAdapter {
     id: c.id,
     label: c.label,
     nativeSymbol: c.symbol,
-    addressHint: `${c.hrp}1… / ${c.id === "bitcoin" ? "1… / 3…" : "L… / M…"} address, or an xpub/ypub/zpub${c.id === "litecoin" ? "/Ltub/Mtub" : ""}`,
+    addressHint:
+      c.id === "bitcoin"
+        ? msg("bc1… / 1… / 3… address, or an xpub/ypub/zpub")
+        : msg("ltc1… / L… / M… address, or an xpub/ypub/zpub/Ltub/Mtub"),
     supportsXpub: true,
 
     normalise(input) {
@@ -231,7 +237,7 @@ export function utxoAdapter(c: UtxoChain): ChainAdapter {
         parseExtendedKey(c, s);
         return s;
       }
-      if (!isValidAddress(c, s)) throw new ChainError(`Not a valid ${c.label} address`);
+      if (!isValidAddress(c, s)) throw new ChainError(tr("Not a valid {chain} address", { chain: c.label }));
       return s.toLowerCase().startsWith(`${c.hrp}1`) ? s.toLowerCase() : s;
     },
 
@@ -294,7 +300,13 @@ export function utxoAdapter(c: UtxoChain): ChainAdapter {
         balances,
         cursor: { txCounts: { ...seen, ...txCounts } },
         warnings: [],
-        info: derived ? `${derived} used addresses found from the extended key` : undefined,
+        info: derived
+          ? trn(
+              derived,
+              "{n} used address found from the extended key",
+              "{n} used addresses found from the extended key",
+            )
+          : undefined,
       };
     },
   };

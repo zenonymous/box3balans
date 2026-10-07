@@ -1,3 +1,4 @@
+import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import { z } from "zod";
 
@@ -64,6 +65,11 @@ const schema = z.object({
     .transform((v) => (v ? v : undefined))
     .refine((v) => v === undefined || v.length >= 12, "BACKUP_PASSPHRASE must be at least 12 characters"),
   LOG_LEVEL: z.string().default("info"),
+  // Demo mode: an example household in an in-memory database, signed in automatically, nothing kept.
+  DEMO: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
   // Where the running code's source can be found (AGPL); the Docker build sets it.
   SOURCE_URL: z.string().default("https://github.com/OWNER/kluishuis"),
 });
@@ -83,7 +89,11 @@ function fromFile(value: string | undefined, file: string | undefined): string |
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = schema.safeParse(env);
   const issues = parsed.success ? [] : parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`);
-  const appSecret = parsed.success ? fromFile(parsed.data.APP_SECRET, parsed.data.APP_SECRET_FILE) : undefined;
+  // The demo keeps nothing, so a throwaway secret will do.
+  const appSecret = parsed.success
+    ? (fromFile(parsed.data.APP_SECRET, parsed.data.APP_SECRET_FILE) ??
+      (parsed.data.DEMO ? randomBytes(32).toString("hex") : undefined))
+    : undefined;
   if (parsed.success && !appSecret)
     issues.push("  APP_SECRET: not set (nor a readable APP_SECRET_FILE); use at least 32 random characters");
   else if (appSecret && appSecret.length < 32) issues.push("  APP_SECRET: must be at least 32 characters");

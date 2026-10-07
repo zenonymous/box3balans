@@ -3,27 +3,29 @@ import { useQuery } from "@tanstack/react-query";
 import { NavLink, Outlet } from "react-router";
 import { get, type User } from "../api";
 import { AttentionBadge } from "../pages/Attention";
-import { Spinner, cx } from "./ui";
+import { Alert, Spinner, cx } from "./ui";
+import { t, tj } from "../i18n";
 
 const NAV = [
-  { to: "/", label: "Overview", icon: "◎", end: true },
-  { to: "/holdings", label: "Holdings", icon: "▤" },
-  { to: "/performance", label: "Performance", icon: "↗" },
-  { to: "/income", label: "Income", icon: "❖" },
-  { to: "/box3", label: "Box 3", icon: "§" },
-  { to: "/transactions", label: "Transactions", icon: "⇄" },
-  { to: "/metals", label: "Metals", icon: "◆" },
-  { to: "/accounts", label: "Accounts", icon: "▣" },
-  { to: "/connections", label: "Connections", icon: "⇅" },
-  { to: "/wallets", label: "Wallets", icon: "◈" },
-  { to: "/assets", label: "Assets", icon: "◇" },
-  { to: "/settings", label: "Settings", icon: "⚙" },
+  { to: "/", label: t("Overview"), icon: "◎", end: true },
+  { to: "/holdings", label: t("Holdings"), icon: "▤" },
+  { to: "/performance", label: t("Performance"), icon: "↗" },
+  { to: "/income", label: t("Income"), icon: "❖" },
+  { to: "/box3", label: t("Box 3"), icon: "§" },
+  { to: "/transactions", label: t("Transactions"), icon: "⇄" },
+  { to: "/metals", label: t("Metals"), icon: "◆" },
+  { to: "/accounts", label: t("Accounts"), icon: "▣" },
+  { to: "/household", label: t("Household"), icon: "⌂" },
+  { to: "/connections", label: t("Connections"), icon: "⇅" },
+  { to: "/wallets", label: t("Wallets"), icon: "◈" },
+  { to: "/assets", label: t("Assets"), icon: "◇" },
+  { to: "/settings", label: t("Settings"), icon: "⚙" },
 ];
 
 // The bottom bar on phones shows the most used pages; the rest live under Settings/More.
 const MOBILE_NAV = ["/", "/holdings", "/transactions", "/metals", "/settings"];
 
-export function Layout({ user }: { user: User }) {
+export function Layout({ user, demo }: { user: User; demo?: boolean }) {
   const version = useQuery({
     queryKey: ["version"],
     queryFn: () => get<{ version: string; source: string }>("/api/version"),
@@ -36,7 +38,7 @@ export function Layout({ user }: { user: User }) {
           <img src="/favicon.svg" alt="" className="size-8" />
           <div className="leading-tight">
             <div className="font-semibold tracking-tight">Kluishuis</div>
-            <div className="text-[11px] text-muted">Your vault lives at home</div>
+            <div className="text-[11px] text-muted">{t("Your vault lives at home")}</div>
           </div>
         </div>
         <AttentionBadge className="mb-3" />
@@ -61,17 +63,17 @@ export function Layout({ user }: { user: User }) {
           ))}
         </nav>
         <div className="mt-auto px-2.5 text-xs text-muted">
-          Signed in as {user.username}
+          {t("Signed in as {name}", { name: user.username })}
           {version.data && (
             <div className="mt-0.5 tabular-nums">
-              Version {version.data.version} ·{" "}
+              {t("Version {version}", { version: version.data.version })} ·{" "}
               <a
                 className="underline-offset-2 hover:underline"
                 href={version.data.source}
                 target="_blank"
                 rel="noreferrer"
               >
-                source
+                {t("source")}
               </a>
             </div>
           )}
@@ -79,6 +81,16 @@ export function Layout({ user }: { user: User }) {
       </aside>
 
       <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-5 sm:px-6 md:pb-10 md:pt-8">
+        {demo && (
+          <div className="mb-4 print:hidden">
+            <Alert>
+              {tj(
+                "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Kluishuis</0> to keep track of your own.",
+                [<a key="i" className="underline" href={version.data?.source} target="_blank" rel="noreferrer" />],
+              )}
+            </Alert>
+          </div>
+        )}
         <AttentionBadge className="mb-4 md:hidden print:hidden" />
         <Suspense fallback={<Spinner />}>
           <Outlet />

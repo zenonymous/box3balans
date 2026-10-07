@@ -23,6 +23,7 @@ import {
 } from "../components/ui";
 import { METAL_LABEL, date, eur, num, pct, todayIso, parseNumberInput, toApiNumber, toInputNumber } from "../format";
 import { useAccounts, useInvalidateAll, useMetals } from "../queries";
+import { t, tj } from "../i18n";
 
 export function MetalsPage() {
   const metals = useMetals();
@@ -38,8 +39,8 @@ export function MetalsPage() {
   return (
     <>
       <PageHeader
-        title="Precious metals"
-        subtitle="Physical coins & bars valued at spot by fine weight, plus vaulted holdings"
+        title={t("Precious metals")}
+        subtitle={t("Physical coins & bars valued at spot by fine weight, plus vaulted holdings")}
         actions={
           <>
             <RefreshButton />
@@ -48,11 +49,11 @@ export function MetalsPage() {
                 to="/metals/inventory"
                 className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
               >
-                Inventory
+                {t("Inventory")}
               </Link>
             )}
             <Button variant="primary" onClick={() => setEditing("new")}>
-              + Add coin / bar
+              {t("+ Add coin / bar")}
             </Button>
           </>
         }
@@ -62,52 +63,54 @@ export function MetalsPage() {
         {m.spot.map((s) => (
           <Stat
             key={s.metal}
-            label={`${METAL_LABEL[s.metal]} spot`}
+            label={t("{metal} spot", { metal: METAL_LABEL[s.metal] ?? s.metal })}
             value={s.eurPerOz ? `${eur(s.eurPerOz)}/oz` : "—"}
-            sub={<span className="text-muted">{s.eurPerGram ? `${eur(s.eurPerGram)}/g` : "no price yet"}</span>}
+            sub={<span className="text-muted">{s.eurPerGram ? `${eur(s.eurPerGram)}/g` : t("no price yet")}</span>}
           />
         ))}
       </div>
 
       {m.totals.length > 0 && (
-        <Card title="Totals per metal" padded={false} className="mb-4">
+        <Card title={t("Totals per metal")} padded={false} className="mb-4">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-line text-xs text-ink-2">
-                  <th className="px-4 py-2 text-left font-medium">Metal</th>
-                  <th className="px-4 py-2 text-right font-medium">Physical</th>
-                  <th className="px-4 py-2 text-right font-medium">Vaulted</th>
-                  <th className="px-4 py-2 text-right font-medium">Total</th>
-                  <th className="px-4 py-2 text-right font-medium">Value</th>
-                  <th className="px-4 py-2 text-right font-medium">P&L</th>
+                  <th className="px-4 py-2 text-left font-medium">{t("Metal")}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t("Physical")}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t("Vaulted")}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t("Total")}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t("Value")}</th>
+                  <th className="px-4 py-2 text-right font-medium">{t("P&L")}</th>
                   <th
                     className="px-4 py-2 text-right font-medium"
-                    title="Price paid above spot on physical items, where spot at purchase is known"
+                    title={t("Price paid above spot on physical items, where spot at purchase is known")}
                   >
-                    Premium paid
+                    {t("Premium paid")}
                   </th>
                 </tr>
               </thead>
               <tbody className="tabular divide-y divide-line">
-                {m.totals.map((t) => (
-                  <tr key={t.metal}>
-                    <td className="px-4 py-2.5 font-medium">{METAL_LABEL[t.metal]}</td>
-                    <td className="px-4 py-2.5 text-right text-ink-2">{num(t.physicalG, 2)} g</td>
-                    <td className="px-4 py-2.5 text-right text-ink-2">{num(t.vaultedG, 2)} g</td>
+                {m.totals.map((x) => (
+                  <tr key={x.metal}>
+                    <td className="px-4 py-2.5 font-medium">{METAL_LABEL[x.metal]}</td>
+                    <td className="px-4 py-2.5 text-right text-ink-2">{num(x.physicalG, 2)} g</td>
+                    <td className="px-4 py-2.5 text-right text-ink-2">{num(x.vaultedG, 2)} g</td>
                     <td className="px-4 py-2.5 text-right">
-                      {num(t.totalG, 2)} g<div className="text-xs text-muted">{num(t.totalOz, 3)} oz</div>
+                      {num(x.totalG, 2)} g<div className="text-xs text-muted">{num(x.totalOz, 3)} oz</div>
                     </td>
-                    <td className="px-4 py-2.5 text-right">{eur(t.valueEur)}</td>
+                    <td className="px-4 py-2.5 text-right">{eur(x.valueEur)}</td>
                     <td className="px-4 py-2.5 text-right">
-                      <Delta value={t.pnlEur} />
+                      <Delta value={x.pnlEur} />
                     </td>
                     <td className="px-4 py-2.5 text-right text-ink-2">
-                      {Number(t.premiumPaidEur) ? (
+                      {Number(x.premiumPaidEur) ? (
                         <>
-                          {eur(t.premiumPaidEur)}
-                          {t.premiumPaidPct && (
-                            <div className="text-xs text-muted">{pct(t.premiumPaidPct, { sign: false })} over spot</div>
+                          {eur(x.premiumPaidEur)}
+                          {x.premiumPaidPct && (
+                            <div className="text-xs text-muted">
+                              {t("{pct} over spot", { pct: pct(x.premiumPaidPct, { sign: false }) })}
+                            </div>
                           )}
                         </>
                       ) : (
@@ -123,20 +126,22 @@ export function MetalsPage() {
       )}
 
       <Card
-        title="Physical items"
+        title={t("Physical items")}
         padded={false}
         className="mb-4"
         actions={
           soldCount > 0 && (
             <label className="flex items-center gap-1.5 text-xs text-ink-2">
-              <input type="checkbox" checked={showSold} onChange={(e) => setShowSold(e.target.checked)} /> Show sold (
-              {soldCount})
+              <input type="checkbox" checked={showSold} onChange={(e) => setShowSold(e.target.checked)} />{" "}
+              {t("Show sold ({n})", { n: soldCount })}
             </label>
           )
         }
       >
         {items.length === 0 ? (
-          <Empty title="No physical metal yet">Add coins and bars you hold at home or in a safe deposit box.</Empty>
+          <Empty title={t("No physical metal yet")}>
+            {t("Add coins and bars you hold at home or in a safe deposit box.")}
+          </Empty>
         ) : (
           <ul className="divide-y divide-line">
             {items.map((i) => (
@@ -159,12 +164,13 @@ export function MetalsPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate font-medium text-ink">
                       {i.quantity > 1 && <span className="text-ink-2">{i.quantity}× </span>}
-                      {i.product} {i.soldDate && <Badge>sold {date(i.soldDate)}</Badge>}
+                      {i.product} {i.soldDate && <Badge>{t("sold {date}", { date: date(i.soldDate) })}</Badge>}
                     </div>
                     <div className="truncate text-xs text-muted">
-                      {METAL_LABEL[i.metal]} · {num(i.fineWeightG, 3)} g fine ({num(i.fineWeightOz, 4)} oz) ·{" "}
-                      {i.accountName} · bought {date(i.purchaseDate)}
-                      {i.premiumPct && ` · ${pct(i.premiumPct, { sign: false })} premium`}
+                      {METAL_LABEL[i.metal]} ·{" "}
+                      {t("{grams} g fine ({oz} oz)", { grams: num(i.fineWeightG, 3), oz: num(i.fineWeightOz, 4) })} ·{" "}
+                      {i.accountName} · {t("bought {date}", { date: date(i.purchaseDate) })}
+                      {i.premiumPct && ` · ${t("{pct} premium", { pct: pct(i.premiumPct, { sign: false }) })}`}
                     </div>
                   </div>
                   <div className="shrink-0 text-right">
@@ -180,18 +186,16 @@ export function MetalsPage() {
         )}
       </Card>
 
-      <Card title="Vaulted & allocated" padded={false}>
+      <Card title={t("Vaulted & allocated")} padded={false}>
         {m.vaulted.length === 0 ? (
-          <Empty title="No vaulted metal">
-            For Goldrepublic or similar, create a{" "}
-            <Link to="/accounts" className="text-accent underline">
-              vault account
-            </Link>{" "}
-            and record{" "}
-            <Link to="/transactions" className="text-accent underline">
-              buy transactions
-            </Link>{" "}
-            on the Gold or Silver asset, in grams.
+          <Empty title={t("No vaulted metal")}>
+            {tj(
+              "For Goldrepublic or similar, create a <0>vault account</0> and record <1>buy transactions</1> on the Gold or Silver asset, in grams.",
+              [
+                <Link key="a" to="/accounts" className="text-accent underline" />,
+                <Link key="t" to="/transactions" className="text-accent underline" />,
+              ],
+            )}
           </Empty>
         ) : (
           <ul className="divide-y divide-line">
@@ -202,7 +206,7 @@ export function MetalsPage() {
                     {METAL_LABEL[v.metal]} · {v.accountName}
                   </div>
                   <div className="text-xs text-muted">
-                    {num(v.grams, 3)} g ({num(v.oz, 4)} oz) · cost {eur(v.costEur)}
+                    {num(v.grams, 3)} g ({num(v.oz, 4)} oz) · {t("cost {amount}", { amount: eur(v.costEur) })}
                   </div>
                 </div>
                 <div className="text-right">
@@ -282,19 +286,19 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
         accountId: Number(f.accountId),
         metal: f.metal,
         product: f.product,
-        grossWeightG: toApiNumber(f.grossWeightG, "Gross weight"),
-        purity: toApiNumber(f.purity, "Purity"),
+        grossWeightG: toApiNumber(f.grossWeightG, t("Gross weight")),
+        purity: toApiNumber(f.purity, t("Purity")),
         quantity: Number(f.quantity),
         purchaseDate: f.purchaseDate,
-        purchasePriceEur: toApiNumber(f.purchasePriceEur, "Price paid"),
+        purchasePriceEur: toApiNumber(f.purchasePriceEur, t("Price paid")),
         // Empty means "derive from stored spot history" on the server.
         ...(f.spotValueAtPurchaseEur
-          ? { spotValueAtPurchaseEur: toApiNumber(f.spotValueAtPurchaseEur, "Spot value") }
+          ? { spotValueAtPurchaseEur: toApiNumber(f.spotValueAtPurchaseEur, t("Spot value")) }
           : {}),
         dealer: f.dealer || null,
         notes: f.notes || null,
         soldDate: selling && f.soldDate ? f.soldDate : null,
-        salePriceEur: selling && f.salePriceEur ? toApiNumber(f.salePriceEur, "Sale proceeds") : null,
+        salePriceEur: selling && f.salePriceEur ? toApiNumber(f.salePriceEur, t("Sale proceeds")) : null,
       };
       if (item) await put(`/api/metals/items/${item.id}`, body);
       else await post("/api/metals/items", body);
@@ -309,7 +313,9 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
 
   const remove = async () => {
     if (
-      !confirm("Delete this item and its photos? If you sold it, mark it as sold instead to keep the realized result.")
+      !confirm(
+        t("Delete this item and its photos? If you sold it, mark it as sold instead to keep the realized result."),
+      )
     )
       return;
     try {
@@ -326,17 +332,17 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
       open
       onClose={onClose}
       wide
-      title={item ? "Edit item" : "Add coin or bar"}
+      title={item ? t("Edit item") : t("Add coin or bar")}
       footer={
         <>
           {item && (
             <Button variant="danger" onClick={remove} className="mr-auto">
-              Delete
+              {t("Delete")}
             </Button>
           )}
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="item-form" disabled={busy}>
-            {busy ? "Saving…" : "Save"}
+            {busy ? t("Saving…") : t("Save")}
           </Button>
         </>
       }
@@ -345,15 +351,14 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
         {storage.length === 0 && (
           <div className="sm:col-span-2">
             <Alert>
-              Create a storage location first (an account of type “physical”, e.g. “Home safe”) on the{" "}
-              <Link to="/accounts" className="underline" onClick={onClose}>
-                Accounts
-              </Link>{" "}
-              page.
+              {tj(
+                "Create a storage location first (an account of type “physical”, e.g. “Home safe”) on the <0>Accounts</0> page.",
+                [<Link key="a" to="/accounts" className="underline" onClick={onClose} />],
+              )}
             </Alert>
           </div>
         )}
-        <Field label="Metal">
+        <Field label={t("Metal")}>
           {(id) => (
             <Select id={id} value={f.metal} onChange={(e) => set("metal")(e.target.value)}>
               {Object.entries(METAL_LABEL).map(([k, v]) => (
@@ -364,7 +369,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             </Select>
           )}
         </Field>
-        <Field label="Product" hint="Pick a preset to fill weight and purity, or type your own">
+        <Field label={t("Product")} hint={t("Pick a preset to fill weight and purity, or type your own")}>
           {(id) => (
             <>
               <Input
@@ -384,7 +389,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             </>
           )}
         </Field>
-        <Field label="Gross weight per piece (g)">
+        <Field label={t("Gross weight per piece (g)")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -395,7 +400,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             />
           )}
         </Field>
-        <Field label="Purity / fineness" hint="e.g. 0.9999 or 0.9167 (22 ct)">
+        <Field label={t("Purity / fineness")} hint={t("e.g. 0.9999 or 0.9167 (22 ct)")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -406,7 +411,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             />
           )}
         </Field>
-        <Field label="Quantity (pieces)">
+        <Field label={t("Quantity (pieces)")}>
           {(id) => (
             <Input
               id={id}
@@ -419,10 +424,10 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             />
           )}
         </Field>
-        <Field label="Storage location">
+        <Field label={t("Storage location")}>
           {(id) => (
             <Select id={id} value={f.accountId} onChange={(e) => set("accountId")(e.target.value)} required>
-              <option value="">Choose…</option>
+              <option value="">{t("Choose…")}</option>
               {storage.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -431,7 +436,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             </Select>
           )}
         </Field>
-        <Field label="Purchase date">
+        <Field label={t("Purchase date")}>
           {(id) => (
             <Input
               id={id}
@@ -443,7 +448,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             />
           )}
         </Field>
-        <Field label="Total price paid (EUR)" hint="All pieces, incl. premium and shipping">
+        <Field label={t("Total price paid (EUR)")} hint={t("All pieces, incl. premium and shipping")}>
           {(id) => (
             <AmountInput
               id={id}
@@ -455,8 +460,10 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
           )}
         </Field>
         <Field
-          label="Spot value at purchase (EUR, optional)"
-          hint="Used to compute the premium you paid. Left empty, it is filled from stored spot history when available."
+          label={t("Spot value at purchase (EUR, optional)")}
+          hint={t(
+            "Used to compute the premium you paid. Left empty, it is filled from stored spot history when available.",
+          )}
         >
           {(id) => (
             <AmountInput
@@ -467,26 +474,28 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             />
           )}
         </Field>
-        <Field label="Dealer">
+        <Field label={t("Dealer")}>
           {(id) => <Input id={id} value={f.dealer} onChange={(e) => set("dealer")(e.target.value)} />}
         </Field>
-        <Field label="Notes" className="sm:col-span-2">
+        <Field label={t("Notes")} className="sm:col-span-2">
           {(id) => <Textarea id={id} value={f.notes} onChange={(e) => set("notes")(e.target.value)} />}
         </Field>
 
         <p className="text-sm text-ink-2 sm:col-span-2">
-          Fine metal: <span className="tabular font-medium text-ink">{num(fine, 3)} g</span> (
-          {num(fine / 31.1034768, 4)} oz)
+          {tj("Fine metal: <0>{grams} g</0> ({oz} oz)", [<span key="g" className="tabular font-medium text-ink" />], {
+            grams: num(fine, 3),
+            oz: num(fine / 31.1034768, 4),
+          })}
         </p>
 
         {item && (
           <div className="rounded-lg border border-line p-3 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={selling} onChange={(e) => setSelling(e.target.checked)} /> Sold
+              <input type="checkbox" checked={selling} onChange={(e) => setSelling(e.target.checked)} /> {t("Sold")}
             </label>
             {selling && (
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <Field label="Sale date">
+                <Field label={t("Sale date")}>
                   {(id) => (
                     <Input
                       id={id}
@@ -498,7 +507,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
                     />
                   )}
                 </Field>
-                <Field label="Sale proceeds (EUR)">
+                <Field label={t("Sale proceeds (EUR)")}>
                   {(id) => (
                     <AmountInput
                       id={id}
@@ -520,11 +529,11 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
         )}
       </form>
       <div className="mt-4 border-t border-line pt-3">
-        <h3 className="mb-2 text-xs font-medium text-ink-2">Photos</h3>
+        <h3 className="mb-2 text-xs font-medium text-ink-2">{t("Photos")}</h3>
         {item ? (
           <PhotoStrip itemId={item.id} photoIds={photoIds} onChange={() => void metals.refetch()} />
         ) : (
-          <p className="text-xs text-muted">Save the item first, then add photos (e.g. for your insurance).</p>
+          <p className="text-xs text-muted">{t("Save the item first, then add photos (e.g. for your insurance).")}</p>
         )}
       </div>
     </Modal>

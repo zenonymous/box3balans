@@ -13,6 +13,7 @@ import type { AssetRef, Balance, SyncEvent } from "../sync/types.js";
 import { movementsToEvents } from "./netting.js";
 import { buildChains } from "./registry.js";
 import type { ChainAdapter } from "./types.js";
+import { trn } from "../i18n/index.js";
 
 export interface WalletSyncResult {
   at: string;
@@ -291,7 +292,11 @@ export class WalletService {
     result.pendingTokens = [...status.values()].filter((s) => s === "pending").length;
     if (result.pendingTokens) {
       result.warnings.push(
-        `${result.pendingTokens} token(s) not identified yet (CoinGecko rate limit); they are added on the next sync.`,
+        trn(
+          result.pendingTokens,
+          "{n} token not identified yet (CoinGecko rate limit); it is added on the next sync.",
+          "{n} tokens not identified yet (CoinGecko rate limit); they are added on the next sync.",
+        ),
       );
     }
     return { events: out, balances: keptBalances };

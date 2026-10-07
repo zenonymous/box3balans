@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { del, post } from "../api";
 import { Alert, cx } from "./ui";
+import { t } from "../i18n";
 
 const MAX_SIDE = 1600;
 
@@ -13,7 +14,7 @@ async function prepare(file: File): Promise<{ mime: string; data: string }> {
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   } catch {
-    throw new Error(`Can't read ${file.name}; use a JPEG, PNG or WebP photo`);
+    throw new Error(t("Can't read {name}; use a JPEG, PNG or WebP photo", { name: file.name }));
   }
   const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement("canvas");
@@ -22,11 +23,11 @@ async function prepare(file: File): Promise<{ mime: string; data: string }> {
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
   const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
-  if (!blob) throw new Error("Couldn't process the photo");
+  if (!blob) throw new Error(t("Couldn't process the photo"));
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const fr = new FileReader();
     fr.onload = () => resolve(fr.result as string);
-    fr.onerror = () => reject(new Error("Couldn't read the photo"));
+    fr.onerror = () => reject(new Error(t("Couldn't read the photo")));
     fr.readAsDataURL(blob);
   });
   return { mime: "image/jpeg", data: dataUrl.slice(dataUrl.indexOf(",") + 1) };
@@ -63,7 +64,7 @@ export function PhotoStrip({
   };
 
   const remove = async (id: number) => {
-    if (!confirm("Delete this photo?")) return;
+    if (!confirm(t("Delete this photo?"))) return;
     await del(`/api/metals/photos/${id}`);
     setOpen(null);
     onChange();
@@ -78,7 +79,7 @@ export function PhotoStrip({
             type="button"
             onClick={() => setOpen(id)}
             className="size-20 overflow-hidden rounded-lg border border-line"
-            aria-label="Open photo"
+            aria-label={t("Open photo")}
           >
             <img src={photoUrl(id)} alt="" loading="lazy" className="size-full object-cover" />
           </button>
@@ -91,7 +92,7 @@ export function PhotoStrip({
             )}
           >
             <span className="text-lg leading-none">+</span>
-            {busy ? "Adding…" : "Photo"}
+            {busy ? t("Adding…") : t("Photo")}
             <input
               type="file"
               accept="image/*"
@@ -106,7 +107,7 @@ export function PhotoStrip({
           </label>
         )}
       </div>
-      <p className="mt-1 text-xs text-muted">Up to 8 photos. They're resized, and location data is removed.</p>
+      <p className="mt-1 text-xs text-muted">{t("Up to 8 photos. They're resized, and location data is removed.")}</p>
       {error && (
         <div className="mt-2">
           <Alert tone="danger">{error}</Alert>
@@ -115,7 +116,7 @@ export function PhotoStrip({
       {open != null && (
         <div
           role="dialog"
-          aria-label="Photo"
+          aria-label={t("Photo")}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-3 bg-black/85 p-4"
           onClick={() => setOpen(null)}
         >
@@ -126,10 +127,10 @@ export function PhotoStrip({
               onClick={() => void remove(open)}
               className="rounded-lg bg-surface px-3 py-1.5 text-sm text-loss"
             >
-              Delete photo
+              {t("Delete photo")}
             </button>
             <button type="button" onClick={() => setOpen(null)} className="rounded-lg bg-surface px-3 py-1.5 text-sm">
-              Close
+              {t("Close")}
             </button>
           </div>
         </div>

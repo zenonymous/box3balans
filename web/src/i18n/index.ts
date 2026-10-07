@@ -20,7 +20,7 @@ function initial(): Lang {
 }
 
 const current: Lang = initial();
-document.documentElement.lang = current;
+if (typeof document !== "undefined") document.documentElement.lang = current;
 
 export const getLang = () => current;
 

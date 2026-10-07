@@ -8,8 +8,13 @@ import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Card, Delta, Empty, PageHeader, Spinner, Stat, Tabs } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, pct } from "../format";
 import { useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
+import { t, tj, tn } from "../i18n";
+import { kindLabel } from "../labels";
 
 const RANGES: HistoryRange[] = ["1M", "3M", "1Y", "5Y", "ALL"];
+// "1M" → "1M" / "1 mnd"; ALL → "All" / "Alles".
+const rangeLabel = (r: HistoryRange) =>
+  ({ "1M": t("1M"), "3M": t("3M"), "1Y": t("1Y"), "5Y": t("5Y"), ALL: t("All") })[r];
 
 function loadInvested(): boolean {
   try {
@@ -40,22 +45,22 @@ export function OverviewPage() {
   if (holdings.length === 0) {
     return (
       <>
-        <PageHeader title="Overview" />
+        <PageHeader title={t("Overview")} />
         <Card>
-          <Empty title="Your portfolio is empty">
-            Start by adding an{" "}
-            <Link className="text-accent underline" to="/accounts">
-              account
-            </Link>{" "}
-            (broker, exchange, vault or home safe), then record{" "}
-            <Link className="text-accent underline" to="/transactions">
-              transactions
-            </Link>{" "}
-            or add{" "}
-            <Link className="text-accent underline" to="/metals">
-              physical metal
-            </Link>
-            .
+          <Empty title={t("Nothing here yet")}>
+            <p>
+              {tj(
+                "New here? <0>Get started</0>: your household, your accounts and a first box 3 estimate in a few steps.",
+                [<Link key="s" className="text-accent underline" to="/start" />],
+              )}
+            </p>
+            <p className="mt-2">
+              {tj("Or go your own way: add <0>accounts</0>, record <1>transactions</1> or add <2>physical metal</2>.", [
+                <Link key="a" className="text-accent underline" to="/accounts" />,
+                <Link key="t" className="text-accent underline" to="/transactions" />,
+                <Link key="m" className="text-accent underline" to="/metals" />,
+              ])}
+            </p>
           </Empty>
         </Card>
       </>
@@ -64,15 +69,19 @@ export function OverviewPage() {
 
   return (
     <>
-      <PageHeader title="Overview" actions={<RefreshButton />} />
+      <PageHeader title={t("Overview")} actions={<RefreshButton />} />
 
       <div className="mb-4 flex flex-col gap-2">
         {summary.missingPrices.length > 0 && (
-          <Alert>No price yet for: {summary.missingPrices.join(", ")}. These are valued at €0.</Alert>
+          <Alert>
+            {t("No price yet for: {list}. These are valued at €0.", { list: summary.missingPrices.join(", ") })}
+          </Alert>
         )}
         {failed.length > 0 && (
           <Alert>
-            Last refresh could not update {failed.map((f) => f.symbol).join(", ")}; showing the previous price.
+            {t("The last refresh could not update {list}; showing the previous price.", {
+              list: failed.map((f) => f.symbol).join(", "),
+            })}
           </Alert>
         )}
         {summary.warnings.map((w) => (
@@ -81,24 +90,24 @@ export function OverviewPage() {
       </div>
 
       <section className="mb-6">
-        <div className="text-sm text-ink-2">Net worth</div>
+        <div className="text-sm text-ink-2">{t("Net worth")}</div>
         <div className="mt-1 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">{eur(summary.totalEur)}</div>
         <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <span>
             <Delta value={summary.dayChangeEur} percent={summary.dayChangePct} />{" "}
-            <span className="text-muted">today</span>
+            <span className="text-muted">{t("today")}</span>
           </span>
           {summary.periodChanges.map((p) => (
-            <span key={p.period} title={`Net worth change since ${p.fromDay}, including deposits`}>
+            <span key={p.period} title={t("Net worth change since {day}, including deposits", { day: p.fromDay })}>
               <Delta percent={p.changePct} /> <span className="text-muted">{p.period}</span>
             </span>
           ))}
           <span className="ml-auto flex gap-3 text-xs">
             <Link to="/performance" className="text-accent">
-              Performance →
+              {t("Performance")} →
             </Link>
             <Link to="/income" className="text-accent">
-              Income →
+              {t("Income")} →
             </Link>
           </span>
         </div>
@@ -106,41 +115,44 @@ export function OverviewPage() {
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
-          label="Invested (cost basis)"
+          label={t("Invested (cost basis)")}
           value={eur(summary.costEur, { decimals: 0 })}
-          sub={<span className="text-muted">excl. cash</span>}
+          sub={<span className="text-muted">{t("excl. cash")}</span>}
         />
         <Stat
-          label="Unrealized P&L"
+          label={t("Unrealized P&L")}
           value={<Delta value={summary.unrealizedEur} />}
           sub={
             <span className="text-muted">
-              {Number(summary.costEur) ? pct((Number(summary.unrealizedEur) / Number(summary.costEur)) * 100) : "—"} on
-              cost
+              {t("{pct} on cost", {
+                pct: Number(summary.costEur)
+                  ? pct((Number(summary.unrealizedEur) / Number(summary.costEur)) * 100)
+                  : "—",
+              })}
             </span>
           }
         />
         <Stat
-          label="Realized P&L"
+          label={t("Realized P&L")}
           value={<Delta value={summary.realizedEur} />}
-          sub={<span className="text-muted">all time</span>}
+          sub={<span className="text-muted">{t("all time")}</span>}
         />
         <Stat
-          label="Dividends & rewards"
+          label={t("Dividends and rewards")}
           value={eur(summary.incomeEur)}
-          sub={<span className="text-muted">all time, net</span>}
+          sub={<span className="text-muted">{t("all time, net")}</span>}
         />
       </div>
 
       <Card
-        title="Net worth over time"
+        title={t("Net worth over time")}
         actions={
           <div className="flex flex-wrap items-center justify-end gap-3">
             <label className="flex items-center gap-1.5 text-xs text-ink-2">
               <input type="checkbox" checked={showInvested} onChange={(e) => toggleInvested(e.target.checked)} />{" "}
-              Invested
+              {t("Invested")}
             </label>
-            <Tabs value={range} onChange={setRange} options={RANGES.map((r) => ({ value: r, label: r }))} />
+            <Tabs value={range} onChange={setRange} options={RANGES.map((r) => ({ value: r, label: rangeLabel(r) }))} />
           </div>
         }
       >
@@ -151,8 +163,9 @@ export function OverviewPage() {
         )}
         {history.data && history.data.estimated.length > 0 && (
           <p className="mt-2 text-xs text-muted">
-            No price history yet for {history.data.estimated.map((e) => e.symbol).join(", ")}; valued at cost where
-            missing. History loads in the background.
+            {t("No price history yet for {list}; valued at cost where missing. History loads in the background.", {
+              list: history.data.estimated.map((e) => e.symbol).join(", "),
+            })}
           </p>
         )}
       </Card>
@@ -160,12 +173,12 @@ export function OverviewPage() {
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
         <AllocationCard summary={summary} holdings={holdings} />
         <Card
-          title="Top holdings"
+          title={t("Top holdings")}
           className="lg:col-span-3"
           padded={false}
           actions={
             <Link to="/holdings" className="text-xs text-accent">
-              All holdings →
+              {t("All holdings")} →
             </Link>
           }
         >
@@ -242,7 +255,7 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
       for (const h of rest) byClass.set(h.assetClass, (byClass.get(h.assetClass) ?? 0) + Number(h.valueEur));
       rows.push({
         key: "other",
-        label: `${rest.length} other holding${rest.length === 1 ? "" : "s"}`,
+        label: tn(rest.length, "{n} other holding", "{n} other holdings"),
         value: rest.reduce((a, h) => a + Number(h.valueEur), 0),
         segments: classSegments(byClass),
       });
@@ -261,7 +274,7 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
       .map(([id, a]) => ({
         key: String(id),
         label: a.name,
-        sub: kind.get(id),
+        sub: kindLabel(kind.get(id) ?? "other"),
         value: [...a.byClass.values()].reduce((x, y) => x + y, 0),
         segments: classSegments(a.byClass),
       }))
@@ -270,16 +283,16 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
 
   return (
     <Card
-      title="Allocation"
+      title={t("Allocation")}
       className="lg:col-span-2"
       actions={
         <Tabs
           value={view}
           onChange={setView}
           options={[
-            { value: "class", label: "Class" },
-            { value: "asset", label: "Asset" },
-            { value: "account", label: "Account" },
+            { value: "class", label: t("Class") },
+            { value: "asset", label: t("Asset") },
+            { value: "account", label: t("Account") },
           ]}
         />
       }

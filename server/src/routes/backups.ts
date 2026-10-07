@@ -5,6 +5,7 @@ import { backupPath, listBackups, readBackupFile, restoreBackup, writeBackupFile
 import { getBackupStatus } from "../backup/status.js";
 import { SESSION_COOKIE } from "../auth/service.js";
 import { HttpError } from "../lib/errors.js";
+import { tr } from "../i18n/index.js";
 
 export async function backupRoutes(app: FastifyInstance) {
   const { db, config, sync, wallets } = app.deps;
@@ -29,9 +30,9 @@ export async function backupRoutes(app: FastifyInstance) {
     try {
       file = backupPath(dir, name);
     } catch {
-      throw new HttpError(400, "Invalid backup name");
+      throw new HttpError(400, tr("Invalid backup name"));
     }
-    if (!fs.existsSync(file)) throw new HttpError(404, "Backup not found");
+    if (!fs.existsSync(file)) throw new HttpError(404, tr("Backup not found"));
     return reply
       .header("content-type", name.endsWith(".enc") ? "application/octet-stream" : "application/gzip")
       .header("content-disposition", `attachment; filename="${name}"`)
@@ -44,15 +45,15 @@ export async function backupRoutes(app: FastifyInstance) {
     const body = z
       .object({ confirm: z.literal("RESTORE"), passphrase: z.string().max(500).optional() })
       .safeParse(req.body);
-    if (!body.success) throw new HttpError(400, "Type RESTORE to confirm");
+    if (!body.success) throw new HttpError(400, tr("Type RESTORE to confirm"));
     let file: string;
     try {
       file = backupPath(dir, name);
     } catch {
-      throw new HttpError(400, "Invalid backup name");
+      throw new HttpError(400, tr("Invalid backup name"));
     }
-    if (!fs.existsSync(file)) throw new HttpError(404, "Backup not found");
-    if (sync.anyRunning() || wallets.anyRunning()) throw new HttpError(409, "Wait for running syncs to finish");
+    if (!fs.existsSync(file)) throw new HttpError(404, tr("Backup not found"));
+    if (sync.anyRunning() || wallets.anyRunning()) throw new HttpError(409, tr("Wait for running syncs to finish"));
     let backup;
     try {
       // A backup made with an earlier passphrase can be restored by entering that one.
@@ -67,7 +68,7 @@ export async function backupRoutes(app: FastifyInstance) {
       reply.clearCookie(SESSION_COOKIE, { path: "/" });
       return { ok: true, restoredFrom: name, safetyBackup: safety.name, counts };
     } catch (err) {
-      throw new HttpError(400, `Restore failed, nothing was changed: ${(err as Error).message}`);
+      throw new HttpError(400, tr("Restore failed, nothing was changed: {error}", { error: (err as Error).message }));
     }
   });
 }

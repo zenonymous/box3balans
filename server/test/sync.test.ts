@@ -309,7 +309,7 @@ describe("exchange connections", () => {
     expect(res.error).toBeUndefined();
     expect(polls).toBe(2);
     expect(res.mismatches).toEqual([]);
-    expect(res.warnings).toEqual(["Skipped 1 OPT trade(s): only stocks and ETFs are tracked."]);
+    expect(res.warnings).toEqual(["Skipped 1 OPT trade: only stocks and ETFs are tracked."]);
 
     const assets = json<any[]>(await t.api("GET", "/api/assets"));
     expect(assets.find((a) => a.isin === "IE00B4L5Y983")).toMatchObject({

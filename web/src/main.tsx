@@ -6,6 +6,7 @@ import "./index.css";
 import { ApiError, get, post, setUnauthorizedHandler, type User } from "./api";
 import { Layout } from "./components/Layout";
 import { Button, Field, Input, Spinner } from "./components/ui";
+import { followLanguage, t, type Lang } from "./i18n";
 
 // Pages load on demand, so the first paint (and the login screen) skips the charting library.
 const OverviewPage = lazy(() => import("./pages/Overview").then((m) => ({ default: m.OverviewPage })));
@@ -25,6 +26,7 @@ const Box3Page = lazy(() => import("./pages/Box3").then((m) => ({ default: m.Box
 const AssetsPage = lazy(() => import("./pages/Assets").then((m) => ({ default: m.AssetsPage })));
 const SettingsPage = lazy(() => import("./pages/Settings").then((m) => ({ default: m.SettingsPage })));
 const HouseholdPage = lazy(() => import("./pages/Household").then((m) => ({ default: m.HouseholdPage })));
+const StartPage = lazy(() => import("./pages/Start").then((m) => ({ default: m.StartPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,11 +37,16 @@ const queryClient = new QueryClient({
 interface AuthState {
   needsSetup: boolean;
   user: User | null;
+  language?: Lang;
+  demo?: boolean;
 }
 
 function AuthGate() {
   const qc = useQueryClient();
   const auth = useQuery({ queryKey: ["auth"], queryFn: () => get<AuthState>("/api/auth/state"), staleTime: Infinity });
+
+  // The language is a server setting; this browser follows it (reloading once if it changed).
+  useEffect(() => followLanguage(auth.data?.language), [auth.data?.language]);
 
   useEffect(() => {
     setUnauthorizedHandler(() => {
@@ -48,12 +55,15 @@ function AuthGate() {
   }, [qc]);
 
   if (auth.isLoading) return <Spinner />;
-  if (auth.error) return <p className="p-6 text-loss">Cannot reach the server: {(auth.error as Error).message}</p>;
+  if (auth.error)
+    return (
+      <p className="p-6 text-loss">{t("Cannot reach the server: {error}", { error: (auth.error as Error).message })}</p>
+    );
   if (!auth.data?.user) return <Login setup={auth.data?.needsSetup ?? false} />;
 
   return (
     <Routes>
-      <Route element={<Layout user={auth.data.user} />}>
+      <Route element={<Layout user={auth.data.user} demo={auth.data.demo} />}>
         <Route index element={<OverviewPage />} />
         <Route path="holdings" element={<HoldingsPage />} />
         <Route path="performance" element={<PerformancePage />} />
@@ -65,6 +75,7 @@ function AuthGate() {
         <Route path="metals/inventory" element={<InventoryPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="household" element={<HouseholdPage />} />
+        <Route path="start" element={<StartPage />} />
         <Route path="connections" element={<ConnectionsPage />} />
         <Route path="wallets" element={<WalletsPage />} />
         <Route path="assets" element={<AssetsPage />} />
@@ -88,7 +99,7 @@ function Login({ setup }: { setup: boolean }) {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(undefined);
-    if (setup && password !== confirm) return setError("Passwords do not match");
+    if (setup && password !== confirm) return setError(t("Passwords do not match"));
     setBusy(true);
     try {
       const { user } = await post<{ user: User }>(setup ? "/api/auth/setup" : "/api/auth/login", {
@@ -110,16 +121,16 @@ function Login({ setup }: { setup: boolean }) {
         <div className="mb-6 flex flex-col items-center text-center">
           <img src="/favicon.svg" alt="" className="size-14" />
           <div className="mt-3 text-xl font-semibold tracking-tight">Kluishuis</div>
-          <div className="text-sm text-muted">Your vault lives at home</div>
+          <div className="text-sm text-muted">{t("Your vault lives at home")}</div>
         </div>
-        <h1 className="text-lg font-semibold">{setup ? "Welcome — create your account" : "Sign in"}</h1>
+        <h1 className="text-lg font-semibold">{setup ? t("Welcome: create your account") : t("Sign in")}</h1>
         <p className="mt-1 text-sm text-ink-2">
           {setup
-            ? "Kluishuis has a single user. Choose a strong password (12+ characters)."
-            : "Stocks, crypto, gold and silver, on your own server."}
+            ? t("Kluishuis has a single user. Choose a strong password (12 or more characters).")
+            : t("Your investments and box 3, on your own server.")}
         </p>
         <div className="mt-5 flex flex-col gap-3">
-          <Field label="Username">
+          <Field label={t("Username")}>
             {(id) => (
               <Input
                 id={id}
@@ -131,7 +142,7 @@ function Login({ setup }: { setup: boolean }) {
               />
             )}
           </Field>
-          <Field label="Password">
+          <Field label={t("Password")}>
             {(id) => (
               <Input
                 id={id}
@@ -145,7 +156,7 @@ function Login({ setup }: { setup: boolean }) {
             )}
           </Field>
           {setup && (
-            <Field label="Confirm password">
+            <Field label={t("Confirm password")}>
               {(id) => (
                 <Input
                   id={id}
@@ -160,7 +171,7 @@ function Login({ setup }: { setup: boolean }) {
           )}
           {error && <p className="text-sm text-loss">{error}</p>}
           <Button type="submit" variant="primary" disabled={busy}>
-            {busy ? "…" : setup ? "Create account" : "Sign in"}
+            {busy ? "…" : setup ? t("Create account") : t("Sign in")}
           </Button>
         </div>
       </form>

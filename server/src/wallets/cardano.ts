@@ -3,6 +3,7 @@ import { D, type Decimal } from "../lib/decimal.js";
 import { HttpRequestError } from "../lib/http.js";
 import type { AssetRef, Balance } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement, type Reward } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 const LOVELACE = D(1_000_000);
 // Shelley epochs are five days; epoch 208 started 2020-07-29 21:44:51 UTC.
@@ -112,25 +113,26 @@ export function cardanoAdapter(base = "https://api.koios.rest/api/v1"): ChainAda
     id: "cardano",
     label: "Cardano",
     nativeSymbol: "ADA",
-    addressHint: "stake1… stake address, or any addr1… address of the wallet",
+    addressHint: msg("stake1… stake address, or any addr1… address of the wallet"),
     supportsXpub: false,
 
     normalise(input) {
       const s = input.trim().toLowerCase();
       if (s.startsWith("stake1")) {
         const b = bech32Bytes(s, "stake");
-        if (!b || b.length !== 29 || (b[0]! & 0x0f) !== 1) throw new ChainError("Not a valid Cardano stake address");
+        if (!b || b.length !== 29 || (b[0]! & 0x0f) !== 1)
+          throw new ChainError(tr("Not a valid Cardano stake address"));
         return s;
       }
       if (s.startsWith("addr_test") || s.startsWith("stake_test"))
-        throw new ChainError("Testnet addresses aren't tracked");
+        throw new ChainError(tr("Testnet addresses aren't tracked"));
       if (!s.startsWith("addr1")) {
         throw new ChainError(
-          "Use a stake1… address or a Shelley addr1… address (old Byron addresses aren't supported)",
+          tr("Use a stake1… address or a Shelley addr1… address (old Byron addresses aren't supported)"),
         );
       }
       const b = bech32Bytes(s, "addr");
-      if (!b || (b[0]! & 0x0f) !== 1) throw new ChainError("Not a valid Cardano address");
+      if (!b || (b[0]! & 0x0f) !== 1) throw new ChainError(tr("Not a valid Cardano address"));
       // A wallet spreads its funds over many addresses that share one stake key; track them all.
       return stakeAddressOf(s) ?? s;
     },

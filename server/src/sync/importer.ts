@@ -6,6 +6,7 @@ import type { FxService } from "../prices/fx.js";
 import type { HistoryService } from "../prices/history.js";
 import { type AssetResolver, isFiat } from "./assets.js";
 import type { AssetRef, SyncEvent } from "./types.js";
+import { tr } from "../i18n/index.js";
 
 type TxInsert = typeof transactions.$inferInsert;
 type Source = "api" | "csv" | "chain";
@@ -49,7 +50,9 @@ export class Importer {
       try {
         built.push(...(await this.toRows(accountId, e)));
       } catch (err) {
-        this.warnings.push(`Skipped ${e.kind} ${e.id}: ${(err as Error).message}`);
+        this.warnings.push(
+          tr("Skipped {kind} {id}: {error}", { kind: e.kind, id: e.id, error: (err as Error).message }),
+        );
       }
     }
     const rows = built.filter((r) => !ignoredEvents.has(r.externalId!));
@@ -195,7 +198,14 @@ export class Importer {
 
     if (e.kind === "reward") {
       const unit = e.valueEur != null ? D(e.valueEur).div(q) : await this.eurPriceOf(e.asset, e.at);
-      if (!unit) this.warnings.push(`No EUR price for ${asset.symbol} on ${day(e.at)}; reward ${e.id} booked at €0.`);
+      if (!unit)
+        this.warnings.push(
+          tr("No EUR price for {symbol} on {day}; reward {id} booked at €0.", {
+            symbol: asset.symbol,
+            day: day(e.at),
+            id: e.id,
+          }),
+        );
       if (asset.assetClass === "cash") {
         // Interest on cash: quantity is the currency amount itself.
         return [
@@ -277,7 +287,12 @@ export class Importer {
       valueEur = quoteUnit ? quoteAmt.mul(quoteUnit) : assetUnit ? q.mul(assetUnit) : null;
     }
     if (!valueEur) {
-      this.warnings.push(`No EUR price to value trade ${e.id} (${asset.symbol}/${quoteAsset.symbol}); booked at €0.`);
+      this.warnings.push(
+        tr("No EUR price to value trade {id} ({pair}); booked at €0.", {
+          id: e.id,
+          pair: `${asset.symbol}/${quoteAsset.symbol}`,
+        }),
+      );
       valueEur = ZERO;
     }
     const [got, gotQty, gave, gaveQty] =

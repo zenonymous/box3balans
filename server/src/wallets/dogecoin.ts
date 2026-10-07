@@ -3,6 +3,7 @@ import { HttpRequestError } from "../lib/http.js";
 import type { AssetRef } from "../sync/types.js";
 import { type UtxoChain, addressFor, isValidAddress, parseExtendedKey } from "./bitcoin.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr, trn } from "../i18n/index.js";
 
 /** Dogecoin has no SegWit: legacy (D…) and P2SH (9…/A…) addresses, BIP44 keys as dgub or xpub. */
 export const DOGECOIN: UtxoChain = {
@@ -90,7 +91,7 @@ export function dogecoinAdapter(c: UtxoChain = DOGECOIN): ChainAdapter {
     id: c.id,
     label: c.label,
     nativeSymbol: c.symbol,
-    addressHint: "D… address, or a dgub/xpub extended public key",
+    addressHint: msg("D… address, or a dgub/xpub extended public key"),
     supportsXpub: true,
 
     normalise(input) {
@@ -100,7 +101,7 @@ export function dogecoinAdapter(c: UtxoChain = DOGECOIN): ChainAdapter {
         return s;
       }
       if (!isValidAddress(c, s) || s.toLowerCase().startsWith(`${c.hrp}1`)) {
-        throw new ChainError(`Not a valid ${c.label} address`);
+        throw new ChainError(tr("Not a valid {chain} address", { chain: c.label }));
       }
       return s;
     },
@@ -162,7 +163,9 @@ export function dogecoinAdapter(c: UtxoChain = DOGECOIN): ChainAdapter {
       }
       if (partial) {
         warnings.push(
-          "BlockCypher's free limit (100 requests an hour) was reached; the rest of the history follows in the next sync.",
+          tr(
+            "BlockCypher's free limit (100 requests an hour) was reached; the rest of the history follows in the next sync.",
+          ),
         );
       }
 
@@ -197,7 +200,14 @@ export function dogecoinAdapter(c: UtxoChain = DOGECOIN): ChainAdapter {
         warnings,
         partial,
         info: Object.keys(derived).length
-          ? `${Object.values(derived).reduce((n, a) => n + a.length, 0)} used addresses found from the extended key`
+          ? (() => {
+              const n = Object.values(derived).reduce((sum, a) => sum + a.length, 0);
+              return trn(
+                n,
+                "{n} used address found from the extended key",
+                "{n} used addresses found from the extended key",
+              );
+            })()
           : undefined,
       };
     },

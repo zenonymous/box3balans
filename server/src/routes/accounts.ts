@@ -7,6 +7,7 @@ import { readBankExport } from "../import/bank.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
+import { tr } from "../i18n/index.js";
 
 const KINDS = [
   "broker",
@@ -38,7 +39,7 @@ const body = z.object({
 const money = z
   .union([z.string(), z.number()])
   .transform((v) => String(v).trim().replace(",", "."))
-  .refine((v) => /^-?\d+(\.\d+)?$/.test(v), "Must be a number");
+  .refine((v) => /^-?\d+(\.\d+)?$/.test(v), { error: () => tr("Must be a number") });
 
 const yearRow = z.object({
   year: z.number().int().min(1990).max(2100),
@@ -111,7 +112,7 @@ export async function accountRoutes(app: FastifyInstance) {
         .where(eq(metalItems.accountId, before.id))
         .limit(1);
       if (used || usedItem)
-        throw new HttpError(409, "This account has transactions; add a new account for values per year instead");
+        throw new HttpError(409, tr("This account has transactions; add a new account for values per year instead"));
     }
     const owner = data.owner ?? before?.owner ?? "self";
     let ownerChildId = data.ownerChildId !== undefined ? data.ownerChildId : (before?.ownerChildId ?? null);
@@ -122,7 +123,7 @@ export async function accountRoutes(app: FastifyInstance) {
             .from(persons)
             .where(and(eq(persons.id, ownerChildId), eq(persons.role, "child")))
         : [];
-      if (!child) throw new HttpError(400, "Choose which child the account belongs to");
+      if (!child) throw new HttpError(400, tr("Choose which child the account belongs to"));
     } else ownerChildId = null;
     const { jointSelfPct, ...rest } = data;
     return {
@@ -147,7 +148,7 @@ export async function accountRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!before) throw notFound("Account");
+    if (!before) throw notFound(tr("Account"));
     const data = await checked(body.partial().parse(req.body), before);
     const [row] = await db.update(accounts).set(data).where(eq(accounts.id, id)).returning();
     await audit(db, "account", id, "update", before, row);
@@ -166,11 +167,11 @@ export async function accountRoutes(app: FastifyInstance) {
     const { id } = idParam.parse(req.params);
     const { rows } = z.object({ rows: z.array(yearRow).max(200) }).parse(req.body);
     const [acc] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!acc) throw notFound("Account");
+    if (!acc) throw notFound(tr("Account"));
     if (acc.tracking !== "yearly")
-      throw new HttpError(400, "This account is kept with transactions, not values per year");
+      throw new HttpError(400, tr("This account is kept with transactions, not values per year"));
     if (new Set(rows.map((r) => r.year)).size !== rows.length)
-      throw new HttpError(400, "Each year can appear only once");
+      throw new HttpError(400, tr("Each year can appear only once"));
     const before = await db.select().from(accountYears).where(eq(accountYears.accountId, id));
     await db.transaction(async (trx) => {
       await trx.delete(accountYears).where(eq(accountYears.accountId, id));
@@ -209,7 +210,7 @@ export async function accountRoutes(app: FastifyInstance) {
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const [before] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!before) throw notFound("Account");
+    if (!before) throw notFound(tr("Account"));
     const [used] = await db
       .select({ id: transactions.id })
       .from(transactions)
@@ -220,7 +221,7 @@ export async function accountRoutes(app: FastifyInstance) {
       .from(metalItems)
       .where(eq(metalItems.accountId, id))
       .limit(1);
-    if (used || usedItem) throw new HttpError(409, "Account has transactions or items; archive it instead");
+    if (used || usedItem) throw new HttpError(409, tr("Account has transactions or items; archive it instead"));
     await db.delete(accounts).where(eq(accounts.id, id));
     await audit(db, "account", id, "delete", before, null);
     return { ok: true };

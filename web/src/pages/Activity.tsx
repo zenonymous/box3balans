@@ -4,6 +4,7 @@ import { get, post } from "../api";
 import { Alert, Badge, Button, Card, Empty, PageHeader, Spinner, Tabs } from "../components/ui";
 import { TX_LABEL, date, relativeTime } from "../format";
 import { useInvalidateAll } from "../queries";
+import { t } from "../i18n";
 
 export type Entity =
   | "transaction"
@@ -29,59 +30,88 @@ interface Entry {
 }
 
 const ENTITY_LABEL: Record<Entity, string> = {
-  transaction: "Transaction",
-  asset: "Asset",
-  account: "Account",
-  account_years: "Values per year",
-  person: "Household",
-  metal_item: "Metal item",
-  import: "CSV import",
-  integration: "Connection",
-  wallet_address: "Wallet address",
+  transaction: t("Transaction"),
+  asset: t("Asset"),
+  account: t("Account"),
+  account_years: t("Values per year"),
+  person: t("Household"),
+  metal_item: t("Metal item"),
+  import: t("CSV import"),
+  integration: t("Connection"),
+  wallet_address: t("Wallet address"),
 };
 
 const FIELD_LABEL: Record<string, string> = {
-  occurredAt: "Date",
-  feeEur: "Fee (EUR)",
-  fxRate: "Exchange rate",
-  taxWithheld: "Tax withheld",
-  amount: "Dividend amount",
-  accountId: "Account",
-  assetId: "Asset",
-  settleAssetId: "Cash settlement",
-  transferGroup: "Transfer link",
-  noAutoMatch: "Never auto-link",
-  priceSource: "Price source",
-  priceRef: "Price feed",
-  assetClass: "Asset class",
-  grossWeightG: "Weight (g)",
-  purchaseDate: "Purchase date",
-  purchasePriceEur: "Price paid (EUR)",
-  spotValueAtPurchaseEur: "Spot value at purchase",
-  soldDate: "Sold on",
-  salePriceEur: "Sale price (EUR)",
-  includeUnlisted: "Include unlisted tokens",
-  scriptType: "Address type",
+  occurredAt: t("Date"),
+  type: t("Type"),
+  quantity: t("Quantity"),
+  price: t("Price"),
+  currency: t("Currency"),
+  notes: t("Notes"),
+  name: t("Name"),
+  symbol: t("Symbol"),
+  kind: t("Type"),
+  feeEur: t("Fee (EUR)"),
+  fxRate: t("Exchange rate"),
+  taxWithheld: t("Tax withheld"),
+  amount: t("Dividend amount"),
+  accountId: t("Account"),
+  assetId: t("Asset"),
+  settleAssetId: t("Cash settlement"),
+  transferGroup: t("Transfer link"),
+  noAutoMatch: t("Never auto-link"),
+  priceSource: t("Price source"),
+  priceRef: t("Price feed"),
+  assetClass: t("Asset class"),
+  grossWeightG: t("Weight (g)"),
+  purity: t("Purity"),
+  product: t("Product"),
+  purchaseDate: t("Purchase date"),
+  purchasePriceEur: t("Price paid (EUR)"),
+  spotValueAtPurchaseEur: t("Spot value at purchase"),
+  soldDate: t("Sold on"),
+  salePriceEur: t("Sale price (EUR)"),
+  includeUnlisted: t("Include unlisted tokens"),
+  scriptType: t("Address type"),
+  archived: t("Archived"),
+  hidden: t("Hidden"),
+  tracking: t("Kept with"),
+  owner: t("Owner"),
+  jointSelfPct: t("Your share (%)"),
+  foreign: t("Abroad"),
+  birthDate: t("Date of birth"),
+  custody: t("Custody"),
+  valueEur: t("Value on 1 January"),
+  inEur: t("Money in"),
+  outEur: t("Money out"),
+  incomeEur: t("Income"),
+  costsEur: t("Costs"),
+  terPct: t("TER (%)"),
 };
 
 const FLAG_LABEL: Record<string, string> = {
-  unlinked: "Transfer unlinked",
-  transferUndoneByImport: "Transfer undone by undoing an import",
+  unlinked: t("Transfer unlinked"),
+  transferUndoneByImport: t("Transfer undone by undoing an import"),
 };
 
 const ACTION: Record<Entry["action"], { label: string; tone: "accent" | "neutral" | "danger" }> = {
-  create: { label: "Added", tone: "accent" },
-  update: { label: "Changed", tone: "neutral" },
-  delete: { label: "Deleted", tone: "danger" },
+  create: { label: t("Added"), tone: "accent" },
+  update: { label: t("Changed"), tone: "neutral" },
+  delete: { label: t("Deleted"), tone: "danger" },
 };
 
-const fieldLabel = (f: string) => FIELD_LABEL[f] ?? f.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+/** A field name in words; values per year come as "2024 valueEur". */
+function fieldLabel(f: string): string {
+  const year = /^(\d{4}) (\w+)$/.exec(f);
+  if (year) return `${year[1]} · ${fieldLabel(year[2]!)}`;
+  return FIELD_LABEL[f] ?? f.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+}
 
 function value(field: string, v: unknown): string {
   if (v == null || v === "") return "—";
-  if (field === "transferGroup") return "linked";
+  if (field === "transferGroup") return t("linked");
   if (field === "type" && typeof v === "string") return TX_LABEL[v] ?? v;
-  if (typeof v === "boolean") return v ? "yes" : "no";
+  if (typeof v === "boolean") return v ? t("yes") : t("no");
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
     const d = new Date(v);
     return `${date(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
@@ -125,9 +155,9 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
   const items = list.data?.pages.flatMap((p) => p.items) ?? [];
   if (!items.length) {
     return compact ? (
-      <p className="text-sm text-muted">No changes recorded.</p>
+      <p className="text-sm text-muted">{t("No changes recorded.")}</p>
     ) : (
-      <Empty title="Nothing recorded yet">Changes you make appear here.</Empty>
+      <Empty title={t("Nothing recorded yet")}>{t("Changes you make appear here.")}</Empty>
     );
   }
 
@@ -148,11 +178,11 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
               {e.via && (
                 <span className="text-xs text-muted">
                   {e.via === "restore"
-                    ? "restored"
+                    ? t("restored")
                     : e.via === "sync"
-                      ? "by a sync"
+                      ? t("by a sync")
                       : e.via === "import"
-                        ? "by an import"
+                        ? t("by an import")
                         : e.via}
                 </span>
               )}
@@ -161,7 +191,7 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
               </span>
               {e.restorable && (
                 <Button size="sm" onClick={() => void restore(e)}>
-                  Restore
+                  {t("Restore")}
                 </Button>
               )}
             </div>
@@ -191,7 +221,7 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
             onClick={() => void list.fetchNextPage()}
             disabled={list.isFetchingNextPage}
           >
-            Show older
+            {t("Show older")}
           </Button>
         </div>
       )}
@@ -200,12 +230,14 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
 }
 
 const FILTERS: { value: "all" | Entity; label: string }[] = [
-  { value: "all", label: "Everything" },
-  { value: "transaction", label: "Transactions" },
-  { value: "metal_item", label: "Metals" },
-  { value: "asset", label: "Assets" },
-  { value: "account", label: "Accounts" },
-  { value: "import", label: "Imports" },
+  { value: "all", label: t("Everything") },
+  { value: "transaction", label: t("Transactions") },
+  { value: "metal_item", label: t("Metals") },
+  { value: "asset", label: t("Assets") },
+  { value: "account", label: t("Accounts") },
+  { value: "account_years", label: t("Values per year") },
+  { value: "person", label: t("Household") },
+  { value: "import", label: t("Imports") },
 ];
 
 export function ActivityPage() {
@@ -213,8 +245,10 @@ export function ActivityPage() {
   return (
     <>
       <PageHeader
-        title="History"
-        subtitle="Every change you made, and what syncs and imports changed. Deleted transactions and metal items can be restored."
+        title={t("History")}
+        subtitle={t(
+          "Every change you made, and what syncs and imports changed. Deleted transactions and metal items can be restored.",
+        )}
       />
       <div className="mb-3">
         <Tabs value={filter} onChange={setFilter} options={FILTERS} />

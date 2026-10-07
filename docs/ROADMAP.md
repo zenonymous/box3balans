@@ -29,11 +29,11 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Spaargeld:** saldi op 1 januari, rente en geld erin en eruit, ingelezen uit de export van je bank (CSV met saldo, het TAB-bestand van ABN AMRO, CAMT.053, of CSV zonder saldo met één bekend saldo).
 - **Overige bezittingen en schulden:** een tweede of verhuurde woning (WOZ-waarde, met de leegwaarderatio bij verhuur), uitgeleend geld, kapitaalverzekeringen, schulden met betaalde rente, en een vinkje voor rekeningen in het buitenland.
 
-## Fase C: Nederlands
+## Fase C: Nederlands ✅
 
-- De app in het Nederlands (Engels blijft beschikbaar), met de termen uit de aangifte.
-- Een startwizard: huishouden → rekeningen → snelle waarden of import → je box 3.
-- Een demomodus met een voorbeeldhuishouden.
+- De app in het Nederlands, met de termen uit de aangifte, ook de meldingen van de server en de foutmeldingen bij invoer. Engels kan via _Instellingen → Weergave → Taal_.
+- Een startwizard (_Aan de slag_): huishouden en fiscaal partnerschap → rekeningen → waarden op 1 januari, of de weg naar import en koppelingen → je box 3.
+- Een demomodus (`DEMO=true`): een voorbeeldhuishouden met verzonnen koersen, meteen ingelogd, zonder iets te bewaren.
 
 ## Fase D: de aangifte invullen
 

@@ -5,6 +5,7 @@ import { Mismatches } from "../components/Mismatches";
 import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Select, Spinner } from "../components/ui";
 import { relativeTime } from "../format";
 import { useAccounts, useInvalidateAll } from "../queries";
+import { t, tn } from "../i18n";
 
 const SCRIPT_LABEL: Record<string, string> = {
   p2pkh: "Legacy (1…)",
@@ -53,11 +54,13 @@ export function WalletsPage() {
   return (
     <>
       <PageHeader
-        title="Wallets"
-        subtitle="Self-custody wallets tracked by public address. Nothing here can move funds: never paste a seed phrase or private key."
+        title={t("Wallets")}
+        subtitle={t(
+          "Self-custody wallets tracked by public address. Nothing here can move funds: never paste a seed phrase or private key.",
+        )}
         actions={
           <Button variant="primary" onClick={() => setAdding(true)}>
-            + Add address
+            {t("+ Add address")}
           </Button>
         }
       />
@@ -67,9 +70,10 @@ export function WalletsPage() {
         <Alert tone="danger">{(wallets.error as Error).message}</Alert>
       ) : groups.length === 0 ? (
         <Card>
-          <Empty title="No wallets yet">
-            Add a Bitcoin, Litecoin or Dogecoin address or xpub, an Ethereum, L2 or BNB Chain address, or a Solana,
-            Cardano, XRP or Tron address. History and balances are read from public blockchain explorers.
+          <Empty title={t("No wallets yet")}>
+            {t(
+              "Add a Bitcoin, Litecoin or Dogecoin address or xpub, an Ethereum, L2 or BNB Chain address, or a Solana, Cardano, XRP or Tron address. History and balances are read from public blockchain explorers.",
+            )}
           </Empty>
         </Card>
       ) : (
@@ -86,13 +90,13 @@ export function WalletsPage() {
 
 function StatusBadge({ rows }: { rows: WalletAddress[] }) {
   const w = rows[0]!;
-  if (rows.some((r) => r.running)) return <Badge tone="accent">⟳ syncing…</Badge>;
-  if (rows.every((r) => !r.enabled)) return <Badge>paused</Badge>;
-  if (w.lastStatus === "error") return <Badge tone="danger">⛔ failed</Badge>;
-  if (w.lastResult?.partial) return <Badge tone="accent">importing history…</Badge>;
-  if (w.lastStatus === "warning") return <Badge tone="warn">⚠ needs attention</Badge>;
-  if (w.lastStatus === "ok") return <Badge>✓ up to date</Badge>;
-  return <Badge>not synced yet</Badge>;
+  if (rows.some((r) => r.running)) return <Badge tone="accent">⟳ {t("syncing…")}</Badge>;
+  if (rows.every((r) => !r.enabled)) return <Badge>{t("paused")}</Badge>;
+  if (w.lastStatus === "error") return <Badge tone="danger">⛔ {t("failed")}</Badge>;
+  if (w.lastResult?.partial) return <Badge tone="accent">{t("importing history…")}</Badge>;
+  if (w.lastStatus === "warning") return <Badge tone="warn">⚠ {t("needs attention")}</Badge>;
+  if (w.lastStatus === "ok") return <Badge>✓ {t("up to date")}</Badge>;
+  return <Badge>{t("not synced yet")}</Badge>;
 }
 
 function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
@@ -128,9 +132,17 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
     const purge =
       last &&
       confirm(
-        `Stop tracking ${short(w.address)}.\n\nAlso delete the transactions imported from ${chain?.label ?? w.chain}? (OK = delete them, Cancel = keep them)`,
+        t(
+          "Stop tracking {address}.\n\nAlso delete the transactions imported from {chain}? (OK = delete them, Cancel = keep them)",
+          { address: short(w.address), chain: chain?.label ?? w.chain },
+        ),
       );
-    if (!last && !confirm(`Stop tracking ${short(w.address)}? The other addresses re-import on their next sync.`))
+    if (
+      !last &&
+      !confirm(
+        t("Stop tracking {address}? The other addresses re-import on their next sync.", { address: short(w.address) }),
+      )
+    )
       return;
     try {
       await del(`/api/wallets/${w.id}?deleteTransactions=${purge}`);
@@ -156,7 +168,7 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
       }
       actions={
         <Button size="sm" variant="primary" onClick={syncNow} disabled={busy || group.rows.some((w) => w.running)}>
-          {busy || group.rows.some((w) => w.running) ? "Syncing…" : "↻ Sync now"}
+          {busy || group.rows.some((w) => w.running) ? t("Syncing…") : t("↻ Sync now")}
         </Button>
       }
     >
@@ -169,24 +181,30 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
                 {short(w.address)}
               </div>
             </div>
-            {looksLikeXpub(w.address) && <Badge>{w.scriptType ? SCRIPT_LABEL[w.scriptType] : "extended key"}</Badge>}
-            <Button size="sm" variant="ghost" onClick={() => remove(w)} aria-label={`Remove ${w.address}`}>
-              Remove
+            {looksLikeXpub(w.address) && <Badge>{w.scriptType ? SCRIPT_LABEL[w.scriptType] : t("extended key")}</Badge>}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => remove(w)}
+              aria-label={t("Remove {name}", { name: w.address })}
+            >
+              {t("Remove")}
             </Button>
           </li>
         ))}
       </ul>
 
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
-        <dt className="text-ink-2">Last sync</dt>
+        <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={group.rows[0]!.lastSyncAt ?? undefined}>{relativeTime(group.rows[0]!.lastSyncAt)}</dd>
         {r && !r.error && (
           <>
-            <dt className="text-ink-2">Imported</dt>
+            <dt className="text-ink-2">{t("Imported")}</dt>
             <dd>
-              {r.inserted} new <span className="text-muted">of {r.fetched}</span>
+              {t("{n} new", { n: r.inserted })}{" "}
+              <span className="text-muted">{t("of {total}", { total: r.fetched })}</span>
             </dd>
-            <dt className="text-ink-2">Transfers linked</dt>
+            <dt className="text-ink-2">{t("Transfers linked")}</dt>
             <dd>{r.transfersMatched}</dd>
           </>
         )}
@@ -197,7 +215,7 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
         {r?.error && <Alert tone="danger">{r.error}</Alert>}
         {r?.info && <p className="text-xs text-ink-2">{r.info}</p>}
         {r?.newAssets && r.newAssets.length > 0 && (
-          <p className="text-xs text-ink-2">New assets added: {r.newAssets.join(", ")}</p>
+          <p className="text-xs text-ink-2">{t("New assets added: {list}", { list: r.newAssets.join(", ") })}</p>
         )}
         {r?.warnings?.map((w) => (
           <Alert key={w}>{w}</Alert>
@@ -205,17 +223,17 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
         {r && (r.skippedTokens.length > 0 || includeUnlisted) && (
           <div className="text-xs text-ink-2">
             {includeUnlisted ? (
-              <>Unrecognised tokens are included (manually priced). </>
+              <>{t("Unrecognised tokens are included (manually priced).")} </>
             ) : (
               <>
                 <button type="button" className="underline" onClick={() => setShowTokens(!showTokens)}>
-                  {r.skippedTokens.length} unrecognised token{r.skippedTokens.length === 1 ? "" : "s"} skipped
+                  {tn(r.skippedTokens.length, "{n} unrecognised token skipped", "{n} unrecognised tokens skipped")}
                 </button>{" "}
-                (not on CoinGecko, usually spam airdrops).{" "}
+                {t("(not on CoinGecko, usually spam airdrops).")}{" "}
               </>
             )}
             <button type="button" className="text-accent underline" onClick={toggleUnlisted}>
-              {includeUnlisted ? "Skip them again" : "Include them anyway"}
+              {includeUnlisted ? t("Skip them again") : t("Include them anyway")}
             </button>
             {showTokens && !includeUnlisted && (
               <ul className="mt-1 max-h-40 overflow-y-auto rounded border border-line p-2 font-mono">
@@ -273,19 +291,21 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
     const out: { chain: string; result: WalletSyncResult | null }[] = [];
     try {
       for (const c of targets) {
-        setBusy(`Adding ${label_(c)}…`);
+        setBusy(t("Adding {chain}…", { chain: label_(c) }));
         const res = await post<{ accountId: number }>("/api/wallets", {
           chain: c,
           address,
           label: label || null,
           scriptType: xpub && scriptType ? scriptType : null,
-          ...(accountId ? { accountId } : { accountName: accountName.trim() || `${info.label} wallet` }),
+          ...(accountId
+            ? { accountId }
+            : { accountName: accountName.trim() || t("{chain} wallet", { chain: info.label }) }),
         });
         accountId = res.accountId; // further chains go into the same account
         out.push({ chain: c, result: null });
       }
       // Imports run in the background (in parallel per chain); wait for all of them.
-      setBusy("Importing history…");
+      setBusy(t("Importing history…"));
       await qc.invalidateQueries({ queryKey: ["wallets"] });
       const mine = (list: WalletAddress[]) =>
         list.filter((w) => w.accountId === accountId && targets.includes(w.chain));
@@ -310,17 +330,17 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
       open
       onClose={onClose}
       wide
-      title="Track a wallet address"
+      title={t("Track a wallet address")}
       footer={
         results ? (
           <Button variant="primary" onClick={onClose}>
-            Done
+            {t("Done")}
           </Button>
         ) : (
           <>
-            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={onClose}>{t("Cancel")}</Button>
             <Button variant="primary" type="submit" form="wallet-form" disabled={!!busy || !!info.unavailable}>
-              {busy ?? "Add and import"}
+              {busy ?? t("Add and import")}
             </Button>
           </>
         )
@@ -332,15 +352,28 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
             <div key={c}>
               <div className="font-medium">{label_(c)}</div>
               {!r ? (
-                <p className="text-ink-2">Added; it syncs shortly.</p>
+                <p className="text-ink-2">{t("Added; it syncs shortly.")}</p>
               ) : r.error ? (
                 <Alert tone="danger">{r.error}</Alert>
               ) : (
                 <p className="text-ink-2">
-                  <span className="text-gain">✓</span> Imported {r.inserted} transactions
-                  {r.transfersMatched ? `, linked ${r.transfersMatched} transfer(s) to your other accounts` : ""}
-                  {r.skippedTokens.length ? `; skipped ${r.skippedTokens.length} unrecognised token(s)` : ""}.
-                  {r.partial && " Older history continues on the next syncs."}
+                  <span className="text-gain">✓</span>{" "}
+                  {tn(r.inserted, "Imported {n} transaction", "Imported {n} transactions")}
+                  {r.transfersMatched
+                    ? tn(
+                        r.transfersMatched,
+                        ", linked {n} transfer to your other accounts",
+                        ", linked {n} transfers to your other accounts",
+                      )
+                    : ""}
+                  {r.skippedTokens.length
+                    ? tn(
+                        r.skippedTokens.length,
+                        "; skipped {n} unrecognised token",
+                        "; skipped {n} unrecognised tokens",
+                      )
+                    : ""}
+                  .{r.partial && ` ${t("Older history continues on the next syncs.")}`}
                 </p>
               )}
             </div>
@@ -349,24 +382,24 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
         </div>
       ) : (
         <form id="wallet-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Field label="Blockchain">
+          <Field label={t("Blockchain")}>
             {(id) => (
               <Select id={id} value={chain} onChange={(e) => setChain(e.target.value)}>
                 {chains.map((c) => (
                   <option key={c.id} value={c.id}>
-                    {c.label} ({c.nativeSymbol}){c.unavailable ? " – needs setup" : ""}
+                    {c.label} ({c.nativeSymbol}){c.unavailable ? ` – ${t("needs setup")}` : ""}
                   </option>
                 ))}
               </Select>
             )}
           </Field>
-          <Field label="Label (optional)">
+          <Field label={t("Label (optional)")}>
             {(id) => (
               <Input
                 id={id}
                 value={label}
                 onChange={(e) => setLabel(e.target.value)}
-                placeholder="e.g. Ledger savings"
+                placeholder={t("e.g. Ledger savings")}
               />
             )}
           </Field>
@@ -375,7 +408,7 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
               <Alert tone="warn">{info.unavailable}</Alert>
             </div>
           )}
-          <Field label="Public address" hint={info.addressHint} className="sm:col-span-2">
+          <Field label={t("Public address")} hint={info.addressHint} className="sm:col-span-2">
             {(id) => (
               <Input
                 id={id}
@@ -390,13 +423,13 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
           </Field>
           {xpub && (
             <Field
-              label="Address type"
-              hint="Leave on automatic unless your wallet uses Taproot with an xpub."
+              label={t("Address type")}
+              hint={t("Leave on automatic unless your wallet uses Taproot with an xpub.")}
               className="sm:col-span-2"
             >
               {(id) => (
                 <Select id={id} value={scriptType} onChange={(e) => setScriptType(e.target.value)}>
-                  <option value="">Automatic (from the key prefix)</option>
+                  <option value="">{t("Automatic (from the key prefix)")}</option>
                   {info.scriptTypes.map((s) => (
                     <option key={s} value={s}>
                       {SCRIPT_LABEL[s] ?? s}
@@ -408,7 +441,7 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
           )}
           {isEvm && (
             <fieldset className="sm:col-span-2">
-              <legend className="mb-1 text-xs font-medium text-ink-2">Also track this address on</legend>
+              <legend className="mb-1 text-xs font-medium text-ink-2">{t("Also track this address on")}</legend>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
                 {otherEvm.map((c) => (
                   <label
@@ -425,45 +458,48 @@ function AddModal({ chains, onClose }: { chains: ChainInfo[]; onClose: () => voi
                       }
                     />
                     {c.label}
-                    {c.unavailable && " (needs setup)"}
+                    {c.unavailable && ` (${t("needs setup")})`}
                   </label>
                 ))}
               </div>
             </fieldset>
           )}
-          <Field label="Account">
+          <Field label={t("Account")}>
             {(id) => (
               <Select id={id} value={accountChoice} onChange={(e) => setAccountChoice(e.target.value)}>
-                <option value="new">Create a new wallet account</option>
+                <option value="new">{t("Create a new wallet account")}</option>
                 {wallets.map((a) => (
                   <option key={a.id} value={a.id}>
-                    {a.name} (existing)
+                    {t("{name} (existing)", { name: a.name })}
                   </option>
                 ))}
               </Select>
             )}
           </Field>
           {accountChoice === "new" ? (
-            <Field label="Account name">
+            <Field label={t("Account name")}>
               {(id) => (
                 <Input
                   id={id}
                   value={accountName}
                   onChange={(e) => setAccountName(e.target.value)}
-                  placeholder={`${info.label} wallet`}
+                  placeholder={t("{chain} wallet", { chain: info.label })}
                 />
               )}
             </Field>
           ) : (
             <p className="self-end text-xs text-muted">
-              Transactions you entered by hand for this account stay; imported ones are added next to them, so check for
-              duplicates.
+              {t(
+                "Transactions you entered by hand for this account stay; imported ones are added next to them, so check for duplicates.",
+              )}
             </p>
           )}
           {busy && (
             <p className="text-sm text-ink-2 sm:col-span-2">
-              {busy} Large wallets can take a few minutes; you can close this dialog and the import continues in the
-              background.
+              {busy}{" "}
+              {t(
+                "Large wallets can take a few minutes; you can close this dialog and the import continues in the background.",
+              )}
             </p>
           )}
           {error && (

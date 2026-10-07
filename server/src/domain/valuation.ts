@@ -6,6 +6,8 @@ import { D, type Decimal } from "../lib/decimal.js";
 import { Ledger, sortTransactions } from "./ledger.js";
 import type { AssetClassKey } from "./portfolio.js";
 import { localDay } from "../lib/time.js";
+import { tr } from "../i18n/index.js";
+import { displayName } from "../db/seed.js";
 
 export interface HoldingOn {
   accountId: number;
@@ -77,7 +79,7 @@ export async function holdingsOn(db: DB, day: string): Promise<HoldingOn[]> {
       accountKind: acc?.kind ?? "other",
       assetId: a.id,
       symbol: a.symbol,
-      name: a.assetClass === "metal" ? `${a.name} (vaulted)` : a.name,
+      name: a.assetClass === "metal" ? tr("{name} (vaulted)", { name: displayName(a) }) : displayName(a),
       assetClass: a.assetClass as AssetClassKey,
       physical: false,
       quantity: p.quantity,
@@ -104,7 +106,7 @@ export async function holdingsOn(db: DB, day: string): Promise<HoldingOn[]> {
       accountKind: acc?.kind ?? "physical",
       assetId: a.id,
       symbol: a.symbol,
-      name: `${a.name} (physical)`,
+      name: tr("{name} (physical)", { name: displayName(a) }),
       assetClass: "metal" as const,
       physical: true,
       quantity: D(0),

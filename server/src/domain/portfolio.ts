@@ -6,6 +6,8 @@ import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { replayLedger, type CostMethod, type LedgerResult } from "./ledger.js";
 import { getCostMethod } from "./settings.js";
 import { computeHistory, pointOn } from "./history.js";
+import { tr } from "../i18n/index.js";
+import { displayName } from "../db/seed.js";
 
 export type AssetClassKey = "stock" | "etf" | "crypto" | "metal" | "cash" | "other";
 const CLASSES: AssetClassKey[] = ["stock", "etf", "crypto", "metal", "cash", "other"];
@@ -230,7 +232,11 @@ export async function buildPortfolio(db: DB, opts: { staleAfterMs: number; now?:
     holdings.push({
       key,
       assetId: a.assetId,
-      name: a.physical ? `${asset.name} (physical)` : cls === "metal" ? `${asset.name} (vaulted)` : asset.name,
+      name: a.physical
+        ? tr("{name} (physical)", { name: displayName(asset) })
+        : cls === "metal"
+          ? tr("{name} (vaulted)", { name: displayName(asset) })
+          : displayName(asset),
       symbol: asset.symbol,
       assetClass: cls,
       unit: asset.unit,

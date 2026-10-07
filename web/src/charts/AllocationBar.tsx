@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { eur, pct } from "../format";
 import { Swatch } from "../components/ui";
+import { t } from "../i18n";
 
 export interface Slice {
   key: string;
@@ -23,7 +24,7 @@ export function AllocationBar({ slices }: { slices: Slice[] }) {
   return (
     <div>
       <div className="relative">
-        <div className="flex h-7 w-full gap-[2px] overflow-hidden rounded" role="img" aria-label="Allocation">
+        <div className="flex h-7 w-full gap-[2px] overflow-hidden rounded" role="img" aria-label={t("Allocation")}>
           {shown.map((s) => (
             <div
               key={s.key}

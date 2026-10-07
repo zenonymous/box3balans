@@ -11,6 +11,21 @@ const CUSTODY: Custody[] = ["together", "self", "self_half", "partner"];
 
 /** Who box 3 is about: you, a partner and children. Accounts are then marked with their owner. */
 export function HouseholdPage() {
+  return (
+    <>
+      <PageHeader
+        title={t("Household")}
+        subtitle={t(
+          "Who your box 3 is about: you, your partner and your children. Mark each account with its owner under Accounts.",
+        )}
+      />
+      <HouseholdEditor />
+    </>
+  );
+}
+
+/** You, your partner and children; also step 1 of the start wizard. */
+export function HouseholdEditor() {
   const people = useHousehold();
   if (people.isLoading) return <Spinner />;
   if (people.error) return <Alert tone="danger">{(people.error as Error).message}</Alert>;
@@ -20,42 +35,34 @@ export function HouseholdPage() {
   const children = list.filter((p) => p.role === "child");
 
   return (
-    <>
-      <PageHeader
-        title={t("Household")}
-        subtitle={t(
-          "Who your box 3 is about: you, your partner and your children. Mark each account with its owner under Accounts.",
-        )}
-      />
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card title={t("You and your partner")}>
-          <div className="flex flex-col gap-4">
-            <PersonRow role="self" person={self} label={t("Your name")} placeholder={t("e.g. box3balans")} />
-            <PersonRow role="partner" person={partner} label={t("Your partner's name")} placeholder={t("e.g. Sam")} />
-            <p className="text-xs text-muted">
-              {tj(
-                "Whether your partner is your fiscal partner can differ per year: set it per year on the <0>Box 3</0> page. Fiscal partners add up their box 3 and divide it as they like.",
-                [<Link key="b" to="/box3" className="underline" />],
-              )}
-            </p>
-          </div>
-        </Card>
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Card title={t("You and your partner")}>
+        <div className="flex flex-col gap-4">
+          <PersonRow role="self" person={self} label={t("Your name")} placeholder={t("e.g. box3balans")} />
+          <PersonRow role="partner" person={partner} label={t("Your partner's name")} placeholder={t("e.g. Sam")} />
+          <p className="text-xs text-muted">
+            {tj(
+              "Whether your partner is your fiscal partner can differ per year: set it per year on the <0>Box 3</0> page. Fiscal partners add up their box 3 and divide it as they like.",
+              [<Link key="b" to="/box3" className="underline" />],
+            )}
+          </p>
+        </div>
+      </Card>
 
-        <Card title={t("Children")}>
-          <div className="flex flex-col gap-3">
-            {children.map((c) => (
-              <ChildRow key={c.id} child={c} />
-            ))}
-            <ChildRow child={null} />
-            <p className="text-xs text-muted">
-              {t(
-                "The savings and investments of a child under 18 on 1 January count for the parents with custody, half each. From the year they turn 18 they file their own return.",
-              )}
-            </p>
-          </div>
-        </Card>
-      </div>
-    </>
+      <Card title={t("Children")}>
+        <div className="flex flex-col gap-3">
+          {children.map((c) => (
+            <ChildRow key={c.id} child={c} />
+          ))}
+          <ChildRow child={null} />
+          <p className="text-xs text-muted">
+            {t(
+              "The savings and investments of a child under 18 on 1 January count for the parents with custody, half each. From the year they turn 18 they file their own return.",
+            )}
+          </p>
+        </div>
+      </Card>
+    </div>
   );
 }
 

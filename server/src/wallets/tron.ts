@@ -5,6 +5,7 @@ import { D } from "../lib/decimal.js";
 import { getJson } from "../lib/http.js";
 import type { AssetRef, Balance } from "../sync/types.js";
 import { ChainError, type ChainAdapter, type ChainContext, type Fee, type Movement } from "./types.js";
+import { msg, tr } from "../i18n/index.js";
 
 const b58c = createBase58check(sha256);
 const SUN = D(1_000_000);
@@ -55,7 +56,8 @@ export function tronAdapter(): ChainAdapter {
       out.push(...page.data);
       next = page.meta?.links?.next;
       // Only follow pagination links that stay on TronGrid.
-      if (next && !next.startsWith(`${API}/`)) throw new ChainError("TronGrid returned an unexpected next-page link");
+      if (next && !next.startsWith(`${API}/`))
+        throw new ChainError(tr("TronGrid returned an unexpected next-page link"));
       // Without an API key TronGrid allows only a few requests per second.
       if (next) await ctx.sleep(400);
     }
@@ -66,7 +68,7 @@ export function tronAdapter(): ChainAdapter {
     id: "tron",
     label: "Tron",
     nativeSymbol: "TRX",
-    addressHint: "T… address",
+    addressHint: msg("T… address"),
     supportsXpub: false,
 
     normalise(input) {
@@ -77,7 +79,7 @@ export function tronAdapter(): ChainAdapter {
       } catch {
         // fall through
       }
-      throw new ChainError("Not a valid Tron address (starts with T)");
+      throw new ChainError(tr("Not a valid Tron address (starts with T)"));
     },
 
     async fetch(inputs, ctx) {
