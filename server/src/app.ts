@@ -94,8 +94,10 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(rateLimit, { global: false });
 
   app.addHook("onRequest", async (req, reply) => {
-    if (!req.url.startsWith("/api/")) return;
-    const pathOnly = req.url.split("?")[0]!;
+    // Decide by the route the router matched, never by the raw URL: "/%61pi/accounts" reaches the
+    // /api/accounts route too.
+    const route = req.routeOptions.url;
+    if (!route?.startsWith("/api/")) return;
     if (req.method !== "GET" && req.method !== "HEAD" && req.headers[CSRF_HEADER] !== "portfolio") {
       return reply.code(403).send({ error: tr("Missing CSRF header") });
     }
@@ -115,7 +117,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         req.user = demo;
       }
     }
-    if (!req.user && !PUBLIC_ROUTES.has(pathOnly)) {
+    if (!req.user && !PUBLIC_ROUTES.has(route)) {
       return reply.code(401).send({ error: tr("Not logged in") });
     }
   });
@@ -147,7 +149,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   // Data changes can introduce assets or dates without price history; load it shortly after.
   app.addHook("onResponse", async (req, reply) => {
     if (req.method === "GET" || reply.statusCode >= 300) return;
-    if (/^\/api\/(transactions|assets|metals)/.test(req.url)) deps.backfill.request();
+    if (/^\/api\/(transactions|assets|metals)/.test(req.routeOptions.url ?? "")) deps.backfill.request();
   });
 
   app.setErrorHandler((err, req, reply) => {

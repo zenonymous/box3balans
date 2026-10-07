@@ -40,6 +40,50 @@ describe("auth", () => {
   });
 });
 
+describe("every API route", () => {
+  // All routes the app registered, as [method, path with sample ids], from Fastify's route tree
+  // ("├── /api/accounts (GET, POST)" with children indented four characters per level).
+  const apiRoutes = (t: TestApp) => {
+    const routes: (readonly [string, string])[] = [];
+    const parents: string[] = [""];
+    for (const line of t.app.printRoutes({ commonPrefix: false }).split("\n")) {
+      const m = /^([│├└─ ]*)(\S.*?)(?: \(([^)]+)\))?$/.exec(line);
+      if (!m) continue;
+      const depth = m[1]!.length / 4;
+      const url = parents[depth - 1]! + m[2]!;
+      parents[depth] = url;
+      if (!url.startsWith("/api/") || !m[3]) continue;
+      for (const method of m[3].split(", ")) if (method !== "HEAD") routes.push([method, url.replace(/:\w+/g, "1")]);
+    }
+    return routes;
+  };
+  const PUBLIC = ["GET /api/health", "GET /api/auth/state", "POST /api/auth/login", "POST /api/auth/setup"];
+  // The same path as the router sees it, spelled differently on the wire.
+  const spellings = (url: string) => [url, url.replace("/api/", "/%61pi/"), url.replace("/api/", "/ap%69/")];
+
+  it("needs a session and the CSRF header, however the path is spelled", async () => {
+    t = await createTestApp(undefined, { login: false });
+    const routes = apiRoutes(t);
+    expect(routes.length).toBeGreaterThan(90);
+    for (const [method, url] of routes) {
+      if (PUBLIC.includes(`${method} ${url}`)) continue;
+      for (const spelled of spellings(url)) {
+        const res = await t.app.inject({
+          method: method as "GET",
+          url: spelled,
+          payload: method === "GET" || method === "DELETE" ? undefined : {},
+          headers: { "x-requested-with": "portfolio" },
+        });
+        expect([method, spelled, res.statusCode]).toEqual([method, spelled, 401]);
+        if (method !== "GET") {
+          const noCsrf = await t.app.inject({ method: method as "GET", url: spelled, payload: {} });
+          expect([method, spelled, noCsrf.statusCode]).toEqual([method, spelled, 403]);
+        }
+      }
+    }
+  });
+});
+
 describe("hardening", () => {
   it("reports health including the database, and sends security headers", async () => {
     t = await createTestApp(undefined, { login: false });
