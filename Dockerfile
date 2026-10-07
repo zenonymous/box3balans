@@ -3,7 +3,7 @@
 # ---- Build: compile the server and bundle the web app ----
 # Runs on the build machine's own platform: the output is plain JavaScript, so building it once
 # serves every target platform (and avoids emulating ARM for the heavy part).
-FROM --platform=$BUILDPLATFORM node:24-alpine AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -14,7 +14,7 @@ COPY web web
 RUN npm run build
 
 # ---- Runtime: production dependencies + build output only ----
-FROM node:24-alpine
+FROM node:26-alpine
 # su-exec: the entrypoint drops from root to the app user after preparing its folders.
 RUN apk add --no-cache su-exec
 WORKDIR /app
