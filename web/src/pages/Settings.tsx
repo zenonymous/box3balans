@@ -5,7 +5,7 @@ import { get, put, post } from "../api";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Button, Card, Field, Input, PageHeader, Select, Tabs } from "../components/ui";
 import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../format";
-import { usePriceStatus } from "../queries";
+import { switchSession, usePriceStatus } from "../queries";
 import { followLanguage, getLang, t, tj, tn, type Lang } from "../i18n";
 
 type Theme = "system" | "light" | "dark";
@@ -43,8 +43,7 @@ export function SettingsPage() {
 
   const logout = async () => {
     await post("/api/auth/logout");
-    qc.clear();
-    qc.setQueryData(["auth"], { needsSetup: false, user: null });
+    switchSession(qc, null);
   };
 
   return (
@@ -145,6 +144,8 @@ export function SettingsPage() {
 
         <PasswordCard />
 
+        <TwoFactorCard />
+
         <Card title={t("Session")}>
           <Button onClick={logout}>{t("Sign out")}</Button>
         </Card>
@@ -187,6 +188,296 @@ function AboutCard() {
             ])}
           </p>
         )}
+        <UpdateCheck />
+      </div>
+    </Card>
+  );
+}
+
+interface UpdateStatus {
+  enabled: boolean;
+  current: string;
+  checkedAt?: string;
+  latest?: { version: string; name: string; url: string; publishedAt: string };
+  newer?: boolean | null;
+  error?: string;
+}
+
+/** The opt-in check for a new release: it asks GitHub, so it's off until you turn it on. */
+function UpdateCheck() {
+  const qc = useQueryClient();
+  const status = useQuery({ queryKey: ["updates"], queryFn: () => get<UpdateStatus>("/api/updates") });
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string>();
+  const s = status.data;
+  const run = async (fn: () => Promise<UpdateStatus>) => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      qc.setQueryData(["updates"], await fn());
+      await qc.invalidateQueries({ queryKey: ["attention"] });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (!s) return null;
+  return (
+    <div className="mt-2 border-t border-line pt-3">
+      <label className="flex items-start gap-2">
+        <input
+          type="checkbox"
+          className="mt-0.5"
+          checked={s.enabled}
+          disabled={busy}
+          onChange={(e) => void run(() => put<UpdateStatus>("/api/updates", { enabled: e.target.checked }))}
+        />
+        <span>
+          {t("Check for new versions")}
+          <span className="block text-xs text-muted">
+            {t(
+              "Once a day, Kluishuis asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.",
+            )}
+          </span>
+        </span>
+      </label>
+      {s.enabled && (
+        <div className="mt-2 flex flex-col gap-1 pl-6 text-xs">
+          {s.latest &&
+            (s.newer ? (
+              <p className="text-ink">
+                {tj(
+                  "A newer version is available: <0>{version}</0>.",
+                  [
+                    <a
+                      key="r"
+                      className="font-medium underline"
+                      href={s.latest.url}
+                      target="_blank"
+                      rel="noreferrer"
+                    />,
+                  ],
+                  { version: s.latest.version },
+                )}
+              </p>
+            ) : s.newer === false ? (
+              <p className="text-gain">
+                ✓ {t("You have the latest version ({version}).", { version: s.latest.version })}
+              </p>
+            ) : (
+              <p>
+                {tj(
+                  "This build ({current}) has no version number; the latest release is <0>{version}</0>.",
+                  [<a key="r" className="underline" href={s.latest.url} target="_blank" rel="noreferrer" />],
+                  { current: s.current, version: s.latest.version },
+                )}
+              </p>
+            ))}
+          {s.error && <p className="text-loss">{s.error}</p>}
+          {error && <p className="text-loss">{error}</p>}
+          <p className="text-muted">
+            {s.checkedAt && t("Checked {when}.", { when: relativeTime(s.checkedAt) })}{" "}
+            <button
+              type="button"
+              className="underline"
+              disabled={busy}
+              onClick={() => void run(() => post<UpdateStatus>("/api/updates/check"))}
+            >
+              {busy ? t("Checking…") : t("Check now")}
+            </button>
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Two-step verification: after the password, a code from an authenticator app (or a recovery code).
+ * Turning it on shows a QR code to scan, a code confirms it, and ten recovery codes are shown once.
+ */
+function TwoFactorCard() {
+  const qc = useQueryClient();
+  const status = useQuery({
+    queryKey: ["2fa"],
+    queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
+  });
+  const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
+  const [codes, setCodes] = useState<string[] | null>(null);
+  const [mode, setMode] = useState<"off" | "renew" | null>(null);
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+
+  const act = async (fn: () => Promise<void>) => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      await fn();
+      setCode("");
+      setPassword("");
+      await qc.invalidateQueries({ queryKey: ["2fa"] });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  const s = status.data;
+  const codeField = (
+    <Field label={t("Code from your authenticator app")}>
+      {(id) => (
+        <Input
+          id={id}
+          inputMode="numeric"
+          autoComplete="one-time-code"
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="max-w-40"
+          required
+        />
+      )}
+    </Field>
+  );
+
+  return (
+    <Card title={t("Two-step verification")}>
+      <div className="flex flex-col gap-3 text-sm">
+        {codes ? (
+          <>
+            <p>
+              {t(
+                "Your recovery codes. Each works once, instead of a code from the app, if you lose your phone. Keep them somewhere safe, away from this server: they are shown only now.",
+              )}
+            </p>
+            <ul className="grid grid-cols-2 gap-1 rounded-lg border border-line bg-surface-2 p-3 font-mono">
+              {codes.map((c) => (
+                <li key={c}>{c}</li>
+              ))}
+            </ul>
+            <div>
+              <Button variant="primary" onClick={() => setCodes(null)}>
+                {t("I've saved them")}
+              </Button>
+            </div>
+          </>
+        ) : !s ? null : !s.enabled ? (
+          setup ? (
+            <form
+              className="flex flex-col gap-3"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void act(async () => {
+                  const r = await post<{ recoveryCodes: string[] }>("/api/auth/2fa/enable", { code });
+                  setSetup(null);
+                  setCodes(r.recoveryCodes);
+                });
+              }}
+            >
+              <p className="text-ink-2">
+                {t(
+                  "Scan this with an authenticator app (such as Aegis, 2FAS, Google Authenticator or your password manager), then enter the code it shows.",
+                )}
+              </p>
+              <img
+                src={`data:image/svg+xml;utf8,${encodeURIComponent(setup.qrSvg)}`}
+                alt={t("QR code for your authenticator app")}
+                className="size-44 rounded-lg bg-white p-2"
+              />
+              <p className="text-xs text-muted">
+                {t("Can't scan? Enter this key by hand:")}{" "}
+                <code className="select-all break-all rounded bg-surface-2 px-1">
+                  {setup.secret.match(/.{1,4}/g)?.join(" ")}
+                </code>
+              </p>
+              {codeField}
+              <div className="flex gap-2">
+                <Button type="submit" variant="primary" disabled={busy}>
+                  {t("Turn on")}
+                </Button>
+                <Button onClick={() => setSetup(null)}>{t("Cancel")}</Button>
+              </div>
+            </form>
+          ) : (
+            <>
+              <p className="text-ink-2">
+                {t(
+                  "Off. With it on, signing in also needs a code from an app on your phone, so a stolen password isn't enough.",
+                )}
+              </p>
+              <div>
+                <Button
+                  variant="primary"
+                  disabled={busy}
+                  onClick={() =>
+                    void act(async () => setSetup(await post<{ secret: string; qrSvg: string }>("/api/auth/2fa/setup")))
+                  }
+                >
+                  {t("Set up")}
+                </Button>
+              </div>
+            </>
+          )
+        ) : (
+          <>
+            <p>
+              <span className="text-gain">✓</span>{" "}
+              {tn(s.recoveryCodesLeft, "On. {n} recovery code left.", "On. {n} recovery codes left.")}
+            </p>
+            {mode ? (
+              <form
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void act(async () => {
+                    if (mode === "off") await post("/api/auth/2fa/disable", { password, code });
+                    else
+                      setCodes(
+                        (await post<{ recoveryCodes: string[] }>("/api/auth/2fa/recovery-codes", { code }))
+                          .recoveryCodes,
+                      );
+                    setMode(null);
+                  });
+                }}
+              >
+                {mode === "off" && (
+                  <Field label={t("Current password")}>
+                    {(id) => (
+                      <Input
+                        id={id}
+                        type="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                    )}
+                  </Field>
+                )}
+                {codeField}
+                <div className="flex gap-2">
+                  <Button type="submit" variant={mode === "off" ? "danger" : "primary"} disabled={busy}>
+                    {mode === "off" ? t("Turn off") : t("New recovery codes")}
+                  </Button>
+                  <Button onClick={() => setMode(null)}>{t("Cancel")}</Button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={() => setMode("renew")}>{t("New recovery codes")}</Button>
+                <Button variant="danger" onClick={() => setMode("off")}>
+                  {t("Turn off")}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+        {error && <Alert tone="danger">{error}</Alert>}
+        <p className="text-xs text-muted">
+          {t("Locked out? On the server, run node dist/cli.js disable-2fa in the app container.")}
+        </p>
       </div>
     </Card>
   );
@@ -406,8 +697,7 @@ function BackupsCard() {
         ...(passphrase ? { passphrase } : {}),
       });
       // Sessions aren't in backups: sign in again with the restored account.
-      qc.clear();
-      qc.setQueryData(["auth"], { needsSetup: false, user: null });
+      switchSession(qc, null);
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });
       setBusy(false);

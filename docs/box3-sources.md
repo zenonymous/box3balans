@@ -10,13 +10,13 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
-**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Voeg 2027 toe onder _Rules & rates_ zodra het definitief is.
+**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Het Belastingplan 2027 staat in [belastingregels.md](belastingregels.md) als volgende stap: 2027 komt erin als voorlopig jaar zodra de keuze tussen die twee bekend is. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
 
 - Holdwise, _Box 3 in 2027_: https://holdwise.nl/kennisbank/box-3-2027
 
 ## Wat in welke categorie valt, en van wie het is
 
-Wat de app toepast (Kluishuis: _Household_ en _Accounts_):
+Wat de app toepast (Kluishuis: _Huishouden_ en _Rekeningen_):
 
 - **Banktegoeden:** bank- en spaartegoeden in Nederland en daarbuiten, contant geld boven de vrijstelling (per persoon € 596 in 2023, € 653 in 2024, € 661 in 2025, € 672 in 2026; het dubbele voor partners die het hele jaar fiscale partner zijn), premiedepots, het niet-vrijgestelde deel van groene spaartegoeden.
 - **Overige bezittingen** (beleggingen en andere bezittingen): aandelen, obligaties en andere beleggingen, het niet-vrijgestelde deel van groene beleggingen, overige vorderingen (zoals uitgeleend geld, behalve tussen fiscale partners of tussen ouders en minderjarige kinderen), een tweede woning, een verhuurde woning, overige onroerende zaken, cryptovaluta, kapitaalverzekeringen (met hun eigen vrijstellingen, die de app niet toepast).
@@ -34,7 +34,7 @@ Bronnen:
 
 Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Over **2024 en eerder** geef je het door met het formulier _Opgaaf werkelijk rendement_ (OWR) in Mijn Belastingdienst, beschikbaar sinds 8 juli 2025. **Vanaf 2025** vraagt de aangifte inkomstenbelasting zelf of je je werkelijk rendement wilt opgeven; de Belastingdienst rekent dan beide manieren uit en gebruikt de gunstigste.
 
-Wat de app toepast (Kluishuis: _Box 3 → jaar → Actual return_):
+Wat de app toepast (Kluishuis: _Box 3 → jaar → Werkelijk rendement_):
 
 - **Werkelijk rendement** = direct rendement (rente, dividenden **bruto**, huur, andere inkomsten zoals stakingbeloningen) + indirect rendement (alle waardeveranderingen, gerealiseerd en ongerealiseerd, van elke box 3-bezitting die je in het jaar had, niet alleen die op 1 januari) − **werkelijk betaalde rente op box 3-schulden**.
 - **Kosten zijn niet aftrekbaar**, behalve rente op schulden. Transactie- en accountkosten verlagen het niet, en ingehouden dividendbelasting ook niet: dividenden tellen bruto.

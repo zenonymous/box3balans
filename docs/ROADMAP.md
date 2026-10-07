@@ -12,7 +12,7 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **CSV-import** met kolomindeling, voorbeeld, dubbelherkenning en ongedaan maken. Ingebouwde formaten voor specifieke brokers volgen in fase D.
 - **Rendement:** tijd- en geldgewogen rendement met een benchmark, een kostenoverzicht en verwachte dividenden.
 - **Box 3:** werkelijk rendement voor de tegenbewijsregeling en een vooruitblik op het stelsel vanaf 2028.
-- **Beheer:** versleutelde back-ups, wijzigingsgeschiedenis met terugzetten, _Needs attention_, tweede koersbronnen, PostgreSQL 18 met een geteste upgrade.
+- **Beheer:** versleutelde back-ups, wijzigingsgeschiedenis met terugzetten, _Aandacht nodig_, tweede koersbronnen, PostgreSQL 18 met een geteste upgrade.
 
 ## Fase A: installeerbaar voor iedereen ✅
 
@@ -42,11 +42,11 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Rekenvoorbeelden van de Belastingdienst** als tests: de vijf forfaitaire voorbeelden voor 2025 komen precies uit (met dezelfde afronding), en drie voorbeelden van het werkelijk rendement.
 - **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/kluishuis/issues/new/choose) nodig.
 
-## Fase E: onderhoud en extra veiligheid
+## Fase E: onderhoud en extra veiligheid ✅
 
-- Inloggen met een tweede factor (TOTP).
-- Een melding als er een nieuwe versie is (alleen als je dat aanzet: het vraagt GitHub om informatie).
-- Belastingregels als gegevensbestand, met de datum van de laatste controle in de app, en een vaste jaarlijkse update: voorstellen rond Prinsjesdag, definitieve cijfers in december.
+- **Tweestapsverificatie** met een authenticator-app (TOTP), met herstelcodes en een opdracht om het uit te zetten als je buitengesloten bent.
+- **Melding bij een nieuwe versie**, alleen als je dat aanzet: Kluishuis vraagt GitHub dan één keer per dag naar de nieuwste versie.
+- **Belastingregels als gegevensbestand** (`server/src/rules/box3.json`) met de datum van de laatste controle en de bron per jaar in de app, een melding als ze meer dan 400 dagen oud zijn, en een vast jaarritme in [belastingregels.md](belastingregels.md): voorstellen rond Prinsjesdag, vaste cijfers in december, definitieve percentages na afloop van het jaar.
 
 ## Oorspronkelijke opzet
 

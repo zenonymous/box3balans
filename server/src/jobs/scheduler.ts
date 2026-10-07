@@ -8,6 +8,7 @@ import type { WalletService } from "../wallets/service.js";
 import type { BackfillService } from "./backfill.js";
 import { isAutomatic, listBackups, pruneBackups, writeBackupFile } from "../backup/backup.js";
 import { recordBackupStatus } from "../backup/status.js";
+import { checkForUpdate } from "../domain/updates.js";
 
 // A price counts as stale once it missed two refresh cycles plus some slack.
 export const staleAfterMs = (config: Config) => (config.PRICE_REFRESH_MINUTES * 2 + 10) * 60_000;
@@ -108,6 +109,14 @@ export function startScheduler(
   const firstBackup = backupMs > 0 ? setTimeout(backupTick, 5 * 60_000) : undefined;
   const backupTimer = backupMs > 0 ? setInterval(backupTick, 3_600_000) : undefined;
 
+  // New version: daily, only when the check is turned on (it asks GitHub).
+  const updateTick = () =>
+    void checkForUpdate(db, config, prices.fetchFn)
+      .then((s) => s.enabled && s.newer && log.info({ latest: s.latest?.version }, "a newer version is available"))
+      .catch((err) => log.warn({ err }, "update check failed"));
+  const firstUpdate = setTimeout(updateTick, 2 * 60_000);
+  const updateTimer = setInterval(updateTick, 24 * 3_600_000);
+
   return () => {
     clearTimeout(firstBackup);
     clearInterval(backupTimer);
@@ -117,5 +126,7 @@ export function startScheduler(
     clearInterval(timer);
     clearTimeout(firstSync);
     clearInterval(syncTimer);
+    clearTimeout(firstUpdate);
+    clearInterval(updateTimer);
   };
 }

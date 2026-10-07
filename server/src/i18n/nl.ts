@@ -420,4 +420,20 @@ export const NL: Record<string, string> = {
   "Lines without a date or quantity": "Regels zonder datum of aantal",
   "Left out: {reason} ({n})": "Weggelaten: {reason} ({n})",
   "Kluishuis template": "Kluishuis-sjabloon",
+  // stage E
+  "Kluishuis {version} is available": "Kluishuis {version} is beschikbaar",
+  "You're running {current}. The release notes say what changed; update the way you installed it.":
+    "Je gebruikt {current}. In de release notes staat wat er veranderd is; werk bij zoals je het hebt geïnstalleerd.",
+  About: "Over",
+  "The box 3 rules in this version are from {date}": "De box 3-regels in deze versie zijn van {date}",
+  "Newer figures may exist. Update Kluishuis, or check the rates per year on the Box 3 page under “Rules & rates”.":
+    "Er kunnen nieuwere cijfers zijn. Werk Kluishuis bij, of controleer de tarieven per jaar op de pagina Box 3 onder “Regels en tarieven”.",
+  "Box 3": "Box 3",
+  "The source address isn't a GitHub repository.": "Het bronadres is geen GitHub-repository.",
+  "No releases found yet": "Nog geen versies gevonden",
+  "Enter the code from your authenticator app": "Vul de code uit je authenticator-app in",
+  "That code isn't right, or was already used": "Die code klopt niet, of is al gebruikt",
+  "Two-step verification is already on": "Tweestapsverificatie staat al aan",
+  "That code isn't right; check the time on your phone and try again":
+    "Die code klopt niet; controleer de tijd op je telefoon en probeer het opnieuw",
 };

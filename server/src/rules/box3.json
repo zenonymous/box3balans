@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-10-07",
+  "about": "Box 3 rules built into Kluishuis. Update once a year: proposals for next year around Prinsjesdag (September) as provisional, final figures in December, and the final bank and debt percentages after the year ends. A let home counts at the leegwaarderatio of the first band its rent (as % of the WOZ value) fits in, else 100%. See docs/belastingregels.md.",
+  "years": {
+    "2023": {
+      "bankPct": "0.92",
+      "otherPct": "6.17",
+      "debtPct": "2.46",
+      "allowanceEur": "57000",
+      "debtThresholdEur": "3400",
+      "taxRatePct": "32",
+      "greenExemptEur": "65072",
+      "greenCreditPct": "0.7",
+      "final": true,
+      "source": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2023"
+    },
+    "2024": {
+      "bankPct": "1.44",
+      "otherPct": "6.04",
+      "debtPct": "2.61",
+      "allowanceEur": "57000",
+      "debtThresholdEur": "3700",
+      "taxRatePct": "36",
+      "greenExemptEur": "71251",
+      "greenCreditPct": "0.7",
+      "final": true,
+      "source": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2024"
+    },
+    "2025": {
+      "bankPct": "1.37",
+      "otherPct": "5.88",
+      "debtPct": "2.70",
+      "allowanceEur": "57684",
+      "debtThresholdEur": "3800",
+      "taxRatePct": "36",
+      "greenExemptEur": "26312",
+      "greenCreditPct": "0.1",
+      "final": true,
+      "source": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025"
+    },
+    "2026": {
+      "bankPct": "1.28",
+      "otherPct": "6.00",
+      "debtPct": "2.70",
+      "allowanceEur": "59357",
+      "debtThresholdEur": "3800",
+      "taxRatePct": "36",
+      "greenExemptEur": "26715",
+      "greenCreditPct": "0.1",
+      "final": false,
+      "source": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2026"
+    }
+  },
+  "leegwaarderatio": [
+    {
+      "upToRentPct": 1,
+      "valuePct": 73
+    },
+    {
+      "upToRentPct": 2,
+      "valuePct": 79
+    },
+    {
+      "upToRentPct": 3,
+      "valuePct": 84
+    },
+    {
+      "upToRentPct": 4,
+      "valuePct": 90
+    },
+    {
+      "upToRentPct": 5,
+      "valuePct": 95
+    }
+  ]
+}

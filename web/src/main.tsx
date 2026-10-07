@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from "@tan
 import "./index.css";
 import { ApiError, get, post, setUnauthorizedHandler, type User } from "./api";
 import { Layout } from "./components/Layout";
+import { switchSession } from "./queries";
 import { Button, Field, Input, Spinner } from "./components/ui";
 import { followLanguage, t, type Lang } from "./i18n";
 
@@ -95,6 +96,9 @@ function Login({ setup }: { setup: boolean }) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  // Asked for after the password when two-step verification is on.
+  const [code, setCode] = useState("");
+  const [needsCode, setNeedsCode] = useState(false);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
 
@@ -107,10 +111,17 @@ function Login({ setup }: { setup: boolean }) {
       const { user } = await post<{ user: User }>(setup ? "/api/auth/setup" : "/api/auth/login", {
         username,
         password,
+        ...(needsCode ? { code } : {}),
       });
-      qc.clear();
-      qc.setQueryData(["auth"], { needsSetup: false, user });
+      switchSession(qc, user);
     } catch (err) {
+      if (err instanceof ApiError && err.data?.needsCode) {
+        // The first time it's a question, not an error.
+        if (needsCode) setError(err.message);
+        setNeedsCode(true);
+        setCode("");
+        return;
+      }
       setError((err as Error).message);
     } finally {
       setBusy(false);
@@ -167,6 +178,24 @@ function Login({ setup }: { setup: boolean }) {
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   required
+                />
+              )}
+            </Field>
+          )}
+          {needsCode && (
+            <Field
+              label={t("Code from your authenticator app")}
+              hint={t("Or one of your recovery codes, if you don't have your phone.")}
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value)}
+                  required
+                  autoFocus
                 />
               )}
             </Field>

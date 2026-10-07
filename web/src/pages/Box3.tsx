@@ -758,7 +758,8 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
       {!open ? (
         <p className="text-sm text-ink-2">
           {t(
-            "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official 2023–2026 figures are built in; edit them when the rules change.",
+            "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official figures are built in (checked {date}); edit them when the rules change.",
+            { date: date(overview.rules.checkedAt) },
           )}
         </p>
       ) : (
@@ -862,7 +863,20 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                     return (
                       <tr key={y}>
                         <td className="py-1 pr-2 font-medium">
-                          {y} {cfg.rates[y] && <Badge>{t("custom")}</Badge>}
+                          {overview.rules.sources[y] ? (
+                            <a
+                              className="underline decoration-line underline-offset-2"
+                              href={overview.rules.sources[y]}
+                              target="_blank"
+                              rel="noreferrer"
+                              title={t("Source")}
+                            >
+                              {y}
+                            </a>
+                          ) : (
+                            y
+                          )}{" "}
+                          {cfg.rates[y] && <Badge>{t("custom")}</Badge>}
                         </td>
                         {rateFields().map((f) => (
                           <td key={f.key} className="px-1 py-1">
@@ -898,7 +912,8 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
             </div>
             <p className="mt-2 text-xs text-muted">
               {t(
-                "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year. Years before 2023 used a different system.",
+                "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Kluishuis brings newer figures. Years before 2023 used a different system.",
+                { date: date(overview.rules.checkedAt) },
               )}
             </p>
           </div>

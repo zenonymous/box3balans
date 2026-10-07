@@ -11,6 +11,8 @@ import type { BackfillResult } from "../jobs/backfill.js";
 import { buildPortfolio } from "./portfolio.js";
 import { loadLedger } from "./portfolio.js";
 import { tr, trn } from "../i18n/index.js";
+import { RULES } from "../rules/index.js";
+import { getUpdateStatus } from "./updates.js";
 
 export type Severity = "problem" | "warning" | "info";
 
@@ -343,6 +345,38 @@ export async function collectIssues(
         fingerprint: String(unlinked.length),
       });
     }
+  }
+
+  // ---- New version (only when the update check is on) ----
+  const update = await getUpdateStatus(db);
+  if (update.enabled && update.newer && update.latest) {
+    add({
+      key: "update",
+      severity: "info",
+      title: tr("Kluishuis {version} is available", { version: update.latest.version }),
+      detail: tr("You're running {current}. The release notes say what changed; update the way you installed it.", {
+        current: update.current,
+      }),
+      link: { to: "/settings", label: tr("About") },
+      fingerprint: update.latest.version,
+    });
+  }
+
+  // ---- Tax rules ----
+  // The box 3 figures ship with the app; a version that hasn't been updated for over a year may
+  // miss a year's rates or changes to them.
+  const rulesAge = (Date.now() - Date.parse(`${RULES.checkedAt}T00:00:00Z`)) / (24 * HOUR);
+  if (rulesAge > 400) {
+    add({
+      key: "rules-old",
+      severity: "info",
+      title: tr("The box 3 rules in this version are from {date}", { date: RULES.checkedAt }),
+      detail: tr(
+        "Newer figures may exist. Update Kluishuis, or check the rates per year on the Box 3 page under “Rules & rates”.",
+      ),
+      link: { to: "/box3", label: tr("Box 3") },
+      fingerprint: RULES.checkedAt,
+    });
   }
 
   // ---- Backups ----

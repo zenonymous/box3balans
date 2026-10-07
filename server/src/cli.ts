@@ -4,6 +4,7 @@
  *   node dist/cli.js restore <file>     replace ALL data with a backup (a safety backup is written first)
  *   node dist/cli.js list               list backups in BACKUP_DIR
  *   node dist/cli.js decrypt <file>     decrypt an encrypted backup to <file without .enc> (.json.gz)
+ *   node dist/cli.js disable-2fa        turn off two-step verification (when the phone is lost)
  * Encrypted backups use BACKUP_PASSPHRASE from the environment.
  */
 import fs from "node:fs";
@@ -11,6 +12,7 @@ import { listBackups, readBackupFile, restoreBackup, writeBackupFile } from "./b
 import { decryptBackup } from "./backup/crypto.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
+import { disableTwoFactor } from "./auth/twoFactor.js";
 
 const [cmd, arg] = process.argv.slice(2);
 const config = loadConfig();
@@ -34,8 +36,24 @@ async function main() {
     console.log(`Decrypted to ${out}`);
     return;
   }
+  if (cmd === "disable-2fa") {
+    const database = await openDatabase({
+      url: config.DATABASE_URL,
+      pgEnv: !!config.PGHOST,
+      password: config.PGPASSWORD,
+      pgliteDir: config.PGLITE_DIR,
+      lock: "check",
+    });
+    try {
+      await disableTwoFactor(database.db);
+      console.log("Two-step verification is off. Sign in with your password and turn it on again under Settings.");
+    } finally {
+      await database.close();
+    }
+    return;
+  }
   if (cmd !== "backup" && cmd !== "restore") {
-    console.error("Usage: cli.js backup | restore <file> | list | decrypt <file.enc>");
+    console.error("Usage: cli.js backup | restore <file> | list | decrypt <file.enc> | disable-2fa");
     process.exitCode = 2;
     return;
   }

@@ -12,6 +12,15 @@ import {
 import { getLanguage } from "../domain/settings.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
 import { tr } from "../i18n/index.js";
+import {
+  disableTwoFactor,
+  enableTwoFactor,
+  isTwoFactorEnabled,
+  renewRecoveryCodes,
+  startTwoFactor,
+  twoFactorStatus,
+  verifySecondFactor,
+} from "../auth/twoFactor.js";
 
 const credentials = z.object({
   username: z.string().trim().min(1).max(64),
@@ -24,7 +33,8 @@ const newPassword = z
   .max(256);
 
 export async function authRoutes(app: FastifyInstance) {
-  const { db, config } = app.deps;
+  const { db, config, secrets } = app.deps;
+  const codeBody = z.object({ code: z.string().trim().min(1).max(20) });
 
   const startSession = async (reply: FastifyReply, userId: number) => {
     const { token, expiresAt } = await createSession(db, userId, config.SESSION_DAYS);
@@ -55,11 +65,54 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   app.post("/login", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req, reply) => {
-    const body = credentials.parse(req.body);
+    const body = credentials.extend({ code: z.string().trim().max(20).optional() }).parse(req.body);
     const user = await checkCredentials(db, body.username, body.password);
     if (!user) throw new HttpError(401, tr("Invalid username or password"));
+    // With a second factor, the password alone isn't enough: ask for the code.
+    if (await isTwoFactorEnabled(db, user.id)) {
+      if (!body.code)
+        return reply.code(401).send({ error: tr("Enter the code from your authenticator app"), needsCode: true });
+      if (!(await verifySecondFactor(db, secrets, user.id, body.code)))
+        return reply.code(401).send({ error: tr("That code isn't right, or was already used"), needsCode: true });
+    }
     await startSession(reply, user.id);
     return { user };
+  });
+
+  // ---- Second factor (TOTP) ----
+  app.get("/2fa", async (req) => twoFactorStatus(db, req.user!.id));
+
+  app.post("/2fa/setup", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+    if (config.DEMO) throw notInDemo();
+    if (await isTwoFactorEnabled(db, req.user!.id)) throw new HttpError(409, tr("Two-step verification is already on"));
+    return startTwoFactor(db, secrets, req.user!.id);
+  });
+
+  app.post("/2fa/enable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+    if (config.DEMO) throw notInDemo();
+    const { code } = codeBody.parse(req.body);
+    const recoveryCodes = await enableTwoFactor(db, secrets, req.user!.id, code);
+    if (!recoveryCodes)
+      throw new HttpError(400, tr("That code isn't right; check the time on your phone and try again"));
+    return { recoveryCodes };
+  });
+
+  // Turning it off or renewing the recovery codes takes a code too, so a left-open session isn't enough.
+  app.post("/2fa/disable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+    const { password, code } = codeBody.extend({ password: z.string() }).parse(req.body);
+    const ok = await checkCredentials(db, req.user!.username, password);
+    if (!ok) throw new HttpError(400, tr("Current password is incorrect"));
+    if (!(await verifySecondFactor(db, secrets, req.user!.id, code)))
+      throw new HttpError(400, tr("That code isn't right, or was already used"));
+    await disableTwoFactor(db, req.user!.id);
+    return twoFactorStatus(db, req.user!.id);
+  });
+
+  app.post("/2fa/recovery-codes", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+    const { code } = codeBody.parse(req.body);
+    if (!(await verifySecondFactor(db, secrets, req.user!.id, code)))
+      throw new HttpError(400, tr("That code isn't right, or was already used"));
+    return { recoveryCodes: await renewRecoveryCodes(db, req.user!.id) };
   });
 
   app.post("/logout", async (req, reply) => {

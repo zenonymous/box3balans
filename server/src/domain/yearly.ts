@@ -1,6 +1,7 @@
 import type { DB } from "../db/client.js";
 import { type AccountYearDetails, accountYears, type accounts } from "../db/schema.js";
 import { D, type Decimal } from "../lib/decimal.js";
+import { RULES } from "../rules/index.js";
 
 type Account = typeof accounts.$inferSelect;
 export type AccountYear = typeof accountYears.$inferSelect;
@@ -8,15 +9,9 @@ export type AccountYear = typeof accountYears.$inferSelect;
 /**
  * Leegwaarderatio (2023–2026, unchanged): a home let with rent protection counts in box 3 at a
  * percentage of its WOZ value, depending on the yearly rent as a percentage of that WOZ value.
- * Belastingdienst, "Bezittingen en schulden box 3" (fisin2023–fisin2026).
+ * Belastingdienst, "Bezittingen en schulden box 3" (fisin2023–fisin2026); the bands are in src/rules/box3.json.
  */
-const LEEGWAARDE: { upToRentPct: number; valuePct: number }[] = [
-  { upToRentPct: 1, valuePct: 73 },
-  { upToRentPct: 2, valuePct: 79 },
-  { upToRentPct: 3, valuePct: 84 },
-  { upToRentPct: 4, valuePct: 90 },
-  { upToRentPct: 5, valuePct: 95 },
-];
+const LEEGWAARDE = RULES.leegwaarderatio;
 
 /** The fraction of the WOZ value a let home counts at. */
 export function leegwaarderatio(rentEur: Decimal, wozEur: Decimal): Decimal {

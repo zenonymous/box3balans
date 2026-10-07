@@ -3,6 +3,8 @@ export class ApiError extends Error {
     public status: number,
     message: string,
     public issues?: { path: (string | number)[]; message: string }[],
+    // The whole error body, for answers like { needsCode: true } at sign-in.
+    public data?: Record<string, unknown>,
   ) {
     super(message);
   }
@@ -28,7 +30,7 @@ export async function api<T = unknown>(method: string, url: string, body?: unkno
     if (res.status === 401 && !url.startsWith("/api/auth/")) onUnauthorized();
     const issues = data?.issues as ApiError["issues"];
     const detail = issues?.length ? issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ") : "";
-    throw new ApiError(res.status, detail || data?.error || res.statusText, issues);
+    throw new ApiError(res.status, detail || data?.error || res.statusText, issues, data ?? undefined);
   }
   return data as T;
 }
@@ -546,6 +548,7 @@ export interface Box3Overview {
   years: number[];
   config: Box3Config;
   defaultRates: Record<string, Box3Rates>;
+  rules: { checkedAt: string; sources: Record<string, string> };
   accounts: { id: number; name: string; kind: AccountKind; archived: boolean }[];
 }
 

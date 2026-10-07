@@ -76,6 +76,12 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  // Second factor (TOTP): the secret sealed with APP_SECRET, one being set up, the last time step
+  // used (each code works once), and the SHA-256 hashes of the unused recovery codes.
+  totpSecret: text("totp_secret"),
+  totpPending: text("totp_pending"),
+  totpLastStep: integer("totp_last_step"),
+  recoveryCodes: jsonb("recovery_codes").$type<string[]>().notNull().default([]),
 });
 
 export const sessions = pgTable("sessions", {

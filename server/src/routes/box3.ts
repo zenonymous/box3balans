@@ -12,6 +12,7 @@ import {
 } from "../domain/box3.js";
 import { actualReturn } from "../domain/box3Actual.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
+import { RULES } from "../rules/index.js";
 import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
@@ -29,7 +30,17 @@ export async function box3Routes(app: FastifyInstance) {
         .from(accounts)
         .orderBy(asc(accounts.name)),
     ]);
-    return { years, config, defaultRates: DEFAULT_RATES, accounts: accountRows };
+    return {
+      years,
+      config,
+      defaultRates: DEFAULT_RATES,
+      // When the built-in rules were last checked, and where each year's figures come from.
+      rules: {
+        checkedAt: RULES.checkedAt,
+        sources: Object.fromEntries(Object.entries(RULES.years).map(([y, r]) => [y, r.source])),
+      },
+      accounts: accountRows,
+    };
   });
 
   app.get("/:year", async (req) => {

@@ -1401,4 +1401,40 @@ export const NL: Record<string, string> = {
     "Over {year} geef je je werkelijk rendement op met het aparte formulier <0>Opgaaf werkelijk rendement</0> in Mijn Belastingdienst, na je aanslag.",
   "The full calculation and the rules per year are on the <0>Box 3</0> page. An estimate, not tax advice.":
     "De hele berekening en de regels per jaar staan op de pagina <0>Box 3</0>. Een schatting, geen belastingadvies.",
+  // stage E
+  "Code from your authenticator app": "Code uit je authenticator-app",
+  "Or one of your recovery codes, if you don't have your phone.":
+    "Of een van je herstelcodes, als je je telefoon niet bij de hand hebt.",
+  "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official figures are built in (checked {date}); edit them when the rules change.":
+    "Welk bezit telt als banktegoed, overige bezitting, groene belegging of niet in box 3, en de tarieven per jaar. De officiële cijfers zijn ingebouwd (gecontroleerd {date}); pas ze aan als de regels veranderen.",
+  Source: "Bron",
+  "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Kluishuis brings newer figures. Years before 2023 used a different system.":
+    "Bron: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per jaar (klik op een jaar). Ingebouwde regels gecontroleerd {date}; een nieuwere versie van Kluishuis brengt nieuwere cijfers mee. Jaren vóór 2023 gebruikten een ander stelsel.",
+  "Check for new versions": "Controleren op nieuwe versies",
+  "Once a day, Kluishuis asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.":
+    "Eén keer per dag vraagt Kluishuis GitHub naar de nieuwste versie; GitHub ziet dan je IP-adres. Er wordt verder niets verstuurd.",
+  "A newer version is available: <0>{version}</0>.": "Er is een nieuwere versie: <0>{version}</0>.",
+  "You have the latest version ({version}).": "Je hebt de nieuwste versie ({version}).",
+  "This build ({current}) has no version number; the latest release is <0>{version}</0>.":
+    "Deze build ({current}) heeft geen versienummer; de nieuwste versie is <0>{version}</0>.",
+  "Checked {when}.": "Gecontroleerd {when}.",
+  "Check now": "Nu controleren",
+  "Two-step verification": "Tweestapsverificatie",
+  "Your recovery codes. Each works once, instead of a code from the app, if you lose your phone. Keep them somewhere safe, away from this server: they are shown only now.":
+    "Je herstelcodes. Elke code werkt één keer, in plaats van een code uit de app, als je je telefoon kwijt bent. Bewaar ze op een veilige plek, niet op deze server: ze worden alleen nu getoond.",
+  "I've saved them": "Ik heb ze bewaard",
+  "Scan this with an authenticator app (such as Aegis, 2FAS, Google Authenticator or your password manager), then enter the code it shows.":
+    "Scan dit met een authenticator-app (zoals Aegis, 2FAS, Google Authenticator of je wachtwoordbeheerder) en vul de code in die de app toont.",
+  "QR code for your authenticator app": "QR-code voor je authenticator-app",
+  "Can't scan? Enter this key by hand:": "Lukt scannen niet? Voer deze sleutel met de hand in:",
+  "Turn on": "Aanzetten",
+  "Off. With it on, signing in also needs a code from an app on your phone, so a stolen password isn't enough.":
+    "Uit. Staat het aan, dan vraagt inloggen ook een code uit een app op je telefoon, zodat een gestolen wachtwoord niet genoeg is.",
+  "Set up": "Instellen",
+  "Turn off": "Uitzetten",
+  "New recovery codes": "Nieuwe herstelcodes",
+  "Locked out? On the server, run node dist/cli.js disable-2fa in the app container.":
+    "Buitengesloten? Voer op de server node dist/cli.js disable-2fa uit in de app-container.",
+  "On. {n} recovery code left.": "Aan. Nog {n} herstelcode over.",
+  "On. {n} recovery codes left.": "Aan. Nog {n} herstelcodes over.",
 };

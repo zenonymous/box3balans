@@ -36,6 +36,7 @@ import { attentionRoutes } from "./routes/attention.js";
 import { returnRoutes } from "./routes/returns.js";
 import { dividendRoutes } from "./routes/dividends.js";
 import { householdRoutes } from "./routes/household.js";
+import { updateRoutes } from "./routes/updates.js";
 import { tr } from "./i18n/index.js";
 
 export interface AppDeps {
@@ -197,6 +198,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(returnRoutes, { prefix: "/api/returns" });
   await app.register(dividendRoutes, { prefix: "/api/dividends" });
   await app.register(householdRoutes, { prefix: "/api/household" });
+  await app.register(updateRoutes, { prefix: "/api/updates" });
 
   // Serve the built frontend (single-page app) when present.
   const webDist = path.resolve(deps.config.WEB_DIST);

@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { type QueryClient, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   get,
   type Account,
@@ -9,6 +9,7 @@ import {
   type HistoryResponse,
   type Summary,
   type Person,
+  type User,
 } from "./api";
 
 export const usePortfolio = () =>
@@ -74,4 +75,14 @@ export function useInvalidateAll() {
 export function useDemo(): boolean {
   const qc = useQueryClient();
   return qc.getQueryData<{ demo?: boolean }>(["auth"])?.demo ?? false;
+}
+
+/**
+ * After signing in or out (or restoring a backup): drops what the old session loaded and sets who is
+ * signed in. Not qc.clear(): that would also drop the sign-in state the app is watching, and the
+ * screen wouldn't change.
+ */
+export function switchSession(qc: QueryClient, user: User | null) {
+  qc.setQueryData(["auth"], (s: Record<string, unknown> | undefined) => ({ ...s, needsSetup: false, user }));
+  qc.removeQueries({ predicate: (q) => q.queryKey[0] !== "auth" });
 }

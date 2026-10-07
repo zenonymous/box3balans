@@ -8,6 +8,7 @@ import { localDay } from "../lib/time.js";
 import { type AttributionNote, attribute, loadHousehold } from "./household.js";
 import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
 import { tr } from "../i18n/index.js";
+import { RULES } from "../rules/index.js";
 
 /**
  * Dutch box 3 ("sparen en beleggen"), forfaitaire spaarvariant (tax years 2023 onwards):
@@ -42,57 +43,12 @@ const ratesSchema = z.object({
 export type Box3Rates = z.infer<typeof ratesSchema>;
 
 /**
- * Official figures (belastingdienst.nl, "Hoe wordt mijn box 3-inkomen over <jaar> berekend?").
- * 2026 bank and debt percentages are provisional until early 2027. Green investment limits and
- * credit: 2023 €65,072 / 0.7%, 2024 €71,251 / 0.7%, 2025 €26,312 / 0.1%, 2026 €26,715 / 0.1%
- * (the exemption ends in 2027).
+ * Official figures (belastingdienst.nl, "Hoe wordt mijn box 3-inkomen over <jaar> berekend?"), kept
+ * in src/rules/box3.json with when they were last checked and a source per year.
  */
-export const DEFAULT_RATES: Record<string, Box3Rates> = {
-  "2023": {
-    bankPct: "0.92",
-    otherPct: "6.17",
-    debtPct: "2.46",
-    allowanceEur: "57000",
-    debtThresholdEur: "3400",
-    taxRatePct: "32",
-    greenExemptEur: "65072",
-    greenCreditPct: "0.7",
-    final: true,
-  },
-  "2024": {
-    bankPct: "1.44",
-    otherPct: "6.04",
-    debtPct: "2.61",
-    allowanceEur: "57000",
-    debtThresholdEur: "3700",
-    taxRatePct: "36",
-    greenExemptEur: "71251",
-    greenCreditPct: "0.7",
-    final: true,
-  },
-  "2025": {
-    bankPct: "1.37",
-    otherPct: "5.88",
-    debtPct: "2.70",
-    allowanceEur: "57684",
-    debtThresholdEur: "3800",
-    taxRatePct: "36",
-    greenExemptEur: "26312",
-    greenCreditPct: "0.1",
-    final: true,
-  },
-  "2026": {
-    bankPct: "1.28",
-    otherPct: "6.00",
-    debtPct: "2.70",
-    allowanceEur: "59357",
-    debtThresholdEur: "3800",
-    taxRatePct: "36",
-    greenExemptEur: "26715",
-    greenCreditPct: "0.1",
-    final: false,
-  },
-};
+export const DEFAULT_RATES: Record<string, Box3Rates> = Object.fromEntries(
+  Object.entries(RULES.years).map(([year, { source: _source, ...r }]) => [year, r]),
+);
 
 const ACCOUNT_KINDS = [
   "broker",
