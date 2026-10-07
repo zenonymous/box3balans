@@ -1,10 +1,10 @@
-# Kluishuis
+# Box3balans
 
-_Je kluis woont thuis._
+_Je box 3 in balans._
 
-Kluishuis houdt je beleggingen bij: **aandelen en ETF's, crypto, en goud en zilver** (thuis of in een kluis), alles in **euro's**, met een schatting van je **box 3**. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Kluishuis stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet.
+Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen en ETF's, crypto, goud en zilver** (thuis of in een kluis), een tweede woning, uitgeleend geld en schulden, alles in **euro's**. Met een schatting van je belasting, je werkelijk rendement en een overzicht voor de aangifte. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Box3balans stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet.
 
-> **Geen belastingadvies.** Kluishuis maakt schattingen. Controleer de bedragen met de jaaroverzichten van je bank en broker voordat je ze in je aangifte gebruikt. Gebruik op eigen risico; er is geen garantie (zie de [licentie](LICENSE)).
+> **Geen belastingadvies.** Box3balans maakt schattingen. Controleer de bedragen met de jaaroverzichten van je bank en broker voordat je ze in je aangifte gebruikt. Gebruik op eigen risico; er is geen garantie (zie de [licentie](LICENSE)).
 
 **Status:** in ontwikkeling en bruikbaar. De app is in het Nederlands, met de termen uit de aangifte; Engels kan ook (_Instellingen → Weergave → Taal_). Wat er nog komt, staat op de [roadmap](docs/ROADMAP.md).
 
@@ -26,11 +26,11 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 1. Maak een map en zet [`docker-compose.yml`](docker-compose.yml) erin:
 
    ```bash
-   mkdir kluishuis && cd kluishuis
-   curl -fsSLO https://raw.githubusercontent.com/OWNER/kluishuis/main/docker-compose.yml
+   mkdir box3balans && cd box3balans
+   curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.yml
    ```
 
-2. Start Kluishuis:
+2. Start Box3balans:
 
    ```bash
    docker compose up -d
@@ -50,16 +50,16 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 
    Voer daarna `docker compose up -d` opnieuw uit. Bewaar de wachtwoordzin in je wachtwoordmanager: zonder kun je een versleutelde back-up niet terugzetten.
 
-Een `.env` is niet verplicht. Bij de eerste start maakt Kluishuis zelf een sleutel voor het versleutelen van API-sleutels en een databasewachtwoord aan, in het volume `app-data`.
+Een `.env` is niet verplicht. Bij de eerste start maakt Box3balans zelf een sleutel voor het versleutelen van API-sleutels en een databasewachtwoord aan, in het volume `app-data`.
 
-**Controleren:** `docker compose logs app --tail 50`. De eerste regels tonen `Kluishuis starting` met de versie. Na een herstart van je NAS kan één keer `Database not reachable yet…, waiting for it` voorbijkomen: de app wacht dan tot de database klaar is.
+**Controleren:** `docker compose logs app --tail 50`. De eerste regels tonen `Box3balans starting` met de versie. Na een herstart van je NAS kan één keer `Database not reachable yet…, waiting for it` voorbijkomen: de app wacht dan tot de database klaar is.
 
 ### In één container
 
-Om het uit te proberen, of op een laptop met Docker Desktop, kan Kluishuis ook in één container draaien, met de database ingebouwd (PGlite):
+Om het uit te proberen, of op een laptop met Docker Desktop, kan Box3balans ook in één container draaien, met de database ingebouwd (PGlite):
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/OWNER/kluishuis/main/docker-compose.lite.yml
+curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.lite.yml
 docker compose -f docker-compose.lite.yml up -d
 ```
 
@@ -67,10 +67,10 @@ Voor een NAS of server is de standaardopstelling met een eigen PostgreSQL de ste
 
 ### Demo
 
-Eerst rondkijken? De demo draait Kluishuis met een voorbeeldhuishouden: Sanne, haar fiscale partner Daan en hun dochter Noor, met spaarrekeningen, beleggingen, crypto, edelmetaal, een vakantiehuis, uitgeleend geld en een studieschuld. De koersen zijn verzonnen. Je bent meteen ingelogd en er wordt niets bewaard; koppelingen, wallets en koersen ophalen staan uit.
+Eerst rondkijken? De demo draait Box3balans met een voorbeeldhuishouden: Sanne, haar fiscale partner Daan en hun dochter Noor, met spaarrekeningen, beleggingen, crypto, edelmetaal, een vakantiehuis, uitgeleend geld en een studieschuld. De koersen zijn verzonnen. Je bent meteen ingelogd en er wordt niets bewaard; koppelingen, wallets en koersen ophalen staan uit.
 
 ```bash
-docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/OWNER/kluishuis:latest
+docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/OWNER/box3balans:latest
 ```
 
 Open `http://localhost:8080`. Met Ctrl+C stop je de demo, en alles is weg.
@@ -80,11 +80,11 @@ Open `http://localhost:8080`. Met Ctrl+C stop je de demo, en alles is weg.
 Wil je eigen wijzigingen draaien, bouw het image dan vanuit de broncode:
 
 ```bash
-git clone https://github.com/OWNER/kluishuis.git && cd kluishuis
+git clone https://github.com/OWNER/box3balans.git && cd box3balans
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
-Werk je op een andere computer dan je server, dan kopieert `scripts/deploy.sh gebruiker@nas` de laatste commit via SSH naar `~/kluishuis` op de server en bouwt het daar. Geef een tweede argument voor een andere map. Moet `docker` daar met `sudo` (zoals op Synology): `DOCKER="sudo docker" scripts/deploy.sh gebruiker@nas`. Alleen gecommitte bestanden gaan mee, nooit `.env`, gegevens of back-ups.
+Werk je op een andere computer dan je server, dan kopieert `scripts/deploy.sh gebruiker@nas` de laatste commit via SSH naar `~/box3balans` op de server en bouwt het daar. Geef een tweede argument voor een andere map. Moet `docker` daar met `sudo` (zoals op Synology): `DOCKER="sudo docker" scripts/deploy.sh gebruiker@nas`. Alleen gecommitte bestanden gaan mee, nooit `.env`, gegevens of back-ups.
 
 ### Bijwerken
 
@@ -93,7 +93,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Je instellingen, database en back-ups blijven zoals ze zijn; databasemigraties draaien vanzelf bij het opstarten. Wil je horen wanneer er een nieuwe versie is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan: Kluishuis vraagt GitHub dan één keer per dag naar de nieuwste versie (GitHub ziet daarbij je IP-adres) en meldt een nieuwe versie bij _Aandacht nodig_. Standaard staat dat uit. Wil je eerst een back-up: `docker compose exec app node dist/cli.js backup`. Wil je op een vaste versie blijven, zet dan bijvoorbeeld `KLUISHUIS_VERSION=1.2.0` in `.env`. Wat er per versie verandert, staat bij de [releases](https://github.com/OWNER/kluishuis/releases).
+Je instellingen, database en back-ups blijven zoals ze zijn; databasemigraties draaien vanzelf bij het opstarten. Wil je horen wanneer er een nieuwe versie is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan: Box3balans vraagt GitHub dan één keer per dag naar de nieuwste versie (GitHub ziet daarbij je IP-adres) en meldt een nieuwe versie bij _Aandacht nodig_. Standaard staat dat uit. Wil je eerst een back-up: `docker compose exec app node dist/cli.js backup`. Wil je op een vaste versie blijven, zet dan bijvoorbeeld `BOX3BALANS_VERSION=1.2.0` in `.env`. Wat er per versie verandert, staat bij de [releases](https://github.com/OWNER/box3balans/releases).
 
 ### PostgreSQL upgraden
 
@@ -104,11 +104,11 @@ Kleine updates (18.x) komen mee met `docker compose pull`. Een nieuwe hoofdversi
 3. Zet in `docker-compose.yml` het image van `db` op de nieuwe versie (bijvoorbeeld `postgres:19-alpine`) **en** hernoem het volume (`db-data` → `db-data-19`, op beide plekken). Het oude volume blijft zo onaangeroerd als terugvaloptie.
 4. `docker compose up -d`. De app start met een lege database en maakt de tabellen aan.
 5. Zet terug: `docker compose exec app node dist/cli.js restore /backups/<de back-up uit stap 1>`, dan `docker compose restart app`, en log opnieuw in.
-6. Klopt alles, verwijder dan het oude volume: `docker volume rm kluishuis_db-data`.
+6. Klopt alles, verwijder dan het oude volume: `docker volume rm box3balans_db-data`.
 
 ### Toegang buitenshuis (VPN)
 
-Zet Kluishuis niet open naar het internet: stuur poort 8080 niet door in je router. Wil je erbij vanaf je telefoon of laptop buiten de deur, gebruik dan een VPN:
+Zet Box3balans niet open naar het internet: stuur poort 8080 niet door in je router. Wil je erbij vanaf je telefoon of laptop buiten de deur, gebruik dan een VPN:
 
 - **WireGuard of Tailscale, gewoon:** open `http://<vpn-adres-van-je-server>:8080`. De VPN versleutelt het verkeer al. Laat `COOKIE_SECURE=false`.
 - **Tailscale met HTTPS** (een echt `https://`-adres): zet MagicDNS en HTTPS-certificaten aan in de Tailscale-beheeromgeving en voer op de server uit (zo nodig met `sudo`):
@@ -117,7 +117,7 @@ Zet Kluishuis niet open naar het internet: stuur poort 8080 niet door in je rout
   tailscale serve --bg 8080
   ```
 
-  Kluishuis staat dan op `https://<servernaam>.<tailnet>.ts.net`. Zet `COOKIE_SECURE=true` in `.env` en voer `docker compose up -d` uit. Gebruik vanaf dan alleen het https-adres: via het gewone `http://`-adres blijf je niet ingelogd. Laat `TRUST_PROXY=false`. Alle verzoeken delen dan één limiet voor inlogpogingen; voor één gebruiker is dat prima.
+  Box3balans staat dan op `https://<servernaam>.<tailnet>.ts.net`. Zet `COOKIE_SECURE=true` in `.env` en voer `docker compose up -d` uit. Gebruik vanaf dan alleen het https-adres: via het gewone `http://`-adres blijf je niet ingelogd. Laat `TRUST_PROXY=false`. Alle verzoeken delen dan één limiet voor inlogpogingen; voor één gebruiker is dat prima.
 
   Wil je dat het https-adres de enige ingang is, publiceer de poort dan alleen op de server zelf: verander in `docker-compose.yml` de regel onder `ports` in `"127.0.0.1:${HTTP_PORT:-8080}:8080"`.
 
@@ -133,7 +133,7 @@ Een back-up is een gzip-bestand met **alle** gegevens behalve inlogsessies: reke
 
 **Kopieën elders.** Laat de back-uptool van je NAS (Hyper Backup, rclone, een cloudsync …) de map `backups` meenemen. De bestanden zijn van `PUID`/`PGID` uit `.env`: zet die op je eigen gebruiker (het commando `id` op de NAS toont ze), zodat jij en je back-uptool erbij kunnen. Of gebruik _Downloaden_ naast een back-up in Instellingen.
 
-**De app-sleutel.** API-sleutels van beurzen en de sleutel van je tweestapsverificatie staan versleuteld in de database, met een sleutel die Kluishuis bij de eerste start aanmaakt in het volume `app-data`. Die sleutel zit niet in de back-ups. Verhuis je naar een andere server, bewaar hem dan in je wachtwoordmanager en zet hem daar als `APP_SECRET` in `.env`:
+**De app-sleutel.** API-sleutels van beurzen en de sleutel van je tweestapsverificatie staan versleuteld in de database, met een sleutel die Box3balans bij de eerste start aanmaakt in het volume `app-data`. Die sleutel zit niet in de back-ups. Verhuis je naar een andere server, bewaar hem dan in je wachtwoordmanager en zet hem daar als `APP_SECRET` in `.env`:
 
 ```bash
 docker compose exec app cat /data/app-secret
@@ -147,7 +147,7 @@ Zonder die sleutel lukt het terugzetten ook, maar moet je de API-sleutels opnieu
 - Vanuit een bestand, bijvoorbeeld op een nieuwe server: zet het in de map `backups` en voer uit:
 
   ```bash
-  docker compose exec app node dist/cli.js restore /backups/kluishuis-20261002-030000-auto.json.gz.enc
+  docker compose exec app node dist/cli.js restore /backups/box3balans-20261002-030000-auto.json.gz.enc
   docker compose restart app
   ```
 
@@ -159,7 +159,7 @@ Zonder die sleutel lukt het terugzetten ook, maar moet je de API-sleutels opnieu
 **Extra vangnet (optioneel).** Een ruwe databasedump; terugzetten daarvan vraagt dezelfde PostgreSQL-versie:
 
 ```bash
-docker compose exec db pg_dump -U kluishuis kluishuis | gzip > kluishuis-db.sql.gz
+docker compose exec db pg_dump -U box3balans box3balans | gzip > box3balans-db.sql.gz
 ```
 
 **Exports.** _Instellingen → Back-ups en export_ downloadt ook **alle transacties** en de **huidige posities** als CSV. _Resultaat_, _Inkomsten_ en _Box 3_ hebben elk hun eigen CSV-export.
@@ -171,12 +171,12 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 | Variabele               | Standaard          | Waarvoor                                                                                      |
 | ----------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
 | `HTTP_PORT`             | `8080`             | Poort op de server                                                                            |
-| `KLUISHUIS_VERSION`     | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                                  |
+| `BOX3BALANS_VERSION`    | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                                  |
 | `BACKUP_PASSPHRASE`     | —                  | Versleutelt back-ups (minstens 12 tekens). Nodig om terug te zetten: bewaar hem goed          |
 | `PUID` / `PGID`         | `1000`             | Eigenaar van de back-upbestanden: jouw gebruikers- en groeps-id                               |
 | `BACKUP_INTERVAL_HOURS` | `24`               | Uren tussen automatische back-ups; `0` = uit                                                  |
 | `BACKUP_KEEP`           | `14`               | Aantal automatische back-ups dat bewaard blijft                                               |
-| `COOKIE_SECURE`         | `false`            | Op `true` als je Kluishuis via HTTPS opent                                                    |
+| `COOKIE_SECURE`         | `false`            | Op `true` als je Box3balans via HTTPS opent                                                   |
 | `TRUST_PROXY`           | `false`            | Alleen achter een reverse proxy: `true`, het aantal proxy's, of hun IP-adres(sen)             |
 | `SESSION_DAYS`          | `30`               | Hoe lang je ingelogd blijft                                                                   |
 | `TIME_ZONE`             | `Europe/Amsterdam` | Kalender voor "welke dag of welk jaar" (box 3-peildatum, jaarresultaten)                      |
@@ -195,7 +195,7 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 1. **Overzicht en Posities:** je vermogen door de tijd, de verandering van vandaag, de verdeling per beleggingssoort, per positie of per rekening, en elke positie per rekening met kostprijs en open en gerealiseerd resultaat.
 2. **Aandacht nodig:** bovenaan de zijbalk verschijnt een rode of oranje link als iets aandacht nodig heeft: een mislukte synchronisatie, saldi die niet kloppen met een beurs of wallet, koersen die niet bijgewerkt konden worden, een negatief saldo, stortingen zonder waarde, opnames die niet aan een storting gekoppeld zijn, back-ups die mislukt zijn, te lang geleden zijn of niet versleuteld zijn, belastingregels die meer dan een jaar oud zijn, of (als je dat aanzet) een nieuwe versie. Elk punt linkt naar waar je het oplost; een waarschuwing kun je wegklikken tot er iets aan verandert.
 3. **Geschiedenis** (_Instellingen → Geschiedenis_): elke wijziging aan transacties, beleggingen, rekeningen, edelmetaal, imports, koppelingen en wallets, veld voor veld, of jij of een synchronisatie of import het deed. Verwijderde transacties en edelmetaalstukken zet je daar terug.
-4. **Huishouden** (_Instellingen → Huishouden_): jouw naam, je partner en je kinderen, met geboortedatum en wie het gezag heeft. Daarmee weet Kluishuis welke rekeningen in jouw box 3 meetellen, en voor hoeveel.
+4. **Huishouden** (_Instellingen → Huishouden_): jouw naam, je partner en je kinderen, met geboortedatum en wie het gezag heeft. Daarmee weet Box3balans welke rekeningen in jouw box 3 meetellen, en voor hoeveel.
 5. **Rekeningen:** maak er één per plek waar je iets aanhoudt: banken (ING-spaarrekening), brokers (DEGIRO), beurzen (Bitvavo), wallets (Ledger), kluizen (Goldrepublic), thuis (de kluis), en ook een tweede of verhuurde woning, uitgeleend geld, een kapitaalverzekering of een schuld. Per rekening kies je:
    - **van wie:** van jou, van je partner, van jullie samen (met jouw aandeel, meestal 50%) of van een kind;
    - **hoe je hem bijhoudt:** met **transacties** (aankopen, verkopen, dividenden: met de hand, uit een CSV of via een koppeling; dan krijg je koersen, rendementen en geschiedenis), of met **waarden per jaar**: alleen de waarde op 1 januari en wat er in het jaar binnenkwam, uitging en werd verdiend. Dat is genoeg voor box 3. Woningen, uitgeleend geld, schulden en verzekeringen gaan altijd zo.
@@ -214,12 +214,12 @@ Voor een rekening met **waarden per jaar** (_Rekeningen → Waarden per jaar_) v
 
 Bij een **woning** vul je de WOZ-waarde in die voor dat jaar geldt (die met waardepeildatum 1 januari van het jaar ervoor). Verhuur je hem met huurbescherming, vink dan _Verhuurd_ aan en vul de jaarhuur in: hij telt dan voor een deel van de WOZ-waarde (de leegwaarderatio, 73% tot 100%, afhankelijk van de huur als percentage van de WOZ-waarde). Je eigen woning hoort niet in box 3 (dat is box 1).
 
-**Bankexport inlezen.** Bij een bankrekening haalt _Bankexport inlezen_ de saldi op 1 januari, de rente en het geld erin en eruit per jaar uit de transacties die je bij je bank downloadt. Kluishuis leest:
+**Bankexport inlezen.** Bij een bankrekening haalt _Bankexport inlezen_ de saldi op 1 januari, de rente en het geld erin en eruit per jaar uit de transacties die je bij je bank downloadt. Box3balans leest:
 
 - **CSV met een saldokolom**, zoals van ING (_Saldo na mutatie_), Rabobank (_Saldo na trn_), Knab, Triodos en andere banken; meerdere rekeningen in één bestand worden uit elkaar gehouden;
 - **het TAB-bestand van ABN AMRO**;
 - **CAMT.053**, het standaard afschriftformaat dat de meeste banken aanbieden;
-- **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Kluishuis de rest terug.
+- **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Box3balans de rest terug.
 
 Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je ziet eerst per jaar wat er gevonden is: een geschat saldo (omdat het bestand halverwege een jaar begint of eindigt) en de totalen van jaren die het bestand maar deels beslaat, staan uit tot je ze aanvinkt. Er wordt pas iets opgeslagen als je in de tabel op _Opslaan_ drukt.
 
@@ -229,7 +229,7 @@ In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het n
 
 _Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of spreadsheet.
 
-**Herkende exports.** Deze bestanden herkent Kluishuis zelf; je hoeft dan geen kolommen te kiezen:
+**Herkende exports.** Deze bestanden herkent Box3balans zelf; je hoeft dan geen kolommen te kiezen:
 
 | Aanbieder         | Welk bestand                                                          | Wat er wordt ingelezen                                                                        |
 | ----------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
@@ -243,12 +243,12 @@ _Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of
 | Saxo              | Transactieoverzicht (Excel, opgeslagen als CSV)                       | Aankopen, verkopen met kosten, dividend                                                       |
 | Revolut           | Aandelenoverzicht (CSV)                                               | Aankopen, verkopen, dividend                                                                  |
 
-Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Kluishuis het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten. Deze formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/OWNER/kluishuis/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
+Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Box3balans het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten. Deze formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/OWNER/box3balans/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
 
 Bij andere bestanden:
 
 1. **Kies de rekening en het bestand.** Puntkomma's of komma's, decimale komma's of punten, een byte order mark, titelregels boven de kopregel en Windows-codering worden allemaal herkend.
-2. **Controleer de kolommen.** Kluishuis raadt welke kolom wat is aan de hand van gangbare Engelse en Nederlandse kopjes (Datum, Aantal, Koers, Valuta …) en toont per kolom een voorbeeldwaarde. Het soort transactie komt uit een kolom, is voor elke regel hetzelfde, of volgt uit het teken van het aantal (negatief = verkoop, zoals in sommige brokerexports). Elke waarde in een soortkolom ("Koop", "Staking", "Airdrop" …) koppel je aan een soort of sla je over. Bewaar de instellingen onder een naam: bestanden met dezelfde kolommen gebruiken ze dan vanzelf.
+2. **Controleer de kolommen.** Box3balans raadt welke kolom wat is aan de hand van gangbare Engelse en Nederlandse kopjes (Datum, Aantal, Koers, Valuta …) en toont per kolom een voorbeeldwaarde. Het soort transactie komt uit een kolom, is voor elke regel hetzelfde, of volgt uit het teken van het aantal (negatief = verkoop, zoals in sommige brokerexports). Elke waarde in een soortkolom ("Koop", "Staking", "Airdrop" …) koppel je aan een soort of sla je over. Bewaar de instellingen onder een naam: bestanden met dezelfde kolommen gebruiken ze dan vanzelf.
 3. **Bekijk alles voordat je importeert.** Er wordt niets opgeslagen tot je op _… transacties importeren_ drukt. Het voorbeeld toont:
    - **Nieuw:** wordt geïmporteerd.
    - **Al geïmporteerd:** dezelfde regel uit een eerdere import van dit of een overlappend bestand.
@@ -262,7 +262,7 @@ Tijden zonder tijdzone worden gelezen als lokale tijd (`TIME_ZONE`). Prijzen in 
 
 **Sjabloon:** voor alles zonder bruikbare export vul je [het sjabloon](server/src/import/mapping.ts) in (_↓ Template_ op de importpagina). Kolommen: `date` (JJJJ-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (bij een split: de verhouding, bijvoorbeeld 4), `price`, `total`, `currency`, `fee`, `amount` en `tax_withheld` (dividenden), `notes`, `id`.
 
-Wil je dat Kluishuis het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/OWNER/kluishuis/issues/new/choose).
+Wil je dat Box3balans het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/OWNER/box3balans/issues/new/choose).
 
 ### Koppelingen met beurzen en brokers
 
@@ -288,7 +288,7 @@ Bekende beperkingen: bij Bitvavo gaat de koppeling ervan uit dat kosten bovenop 
 
 ### Wallets (eigen beheer, op adres)
 
-**Wallets** volgt adressen alleen-lezen, via gratis openbare blockchainverkenners. Alleen BNB Chain vraagt een (gratis) API-sleutel. Kluishuis vraagt nooit om je seed phrase of privésleutels en bewaart die ook niet.
+**Wallets** volgt adressen alleen-lezen, via gratis openbare blockchainverkenners. Alleen BNB Chain vraagt een (gratis) API-sleutel. Box3balans vraagt nooit om je seed phrase of privésleutels en bewaart die ook niet.
 
 | Blockchain                                                          | Bron                               | Opmerkingen                                                                                                                                                                                                                                                                     |
 | ------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -299,7 +299,7 @@ Bekende beperkingen: bij Bitvavo gaat de koppeling ervan uit dat kosten bovenop 
 | Solana                                                              | openbare RPC (of `SOLANA_RPC_URL`) | SOL en SPL-tokens. Grote geschiedenissen komen er geleidelijk in (ongeveer 1.500 transacties per synchronisatie) door de limiet van de openbare RPC                                                                                                                             |
 | XRP Ledger                                                          | xrplcluster.com                    | XRP-betalingen; uitgegeven tokens worden overgeslagen                                                                                                                                                                                                                           |
 | Tron                                                                | TronGrid                           | TRX en TRC-20-tokens (zoals USDT)                                                                                                                                                                                                                                               |
-| Cardano                                                             | Koios (gratis openbare API)        | ADA, native tokens en **stakingbeloningen** (gedateerd wanneer ze opneembaar worden; teruggekregen borg is geen inkomen). Plak het stake-adres (stake1…) of een ontvangstadres: Kluishuis volgt de hele wallet via de stake-sleutel                                             |
+| Cardano                                                             | Koios (gratis openbare API)        | ADA, native tokens en **stakingbeloningen** (gedateerd wanneer ze opneembaar worden; teruggekregen borg is geen inkomen). Plak het stake-adres (stake1…) of een ontvangstadres: Box3balans volgt de hele wallet via de stake-sleutel                                            |
 | Dogecoin                                                            | BlockCypher (gratis)               | Adressen of **dgub/xpub** (BIP44, gap limit 20). De gratis laag staat 100 verzoeken per uur toe: een grote geschiedenis of een nieuwe xpub kan een paar synchronisaties duren                                                                                                   |
 
 Zo werkt een wallet-synchronisatie:
@@ -344,7 +344,7 @@ Het blijft een schatting: controleer de waarden met de jaaroverzichten van je ba
 - **Vermogen door de tijd** wordt uit je transacties berekend: elke dag worden je posities gewaardeerd tegen de slotkoers van die dag, met de laatste slotkoers over weekenden en feestdagen. Posities zonder koersgeschiedenis tellen tegen kostprijs, en de grafiek vermeldt dat. Veranderingen per periode (1W, 1M, YTD) zijn veranderingen van je vermogen, stortingen inbegrepen.
 - **Resultaat per jaar** = gerealiseerd resultaat + inkomsten + verandering in open (ongerealiseerd) resultaat over het jaar. Stortingen en opnames zijn geen resultaat, en de jaren tellen op tot het totale resultaat. Kosten en ingehouden belasting zitten er al in en worden ter informatie getoond.
 - **Inkomsten** = dividenden na ingehouden belasting, staking- en andere beloningen tegen hun eurowaarde bij ontvangst, en rente (beloningen op geld). De pagina's _Inkomsten_ en _Resultaat_ exporteren CSV.
-- **Geld erin en eruit.** Voor rendementen komt geld je portefeuille in of uit met stortingen en opnames, beleggingen die erin of eruit gaan (tegen de marktwaarde van die dag), aan- en verkopen die niet via een bijgehouden geldsaldo lopen, dividenden die naar een bankrekening buiten Kluishuis gaan, en gekocht of verkocht fysiek metaal. Beloningen, kosten en overboekingen tussen je rekeningen blijven erbinnen: dat zijn resultaten.
+- **Geld erin en eruit.** Voor rendementen komt geld je portefeuille in of uit met stortingen en opnames, beleggingen die erin of eruit gaan (tegen de marktwaarde van die dag), aan- en verkopen die niet via een bijgehouden geldsaldo lopen, dividenden die naar een bankrekening buiten Box3balans gaan, en gekocht of verkocht fysiek metaal. Beloningen, kosten en overboekingen tussen je rekeningen blijven erbinnen: dat zijn resultaten.
 - **Tijdgewogen rendement** (_Resultaat → Rendement %_) schakelt de rendementen van elke dag aan elkaar, met stortingen vanaf het begin van hun dag en opnames aan het eind: hoe de beleggingen het deden, ongeacht wanneer jij geld erin of eruit haalde, zoals fondsen het melden. **Geldgewogen rendement** (XIRR) is je eigen rendement inclusief die timing: per jaar over dat jaar, over de hele periode als jaarrendement. Per positie en per rekening is het een jaarrendement als je die een jaar of langer hebt, anders het rendement over de looptijd.
 - **Benchmark:** hetzelfde geld erin en eruit, maar belegd in MSCI World (IWDA), FTSE All-World (VWCE), S&P 500 (CSPX), goud of bitcoin. Deze fondsen herbeleggen dividend, dus hun koersrendement is hun hele rendement. De koersen van de benchmark worden bewaard als verborgen belegging.
 - **Kosten** (_Resultaat → Kosten_): transactie- en accountkosten, netwerk- en kluiskosten betaald in een belegging (tegen wat die stukken kostten), ingehouden dividendbelasting, opslag boven de spotprijs bij fysiek metaal, en de lopende kosten van fondsen, geschat als dagwaarde van het fonds × de TER ÷ 365. Vul de TER van een fonds (uit de factsheet) in onder _Beleggingen_. Lopende kosten gaan van de koers van het fonds af en zitten dus al in je resultaten; het overzicht maakt ze alleen zichtbaar.
@@ -410,32 +410,32 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 - Elke toevoeging, wijziging en verwijdering wordt vastgelegd in `audit_log`, met de situatie ervoor en erna.
 - Antwoorden hebben een strikte Content-Security-Policy (alleen scripts van de eigen site, niet in een frame te laden), `nosniff`, `no-referrer` en een beperkende Permissions-Policy. Met `COOKIE_SECURE=true` komt er HSTS bij.
 - De app draait als gewone gebruiker, niet als root. Back-ups zijn alleen leesbaar voor de eigenaar, en back-upnamen worden gecontroleerd zodat verzoeken niet buiten de back-upmap kunnen komen.
-- Kluishuis op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
+- Box3balans op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
 - API-sleutels van beurzen worden versleuteld opgeslagen (AES-256-GCM, HKDF van de app-sleutel) en nooit teruggestuurd of gelogd. Verandert de app-sleutel, dan moet je ze opnieuw invoeren.
 - Een kwetsbaarheid gevonden? Meld het privé: zie [SECURITY.md](SECURITY.md).
 
 ## Problemen oplossen
 
-| Wat je ziet                                               | Wat je kunt doen                                                                                                                                                                                                                                             |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Een gesynchroniseerde munt heeft de verkeerde koers       | Na een synchronisatie toont _Nieuwe beleggingen toegevoegd_ aan welke koersbron elke nieuwe munt gekoppeld is (bijvoorbeeld "LUNA → CoinGecko terra-luna-2"). Klopt dat niet, pas de belegging dan aan onder _Beleggingen_ en vul de juiste CoinGecko-id in. |
-| Een koers staat op "verouderde koers" of "nog geen koers" | _Instellingen → Koersen_ toont wat mislukte. Gratis API's begrenzen; koersen worden bij de volgende update opnieuw geprobeerd. Bij een verkeerde ticker: pas de belegging aan (_Beleggingen_) en verbeter de Yahoo-ticker of CoinGecko-id.                   |
-| De grafiek meldt "gewaardeerd tegen aankoopwaarde"        | De koersgeschiedenis wordt nog geladen (dat gebeurt op de achtergrond na wijzigingen), of er is geen gratis geschiedenis voor die belegging. `POST /api/prices/backfill` dwingt een nieuwe controle af.                                                      |
-| Een koppeling of wallet toont verschillen in saldo        | Geschiedenis die de API niet laat zien (heel oude transacties, stakingverplaatsingen). Vul de geschiedenis aan, of gebruik _Corrigeren_ voor een correctiestorting of -opname.                                                                               |
-| "Opgeslagen sleutels zijn niet te ontsleutelen"           | De app-sleutel is veranderd (bijvoorbeeld een nieuw `app-data`-volume of een andere `APP_SECRET`). Zet de oude sleutel terug, of voer de API-sleutels opnieuw in.                                                                                            |
-| De container is unhealthy                                 | `docker compose logs app`. De gezondheidscontrole (`/api/health`) faalt ook als de database niet bereikbaar is.                                                                                                                                              |
-| Pagina's zijn traag                                       | Zet `LOG_LEVEL=debug` en voer `docker compose up -d` uit; elk verzoek logt dan zijn `responseTime` in milliseconden (`docker compose logs app \| grep responseTime`). Zet het daarna terug op `info`.                                                        |
-| De `db`-container herstart steeds na een update           | Het log noemt oude databases of onverenigbare databestanden: de hoofdversie van PostgreSQL is veranderd. Ga terug naar de vorige image-tag en volg [PostgreSQL upgraden](#postgresql-upgraden).                                                              |
-| "The database … is in use by the running Kluishuis"       | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Instellingen → Back-ups en export_, of stop eerst de app.                                                                             |
-| Telefoon met de authenticator-app kwijt                   | Log in met een van je herstelcodes en stel tweestapsverificatie opnieuw in. Geen herstelcodes meer: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: stop eerst de app).                                 |
-| Buitengesloten                                            | Er is één gebruiker en geen herstel via e-mail. Zet een back-up terug, of wis de gebruiker in de database: `docker compose exec db psql -U kluishuis -c "delete from users"`, en open de app om de eerste installatie opnieuw te doen (je gegevens blijven). |
+| Wat je ziet                                               | Wat je kunt doen                                                                                                                                                                                                                                              |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Een gesynchroniseerde munt heeft de verkeerde koers       | Na een synchronisatie toont _Nieuwe beleggingen toegevoegd_ aan welke koersbron elke nieuwe munt gekoppeld is (bijvoorbeeld "LUNA → CoinGecko terra-luna-2"). Klopt dat niet, pas de belegging dan aan onder _Beleggingen_ en vul de juiste CoinGecko-id in.  |
+| Een koers staat op "verouderde koers" of "nog geen koers" | _Instellingen → Koersen_ toont wat mislukte. Gratis API's begrenzen; koersen worden bij de volgende update opnieuw geprobeerd. Bij een verkeerde ticker: pas de belegging aan (_Beleggingen_) en verbeter de Yahoo-ticker of CoinGecko-id.                    |
+| De grafiek meldt "gewaardeerd tegen aankoopwaarde"        | De koersgeschiedenis wordt nog geladen (dat gebeurt op de achtergrond na wijzigingen), of er is geen gratis geschiedenis voor die belegging. `POST /api/prices/backfill` dwingt een nieuwe controle af.                                                       |
+| Een koppeling of wallet toont verschillen in saldo        | Geschiedenis die de API niet laat zien (heel oude transacties, stakingverplaatsingen). Vul de geschiedenis aan, of gebruik _Corrigeren_ voor een correctiestorting of -opname.                                                                                |
+| "Opgeslagen sleutels zijn niet te ontsleutelen"           | De app-sleutel is veranderd (bijvoorbeeld een nieuw `app-data`-volume of een andere `APP_SECRET`). Zet de oude sleutel terug, of voer de API-sleutels opnieuw in.                                                                                             |
+| De container is unhealthy                                 | `docker compose logs app`. De gezondheidscontrole (`/api/health`) faalt ook als de database niet bereikbaar is.                                                                                                                                               |
+| Pagina's zijn traag                                       | Zet `LOG_LEVEL=debug` en voer `docker compose up -d` uit; elk verzoek logt dan zijn `responseTime` in milliseconden (`docker compose logs app \| grep responseTime`). Zet het daarna terug op `info`.                                                         |
+| De `db`-container herstart steeds na een update           | Het log noemt oude databases of onverenigbare databestanden: de hoofdversie van PostgreSQL is veranderd. Ga terug naar de vorige image-tag en volg [PostgreSQL upgraden](#postgresql-upgraden).                                                               |
+| "The database … is in use by the running Box3balans"      | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Instellingen → Back-ups en export_, of stop eerst de app.                                                                              |
+| Telefoon met de authenticator-app kwijt                   | Log in met een van je herstelcodes en stel tweestapsverificatie opnieuw in. Geen herstelcodes meer: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: stop eerst de app).                                  |
+| Buitengesloten                                            | Er is één gebruiker en geen herstel via e-mail. Zet een back-up terug, of wis de gebruiker in de database: `docker compose exec db psql -U box3balans -c "delete from users"`, en open de app om de eerste installatie opnieuw te doen (je gegevens blijven). |
 
 ## Licentie
 
-Kluishuis is vrije software onder de [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Je mag het gebruiken, bestuderen, aanpassen en verspreiden. Verspreid je een aangepaste versie, of laat je anderen die via een netwerk gebruiken, dan moet je hun de broncode van die versie aanbieden, onder dezelfde licentie. De app linkt daarom naar zijn eigen broncode (_Instellingen → Over_). Er is geen garantie.
+Box3balans is vrije software onder de [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Je mag het gebruiken, bestuderen, aanpassen en verspreiden. Verspreid je een aangepaste versie, of laat je anderen die via een netwerk gebruiken, dan moet je hun de broncode van die versie aanbieden, onder dezelfde licentie. De app linkt daarom naar zijn eigen broncode (_Instellingen → Over_). Er is geen garantie.
 
-De naam "Kluishuis" valt niet onder de licentie: geef een aangepaste versie die je verspreidt een eigen naam.
+De naam "Box3balans" valt niet onder de licentie: geef een aangepaste versie die je verspreidt een eigen naam.
 
 ## In English
 
-Kluishuis is a self-hosted dashboard for Dutch investors: stocks and ETFs, crypto, and gold and silver, in euros, with an estimate of the Dutch wealth tax (box 3), including the actual-return rebuttal scheme, a per-year overview in the order of the tax return, and a preview of the system planned from 2028. It runs on your own NAS, home server or laptop with Docker (`docker compose up -d` with [`docker-compose.yml`](docker-compose.yml)), and your data never leaves it. The interface is Dutch, with English under Settings → Appearance → Language; the documentation is in Dutch. Contributions in English are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under the AGPL-3.0.
+Box3balans keeps track of your Dutch wealth tax (box 3) and everything in it: savings, stocks and ETFs, crypto, gold and silver, property and debts, in euros. It estimates the tax, including the actual-return rebuttal scheme, a per-year overview in the order of the tax return, and a preview of the system planned from 2028. It runs on your own NAS, home server or laptop with Docker (`docker compose up -d` with [`docker-compose.yml`](docker-compose.yml)), and your data never leaves it. The interface is Dutch, with English under Settings → Appearance → Language; the documentation is in Dutch. Contributions in English are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under the AGPL-3.0.

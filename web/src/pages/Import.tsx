@@ -94,7 +94,7 @@ interface Upload {
   fileName: string;
   mapping: Mapping;
   preset: string | null;
-  // A known export (DEGIRO, Bitvavo …), converted to the Kluishuis template.
+  // A known export (DEGIRO, Bitvavo …), converted to the Box3balans template.
   format: { id: string; label: string; rows: number } | null;
 }
 
@@ -251,7 +251,7 @@ export function ImportPage() {
     <>
       <PageHeader
         title={t("Import CSV")}
-        subtitle={t("Transactions from a broker or exchange export, or from the Kluishuis template")}
+        subtitle={t("Transactions from a broker or exchange export, or from the Box3balans template")}
         actions={
           <a
             href="/api/import/template.csv"
@@ -323,8 +323,8 @@ export function ImportPage() {
                   <p className="text-sm text-ink-2">
                     {tn(
                       upload.format.rows,
-                      "Kluishuis read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.",
-                      "Kluishuis read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.",
+                      "Box3balans read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.",
+                      "Box3balans read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.",
                     )}
                   </p>
                   <p className="mt-2 text-xs text-muted">

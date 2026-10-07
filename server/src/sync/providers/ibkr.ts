@@ -38,7 +38,7 @@ const RETRY_CODES = new Set(["1001", "1004", "1009", "1018", "1019", "1021"]);
 
 async function getText(ctx: ProviderContext, url: string): Promise<string> {
   const res = await ctx.fetchFn(url, {
-    headers: { "User-Agent": "kluishuis/1.0" },
+    headers: { "User-Agent": "box3balans/1.0" },
     signal: AbortSignal.timeout(60_000),
   });
   if (!res.ok) throw new ProviderError(`IBKR: HTTP ${res.status}`);

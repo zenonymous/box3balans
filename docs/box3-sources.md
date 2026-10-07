@@ -16,7 +16,7 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 ## Wat in welke categorie valt, en van wie het is
 
-Wat de app toepast (Kluishuis: _Huishouden_ en _Rekeningen_):
+Wat de app toepast (Box3balans: _Huishouden_ en _Rekeningen_):
 
 - **Banktegoeden:** bank- en spaartegoeden in Nederland en daarbuiten, contant geld boven de vrijstelling (per persoon € 596 in 2023, € 653 in 2024, € 661 in 2025, € 672 in 2026; het dubbele voor partners die het hele jaar fiscale partner zijn), premiedepots, het niet-vrijgestelde deel van groene spaartegoeden.
 - **Overige bezittingen** (beleggingen en andere bezittingen): aandelen, obligaties en andere beleggingen, het niet-vrijgestelde deel van groene beleggingen, overige vorderingen (zoals uitgeleend geld, behalve tussen fiscale partners of tussen ouders en minderjarige kinderen), een tweede woning, een verhuurde woning, overige onroerende zaken, cryptovaluta, kapitaalverzekeringen (met hun eigen vrijstellingen, die de app niet toepast).
@@ -34,7 +34,7 @@ Bronnen:
 
 Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Over **2024 en eerder** geef je het door met het formulier _Opgaaf werkelijk rendement_ (OWR) in Mijn Belastingdienst, beschikbaar sinds 8 juli 2025. **Vanaf 2025** vraagt de aangifte inkomstenbelasting zelf of je je werkelijk rendement wilt opgeven; de Belastingdienst rekent dan beide manieren uit en gebruikt de gunstigste.
 
-Wat de app toepast (Kluishuis: _Box 3 → jaar → Werkelijk rendement_):
+Wat de app toepast (Box3balans: _Box 3 → jaar → Werkelijk rendement_):
 
 - **Werkelijk rendement** = direct rendement (rente, dividenden **bruto**, huur, andere inkomsten zoals stakingbeloningen) + indirect rendement (alle waardeveranderingen, gerealiseerd en ongerealiseerd, van elke box 3-bezitting die je in het jaar had, niet alleen die op 1 januari) − **werkelijk betaalde rente op box 3-schulden**.
 - **Kosten zijn niet aftrekbaar**, behalve rente op schulden. Transactie- en accountkosten verlagen het niet, en ingehouden dividendbelasting ook niet: dividenden tellen bruto.
@@ -50,7 +50,7 @@ Bronnen:
 
 - Belastingdienst, _Wat is mijn werkelijk rendement?_: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/wat-is-mijn-werkelijk-rendement
 - Belastingdienst, _Werkelijk rendement in belastingaangifte 2025_: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/werkelijk-rendement-belastingaangifte
-- Belastingdienst, _Rekenvoorbeelden berekening werkelijk rendement_ (gecontroleerd 7 oktober 2026; voorbeelden 3, 4 en 8 staan als test in `server/test/box3-examples.test.ts`). De voorbeelden met een verhuurde woning rekenen de waardeverandering over de volle WOZ-waarde; Kluishuis gebruikt de leegwaarde, net als voor het forfaitaire rendement. Welke van de twee klopt voor het werkelijk rendement is niet zeker: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/rekenvoorbeelden-berekening-werkelijk-rendement
+- Belastingdienst, _Rekenvoorbeelden berekening werkelijk rendement_ (gecontroleerd 7 oktober 2026; voorbeelden 3, 4 en 8 staan als test in `server/test/box3-examples.test.ts`). De voorbeelden met een verhuurde woning rekenen de waardeverandering over de volle WOZ-waarde; Box3balans gebruikt de leegwaarde, net als voor het forfaitaire rendement. Welke van de twee klopt voor het werkelijk rendement is niet zeker: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/rekenvoorbeelden-berekening-werkelijk-rendement
 - Belastingdienst, veelgestelde vragen over de Opgaaf werkelijk rendement (geen heffingsvrij vermogen; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
 - SRA, overzicht van de tegenbewijsregeling 2017–2027 (bruto dividenden, geen schuldendrempel, partners, toerekening van rente): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 

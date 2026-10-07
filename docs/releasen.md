@@ -10,8 +10,8 @@
 
    (Op Linux zonder `''` na `-i`.) Controleer daarna met `grep -rn /OWNER/ --exclude-dir=node_modules --exclude=releasen.md .` dat er niets meer staat.
 
-2. Maak de repository aan en push `main`. De workflow **CI** test elke push en publiceert `ghcr.io/<github-naam>/kluishuis:edge`.
-3. Zet het package openbaar: GitHub → je profiel → **Packages** → `kluishuis` → **Package settings** → **Change visibility** → Public. Een nieuw package is standaard privé, en dan kan niemand het image downloaden.
+2. Maak de repository aan en push `main`. De workflow **CI** test elke push en publiceert `ghcr.io/<github-naam>/box3balans:edge`.
+3. Zet het package openbaar: GitHub → je profiel → **Packages** → `box3balans` → **Package settings** → **Change visibility** → Public. Een nieuw package is standaard privé, en dan kan niemand het image downloaden.
 4. Zet onder **Settings → Security** de optie **Private vulnerability reporting** aan, zodat [SECURITY.md](../SECURITY.md) werkt.
 5. Optioneel: bescherm `main` (**Settings → Branches**) zodat pull requests eerst door CI moeten.
 

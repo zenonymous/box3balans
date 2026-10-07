@@ -151,7 +151,7 @@ describe("needs attention", () => {
       lastErrorAt: new Date().toISOString(),
       lastError: "EACCES: permission denied",
     });
-    const file = path.join(t.backupDir, "kluishuis-20240101-000000-auto.json.gz.enc");
+    const file = path.join(t.backupDir, "box3balans-20240101-000000-auto.json.gz.enc");
     fs.writeFileSync(file, "x");
     const old = new Date(Date.now() - 5 * 86_400_000);
     fs.utimesSync(file, old, old);

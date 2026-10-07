@@ -1,4 +1,4 @@
-# Kluishuis in a single container, with the database built in (PGlite): to try it out, or on a
+# Box3balans in a single container, with the database built in (PGlite): to try it out, or on a
 # laptop with Docker Desktop. On a NAS or server, the standard docker-compose.yml with its own
 # PostgreSQL is the sturdier choice. Moving between the two goes through a backup and restore.
 #
@@ -6,11 +6,11 @@
 #
 # Everything lives in the app-data volume; backups go to ./backups. Make backups from the app
 # (Settings → Backups & export): the command-line backup can't run while the app has the database open.
-name: kluishuis
+name: box3balans
 
 services:
   app:
-    image: ghcr.io/OWNER/kluishuis:${KLUISHUIS_VERSION:-latest}
+    image: ghcr.io/OWNER/box3balans:${BOX3BALANS_VERSION:-latest}
     restart: unless-stopped
     environment:
       TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}

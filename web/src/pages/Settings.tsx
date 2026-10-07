@@ -169,7 +169,7 @@ function AboutCard() {
       <div className="flex flex-col gap-2 text-sm text-ink-2">
         <p>
           {tj(
-            "Kluishuis {version} is free software under the <0>GNU AGPL-3.0</0>, without any warranty. It estimates; it doesn't give tax advice.",
+            "Box3balans {version} is free software under the <0>GNU AGPL-3.0</0>, without any warranty. It estimates; it doesn't give tax advice.",
             [
               <a
                 key="l"
@@ -238,7 +238,7 @@ function UpdateCheck() {
           {t("Check for new versions")}
           <span className="block text-xs text-muted">
             {t(
-              "Once a day, Kluishuis asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.",
+              "Once a day, Box3balans asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.",
             )}
           </span>
         </span>

@@ -133,13 +133,13 @@ function Login({ setup }: { setup: boolean }) {
       <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-line bg-surface p-6">
         <div className="mb-6 flex flex-col items-center text-center">
           <img src="/favicon.svg" alt="" className="size-14" />
-          <div className="mt-3 text-xl font-semibold tracking-tight">Kluishuis</div>
-          <div className="text-sm text-muted">{t("Your vault lives at home")}</div>
+          <div className="mt-3 text-xl font-semibold tracking-tight">Box3balans</div>
+          <div className="text-sm text-muted">{t("Your box 3, in balance")}</div>
         </div>
         <h1 className="text-lg font-semibold">{setup ? t("Welcome: create your account") : t("Sign in")}</h1>
         <p className="mt-1 text-sm text-ink-2">
           {setup
-            ? t("Kluishuis has a single user. Choose a strong password (12 or more characters).")
+            ? t("Box3balans has a single user. Choose a strong password (12 or more characters).")
             : t("Your investments and box 3, on your own server.")}
         </p>
         <div className="mt-5 flex flex-col gap-3">

@@ -71,7 +71,7 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true"),
   // Where the running code's source can be found (AGPL); the Docker build sets it.
-  SOURCE_URL: z.string().default("https://github.com/OWNER/kluishuis"),
+  SOURCE_URL: z.string().default("https://github.com/OWNER/box3balans"),
 });
 
 export type Config = Omit<z.infer<typeof schema>, "APP_SECRET" | "PGPASSWORD"> & {

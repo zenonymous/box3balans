@@ -67,8 +67,8 @@ export function matchTotp(secretB32: string, code: string, now = Date.now()): nu
   return null;
 }
 
-/** What an authenticator app scans: otpauth://totp/Kluishuis:me?secret=…&issuer=Kluishuis */
-export function otpauthUri(secretB32: string, account: string, issuer = "Kluishuis"): string {
+/** What an authenticator app scans: otpauth://totp/Box3balans:me?secret=…&issuer=Box3balans */
+export function otpauthUri(secretB32: string, account: string, issuer = "Box3balans"): string {
   const label = encodeURIComponent(`${issuer}:${account}`);
   return `otpauth://totp/${label}?secret=${secretB32}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=${DIGITS}&period=${STEP_S}`;
 }

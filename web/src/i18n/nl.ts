@@ -111,13 +111,13 @@ export const NL: Record<string, string> = {
     "Ik en iemand buiten het huishouden (de helft telt bij mij)",
   "Only my partner": "Alleen mijn partner",
   // main.tsx
-  "Your vault lives at home": "Je kluis staat thuis",
+  "Your box 3, in balance": "Je box 3 in balans",
   "Cannot reach the server: {error}": "Kan de server niet bereiken: {error}",
   "Passwords do not match": "De wachtwoorden zijn niet gelijk",
   "Welcome: create your account": "Welkom: maak je account aan",
   "Sign in": "Inloggen",
-  "Kluishuis has a single user. Choose a strong password (12 or more characters).":
-    "Kluishuis heeft één gebruiker. Kies een sterk wachtwoord (12 tekens of meer).",
+  "Box3balans has a single user. Choose a strong password (12 or more characters).":
+    "Box3balans heeft één gebruiker. Kies een sterk wachtwoord (12 tekens of meer).",
   "Your investments and box 3, on your own server.": "Je beleggingen en box 3, op je eigen server.",
   Username: "Gebruikersnaam",
   Password: "Wachtwoord",
@@ -181,8 +181,8 @@ export const NL: Record<string, string> = {
   "Add a year": "Jaar toevoegen",
   "Read a bank export": "Bankexport inlezen",
   "Balance after the last line": "Saldo na de laatste regel",
-  "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Kluishuis takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
-    "Download je mutaties van de website van je bank, als CSV of CAMT.053, over de jaren die je wilt, en kies het bestand hier. Kluishuis haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
+  "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
+    "Download je mutaties van de website van je bank, als CSV of CAMT.053, over de jaren die je wilt, en kies het bestand hier. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Reading…": "Inlezen…",
   "This export has no balances; with one known balance the rest follows.":
     "Deze export heeft geen saldi; met één bekend saldo volgt de rest.",
@@ -692,8 +692,8 @@ export const NL: Record<string, string> = {
   "year-month-day": "jaar-maand-dag",
   "day-month-year": "dag-maand-jaar",
   "month-day-year": "maand-dag-jaar",
-  "Transactions from a broker or exchange export, or from the Kluishuis template":
-    "Transacties uit een export van een broker of exchange, of uit het Kluishuis-sjabloon",
+  "Transactions from a broker or exchange export, or from the Box3balans template":
+    "Transacties uit een export van een broker of exchange, of uit het Box3balans-sjabloon",
   Template: "Sjabloon",
   "1 · Account and file": "1 · Rekening en bestand",
   "Import into account": "Importeren in rekening",
@@ -1062,8 +1062,8 @@ export const NL: Record<string, string> = {
   Session: "Sessie",
   "Sign out": "Uitloggen",
   About: "Over",
-  "Kluishuis {version} is free software under the <0>GNU AGPL-3.0</0>, without any warranty. It estimates; it doesn't give tax advice.":
-    "Kluishuis {version} is vrije software onder de <0>GNU AGPL-3.0</0>, zonder enige garantie. Het maakt schattingen; het geeft geen belastingadvies.",
+  "Box3balans {version} is free software under the <0>GNU AGPL-3.0</0>, without any warranty. It estimates; it doesn't give tax advice.":
+    "Box3balans {version} is vrije software onder de <0>GNU AGPL-3.0</0>, zonder enige garantie. Het maakt schattingen; het geeft geen belastingadvies.",
   "<0>Source code</0> · report problems and suggest improvements there.":
     "<0>Broncode</0> · meld daar problemen en stel verbeteringen voor.",
   "New passwords do not match": "De nieuwe wachtwoorden zijn niet gelijk",
@@ -1338,8 +1338,8 @@ export const NL: Record<string, string> = {
   "{n} account": "{n} rekening",
   "{n} accounts": "{n} rekeningen",
   // components/Layout.tsx (demo)
-  "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Kluishuis</0> to keep track of your own.":
-    "Dit is de demo: een voorbeeldhuishouden met verzonnen koersen. Wijzigingen gaan verloren als hij herstart. <0>Installeer Kluishuis</0> om je eigen vermogen bij te houden.",
+  "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Box3balans</0> to keep track of your own.":
+    "Dit is de demo: een voorbeeldhuishouden met verzonnen koersen. Wijzigingen gaan verloren als hij herstart. <0>Installeer Box3balans</0> om je eigen vermogen bij te houden.",
   // components/RefreshButton.tsx
   "Example prices": "Voorbeeldkoersen",
   "Prices not refreshed yet": "Koersen nog niet ververst",
@@ -1353,10 +1353,10 @@ export const NL: Record<string, string> = {
   "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.":
     "Gebouwd op openbare voorbeeldbestanden; klopt er iets niet met jouw export, kies dan zelf de kolommen en laat het ons weten.",
   "Choose the columns myself": "Zelf de kolommen kiezen",
-  "Kluishuis read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.":
-    "Kluishuis heeft deze export gelezen en er {n} transactie van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
-  "Kluishuis read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.":
-    "Kluishuis heeft deze export gelezen en er {n} transacties van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
+  "Box3balans read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.":
+    "Box3balans heeft deze export gelezen en er {n} transactie van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
+  "Box3balans read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.":
+    "Box3balans heeft deze export gelezen en er {n} transacties van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
   "Bank accounts and other bank balances": "Bankrekeningen en andere banktegoeden",
   "Shares, bonds and funds": "Aandelen, obligaties en fondsen",
   Cryptocurrency: "Cryptovaluta",
@@ -1408,11 +1408,11 @@ export const NL: Record<string, string> = {
   "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official figures are built in (checked {date}); edit them when the rules change.":
     "Welk bezit telt als banktegoed, overige bezitting, groene belegging of niet in box 3, en de tarieven per jaar. De officiële cijfers zijn ingebouwd (gecontroleerd {date}); pas ze aan als de regels veranderen.",
   Source: "Bron",
-  "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Kluishuis brings newer figures. Years before 2023 used a different system.":
-    "Bron: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per jaar (klik op een jaar). Ingebouwde regels gecontroleerd {date}; een nieuwere versie van Kluishuis brengt nieuwere cijfers mee. Jaren vóór 2023 gebruikten een ander stelsel.",
+  "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Box3balans brings newer figures. Years before 2023 used a different system.":
+    "Bron: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per jaar (klik op een jaar). Ingebouwde regels gecontroleerd {date}; een nieuwere versie van Box3balans brengt nieuwere cijfers mee. Jaren vóór 2023 gebruikten een ander stelsel.",
   "Check for new versions": "Controleren op nieuwe versies",
-  "Once a day, Kluishuis asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.":
-    "Eén keer per dag vraagt Kluishuis GitHub naar de nieuwste versie; GitHub ziet dan je IP-adres. Er wordt verder niets verstuurd.",
+  "Once a day, Box3balans asks GitHub for the latest release, so GitHub sees your IP address. Nothing else is sent.":
+    "Eén keer per dag vraagt Box3balans GitHub naar de nieuwste versie; GitHub ziet dan je IP-adres. Er wordt verder niets verstuurd.",
   "A newer version is available: <0>{version}</0>.": "Er is een nieuwere versie: <0>{version}</0>.",
   "You have the latest version ({version}).": "Je hebt de nieuwste versie ({version}).",
   "This build ({current}) has no version number; the latest release is <0>{version}</0>.":

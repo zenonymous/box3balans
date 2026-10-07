@@ -117,7 +117,7 @@ describe("backup and restore", () => {
     t = await createTestApp();
     const { a } = await populate();
     const made = json(await t!.api("POST", "/api/backups"));
-    expect(made.name).toMatch(/^kluishuis-\d{8}-\d{6}-manual\.json\.gz$/);
+    expect(made.name).toMatch(/^box3balans-\d{8}-\d{6}-manual\.json\.gz$/);
     expect(fs.statSync(path.join(t!.backupDir, made.name)).mode & 0o077).toBe(0); // owner-only
 
     // Download it.
@@ -147,7 +147,7 @@ describe("backup and restore", () => {
 
   it("only serves files it created (no path traversal)", async () => {
     t = await createTestApp();
-    for (const bad of ["..%2F..%2Fetc%2Fpasswd", "kluishuis-20240101-000000.json.gz.tmp", "secrets.txt"]) {
+    for (const bad of ["..%2F..%2Fetc%2Fpasswd", "box3balans-20240101-000000.json.gz.tmp", "secrets.txt"]) {
       const res = await t!.api("GET", `/api/backups/${bad}`);
       expect([400, 404]).toContain(res.statusCode);
     }
@@ -161,41 +161,45 @@ describe("backup and restore", () => {
       /newer version/,
     );
     expect(() => decodeBackup(Buffer.from("hello"))).toThrow(/Not a readable backup/);
-    expect(() => decodeBackup(Buffer.from(JSON.stringify({ format: "other" })))).toThrow(/Not a Kluishuis backup/);
+    expect(() => decodeBackup(Buffer.from(JSON.stringify({ format: "other" })))).toThrow(/Not a Box3balans backup/);
   });
 
   it("keeps only the newest automatic backups", async () => {
     t = await createTestApp();
     const touch = (n: string) => fs.writeFileSync(path.join(t!.backupDir, n), "x");
-    for (let d = 1; d <= 5; d++) touch(`kluishuis-2024010${d}-000000-auto.json.gz`);
-    touch("kluishuis-20230101-000000-manual.json.gz");
+    for (let d = 1; d <= 5; d++) touch(`box3balans-2024010${d}-000000-auto.json.gz`);
+    touch("box3balans-20230101-000000-manual.json.gz");
     const removed = pruneBackups(t!.backupDir, 3);
     expect(removed.sort()).toEqual([
-      "kluishuis-20240101-000000-auto.json.gz",
-      "kluishuis-20240102-000000-auto.json.gz",
+      "box3balans-20240101-000000-auto.json.gz",
+      "box3balans-20240102-000000-auto.json.gz",
     ]);
-    expect(fs.existsSync(path.join(t!.backupDir, "kluishuis-20230101-000000-manual.json.gz"))).toBe(true);
+    expect(fs.existsSync(path.join(t!.backupDir, "box3balans-20230101-000000-manual.json.gz"))).toBe(true);
   });
 
-  // Rename to Kluishuis: backups made under the old name still list, sort by time and restore.
+  // Renames (portfolio → Kluishuis → Box3balans): backups made under the old names still list, sort
+  // by time and restore.
   it("still handles backups made before the rename", async () => {
     t = await createTestApp();
     await populate();
     const b = await createBackup(t!.database.db);
     const legacy = { ...b, format: "portfolio-dashboard-backup" };
+    expect(decodeBackup(encodeBackup({ ...b, format: "kluishuis-backup" })).format).toBe("kluishuis-backup");
     fs.writeFileSync(path.join(t!.backupDir, "portfolio-20250601-120000-manual.json.gz"), encodeBackup(legacy));
     const touch = (n: string) => fs.writeFileSync(path.join(t!.backupDir, n), "x");
     touch("kluishuis-20250101-000000-auto.json.gz");
     touch("kluishuis-20251001-000000-auto.json.gz");
     touch("portfolio-20250501-000000-auto.json.gz");
+    touch("box3balans-20251101-000000-auto.json.gz");
     expect(listBackups(t!.backupDir).map((x) => x.name)).toEqual([
+      "box3balans-20251101-000000-auto.json.gz",
       "kluishuis-20251001-000000-auto.json.gz",
       "portfolio-20250601-120000-manual.json.gz",
       "portfolio-20250501-000000-auto.json.gz",
       "kluishuis-20250101-000000-auto.json.gz",
     ]);
     // The oldest automatic backup goes, whatever its prefix.
-    expect(pruneBackups(t!.backupDir, 2)).toEqual(["kluishuis-20250101-000000-auto.json.gz"]);
+    expect(pruneBackups(t!.backupDir, 3)).toEqual(["kluishuis-20250101-000000-auto.json.gz"]);
     const res = await t!.api("POST", "/api/backups/portfolio-20250601-120000-manual.json.gz/restore", {
       confirm: "RESTORE",
     });
@@ -268,8 +272,8 @@ describe("encrypted backups", () => {
 
     // Pruning counts encrypted automatic backups too.
     for (let d = 1; d <= 3; d++)
-      fs.writeFileSync(path.join(t!.backupDir, `kluishuis-2024010${d}-000000-auto.json.gz.enc`), "x");
-    expect(pruneBackups(t!.backupDir, 2)).toEqual(["kluishuis-20240101-000000-auto.json.gz.enc"]);
+      fs.writeFileSync(path.join(t!.backupDir, `box3balans-2024010${d}-000000-auto.json.gz.enc`), "x");
+    expect(pruneBackups(t!.backupDir, 2)).toEqual(["box3balans-20240101-000000-auto.json.gz.enc"]);
   });
 
   it("rejects a short passphrase at startup", async () => {

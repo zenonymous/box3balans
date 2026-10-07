@@ -353,7 +353,7 @@ export async function collectIssues(
     add({
       key: "update",
       severity: "info",
-      title: tr("Kluishuis {version} is available", { version: update.latest.version }),
+      title: tr("Box3balans {version} is available", { version: update.latest.version }),
       detail: tr("You're running {current}. The release notes say what changed; update the way you installed it.", {
         current: update.current,
       }),
@@ -372,7 +372,7 @@ export async function collectIssues(
       severity: "info",
       title: tr("The box 3 rules in this version are from {date}", { date: RULES.checkedAt }),
       detail: tr(
-        "Newer figures may exist. Update Kluishuis, or check the rates per year on the Box 3 page under “Rules & rates”.",
+        "Newer figures may exist. Update Box3balans, or check the rates per year on the Box 3 page under “Rules & rates”.",
       ),
       link: { to: "/box3", label: tr("Box 3") },
       fingerprint: RULES.checkedAt,

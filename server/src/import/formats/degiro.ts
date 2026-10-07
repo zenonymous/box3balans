@@ -34,7 +34,7 @@ const inFile = (raw: string, decimal: DecimalMark) => num(raw, decimal);
 /**
  * DEGIRO's account statement (Inbox → Account overview, "Account.csv"): every cash movement, from
  * which trades (with their costs) and dividends (with dividend tax) are read. Deposits, currency
- * exchanges and the cash sweep are left out: Kluishuis follows the securities, not DEGIRO's cash.
+ * exchanges and the cash sweep are left out: Box3balans follows the securities, not DEGIRO's cash.
  */
 export const degiroAccount: BrokerFormat = {
   id: "degiro-account",

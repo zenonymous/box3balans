@@ -142,7 +142,7 @@ describe("CSV import", () => {
     const assetsBefore = (await t.database.db.select().from(assets)).length;
 
     const up = await upload(TEMPLATE_CSV, "template.csv");
-    expect(up.preset).toBe("Kluishuis template");
+    expect(up.preset).toBe("Box3balans template");
     const plan = await preview(up.uploadId, acc, up.mapping);
     expect(plan.summary).toMatchObject({ new: 7, error: 0 });
     expect(plan.assets.map((a: any) => [a.key, a.match.priceRef])).toEqual(

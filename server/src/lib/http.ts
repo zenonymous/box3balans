@@ -24,7 +24,7 @@ export async function getJson<T = unknown>(
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const res = await fetchFn(url, {
-        headers: { "User-Agent": "Mozilla/5.0 (kluishuis)", Accept: "application/json", ...headers },
+        headers: { "User-Agent": "Mozilla/5.0 (box3balans)", Accept: "application/json", ...headers },
         signal: AbortSignal.timeout(timeoutMs),
       });
       if (res.ok) return (await res.json()) as T;

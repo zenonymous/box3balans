@@ -5,5 +5,5 @@
 # scripts/deploy.sh does this on your server.
 services:
   app:
-    image: kluishuis:local
+    image: box3balans:local
     build: .

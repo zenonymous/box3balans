@@ -1,15 +1,15 @@
-# Kluishuis with its own PostgreSQL database: the recommended setup for a NAS or home server.
+# Box3balans with its own PostgreSQL database: the recommended setup for a NAS or home server.
 #
 #   docker compose up -d                  start (the first time downloads the images)
 #   docker compose pull && docker compose up -d   update
 #
 # Works without a .env file: the encryption key and the database password are created on first
 # start (in the app-data volume). Settings you can change in .env are listed in .env.example.
-name: kluishuis
+name: box3balans
 
 services:
   app:
-    image: ghcr.io/OWNER/kluishuis:${KLUISHUIS_VERSION:-latest}
+    image: ghcr.io/OWNER/box3balans:${BOX3BALANS_VERSION:-latest}
     restart: unless-stopped
     environment:
       TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
@@ -31,8 +31,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
       PGHOST: db
       PGPORT: "5432"
-      PGUSER: kluishuis
-      PGDATABASE: kluishuis
+      # Database name and user. DB_NAME is only needed for an existing database with another name.
+      PGUSER: ${DB_NAME:-box3balans}
+      PGDATABASE: ${DB_NAME:-box3balans}
     ports:
       - "${HTTP_PORT:-8080}:8080"
     volumes:
@@ -49,15 +50,15 @@ services:
     depends_on:
       - app
     environment:
-      POSTGRES_DB: kluishuis
-      POSTGRES_USER: kluishuis
-      POSTGRES_PASSWORD_FILE: /kluishuis/db-password
+      POSTGRES_DB: ${DB_NAME:-box3balans}
+      POSTGRES_USER: ${DB_NAME:-box3balans}
+      POSTGRES_PASSWORD_FILE: /box3balans/db-password
     volumes:
       # Since PostgreSQL 18 the image keeps its data in /var/lib/postgresql/<major>/docker.
       - db-data:/var/lib/postgresql
-      - app-data:/kluishuis:ro
+      - app-data:/box3balans:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U kluishuis -d kluishuis"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_NAME:-box3balans} -d ${DB_NAME:-box3balans}"]
       interval: 10s
       timeout: 5s
       retries: 10

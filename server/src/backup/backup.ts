@@ -8,9 +8,9 @@ import * as s from "../db/schema.js";
 import { reloadLanguage } from "../domain/settings.js";
 import { decryptBackup, encryptBackup, isEncryptedBackup } from "./crypto.js";
 
-export const BACKUP_FORMAT = "kluishuis-backup";
-// Backups made before the app was named Kluishuis.
-const LEGACY_FORMATS = new Set(["portfolio-dashboard-backup"]);
+export const BACKUP_FORMAT = "box3balans-backup";
+// Backups made under the app's earlier names (portfolio dashboard, then Kluishuis).
+const LEGACY_FORMATS = new Set(["portfolio-dashboard-backup", "kluishuis-backup"]);
 
 /**
  * Tables in dependency order (parents first). Sessions are left out: a restore signs everyone out.
@@ -87,7 +87,7 @@ export function decodeBackup(buf: Buffer): BackupFile {
   const b = parsed as Partial<BackupFile>;
   const knownFormat = b.format === BACKUP_FORMAT || LEGACY_FORMATS.has(String(b.format));
   if (!knownFormat || typeof b.schemaVersion !== "number" || typeof b.tables !== "object" || !b.tables) {
-    throw new Error("Not a Kluishuis backup");
+    throw new Error("Not a Box3balans backup");
   }
   return b as BackupFile;
 }
@@ -148,8 +148,9 @@ export interface BackupInfo {
   encrypted: boolean;
 }
 
-// "kluishuis-…", or "portfolio-…" for backups made before the rename; ".enc" when encrypted.
-const NAME_RE = /^(?:kluishuis|portfolio)-(\d{8}-\d{6})(-[a-z]+)?\.json\.gz(\.enc)?$/;
+// "box3balans-…", or "kluishuis-…" / "portfolio-…" for backups made under the earlier names; ".enc"
+// when encrypted.
+const NAME_RE = /^(?:box3balans|kluishuis|portfolio)-(\d{8}-\d{6})(-[a-z]+)?\.json\.gz(\.enc)?$/;
 const stampOf = (name: string) => NAME_RE.exec(name)?.[1] ?? "";
 
 /** Only names this app generates are accepted, so a request can never reach outside the folder. */
@@ -170,7 +171,7 @@ export async function writeBackupFile(
   fs.mkdirSync(dir, { recursive: true });
   const plain = encodeBackup(await createBackup(db));
   const data = passphrase ? await encryptBackup(plain, passphrase) : plain;
-  const name = `kluishuis-${stamp(new Date())}${label ? `-${label}` : ""}.json.gz${passphrase ? ".enc" : ""}`;
+  const name = `box3balans-${stamp(new Date())}${label ? `-${label}` : ""}.json.gz${passphrase ? ".enc" : ""}`;
   const file = backupPath(dir, name);
   // Write then rename, so a crash never leaves a half-written file that looks valid.
   fs.writeFileSync(`${file}.tmp`, data, { mode: 0o600 });

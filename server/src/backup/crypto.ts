@@ -44,7 +44,7 @@ export async function encryptBackup(plain: Buffer, passphrase: string): Promise<
 }
 
 export async function decryptBackup(buf: Buffer, passphrase: string): Promise<Buffer> {
-  if (!isEncryptedBackup(buf)) throw new Error("Not an encrypted Kluishuis backup");
+  if (!isEncryptedBackup(buf)) throw new Error("Not an encrypted Box3balans backup");
   let o = MAGIC.length;
   const [logN, r, p] = [buf[o]!, buf[o + 1]!, buf[o + 2]!];
   o += 3;

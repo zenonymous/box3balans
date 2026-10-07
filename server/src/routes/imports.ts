@@ -55,7 +55,7 @@ function guessSkipRows(content: string): number {
   return Math.max(0, Math.min(i, 50));
 }
 
-/** The mapping for a file in the Kluishuis template. */
+/** The mapping for a file in the Box3balans template. */
 function templateMapping(skipRows = 0, extra: Partial<Mapping> = {}): Mapping {
   const columns = Object.fromEntries(FIELDS.map((f, i) => [f, i])) as Mapping["columns"];
   return mappingSchema.parse({ skipRows, columns, typeMode: "column", decimal: ".", dateOrder: "YMD", ...extra });
@@ -68,7 +68,7 @@ async function initialMapping(db: DB, content: string): Promise<{ mapping: Mappi
   const { headers, data } = readTable(content, base);
   const preset = (await getPresets(db)).find((p) => p.signature === headerSignature(headers));
   if (preset) return { mapping: mappingSchema.parse(preset.mapping), preset: preset.name };
-  if (isTemplate(headers)) return { mapping: templateMapping(skipRows), preset: tr("Kluishuis template") };
+  if (isTemplate(headers)) return { mapping: templateMapping(skipRows), preset: tr("Box3balans template") };
   const columns = guessColumns(headers);
   const negatives = columns.quantity != null && data.some((r) => /^\s*[-(\u2212]/.test(r[columns.quantity!] ?? ""));
   const typeMode = columns.type != null ? "column" : negatives ? "sign" : "fixed";
@@ -119,7 +119,7 @@ export async function importRoutes(app: FastifyInstance) {
   app.get("/import/template.csv", async (_req, reply) => {
     reply
       .header("content-type", "text/csv; charset=utf-8")
-      .header("content-disposition", 'attachment; filename="kluishuis-import-template.csv"');
+      .header("content-disposition", 'attachment; filename="box3balans-import-template.csv"');
     return TEMPLATE_CSV + "\r\n";
   });
 

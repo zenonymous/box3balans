@@ -19,7 +19,7 @@ const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
 if (config.DEMO) {
   // Nothing is kept: data in memory, backups in a temporary folder that goes with the process.
-  config.BACKUP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "kluishuis-demo-"));
+  config.BACKUP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "box3balans-demo-"));
 }
 const database = config.DEMO
   ? await openDatabase({})
@@ -58,5 +58,5 @@ const shutdown = async (signal: string) => {
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
 process.on("SIGINT", () => void shutdown("SIGINT"));
 
-app.log.info({ version: APP_VERSION, demo: config.DEMO }, "Kluishuis starting");
+app.log.info({ version: APP_VERSION, demo: config.DEMO }, "Box3balans starting");
 await app.listen({ port: config.PORT, host: config.HOST });

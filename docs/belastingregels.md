@@ -1,6 +1,6 @@
 # De belastingregels bijwerken
 
-De box 3-cijfers waarmee Kluishuis rekent, staan in [`server/src/rules/box3.json`](../server/src/rules/box3.json), los van de code: per jaar de forfaitaire percentages, het heffingsvrij vermogen, de schuldendrempel, het tarief, de grens en heffingskorting voor groene beleggingen, of de cijfers definitief zijn, en de bron. Daarnaast de tabel met de leegwaarderatio voor verhuurde woningen, en `checkedAt`: de datum waarop alles voor het laatst is gecontroleerd.
+De box 3-cijfers waarmee Box3balans rekent, staan in [`server/src/rules/box3.json`](../server/src/rules/box3.json), los van de code: per jaar de forfaitaire percentages, het heffingsvrij vermogen, de schuldendrempel, het tarief, de grens en heffingskorting voor groene beleggingen, of de cijfers definitief zijn, en de bron. Daarnaast de tabel met de leegwaarderatio voor verhuurde woningen, en `checkedAt`: de datum waarop alles voor het laatst is gecontroleerd.
 
 De app toont die datum op de pagina Box 3 (onder _Regels en tarieven_), met per jaar een link naar de bron. Is `checkedAt` meer dan 400 dagen oud, dan verschijnt bij _Aandacht nodig_ een melding dat er nieuwere cijfers kunnen zijn. Gebruikers kunnen elk tarief zelf aanpassen; hun aanpassingen gaan voor op het bestand.
 

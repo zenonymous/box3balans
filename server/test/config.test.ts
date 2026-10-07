@@ -49,7 +49,7 @@ describe("PGlite lock (one process per database folder)", () => {
     const dir = path.join(tmp(), "pglite");
     // A live process on this machine (our parent) holds it.
     lockFile(dir, { host: os.hostname(), pid: process.ppid });
-    expect(() => lockPglite(dir, "check")).toThrow(/in use by the running Kluishuis/);
+    expect(() => lockPglite(dir, "check")).toThrow(/in use by the running Box3balans/);
     // Another container: can't tell whether it runs, so stay out too.
     lockFile(dir, { host: "other-container", pid: 7 });
     expect(() => lockPglite(dir, "check")).toThrow(/delete .*pglite\.lock/);

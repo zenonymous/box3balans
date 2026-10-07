@@ -33,11 +33,11 @@ COPY VERSION ./
 ARG VERSION=""
 RUN if [ -n "$VERSION" ]; then printf '%s\n' "$VERSION" > VERSION; fi
 # Where the source of this build is (the AGPL asks a network service to offer it).
-ARG SOURCE_URL="https://github.com/OWNER/kluishuis"
+ARG SOURCE_URL="https://github.com/OWNER/box3balans"
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
-LABEL org.opencontainers.image.title="Kluishuis" \
+LABEL org.opencontainers.image.title="Box3balans" \
       org.opencontainers.image.description="Zelf te hosten overzicht van je beleggingen, crypto en edelmetaal, met box 3" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 

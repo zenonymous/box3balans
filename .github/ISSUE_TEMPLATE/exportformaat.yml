@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Met een voorbeeldbestand kan Kluishuis het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
+        Met een voorbeeldbestand kan Box3balans het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
   - type: input
     id: aanbieder
     attributes:

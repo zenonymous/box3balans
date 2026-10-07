@@ -1,6 +1,6 @@
 # Roadmap
 
-Kluishuis begon als persoonlijk project en wordt nu geschikt gemaakt voor iedereen in Nederland die zijn beleggingen en box 3 zelf wil bijhouden, op eigen hardware. Kluishuis wordt niet ergens voor je gehost: je draait het zelf.
+Box3balans begon als persoonlijk project en wordt nu geschikt gemaakt voor iedereen in Nederland die zijn beleggingen en box 3 zelf wil bijhouden, op eigen hardware. Box3balans wordt niet ergens voor je gehost: je draait het zelf.
 
 Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 
@@ -40,12 +40,12 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Herkende exports** van DEGIRO (rekeningoverzicht en transacties), Bitvavo, Coinbase, Kraken (ledgers), Rabobank Beleggen, Trade Republic, Trading 212, BUX, Saxo en Revolut. Gebouwd op openbare voorbeeldbestanden, nog niet getest met echte exports. Banken (ING, Rabobank, ABN AMRO …) lees je in via _Waarden per jaar_ met hun eigen export.
 - **Voor de aangifte:** per jaar box 3 in de volgorde van de aangifte, per rekening en eigenaar, met dividendbelasting en het werkelijk rendement (vanaf 2025 in de aangifte zelf, daarvoor met de _Opgaaf werkelijk rendement_).
 - **Rekenvoorbeelden van de Belastingdienst** als tests: de vijf forfaitaire voorbeelden voor 2025 komen precies uit (met dezelfde afronding), en drie voorbeelden van het werkelijk rendement.
-- **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/kluishuis/issues/new/choose) nodig.
+- **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/box3balans/issues/new/choose) nodig.
 
 ## Fase E: onderhoud en extra veiligheid ✅
 
 - **Tweestapsverificatie** met een authenticator-app (TOTP), met herstelcodes en een opdracht om het uit te zetten als je buitengesloten bent.
-- **Melding bij een nieuwe versie**, alleen als je dat aanzet: Kluishuis vraagt GitHub dan één keer per dag naar de nieuwste versie.
+- **Melding bij een nieuwe versie**, alleen als je dat aanzet: Box3balans vraagt GitHub dan één keer per dag naar de nieuwste versie.
 - **Belastingregels als gegevensbestand** (`server/src/rules/box3.json`) met de datum van de laatste controle en de bron per jaar in de app, een melding als ze meer dan 400 dagen oud zijn, en een vast jaarritme in [belastingregels.md](belastingregels.md): voorstellen rond Prinsjesdag, vaste cijfers in december, definitieve percentages na afloop van het jaar.
 
 ## Oorspronkelijke opzet

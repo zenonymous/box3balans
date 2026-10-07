@@ -3,7 +3,7 @@ import { TEMPLATE_HEADERS } from "../mapping.js";
 import { parseNumber, type DecimalMark } from "../parse.js";
 
 /**
- * One transaction in Kluishuis's own CSV template (see TEMPLATE_HEADERS). A broker format turns its
+ * One transaction in Box3balans's own CSV template (see TEMPLATE_HEADERS). A broker format turns its
  * export into these rows, so the rest of the import (preview, duplicates, assets, undo) is shared.
  */
 export interface TemplateRow {
@@ -143,7 +143,7 @@ export function utc(raw: string): string | null {
 
 const quote = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
-/** The rows as a Kluishuis template CSV. */
+/** The rows as a Box3balans template CSV. */
 export function templateCsv(rows: TemplateRow[]): string {
   const lines = [TEMPLATE_HEADERS.join(",")];
   for (const r of rows) {

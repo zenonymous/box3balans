@@ -14,17 +14,17 @@ describe("update check", () => {
     expect(isNewer("1.3.0-rc.2", "1.3.0")).toBe(false);
     expect(isNewer("1.3.0", "edge (abc1234)")).toBeNull();
     expect(isNewer("1.3.0", "dev")).toBeNull();
-    expect(githubRepo("https://github.com/someone/kluishuis")).toBe("someone/kluishuis");
+    expect(githubRepo("https://github.com/someone/box3balans")).toBe("someone/box3balans");
     expect(githubRepo("https://example.com/x/y")).toBeNull();
   });
 
   it("asks GitHub only when turned on, and forgets the answer when turned off", async () => {
     t = await createTestApp({
       ...defaultRoutes,
-      "api.github.com/repos/OWNER/kluishuis/releases/latest": {
+      "api.github.com/repos/OWNER/box3balans/releases/latest": {
         tag_name: "v1.2.0",
-        name: "Kluishuis 1.2.0",
-        html_url: "https://github.com/OWNER/kluishuis/releases/tag/v1.2.0",
+        name: "Box3balans 1.2.0",
+        html_url: "https://github.com/OWNER/box3balans/releases/tag/v1.2.0",
         published_at: "2026-10-01T10:00:00Z",
       },
     });
@@ -34,7 +34,7 @@ describe("update check", () => {
     expect(github()).toBe(0);
 
     const on = (await t.api("PUT", "/api/updates", { enabled: true })).json();
-    expect(on).toMatchObject({ enabled: true, latest: { version: "1.2.0", name: "Kluishuis 1.2.0" }, newer: null });
+    expect(on).toMatchObject({ enabled: true, latest: { version: "1.2.0", name: "Box3balans 1.2.0" }, newer: null });
     expect(github()).toBe(1);
 
     const off = (await t.api("PUT", "/api/updates", { enabled: false })).json();

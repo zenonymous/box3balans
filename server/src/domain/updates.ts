@@ -65,7 +65,7 @@ export function isNewer(a: string, b: string): boolean | null {
   return x[3] > y[3];
 }
 
-/** owner/repo from a GitHub URL ("https://github.com/OWNER/kluishuis"), or null. */
+/** owner/repo from a GitHub URL ("https://github.com/OWNER/box3balans"), or null. */
 export function githubRepo(url: string): string | null {
   const m = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(url.trim());
   return m ? `${m[1]}/${m[2]}` : null;
@@ -83,7 +83,7 @@ export async function checkForUpdate(db: DB, config: Config, fetchFn: FetchFn = 
   }
   try {
     const res = await fetchFn(`https://api.github.com/repos/${repo}/releases/latest`, {
-      headers: { accept: "application/vnd.github+json", "user-agent": "Kluishuis" },
+      headers: { accept: "application/vnd.github+json", "user-agent": "Box3balans" },
       signal: AbortSignal.timeout(15_000),
     });
     if (res.status === 404) throw new Error(tr("No releases found yet"));

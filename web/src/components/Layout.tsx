@@ -37,8 +37,8 @@ export function Layout({ user, demo }: { user: User; demo?: boolean }) {
         <div className="mb-6 flex items-center gap-2.5 px-2">
           <img src="/favicon.svg" alt="" className="size-8" />
           <div className="leading-tight">
-            <div className="font-semibold tracking-tight">Kluishuis</div>
-            <div className="text-[11px] text-muted">{t("Your vault lives at home")}</div>
+            <div className="font-semibold tracking-tight">Box3balans</div>
+            <div className="text-[11px] text-muted">{t("Your box 3, in balance")}</div>
           </div>
         </div>
         <AttentionBadge className="mb-3" />
@@ -85,7 +85,7 @@ export function Layout({ user, demo }: { user: User; demo?: boolean }) {
           <div className="mb-4 print:hidden">
             <Alert>
               {tj(
-                "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Kluishuis</0> to keep track of your own.",
+                "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Box3balans</0> to keep track of your own.",
                 [<a key="i" className="underline" href={version.data?.source} target="_blank" rel="noreferrer" />],
               )}
             </Alert>

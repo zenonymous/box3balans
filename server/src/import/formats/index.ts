@@ -5,7 +5,7 @@ import { bitvavo, coinbase, krakenLedgers } from "./crypto.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
-/** Exports Kluishuis recognises and converts to its own template. */
+/** Exports Box3balans recognises and converts to its own template. */
 export const FORMATS: BrokerFormat[] = [
   degiroAccount,
   degiroTransactions,
@@ -23,7 +23,7 @@ export const FORMATS: BrokerFormat[] = [
 export interface Recognised {
   format: BrokerFormat;
   result: Converted;
-  /** The converted file, in the Kluishuis template. */
+  /** The converted file, in the Box3balans template. */
   content: string;
   /** What was left out and why, for the preview. */
   notes: string[];

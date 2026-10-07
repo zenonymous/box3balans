@@ -4,7 +4,7 @@ import { NL } from "./nl.js";
 
 export type Params = Record<string, string | number>;
 
-// Kluishuis has one user, so one language for every message; settings.ts keeps it current.
+// Box3balans has one user, so one language for every message; settings.ts keeps it current.
 let current: Language = "nl";
 z.config(z.locales.nl());
 

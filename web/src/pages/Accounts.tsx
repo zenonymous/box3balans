@@ -735,7 +735,7 @@ function BankImportPanel({
     <div className="flex flex-col gap-3 text-sm">
       <p className="text-ink-2">
         {t(
-          "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Kluishuis takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
+          "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
         )}
       </p>
       <input

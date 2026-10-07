@@ -912,7 +912,7 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
             </div>
             <p className="mt-2 text-xs text-muted">
               {t(
-                "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Kluishuis brings newer figures. Years before 2023 used a different system.",
+                "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year (click a year). Built-in rules checked {date}; a newer version of Box3balans brings newer figures. Years before 2023 used a different system.",
                 { date: date(overview.rules.checkedAt) },
               )}
             </p>

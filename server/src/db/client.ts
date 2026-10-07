@@ -99,7 +99,7 @@ export function lockPglite(dir: string, mode: "take" | "check"): () => void {
     const stale = sameHost && (!held.pid || held.pid === me.pid || !isAlive(held.pid));
     if (!stale)
       throw new Error(
-        `The database in ${dir} is in use by the running Kluishuis. Stop it first, or use Settings → Backups & export in the app. If it really isn't running, delete ${file}.`,
+        `The database in ${dir} is in use by the running Box3balans. Stop it first, or use Settings → Backups & export in the app. If it really isn't running, delete ${file}.`,
       );
   }
   fs.writeFileSync(file, JSON.stringify({ ...me, since: new Date().toISOString() }));

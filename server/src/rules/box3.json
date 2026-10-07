@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-07",
-  "about": "Box 3 rules built into Kluishuis. Update once a year: proposals for next year around Prinsjesdag (September) as provisional, final figures in December, and the final bank and debt percentages after the year ends. A let home counts at the leegwaarderatio of the first band its rent (as % of the WOZ value) fits in, else 100%. See docs/belastingregels.md.",
+  "about": "Box 3 rules built into Box3balans. Update once a year: proposals for next year around Prinsjesdag (September) as provisional, final figures in December, and the final bank and debt percentages after the year ends. A let home counts at the leegwaarderatio of the first band its rent (as % of the WOZ value) fits in, else 100%. See docs/belastingregels.md.",
   "years": {
     "2023": {
       "bankPct": "0.92",

@@ -2,7 +2,7 @@
 # For running your own changes: copies the last commit to a server over SSH and builds and starts
 # it there (instead of downloading the published image).
 #
-#   scripts/deploy.sh user@nas [folder-on-nas]        # folder defaults to "kluishuis" in your home
+#   scripts/deploy.sh user@nas [folder-on-nas]        # folder defaults to "box3balans" in your home
 #   DOCKER="sudo docker" scripts/deploy.sh user@nas   # when docker needs sudo (e.g. Synology)
 #
 # Only committed files are sent: never .env, the database or backups. The server keeps its own
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 host=${1:?"Usage: scripts/deploy.sh user@nas [folder-on-nas]"}
-dir=${2:-kluishuis}
+dir=${2:-box3balans}
 docker=${DOCKER:-docker}
 if [[ ! $dir =~ ^[A-Za-z0-9._/-]+$ ]]; then
   echo "Use a plain folder path (letters, digits, . _ - /), relative to your home or absolute." >&2
@@ -25,13 +25,22 @@ echo "Deploying $(git log -1 --format='%h (%cs) %s') to $host:$dir"
 
 git archive --format=tar HEAD | ssh "$host" "set -e
   mkdir -p '$dir' && cd '$dir'
-  if [ -n \"\$(ls -A)\" ] && ! grep -qs '^name: kluishuis' docker-compose.yml; then
-    echo 'Refusing: $dir is not empty and is not a Kluishuis folder.' >&2
+  # Also a folder from before the rename (Kluishuis).
+  if [ -n \"\$(ls -A)\" ] && ! grep -qsE '^name: (box3balans|kluishuis)' docker-compose.yml; then
+    echo 'Refusing: $dir is not empty and is not a Box3balans folder.' >&2
     exit 1
   fi
   rm -rf server web docs
   tar -xf -"
 
 ssh -t "$host" "set -e; cd '$dir'
+  # Data from before the rename lives in kluishuis_* volumes: without these settings Compose would
+  # start a new, empty installation next to it.
+  if $docker volume ls -q | grep -qx 'kluishuis_db-data' && ! grep -qs '^COMPOSE_PROJECT_NAME=' .env; then
+    echo 'This server has data from before the rename to Box3balans. To keep using it, add to .env:' >&2
+    echo '  COMPOSE_PROJECT_NAME=kluishuis' >&2
+    echo '  DB_NAME=kluishuis' >&2
+    exit 1
+  fi
   $docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
   $docker compose -f docker-compose.yml -f docker-compose.build.yml ps"

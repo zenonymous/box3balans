@@ -30,7 +30,7 @@ describe("TOTP", () => {
     expect(matchTotp(secret, code(2), now)).toBeNull();
     expect(matchTotp(secret, "12345", now)).toBeNull();
     expect(otpauthUri(secret, "me")).toBe(
-      `otpauth://totp/Kluishuis%3Ame?secret=${secret}&issuer=Kluishuis&algorithm=SHA1&digits=6&period=30`,
+      `otpauth://totp/Box3balans%3Ame?secret=${secret}&issuer=Box3balans&algorithm=SHA1&digits=6&period=30`,
     );
   });
 });
@@ -44,7 +44,7 @@ describe("signing in with a second factor", () => {
     expect((await t.api("GET", "/api/auth/2fa")).json()).toEqual({ enabled: false, recoveryCodesLeft: 0 });
 
     const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
-    expect(setup.uri).toContain("otpauth://totp/Kluishuis%3Ame");
+    expect(setup.uri).toContain("otpauth://totp/Box3balans%3Ame");
     expect(setup.qrSvg).toMatch(/^<svg/);
     expect((await t.api("POST", "/api/auth/2fa/enable", { code: "000000" })).statusCode).toBe(400);
     const enabled = (await t.api("POST", "/api/auth/2fa/enable", { code: codeFor(setup.secret, -1) })).json();

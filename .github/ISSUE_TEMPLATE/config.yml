@@ -1,5 +1,5 @@
 blank_issues_enabled: true
 contact_links:
   - name: Beveiligingsprobleem melden
-    url: https://github.com/OWNER/kluishuis/security/advisories/new
+    url: https://github.com/OWNER/box3balans/security/advisories/new
     about: Meld kwetsbaarheden privé, niet in een openbaar issue (zie SECURITY.md).

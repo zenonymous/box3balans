@@ -57,7 +57,7 @@ export const mappingSchema = z.object({
 });
 export type Mapping = z.infer<typeof mappingSchema>;
 
-/** Kluishuis's own CSV template: one row per transaction, documented in the README. */
+/** Box3balans's own CSV template: one row per transaction, documented in the README. */
 export const TEMPLATE_HEADERS = [
   "date",
   "time",
@@ -140,11 +140,11 @@ export function guessColumns(headers: string[]): Record<Field, number | null> {
   return out;
 }
 
-/** True when the headers are exactly the Kluishuis template's. */
+/** True when the headers are exactly the Box3balans template's. */
 export const isTemplate = (headers: string[]) =>
   headers.length >= TEMPLATE_HEADERS.length && TEMPLATE_HEADERS.every((h, i) => norm(headers[i] ?? "") === norm(h));
 
-/** Type column values Kluishuis understands without a mapping (template, English, Dutch). */
+/** Type column values Box3balans understands without a mapping (template, English, Dutch). */
 const TYPE_WORDS: Record<string, CsvType> = {
   buy: "buy",
   bought: "buy",

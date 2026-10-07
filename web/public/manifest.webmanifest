@@ -1,7 +1,7 @@
 {
-  "name": "Kluishuis",
-  "short_name": "Kluishuis",
-  "description": "Your vault lives at home: a self-hosted dashboard for stocks, crypto, gold and silver.",
+  "name": "Box3balans",
+  "short_name": "Box3balans",
+  "description": "Je beleggingen en je box 3, op je eigen server: aandelen, ETF's, crypto, goud en zilver, met een schatting van je box 3.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

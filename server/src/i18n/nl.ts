@@ -419,15 +419,15 @@ export const NL: Record<string, string> = {
   "DEGIRO transactions": "DEGIRO transacties",
   "Lines without a date or quantity": "Regels zonder datum of aantal",
   "Left out: {reason} ({n})": "Weggelaten: {reason} ({n})",
-  "Kluishuis template": "Kluishuis-sjabloon",
+  "Box3balans template": "Box3balans-sjabloon",
   // stage E
-  "Kluishuis {version} is available": "Kluishuis {version} is beschikbaar",
+  "Box3balans {version} is available": "Box3balans {version} is beschikbaar",
   "You're running {current}. The release notes say what changed; update the way you installed it.":
     "Je gebruikt {current}. In de release notes staat wat er veranderd is; werk bij zoals je het hebt geïnstalleerd.",
   About: "Over",
   "The box 3 rules in this version are from {date}": "De box 3-regels in deze versie zijn van {date}",
-  "Newer figures may exist. Update Kluishuis, or check the rates per year on the Box 3 page under “Rules & rates”.":
-    "Er kunnen nieuwere cijfers zijn. Werk Kluishuis bij, of controleer de tarieven per jaar op de pagina Box 3 onder “Regels en tarieven”.",
+  "Newer figures may exist. Update Box3balans, or check the rates per year on the Box 3 page under “Rules & rates”.":
+    "Er kunnen nieuwere cijfers zijn. Werk Box3balans bij, of controleer de tarieven per jaar op de pagina Box 3 onder “Regels en tarieven”.",
   "Box 3": "Box 3",
   "The source address isn't a GitHub repository.": "Het bronadres is geen GitHub-repository.",
   "No releases found yet": "Nog geen versies gevonden",
