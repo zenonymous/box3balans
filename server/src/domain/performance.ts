@@ -46,6 +46,7 @@ export interface IncomeRow {
   assetId: number;
   symbol: string;
   name: string;
+  accountId: number;
   accountName: string;
   grossEur: string;
   taxEur: string;
@@ -112,6 +113,7 @@ export async function loadEvents(db: DB, method: CostMethod) {
       assetId: e.assetId,
       symbol: asset.get(e.assetId)?.symbol ?? "?",
       name: asset.get(e.assetId)?.name ?? "?",
+      accountId: e.accountId,
       accountName: account.get(e.accountId) ?? "?",
       grossEur: money2(e.grossEur),
       taxEur: money2(e.taxEur),

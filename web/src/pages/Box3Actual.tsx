@@ -137,29 +137,39 @@ export function ActualReturnCard({ y }: { y: Box3Year }) {
               <p className="text-ink-2">{t("The year isn't over yet; check again after 31 December.")}</p>
             ) : c.worthFiling ? (
               <Alert>
-                {tj(
-                  "Your actual return was lower: filing an <0>Opgaaf werkelijk rendement</0> for {year} would save about <1>{saving}</1>.",
-                  [
-                    <a
-                      key="owr"
-                      className="underline"
-                      href="https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/wat-is-mijn-werkelijk-rendement"
-                      target="_blank"
-                      rel="noreferrer"
-                    />,
-                    <strong key="s" />,
-                  ],
-                  { year: y.year, saving: eur(c.savingEur) },
-                )}
+                {y.year >= 2025
+                  ? tj(
+                      "Your actual return was lower: give it in your tax return for {year} (the return asks whether you want to). That would save about <0>{saving}</0>.",
+                      [<strong key="s" />],
+                      { year: y.year, saving: eur(c.savingEur) },
+                    )
+                  : tj(
+                      "Your actual return was lower: filing an <0>Opgaaf werkelijk rendement</0> for {year} would save about <1>{saving}</1>.",
+                      [
+                        <a
+                          key="owr"
+                          className="underline"
+                          href="https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/formulier-opgaaf-werkelijk-rendement"
+                          target="_blank"
+                          rel="noreferrer"
+                        />,
+                        <strong key="s" />,
+                      ],
+                      { year: y.year, saving: eur(c.savingEur) },
+                    )}
               </Alert>
             ) : (
               <p className="text-ink-2">
-                {t(
-                  "The deemed return is lower (or equal): no reason to file an Opgaaf werkelijk rendement for {year}.",
-                  {
-                    year: y.year,
-                  },
-                )}
+                {y.year >= 2025
+                  ? t("The deemed return is lower (or equal): no reason to give your actual return for {year}.", {
+                      year: y.year,
+                    })
+                  : t(
+                      "The deemed return is lower (or equal): no reason to file an Opgaaf werkelijk rendement for {year}.",
+                      {
+                        year: y.year,
+                      },
+                    )}
               </p>
             )}
           </>

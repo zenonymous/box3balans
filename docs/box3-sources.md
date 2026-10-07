@@ -4,7 +4,11 @@ Gecontroleerd op 5 oktober 2026. Box 3 verandert vaak: controleer deze regels op
 
 ## Forfaitair rendement (belastingjaren vanaf 2023)
 
-De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain/box3.ts` (`DEFAULT_RATES`). Je kunt ze aanpassen in de app onder _Box 3 → Rules & rates_.
+De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain/box3.ts` (`DEFAULT_RATES`). Je kunt ze aanpassen in de app onder _Box 3 → Regels en tarieven_.
+
+**Afronding** zoals in de rekenvoorbeelden van de Belastingdienst: bezittingen naar beneden en schulden naar boven op hele euro's; het forfaitaire rendement op bezittingen naar beneden en dat op schulden op de dichtstbijzijnde euro (€ 2.494,80 → € 2.495); het aandeel naar beneden op twee decimalen van een procent (82,456% → 82,45%); het voordeel en de belasting per persoon naar beneden op hele euro's. Fiscale partners krijgen elk hun eigen aandeel. De vijf voorbeelden voor 2025 staan als test in `server/test/box3.test.ts` en komen precies uit.
+
+- Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
 **2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Voeg 2027 toe onder _Rules & rates_ zodra het definitief is.
 
@@ -28,7 +32,7 @@ Bronnen:
 
 ## Tegenbewijsregeling: werkelijk in plaats van forfaitair rendement (Wet tegenbewijsregeling box 3)
 
-Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Je geeft het door met de _Opgaaf werkelijk rendement_ (OWR), beschikbaar sinds 8 juli 2025.
+Is je werkelijke rendement lager dan het forfaitaire, dan kun je over het werkelijke rendement belast worden. Over **2024 en eerder** geef je het door met het formulier _Opgaaf werkelijk rendement_ (OWR) in Mijn Belastingdienst, beschikbaar sinds 8 juli 2025. **Vanaf 2025** vraagt de aangifte inkomstenbelasting zelf of je je werkelijk rendement wilt opgeven; de Belastingdienst rekent dan beide manieren uit en gebruikt de gunstigste.
 
 Wat de app toepast (Kluishuis: _Box 3 → jaar → Actual return_):
 
@@ -45,6 +49,8 @@ Wat de app toepast (Kluishuis: _Box 3 → jaar → Actual return_):
 Bronnen:
 
 - Belastingdienst, _Wat is mijn werkelijk rendement?_: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/wat-is-mijn-werkelijk-rendement
+- Belastingdienst, _Werkelijk rendement in belastingaangifte 2025_: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/werkelijk-rendement-belastingaangifte
+- Belastingdienst, _Rekenvoorbeelden berekening werkelijk rendement_ (gecontroleerd 7 oktober 2026; voorbeelden 3, 4 en 8 staan als test in `server/test/box3-examples.test.ts`). De voorbeelden met een verhuurde woning rekenen de waardeverandering over de volle WOZ-waarde; Kluishuis gebruikt de leegwaarde, net als voor het forfaitaire rendement. Welke van de twee klopt voor het werkelijk rendement is niet zeker: https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/rekenvoorbeelden-berekening-werkelijk-rendement
 - Belastingdienst, veelgestelde vragen over de Opgaaf werkelijk rendement (geen heffingsvrij vermogen; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
 - SRA, overzicht van de tegenbewijsregeling 2017–2027 (bruto dividenden, geen schuldendrempel, partners, toerekening van rente): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 

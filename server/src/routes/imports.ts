@@ -20,6 +20,7 @@ import {
 import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
+import { recognise } from "../import/formats/index.js";
 import { tr } from "../i18n/index.js";
 
 const PRESETS_KEY = "csv_import_presets";
@@ -54,6 +55,12 @@ function guessSkipRows(content: string): number {
   return Math.max(0, Math.min(i, 50));
 }
 
+/** The mapping for a file in the Kluishuis template. */
+function templateMapping(skipRows = 0, extra: Partial<Mapping> = {}): Mapping {
+  const columns = Object.fromEntries(FIELDS.map((f, i) => [f, i])) as Mapping["columns"];
+  return mappingSchema.parse({ skipRows, columns, typeMode: "column", decimal: ".", dateOrder: "YMD", ...extra });
+}
+
 /** A starting mapping for a new file: a saved preset, the template, or a guess from the headers. */
 async function initialMapping(db: DB, content: string): Promise<{ mapping: Mapping; preset: string | null }> {
   const skipRows = guessSkipRows(content);
@@ -61,13 +68,7 @@ async function initialMapping(db: DB, content: string): Promise<{ mapping: Mappi
   const { headers, data } = readTable(content, base);
   const preset = (await getPresets(db)).find((p) => p.signature === headerSignature(headers));
   if (preset) return { mapping: mappingSchema.parse(preset.mapping), preset: preset.name };
-  if (isTemplate(headers)) {
-    const columns = Object.fromEntries(FIELDS.map((f, i) => [f, i])) as Mapping["columns"];
-    return {
-      mapping: mappingSchema.parse({ skipRows, columns, typeMode: "column", decimal: ".", dateOrder: "YMD" }),
-      preset: "Kluishuis template",
-    };
-  }
+  if (isTemplate(headers)) return { mapping: templateMapping(skipRows), preset: tr("Kluishuis template") };
   const columns = guessColumns(headers);
   const negatives = columns.quantity != null && data.some((r) => /^\s*[-(\u2212]/.test(r[columns.quantity!] ?? ""));
   const typeMode = columns.type != null ? "column" : negatives ? "sign" : "fixed";
@@ -85,6 +86,8 @@ async function initialMapping(db: DB, content: string): Promise<{ mapping: Mappi
 const uploadBody = z.object({
   fileName: z.string().trim().min(1).max(200),
   content: z.string().min(1).max(MAX_FILE_BYTES),
+  // Read the file as it is, even when it's a known export.
+  raw: z.boolean().optional(),
 });
 const planBody = z.object({
   uploadId: z.string().uuid(),
@@ -103,7 +106,8 @@ export async function importRoutes(app: FastifyInstance) {
   const deps = { db, fetchFn: prices.fetchFn, fx: prices.fx };
 
   // Uploaded files wait here between preview and import (single user, so a small map will do).
-  const uploads = new Map<string, { fileName: string; content: string; at: number }>();
+  // A recognised export is kept converted to the template, with notes on what was left out.
+  const uploads = new Map<string, { fileName: string; content: string; notes: string[]; at: number }>();
   const upload = (id: string) => {
     for (const [k, v] of uploads) if (Date.now() - v.at > UPLOAD_TTL_MS) uploads.delete(k);
     const u = uploads.get(id);
@@ -120,19 +124,34 @@ export async function importRoutes(app: FastifyInstance) {
   });
 
   app.post("/import/upload", { bodyLimit: MAX_FILE_BYTES * 2 }, async (req) => {
-    const { fileName, content } = uploadBody.parse(req.body);
+    const { fileName, content, raw } = uploadBody.parse(req.body);
     if (content.includes("\u0000")) throw new HttpError(400, tr("That isn't a CSV text file"));
     const id = randomUUID();
-    uploads.set(id, { fileName, content, at: Date.now() });
-    while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
-    return { uploadId: id, fileName, ...(await initialMapping(db, content)) };
+    const known = raw ? null : recognise(content);
+    const keep = (c: string, notes: string[]) => {
+      uploads.set(id, { fileName, content: c, notes, at: Date.now() });
+      while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
+    };
+    if (known) {
+      keep(known.content, known.notes);
+      return {
+        uploadId: id,
+        fileName,
+        mapping: templateMapping(0, known.result.mapping),
+        preset: tr(known.format.label),
+        format: { id: known.format.id, label: tr(known.format.label), rows: known.result.rows.length },
+      };
+    }
+    keep(content, []);
+    return { uploadId: id, fileName, format: null, ...(await initialMapping(db, content)) };
   });
 
   app.post("/import/preview", async (req) => {
     const b = planBody.parse(req.body);
     const u = upload(b.uploadId);
     try {
-      return await planImport(deps, u.content, b.accountId, b.mapping);
+      const plan = await planImport(deps, u.content, b.accountId, b.mapping);
+      return { ...plan, warnings: [...u.notes, ...plan.warnings] };
     } catch (err) {
       if ((err as Error).message === "Unknown account") throw new HttpError(400, tr("Unknown account"));
       throw err;

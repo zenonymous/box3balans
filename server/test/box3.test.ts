@@ -10,7 +10,8 @@ afterEach(async () => t?.close());
 const json = <T = any>(res: { body: string }) => JSON.parse(res.body) as T;
 
 describe("box 3 calculation (official steps)", () => {
-  // Expected figures computed independently (Python, Decimal) from the Belastingdienst steps.
+  // Rounded as the Belastingdienst does: deemed returns, benefit and tax down to whole euros, the
+  // share down to two decimals of a percent.
   it("matches a worked 2024 example for a single person", () => {
     const c = calculateBox3(
       { bank: D(50_000), other: D(100_000), debts: D(10_000), partner: false },
@@ -18,13 +19,13 @@ describe("box 3 calculation (official steps)", () => {
     );
     expect(c).toMatchObject({
       deductibleDebtsEur: "6300.00", // 10,000 − 3,700 threshold
-      deemedReturnEur: "6595.57", // 720 + 6,040 − 164.43
+      deemedReturnEur: "6596.00", // 720 + 6,040 − 164 (164.43 to the nearest euro)
       baseEur: "143700.00",
       allowanceEur: "57000.00",
       taxableBaseEur: "86700.00",
-      sharePct: "60.33",
-      benefitEur: "3979.37",
-      taxEur: "1432.57",
+      sharePct: "60.33", // 86,700 / 143,700 = 60.334 %
+      benefitEur: "3979.00", // 6,596 × 60.33 % = 3,979.37
+      taxEur: "1432.00", // 36 % = 1,432.44
     });
   });
 
@@ -35,10 +36,71 @@ describe("box 3 calculation (official steps)", () => {
     );
     expect(c).toMatchObject({
       deductibleDebtsEur: "2600.00",
+      deemedReturnEur: "6692.00", // 720 + 6,040 − 68 (67.86 to the nearest euro)
       allowanceEur: "114000.00",
       taxableBaseEur: "33400.00",
-      benefitEur: "1516.40",
-      taxEur: "545.90",
+      // Each partner: 16,700 / 147,400 = 11.32 %; 6,692 × 11.32 % = 757.53 → 757; tax 272.
+      benefitEur: "1514.00",
+      taxEur: "544.00",
+    });
+  });
+
+  // The worked examples on belastingdienst.nl, "Hoe wordt mijn box 3-inkomen over 2025 berekend?"
+  // (checked 2026-10-07). Each line is the outcome the Belastingdienst gives.
+  describe("Belastingdienst examples 2025", () => {
+    const r = DEFAULT_RATES["2025"]!;
+    it("1: savings only, no fiscal partner", () => {
+      const c = calculateBox3({ bank: D(150_000), other: D(0), debts: D(0), partner: false }, r);
+      expect(c).toMatchObject({ deemedReturnEur: "2055.00", baseEur: "150000.00", taxableBaseEur: "92316.00" });
+      expect(c).toMatchObject({ sharePct: "61.54", benefitEur: "1264.00", taxEur: "455.00" });
+    });
+    it("2: savings, with a fiscal partner (half each)", () => {
+      const c = calculateBox3({ bank: D(150_000), other: D(0), debts: D(0), partner: true }, r);
+      expect(c.taxableBaseEur).toBe("34632.00");
+      expect(c.persons).toEqual([
+        { taxableBaseEur: "17316.00", sharePct: "11.54", benefitEur: "237.00", taxEur: "85.00" },
+        { taxableBaseEur: "17316.00", sharePct: "11.54", benefitEur: "237.00", taxEur: "85.00" },
+      ]);
+    });
+    it("3: savings, investments, a second home and a debt, no fiscal partner", () => {
+      const c = calculateBox3({ bank: D(150_000), other: D(275_000), debts: D(100_000), partner: false }, r);
+      expect(c).toMatchObject({ deductibleDebtsEur: "96200.00", deemedReturnEur: "15628.00", baseEur: "328800.00" });
+      expect(c).toMatchObject({
+        taxableBaseEur: "271116.00",
+        sharePct: "82.45",
+        benefitEur: "12885.00",
+        taxEur: "4638.00",
+      });
+    });
+    it("4: the same, with a fiscal partner", () => {
+      const c = calculateBox3({ bank: D(150_000), other: D(275_000), debts: D(100_000), partner: true }, r);
+      expect(c).toMatchObject({ deductibleDebtsEur: "92400.00", deemedReturnEur: "15730.00", baseEur: "332600.00" });
+      expect(c.taxableBaseEur).toBe("217232.00");
+      expect(c.persons[0]).toEqual({
+        taxableBaseEur: "108616.00",
+        sharePct: "32.65",
+        benefitEur: "5135.00",
+        taxEur: "1848.00",
+      });
+    });
+    it("5: green investments with a fiscal partner, one partner taking all of the grondslag", () => {
+      const c = calculateBox3(
+        { bank: D(5_000), other: D(250_000), green: D(150_000), debts: D(0), partner: true },
+        r,
+        D(100),
+      );
+      expect(c).toMatchObject({
+        greenExemptEur: "52624.00",
+        greenAboveLimitEur: "97376.00",
+        deemedReturnEur: "20493.00",
+      });
+      expect(c).toMatchObject({ baseEur: "352376.00", taxableBaseEur: "237008.00" });
+      expect(c.persons[0]).toEqual({
+        taxableBaseEur: "237008.00",
+        sharePct: "67.25",
+        benefitEur: "13781.00",
+        taxEur: "4961.00",
+      });
     });
   });
 
@@ -59,9 +121,9 @@ describe("box 3 calculation (official steps)", () => {
       greenAboveLimitEur: "28749.00", // taxed as other assets
       otherEur: "78749.00",
       taxableBaseEur: "21749.00",
-      benefitEur: "1313.64",
-      taxEur: "472.91",
-      greenCreditEur: "498.76", // 0.7% of the exempt part
+      benefitEur: "1313.00", // 4,756 × 27.61 %
+      taxEur: "472.00",
+      greenCreditEur: "498.00", // 0.7% of the exempt part, down
       netTaxEur: "0.00", // the credit can't make box 3 negative here
     });
     // Partners get twice the limit.
@@ -234,13 +296,15 @@ describe("box 3 overview", () => {
       valueEur: "2488.00",
       category: "other",
     });
-    // Independently computed with the 2025 rates.
+    // 2025 rates: 835 (61,000 × 1.37 %) + 3,350 (56,988 × 5.88 %) − 32 (1,200 × 2.70 %) = 4,153;
+    // grondslag 116,788 − 57,684 = 59,104; share 50.60 %; benefit 2,101; tax 756.
     expect(y.calculation).toMatchObject({
       deductibleDebtsEur: "1200.00",
-      deemedReturnEur: "4154.19",
+      deemedReturnEur: "4153.00",
       taxableBaseEur: "59104.00",
-      benefitEur: "2102.35",
-      taxEur: "756.85",
+      sharePct: "50.60",
+      benefitEur: "2101.00",
+      taxEur: "756.00",
     });
     expect(y.rates).toMatchObject({ source: "default", final: true });
   });

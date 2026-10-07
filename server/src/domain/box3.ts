@@ -225,46 +225,79 @@ export interface Box3Calculation {
   greenCreditEur: string;
   // Box 3 tax after the green credit (the credit can't make it negative here).
   netTaxEur: string;
+  // You (and your fiscal partner): each one's share of the grondslag, benefit and tax.
+  persons: Box3PersonCalc[];
+}
+
+/** One person's part: their share of the grondslag, and the benefit and tax that follow from it. */
+export interface Box3PersonCalc {
+  taxableBaseEur: string;
+  sharePct: string;
+  benefitEur: string;
+  taxEur: string;
 }
 
 /**
- * The official steps: 1) deemed return per category (debts above the threshold reduce it);
- * 2) rendementsgrondslag = assets − deductible debts; 3) grondslag = that − heffingsvrij vermogen;
- * 4) aandeel = grondslag / rendementsgrondslag; 5) voordeel = deemed return × aandeel; 6) tax = voordeel × rate.
+ * The official steps, rounded as in the Belastingdienst's worked examples: assets down and debts up
+ * to whole euros, the deemed return on assets down and on debts to the nearest euro, the share down
+ * to two decimals of a percent, and the benefit and tax per person down to whole euros.
+ * 1) deemed return per category (debts above the threshold reduce it); 2) rendementsgrondslag =
+ * assets − deductible debts; 3) grondslag = that − heffingsvrij vermogen, divided between fiscal
+ * partners (`selfPct` is yours); 4) aandeel = your grondslag / rendementsgrondslag; 5) voordeel =
+ * deemed return × aandeel; 6) tax = voordeel × rate.
  */
 export function calculateBox3(
   input: { bank: Decimal; other: Decimal; green?: Decimal; debts: Decimal; partner: boolean },
   r: Box3Rates,
+  selfPct: Decimal = D(50),
 ): Box3Calculation {
   const persons = input.partner ? 2 : 1;
+  const pct = (v: string | undefined) => D(v ?? 0).div(100);
   // Green investments above the limit count as ordinary other assets.
-  const green = input.green ?? ZERO;
+  const green = (input.green ?? ZERO).floor();
   const greenExempt = Decimal.min(green, D(r.greenExemptEur ?? 0).mul(persons));
   const greenAbove = green.minus(greenExempt);
-  const other = input.other.plus(greenAbove);
+  const bank = input.bank.floor();
+  const other = input.other.floor().plus(greenAbove);
+  const debts = input.debts.ceil();
   const threshold = D(r.debtThresholdEur).mul(persons);
   const allowance = D(r.allowanceEur).mul(persons);
-  const deductible = Decimal.max(input.debts.minus(threshold), ZERO);
-  const deemed = input.bank
-    .mul(D(r.bankPct).div(100))
-    .plus(other.mul(D(r.otherPct).div(100)))
-    .minus(deductible.mul(D(r.debtPct).div(100)));
-  const base = input.bank.plus(other).minus(deductible);
+  const deductible = Decimal.max(debts.minus(threshold), ZERO);
+  const deemed = bank
+    .mul(pct(r.bankPct))
+    .floor()
+    .plus(other.mul(pct(r.otherPct)).floor())
+    // The debt part is rounded to the nearest euro in the Belastingdienst's examples (2,494.80 → 2,495).
+    .minus(deductible.mul(pct(r.debtPct)).toDecimalPlaces(0, Decimal.ROUND_HALF_UP));
+  const base = bank.plus(other).minus(deductible);
   const taxable = Decimal.max(base.minus(allowance), ZERO);
-  const share = base.gt(0) ? taxable.div(base) : ZERO;
-  const benefit = Decimal.max(deemed.mul(share), ZERO);
-  const tax = benefit.mul(D(r.taxRatePct).div(100));
-  const credit = greenExempt.mul(D(r.greenCreditPct ?? 0).div(100));
+  // Percent, down to two decimals.
+  const shareOf = (part: Decimal) => (base.gt(0) ? part.div(base).mul(10_000).floor().div(100) : ZERO);
+  const parts = input.partner
+    ? (() => {
+        const mine = taxable.mul(selfPct).div(100).floor();
+        return [mine, taxable.minus(mine)];
+      })()
+    : [taxable];
+  const each = parts.map((part) => {
+    const share = shareOf(part);
+    const benefit = Decimal.max(deemed.mul(share).div(100).floor(), ZERO);
+    const tax = benefit.mul(pct(r.taxRatePct)).floor();
+    return { part, share, benefit, tax };
+  });
+  const benefit = each.reduce((s, p) => s.plus(p.benefit), ZERO);
+  const tax = each.reduce((s, p) => s.plus(p.tax), ZERO);
+  const credit = greenExempt.mul(pct(r.greenCreditPct)).floor();
   return {
-    bankEur: money2(input.bank),
+    bankEur: money2(bank),
     otherEur: money2(other),
-    debtsEur: money2(input.debts),
+    debtsEur: money2(debts),
     deductibleDebtsEur: money2(deductible),
     deemedReturnEur: money2(deemed),
     baseEur: money2(base),
     allowanceEur: money2(allowance),
     taxableBaseEur: money2(taxable),
-    sharePct: share.mul(100).toFixed(2),
+    sharePct: shareOf(taxable).toFixed(2),
     benefitEur: money2(benefit),
     taxEur: money2(tax),
     greenEur: money2(green),
@@ -272,6 +305,12 @@ export function calculateBox3(
     greenAboveLimitEur: money2(greenAbove),
     greenCreditEur: money2(credit),
     netTaxEur: money2(Decimal.max(tax.minus(credit), ZERO)),
+    persons: each.map((p) => ({
+      taxableBaseEur: money2(p.part),
+      sharePct: p.share.toFixed(2),
+      benefitEur: money2(p.benefit),
+      taxEur: money2(p.tax),
+    })),
   };
 }
 
@@ -528,6 +567,7 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     warnings.push(
       tr("The {year} rates are provisional; the final bank and debt percentages follow after the year.", { year }),
     );
+  const selfPct = D(input?.allocationSelfPct ?? 50);
   const calculation = rates
     ? calculateBox3(
         {
@@ -538,25 +578,26 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
           partner: fiscalPartner,
         },
         rates,
+        selfPct,
       )
     : null;
 
-  const selfPct = D(input?.allocationSelfPct ?? 50);
-  const part = (v: string, pct: Decimal) => money2(D(v).mul(pct).div(100));
+  // Per person as calculated (each one's own share, rounded down); the green credit split the same way.
+  const credit = (pct: Decimal) => (calculation ? D(calculation.greenCreditEur).mul(pct).div(100) : ZERO);
+  const personCalc = (p: Box3PersonCalc | undefined, pct: Decimal) =>
+    p
+      ? {
+          taxableBaseEur: p.taxableBaseEur,
+          benefitEur: p.benefitEur,
+          taxEur: money2(Decimal.max(D(p.taxEur).minus(credit(pct)), ZERO)),
+        }
+      : { taxableBaseEur: "0.00", benefitEur: "0.00", taxEur: "0.00" };
   const allocation =
     fiscalPartner && calculation
       ? {
           selfPct: selfPct.toFixed(),
-          self: {
-            taxableBaseEur: part(calculation.taxableBaseEur, selfPct),
-            benefitEur: part(calculation.benefitEur, selfPct),
-            taxEur: part(calculation.netTaxEur, selfPct),
-          },
-          partner: {
-            taxableBaseEur: part(calculation.taxableBaseEur, D(100).minus(selfPct)),
-            benefitEur: part(calculation.benefitEur, D(100).minus(selfPct)),
-            taxEur: part(calculation.netTaxEur, D(100).minus(selfPct)),
-          },
+          self: personCalc(calculation.persons[0], selfPct),
+          partner: personCalc(calculation.persons[1], D(100).minus(selfPct)),
         }
       : null;
   const personOut = (p: ReturnType<typeof blank>): PersonTotals => ({

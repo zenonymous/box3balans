@@ -97,6 +97,14 @@ export function Box3Page() {
                 </option>
               ))}
             </Select>
+            {year != null && (
+              <Link
+                to={`/box3/aangifte?year=${year}`}
+                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2 print:hidden"
+              >
+                {t("For the tax return")}
+              </Link>
+            )}
             {detail.data && <ExportButtons y={detail.data} />}
           </>
         }

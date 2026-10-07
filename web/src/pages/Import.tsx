@@ -94,6 +94,8 @@ interface Upload {
   fileName: string;
   mapping: Mapping;
   preset: string | null;
+  // A known export (DEGIRO, Bitvavo …), converted to the Kluishuis template.
+  format: { id: string; label: string; rows: number } | null;
 }
 
 interface CommitResult {
@@ -189,13 +191,15 @@ export function ImportPage() {
     setError(undefined);
   };
 
-  const choose = async (file: File | undefined) => {
-    if (!file) return;
+  const [file, setFile] = useState<File | null>(null);
+  const choose = async (picked: File | undefined, raw = false) => {
+    if (!picked) return;
     reset();
+    setFile(picked);
     setBusy(true);
     try {
-      const content = await readText(file);
-      const up = await post<Upload>("/api/import/upload", { fileName: file.name, content });
+      const content = await readText(picked);
+      const up = await post<Upload>("/api/import/upload", { fileName: picked.name, content, raw });
       setUpload(up);
       setMapping(up.mapping);
     } catch (err) {
@@ -314,12 +318,37 @@ export function ImportPage() {
           mapping &&
           accountId && (
             <>
-              <MappingCard
-                mapping={mapping}
-                setMapping={setMapping}
-                plan={plan.data}
-                uploadHeaders={plan.data?.headers ?? []}
-              />
+              {upload.format ? (
+                <Card title={t("2 · Recognised: {name}", { name: upload.format.label })}>
+                  <p className="text-sm text-ink-2">
+                    {tn(
+                      upload.format.rows,
+                      "Kluishuis read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.",
+                      "Kluishuis read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.",
+                    )}
+                  </p>
+                  <p className="mt-2 text-xs text-muted">
+                    {t(
+                      "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.",
+                    )}
+                  </p>
+                  <Button
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => void choose(file ?? undefined, true)}
+                    disabled={busy}
+                  >
+                    {t("Choose the columns myself")}
+                  </Button>
+                </Card>
+              ) : (
+                <MappingCard
+                  mapping={mapping}
+                  setMapping={setMapping}
+                  plan={plan.data}
+                  uploadHeaders={plan.data?.headers ?? []}
+                />
+              )}
               <ReviewCard
                 plan={plan.data}
                 loading={plan.isFetching}

@@ -35,11 +35,12 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - Een startwizard (_Aan de slag_): huishouden en fiscaal partnerschap → rekeningen → waarden op 1 januari, of de weg naar import en koppelingen → je box 3.
 - Een demomodus (`DEMO=true`): een voorbeeldhuishouden met verzonnen koersen, meteen ingelogd, zonder iets te bewaren.
 
-## Fase D: de aangifte invullen
+## Fase D: de aangifte invullen ✅
 
-- Ingebouwde formaten voor veelgebruikte brokers en banken: DEGIRO, Trade Republic, ABN AMRO, ING, Rabobank, Saxo, Bux, Meesman, Brand New Day, Peaks, Lightyear, Scalable Capital, en CSV-exports van Bitvavo, Kraken en Coinbase. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/kluishuis/issues/new/choose) nodig.
-- Een overzicht per jaar in de volgorde van de aangifte en de _Opgaaf werkelijk rendement_: per bankrekening, per beleggingsrekening, crypto en schulden, met wat je waar invult.
-- Tests met de rekenvoorbeelden van de Belastingdienst.
+- **Herkende exports** van DEGIRO (rekeningoverzicht en transacties), Bitvavo, Coinbase, Kraken (ledgers), Rabobank Beleggen, Trade Republic, Trading 212, BUX, Saxo en Revolut. Gebouwd op openbare voorbeeldbestanden, nog niet getest met echte exports. Banken (ING, Rabobank, ABN AMRO …) lees je in via _Waarden per jaar_ met hun eigen export.
+- **Voor de aangifte:** per jaar box 3 in de volgorde van de aangifte, per rekening en eigenaar, met dividendbelasting en het werkelijk rendement (vanaf 2025 in de aangifte zelf, daarvoor met de _Opgaaf werkelijk rendement_).
+- **Rekenvoorbeelden van de Belastingdienst** als tests: de vijf forfaitaire voorbeelden voor 2025 komen precies uit (met dezelfde afronding), en drie voorbeelden van het werkelijk rendement.
+- **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/kluishuis/issues/new/choose) nodig.
 
 ## Fase E: onderhoud en extra veiligheid
 

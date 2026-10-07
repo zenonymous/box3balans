@@ -1343,4 +1343,62 @@ export const NL: Record<string, string> = {
   // components/RefreshButton.tsx
   "Example prices": "Voorbeeldkoersen",
   "Prices not refreshed yet": "Koersen nog niet ververst",
+  // stage D
+  "For the tax return": "Voor de aangifte",
+  "Your actual return was lower: give it in your tax return for {year} (the return asks whether you want to). That would save about <0>{saving}</0>.":
+    "Je werkelijk rendement was lager: geef het op in je aangifte over {year} (de aangifte vraagt of je dat wilt). Dat scheelt ongeveer <0>{saving}</0>.",
+  "The deemed return is lower (or equal): no reason to give your actual return for {year}.":
+    "Het forfaitair rendement is lager (of gelijk): geen reden om je werkelijk rendement over {year} op te geven.",
+  "2 · Recognised: {name}": "2 · Herkend: {name}",
+  "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.":
+    "Gebouwd op openbare voorbeeldbestanden; klopt er iets niet met jouw export, kies dan zelf de kolommen en laat het ons weten.",
+  "Choose the columns myself": "Zelf de kolommen kiezen",
+  "Kluishuis read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.":
+    "Kluishuis heeft deze export gelezen en er {n} transactie van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
+  "Kluishuis read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.":
+    "Kluishuis heeft deze export gelezen en er {n} transacties van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
+  "Bank accounts and other bank balances": "Bankrekeningen en andere banktegoeden",
+  "Shares, bonds and funds": "Aandelen, obligaties en fondsen",
+  Cryptocurrency: "Cryptovaluta",
+  Property: "Onroerende zaken",
+  "Money lent and other claims": "Uitgeleend geld en andere vorderingen",
+  "Savings and current accounts, also abroad, and cash a broker keeps at a bank: the balance on 1 January.":
+    "Spaar- en betaalrekeningen, ook in het buitenland, en geld dat een broker bij een bank aanhoudt: het saldo op 1 januari.",
+  "Per broker or investment account, the value of what you held on 1 January.":
+    "Per broker of beleggingsrekening de waarde van wat je op 1 januari had.",
+  "The value on 1 January at the price of the platform you use, per exchange or wallet.":
+    "De waarde op 1 januari tegen de koers van het platform dat je gebruikt, per exchange of wallet.",
+  "A second home, a home you let, or land: the WOZ value, for a home let with rent protection the leegwaarde.":
+    "Een tweede woning, een verhuurde woning of grond: de WOZ-waarde, voor een woning verhuurd met huurbescherming de leegwaarde.",
+  "Money you lent to others, at what is still owed to you on 1 January.":
+    "Geld dat je aan anderen hebt uitgeleend, tegen wat je op 1 januari nog tegoed had.",
+  "Precious metals, euros on an exchange, capital insurance and anything else in box 3.":
+    "Edelmetalen, euro's op een exchange, kapitaalverzekeringen en verder alles in box 3.",
+  "Exempt up to the yearly limit; the return asks for them separately.":
+    "Vrijgesteld tot de jaargrens; de aangifte vraagt er apart naar.",
+  "Debts in box 3, not the mortgage on the home you live in: what you owed on 1 January.":
+    "Schulden in box 3, niet de hypotheek op de woning waarin je woont: wat je op 1 januari schuldig was.",
+  "For the tax return {year}": "Voor de aangifte {year}",
+  "What you fill in under box 3, in the order of the return: per part, per account and per owner, in whole euros (assets rounded down, debts up). Check it against the year statements of your banks and brokers.":
+    "Wat je bij box 3 invult, in de volgorde van de aangifte: per onderdeel, per rekening en per eigenaar, in hele euro's (bezittingen naar beneden afgerond, schulden naar boven). Controleer het met de jaaroverzichten van je banken en brokers.",
+  "Peildatum <0>1 January {year}</0>; {partner}.": "Peildatum <0>1 januari {year}</0>; {partner}.",
+  "Fiscal partners give their assets together; who owns what is shown per line.":
+    "Fiscale partners geven hun bezit samen op; van wie wat is, staat per regel.",
+  "On 1 January": "Op 1 januari",
+  Counts: "Telt mee",
+  "Dividend (gross)": "Dividend (bruto)",
+  "Entered on the Box 3 page": "Ingevuld op de pagina Box 3",
+  "Dividend tax withheld in {year}": "Ingehouden dividendbelasting in {year}",
+  "No dividend tax was withheld that year.": "Er is dat jaar geen dividendbelasting ingehouden.",
+  "Dutch dividend tax: <0>{tax}</0> on {gross} of dividends. The return asks for it under taxes already paid; it is offset in full.":
+    "Nederlandse dividendbelasting: <0>{tax}</0> over {gross} aan dividend. De aangifte vraagt ernaar bij de al betaalde belastingen; je verrekent het volledig.",
+  "Foreign tax withheld, per country of the security. The return offsets it up to the treaty rate (usually 15%) to avoid double taxation; more must be reclaimed from that country.":
+    "Ingehouden buitenlandse belasting, per land van het effect. De aangifte verrekent die tot het verdragstarief (meestal 15%) ter voorkoming van dubbele belasting; meer moet je bij dat land terugvragen.",
+  "on {gross}": "over {gross}",
+  "From {year}, the return itself asks whether you want to give your actual return; the Belastingdienst then uses whichever is lower. The figures below are what it asks for per part.":
+    "Vanaf {year} vraagt de aangifte zelf of je je werkelijk rendement wilt opgeven; de Belastingdienst gebruikt dan het laagste van de twee. Hieronder staat per onderdeel wat er wordt gevraagd.",
+  "For {year} you give your actual return on the separate form <0>Opgaaf werkelijk rendement</0> in Mijn Belastingdienst, after your assessment.":
+    "Over {year} geef je je werkelijk rendement op met het aparte formulier <0>Opgaaf werkelijk rendement</0> in Mijn Belastingdienst, na je aanslag.",
+  "The full calculation and the rules per year are on the <0>Box 3</0> page. An estimate, not tax advice.":
+    "De hele berekening en de regels per jaar staan op de pagina <0>Box 3</0>. Een schatting, geen belastingadvies.",
 };

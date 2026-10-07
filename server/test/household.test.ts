@@ -130,6 +130,37 @@ describe("household and values per year in box 3", () => {
     expect(a.totalEur).toBe(19700);
   });
 
+  it("arranges the year as the tax return asks for it", async () => {
+    await household();
+    const r = await ok("GET", "/api/box3/2024/return");
+    expect(r.sections.map((x: any) => x.key)).toEqual([
+      "bank",
+      "investments",
+      "crypto",
+      "property",
+      "receivables",
+      "other",
+      "green",
+      "debts",
+    ]);
+    const section = (key: string) => r.sections.find((x: any) => x.key === key);
+    // 40,000 + 30,000 + 20,000 + 5,000 (Lot is an adult: listed, counted 0).
+    expect(section("bank").totalEur).toBe(95000);
+    expect(section("bank").lines.find((l: any) => l.name === "Lot's savings")).toMatchObject({
+      countedEur: 0,
+      note: "child-adult",
+    });
+    expect(section("bank").lines.find((l: any) => l.name === "Savings")).toMatchObject({ incomeEur: 400 });
+    expect(section("investments").lines).toEqual([expect.objectContaining({ name: "Broker", countedEur: 50000 })]);
+    // The let home at its leegwaarde (79 % of 300,000), the rent received in the year.
+    expect(section("property").lines[0]).toMatchObject({ countedEur: 237000, incomeEur: 6000 });
+    expect(section("receivables").totalEur).toBe(10000);
+    expect(section("debts").lines[0]).toMatchObject({ name: "Study loan", countedEur: 25000, incomeEur: 500 });
+    expect(r.actualReturnIn).toBe("form");
+    expect(r.actualReturn.totalEur).toBe(19700);
+    expect((await ok("GET", "/api/box3/2025/return")).actualReturnIn).toBe("return");
+  });
+
   it("leaves out your partner's part when you aren't fiscal partners that year", async () => {
     await household();
     const y = await ok("GET", "/api/box3/2025");

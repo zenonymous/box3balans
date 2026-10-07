@@ -11,6 +11,7 @@ import {
   saveConfig,
 } from "../domain/box3.js";
 import { actualReturn } from "../domain/box3Actual.js";
+import { taxReturnOverview } from "../domain/taxReturn.js";
 import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
@@ -48,6 +49,14 @@ export async function box3Routes(app: FastifyInstance) {
         comparison: compareWithDeemed(actual, deemed, result.rates ? Number(result.rates.taxRatePct) : null),
       },
     };
+  });
+
+  // Box 3 of a year arranged as the income tax return asks for it.
+  app.get("/:year/return", async (req) => {
+    const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
+    if (year > new Date().getUTCFullYear())
+      throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
+    return taxReturnOverview(db, year, await loadConfig(db));
   });
 
   // The planned actual-return system (from 2028) applied to your past years. Not law yet: the

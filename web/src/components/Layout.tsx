@@ -80,7 +80,7 @@ export function Layout({ user, demo }: { user: User; demo?: boolean }) {
         </div>
       </aside>
 
-      <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-5 sm:px-6 md:pb-10 md:pt-8">
+      <main className="mx-auto w-full min-w-0 max-w-6xl px-4 pb-24 pt-5 sm:px-6 md:pb-10 md:pt-8">
         {demo && (
           <div className="mb-4 print:hidden">
             <Alert>
