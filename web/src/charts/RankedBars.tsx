@@ -29,7 +29,7 @@ export function RankedBars({ rows, legend }: { rows: RankedRow[]; legend?: { lab
   const shown = rows.filter((r) => r.value > 0);
   const total = shown.reduce((a, r) => a + r.value, 0);
   const max = Math.max(0, ...shown.map((r) => r.value));
-  if (total <= 0) return <p className="text-sm text-muted">Nothing to show yet.</p>;
+  if (total <= 0) return <p className="text-sm text-muted">{t("Nothing to show yet.")}</p>;
 
   return (
     <div>

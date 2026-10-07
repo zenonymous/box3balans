@@ -152,7 +152,12 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
           valueEur: euros(value, up),
           countedEur: euros(counted, up),
           incomeEur: y && Number(y.incomeEur) ? euros(y.incomeEur) : undefined,
-          dividendEur: div ? D(div.gross).toDecimalPlaces(2).toNumber() : undefined,
+          // From transactions; for an investment account kept as values per year, its income.
+          dividendEur: div
+            ? D(div.gross).toDecimalPlaces(2).toNumber()
+            : key === "investments" && y && Number(y.incomeEur)
+              ? D(y.incomeEur).toDecimalPlaces(2).toNumber()
+              : undefined,
           dividendTaxEur: div && div.tax.gt(0) ? div.tax.toDecimalPlaces(2).toNumber() : undefined,
         };
       })

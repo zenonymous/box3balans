@@ -42,7 +42,8 @@ export function SettingsPage() {
   const s = status.data?.status;
 
   const logout = async () => {
-    await post("/api/auth/logout");
+    // Signed out on the server or not (the session may already be gone): this screen signs out.
+    await post("/api/auth/logout").catch(() => undefined);
     switchSession(qc, null);
   };
 

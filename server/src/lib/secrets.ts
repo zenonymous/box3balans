@@ -1,4 +1,5 @@
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes } from "node:crypto";
+import { tr } from "../i18n/index.js";
 
 const VERSION = "v1";
 
@@ -8,11 +9,21 @@ const VERSION = "v1";
  */
 export class SecretBox {
   private key: Buffer;
+  private macKey: Buffer;
 
   constructor(appSecret: string) {
     // The salt keeps the app's original name on purpose: changing it would make every stored
     // exchange key undecryptable.
     this.key = Buffer.from(hkdfSync("sha256", appSecret, "portfolio-dashboard", "credentials-v1", 32));
+    this.macKey = Buffer.from(hkdfSync("sha256", appSecret, "portfolio-dashboard", "codes-v1", 32));
+  }
+
+  /**
+   * A keyed hash (HMAC-SHA256) for short secrets that are only compared, such as recovery codes: a
+   * copy of the database or a backup alone isn't enough to try codes against it.
+   */
+  mac(value: string): string {
+    return createHmac("sha256", this.macKey).update(value).digest("hex");
   }
 
   seal(value: unknown): string {
@@ -32,7 +43,7 @@ export class SecretBox {
       const pt = Buffer.concat([decipher.update(buf.subarray(28)), decipher.final()]);
       return JSON.parse(pt.toString("utf8")) as T;
     } catch {
-      throw new Error("Stored credentials cannot be decrypted (was APP_SECRET changed?). Re-enter the API key.");
+      throw new Error(tr("Stored credentials cannot be decrypted (was APP_SECRET changed?). Re-enter the API key."));
     }
   }
 }

@@ -24,7 +24,10 @@ const schema = z.object({
       source: z.string().url(),
     }),
   ),
-  leegwaarderatio: z.array(z.object({ upToRentPct: z.number().positive(), valuePct: z.number().min(0).max(100) })),
+  // Bands from low to high rent; a rent above the last band counts at 100%.
+  leegwaarderatio: z
+    .array(z.object({ upToRentPct: z.number().positive(), valuePct: z.number().min(0).max(100) }))
+    .refine((b) => b.every((x, i) => i === 0 || x.upToRentPct > b[i - 1]!.upToRentPct), "Bands must go up"),
 });
 
 export const RULES = schema.parse(data);

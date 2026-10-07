@@ -436,4 +436,12 @@ export const NL: Record<string, string> = {
   "Two-step verification is already on": "Tweestapsverificatie staat al aan",
   "That code isn't right; check the time on your phone and try again":
     "Die code klopt niet; controleer de tijd op je telefoon en probeer het opnieuw",
+  // review
+  "Two-step verification can't be checked: its key can't be read (was APP_SECRET changed?). Turn it off on the server with node dist/cli.js disable-2fa, then set it up again.":
+    "Tweestapsverificatie kan niet worden gecontroleerd: de sleutel is niet te lezen (is APP_SECRET veranderd?). Zet het op de server uit met node dist/cli.js disable-2fa en stel het daarna opnieuw in.",
+  "The commission on {date} couldn't be worked out and was left out.":
+    "De commissie op {date} kon niet worden berekend en is weggelaten.",
+  // lib/secrets.ts
+  "Stored credentials cannot be decrypted (was APP_SECRET changed?). Re-enter the API key.":
+    "Opgeslagen sleutels zijn niet te ontsleutelen (is APP_SECRET veranderd?). Voer de API-sleutel opnieuw in.",
 };

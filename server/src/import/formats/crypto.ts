@@ -93,9 +93,14 @@ export const bitvavo: BrokerFormat = {
           id,
         });
         coinFee(tr("Trading fee"));
-      } else if (type === "deposit" || type === "withdrawal") {
+      } else if (type === "deposit") {
         out.rows.push({ ...when, type, ...crypto(symbol), quantity: abs(amount)!, id });
-        if (type === "withdrawal") coinFee(tr("Network fee"));
+      } else if (type === "withdrawal") {
+        // The amount includes the network fee: what arrives elsewhere is the amount minus the fee.
+        const inCoin = fee && feeCurrency === symbol.toUpperCase() ? Number(fee) : 0;
+        const sent = Number(abs(amount)) - inCoin;
+        out.rows.push({ ...when, type, ...crypto(symbol), quantity: String(Number(sent.toFixed(12))), id });
+        coinFee(tr("Network fee"));
       } else if (/staking|reward|rebate|airdrop|affiliate|bonus/.test(type) && !isNegative(amount)) {
         out.rows.push({ ...when, type: "reward", ...crypto(symbol), quantity: amount, notes: type, id });
       } else skip(out.skipped, tr("Staking moves and other lines"));

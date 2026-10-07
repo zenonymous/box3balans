@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { disableTwoFactor } from "../src/auth/twoFactor.js";
+import { users } from "../src/db/schema.js";
 import { base32Decode, base32Encode, hotp, matchTotp, otpauthUri, totpStep } from "../src/lib/totp.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
@@ -48,7 +49,7 @@ describe("signing in with a second factor", () => {
     expect((await t.api("POST", "/api/auth/2fa/enable", { code: "000000" })).statusCode).toBe(400);
     const enabled = (await t.api("POST", "/api/auth/2fa/enable", { code: codeFor(setup.secret, -1) })).json();
     expect(enabled.recoveryCodes).toHaveLength(10);
-    expect(enabled.recoveryCodes[0]).toMatch(/^[a-z2-7]{4}-[a-z2-7]{4}$/);
+    expect(enabled.recoveryCodes[0]).toMatch(/^[a-z2-7]{5}-[a-z2-7]{5}$/);
 
     const login = (code?: string) =>
       t!.app.inject({
@@ -80,6 +81,21 @@ describe("signing in with a second factor", () => {
       recoveryCodesLeft: 0,
     });
     expect((await login()).statusCode).toBe(200);
+  });
+
+  it("explains a key that can't be read after APP_SECRET changed", async () => {
+    t = await createTestApp();
+    const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
+    await t.api("POST", "/api/auth/2fa/enable", { code: hotp(base32Decode(setup.secret), totpStep()) });
+    await t.database.db.update(users).set({ totpSecret: "v1:AAAA" });
+    const res = await t.app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      headers: { "x-requested-with": "portfolio" },
+      payload: { username: "me", password: "correct horse battery", code: "123456" },
+    });
+    expect(res.statusCode).toBe(500);
+    expect(res.json().error).toContain("disable-2fa");
   });
 
   it("can be switched off from the command line when the phone is lost", async () => {

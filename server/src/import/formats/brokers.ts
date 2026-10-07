@@ -384,7 +384,13 @@ export const saxo: BrokerFormat = {
         // The amount (account currency) includes the commission; in the trade's currency:
         const value = Math.abs(Number(amount ?? 0)) / rate;
         const gross = Number(quantity) * Number(p.price ?? 0);
-        const fee = side === "buy" ? value - gross : gross - value;
+        let fee = side === "buy" ? value - gross : gross - value;
+        // Saxo doesn't say which way its conversion rate goes; a "commission" of more than 5% means
+        // it went the other way: leave it out rather than book a wrong cost.
+        if (fee > gross * 0.05) {
+          out.warnings.push(tr("The commission on {date} couldn't be worked out and was left out.", { date }));
+          fee = 0;
+        }
         out.rows.push({
           date,
           type: side,

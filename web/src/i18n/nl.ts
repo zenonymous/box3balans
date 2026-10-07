@@ -1437,4 +1437,8 @@ export const NL: Record<string, string> = {
     "Buitengesloten? Voer op de server node dist/cli.js disable-2fa uit in de app-container.",
   "On. {n} recovery code left.": "Aan. Nog {n} herstelcode over.",
   "On. {n} recovery codes left.": "Aan. Nog {n} herstelcodes over.",
+  // charts
+  "Nothing to show yet.": "Nog niets te tonen.",
+  "Not enough history yet. Add transactions, or wait for price history to load.":
+    "Nog niet genoeg geschiedenis. Voeg transacties toe, of wacht tot de koersgeschiedenis geladen is.",
 };

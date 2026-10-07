@@ -33,10 +33,8 @@ Versies volgen [semantic versioning](https://semver.org/lang/nl/): `MAJOR.MINOR.
 
    CI publiceert dan `:1.3.0`, `:1.3` en `:latest`, voor Intel/AMD en ARM. Een proefversie zoals `v1.4.0-rc.1` krijgt alleen zijn eigen tag; `latest` blijft staan.
 
-3. Maak op GitHub een release van de tag (**Releases → Draft a new release**, **Generate release notes**) en schrijf erboven in gewone taal wat er voor gebruikers verandert.
+3. Maak op GitHub een release van de tag (**Releases → Draft a new release**, **Generate release notes**) en schrijf erboven in gewone taal wat er voor gebruikers verandert. De controle op nieuwe versies in de app (voor wie die aanzet) kijkt naar de nieuwste gepubliceerde release, niet naar tags en niet naar proefversies: zonder release ziet niemand de nieuwe versie.
 
 ## Elk jaar: belastingregels
 
-- **Rond Prinsjesdag (september):** het Belastingplan noemt de voorgestelde tarieven en het heffingsvrij vermogen voor het volgende jaar. Noteer ze in [box3-sources.md](box3-sources.md), maar bouw ze pas in als ze definitief zijn.
-- **December:** de cijfers zijn definitief. Voeg ze toe aan `DEFAULT_RATES` in `server/src/domain/box3.ts`, met een test en de bron, en breng een versie uit.
-- **Wetswijzigingen** (zoals het stelsel vanaf 2028): werk [box3-sources.md](box3-sources.md) en de vooruitblik bij zodra er iets verandert.
+De box 3-cijfers staan in `server/src/rules/box3.json`. Wanneer en hoe je ze bijwerkt (Prinsjesdag, december, na afloop van het jaar) staat in [belastingregels.md](belastingregels.md). Breng daarna een versie uit, zodat iedereen de nieuwe cijfers krijgt. Wetswijzigingen (zoals het stelsel vanaf 2028) vragen om code en tests: werk ook [box3-sources.md](box3-sources.md) en de vooruitblik bij.

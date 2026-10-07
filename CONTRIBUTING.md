@@ -8,7 +8,7 @@ _In English: contributions in English are welcome too. Issues and pull requests 
 
 - **Exportbestanden van je broker, bank of beurs.** Met een geanonimiseerd voorbeeld kan Kluishuis een formaat leren lezen. Gebruik het formulier _Exportbestand van een broker, bank of beurs_ bij [Issues](../../issues/new/choose).
 - **Fouten melden**, met de versie (linksonder in de app) en hoe je het kunt nadoen. Deel nooit echte bedragen, rekeningnummers, wallet-adressen of API-sleutels.
-- **Belastingregels controleren.** Klopt een berekening niet met wat de Belastingdienst zegt? Meld het met een link naar de bron. De regels en hun bronnen staan in [`docs/box3-sources.md`](docs/box3-sources.md).
+- **Belastingregels controleren.** Klopt een berekening niet met wat de Belastingdienst zegt? Meld het met een link naar de bron. De regels en hun bronnen staan in [`docs/box3-sources.md`](docs/box3-sources.md), de cijfers in [`server/src/rules/box3.json`](server/src/rules/box3.json).
 - **Code.** Kijk in de [roadmap](docs/ROADMAP.md) wat er gepland is. Open voor grotere wijzigingen eerst een issue, zodat we de aanpak kunnen afstemmen voordat je er veel tijd in steekt.
 
 ## Ontwikkelomgeving
@@ -40,7 +40,7 @@ De GitHub-workflow doet hetzelfde en bouwt daarna het Docker-image.
 - **Geld en hoeveelheden** rekenen met `decimal.js` en worden in de database als `NUMERIC` opgeslagen, nooit als gewone getallen met afrondingsfouten.
 - **Tests gebruiken geen internet.** Alle externe API's krijgen nep-antwoorden via `fakeFetch` in `server/test/helpers.ts`; een test die toch naar buiten gaat, faalt. Let op: `fakeFetch` kiest de **langste** passende URL, dus geef je eigen nep-antwoord de volledige host en het volledige pad als een standaardantwoord er ook op past.
 - **Berekeningen krijgen een test met een uitgerekend voorbeeld**, met in een commentaar hoe je op het verwachte getal komt.
-- **Belastingregels krijgen een bron** in `docs/box3-sources.md`: wat de regel is, waar het staat, en per wanneer het geldt. Tarieven die nog niet definitief zijn, komen er pas in als ze vaststaan.
+- **Belastingregels krijgen een bron** in `docs/box3-sources.md`: wat de regel is, waar het staat, en per wanneer het geldt. De cijfers zelf staan in `server/src/rules/box3.json`; een nieuw jaar komt erin zodra het Belastingplan is aangenomen, met `"final": false` tot de percentages voor banktegoeden en schulden definitief zijn (zie [docs/belastingregels.md](docs/belastingregels.md)).
 - **Databasewijzigingen:** pas `server/src/db/schema.ts` aan en maak een migratie met `npm run db:generate -w server`. Migraties draaien automatisch bij het opstarten en moeten oude back-ups kunnen blijven terugzetten.
 - **Teksten in de app** schrijf je in het Engels in `t("…")` (web) of `tr("…")` (server), met de Nederlandse vertaling in `web/src/i18n/nl.ts` of `server/src/i18n/nl.ts`. Gebruik de termen uit de aangifte (banktegoeden, overige bezittingen, schulden, peildatum, heffingsvrij vermogen). De tekst moet letterlijk tussen dubbele aanhalingstekens staan, zodat de test die op ontbrekende vertalingen controleert hem vindt; aantallen gaan met `tn()`/`trn()`. Houd teksten kort en concreet.
 - **Privacy:** Kluishuis stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Nieuwe externe diensten alleen voor openbare gegevens (zoals koersen), en vermeld ze in de README.

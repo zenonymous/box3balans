@@ -19,3 +19,6 @@ Oplossingen komen in de nieuwste uitgave. Werk bij met `docker compose pull && d
 - Zet Kluishuis **niet open naar het internet**. Gebruik voor toegang buitenshuis een VPN zoals WireGuard of Tailscale (zie de README).
 - Geef API-sleutels van beurzen en brokers **alleen leesrechten**. De verbindingsdialoog vertelt per aanbieder welke rechten nodig zijn.
 - Zet `BACKUP_PASSPHRASE`, zodat back-ups versleuteld zijn voordat ze ergens anders terechtkomen.
+- Zet **tweestapsverificatie** aan (_Instellingen_) en bewaar de herstelcodes buiten de server.
+- Bewaar de app-sleutel (`/data/app-secret`, of je eigen `APP_SECRET`) in je wachtwoordmanager: zonder kun je API-sleutels en tweestapsverificatie na een verhuizing niet meer lezen.
+- Wil je weten wanneer er een beveiligingsoplossing is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan, of volg de releases op GitHub.

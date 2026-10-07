@@ -6,12 +6,12 @@ De app toont die datum op de pagina Box 3 (onder _Regels en tarieven_), met per 
 
 ## Wanneer
 
-| Moment                                    | Wat                                                                                                                                                                                            |
-| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Prinsjesdag (derde dinsdag van september) | Het Belastingplan noemt de cijfers voor het volgende jaar. Voeg dat jaar toe met `"final": false`.                                                                                             |
-| December                                  | Het Belastingplan is aangenomen: zet de vaste cijfers (heffingsvrij vermogen, schuldendrempel, tarief, groene grens) goed. Het forfaitaire percentage voor overige bezittingen staat dan vast. |
-| Na afloop van het jaar (januari–februari) | De Belastingdienst maakt de definitieve percentages voor banktegoeden en schulden bekend. Werk ze bij en zet `"final": true`.                                                                  |
-| Bij elke wijziging                        | Zet `checkedAt` op de datum van controle en zet de bron bij het jaar.                                                                                                                          |
+| Moment                                    | Wat                                                                                                                                                                                                                                                    |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Prinsjesdag (derde dinsdag van september) | Het Belastingplan noemt de voorgestelde cijfers voor het volgende jaar. Noteer ze met bron in [`box3-sources.md`](box3-sources.md), maar bouw ze nog niet in: ze kunnen nog veranderen.                                                                |
+| December                                  | Het Belastingplan is aangenomen: voeg het jaar toe met `"final": false`. Heffingsvrij vermogen, schuldendrempel, tarief, groene grens en het percentage voor overige bezittingen staan dan vast; die voor banktegoeden en schulden zijn nog voorlopig. |
+| Na afloop van het jaar (januari–februari) | De Belastingdienst maakt de definitieve percentages voor banktegoeden en schulden bekend. Werk ze bij en zet `"final": true`.                                                                                                                          |
+| Bij elke wijziging                        | Zet `checkedAt` op de datum van controle en zet de bron bij het jaar.                                                                                                                                                                                  |
 
 Controleer ook of de regels zelf veranderen, niet alleen de cijfers: bijvoorbeeld het eind van de vrijstelling voor groene beleggingen (2027) of het stelsel op basis van werkelijk rendement (wetsvoorstel 36.748). Zulke wijzigingen vragen om code en tests, niet alleen om het bestand. Zet bronnen en uitleg in [`box3-sources.md`](box3-sources.md).
 

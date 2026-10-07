@@ -26,7 +26,7 @@ export function NetWorthChart({ points, showInvested }: { points: HistoryPoint[]
   if (points.length < 2) {
     return (
       <p className="py-8 text-center text-sm text-muted">
-        Not enough history yet. Add transactions, or wait for price history to load.
+        {t("Not enough history yet. Add transactions, or wait for price history to load.")}
       </p>
     );
   }

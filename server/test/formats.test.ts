@@ -126,7 +126,8 @@ describe("broker exports", () => {
       ["deposit", "EUR", "1000", "", ""],
       ["buy", "BTC", "0.01", "40000", "1.00"],
       ["sell", "ETH", "0.1", "2800", "0.70"],
-      ["withdrawal", "BTC", "0.0099", "", ""],
+      // 0.0099 left the account, 0.0001 of it the network fee.
+      ["withdrawal", "BTC", "0.0098", "", ""],
       ["fee", "BTC", "0.0001", "", ""],
       ["reward", "ETH", "0.0012", "", ""],
     ]);

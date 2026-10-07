@@ -18,7 +18,7 @@ export function AllocationBar({ slices }: { slices: Slice[] }) {
   const [hover, setHover] = useState<string | null>(null);
   const shown = slices.filter((s) => s.value > 0);
   const total = shown.reduce((a, s) => a + s.value, 0);
-  if (total <= 0) return <p className="text-sm text-muted">Nothing to show yet.</p>;
+  if (total <= 0) return <p className="text-sm text-muted">{t("Nothing to show yet.")}</p>;
   const active = shown.find((s) => s.key === hover);
 
   return (

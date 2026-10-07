@@ -4,7 +4,9 @@ Kluishuis draait in Docker. Hieronder per systeem hoe je het installeert. Overal
 
 1. Een map met daarin [`docker-compose.yml`](../docker-compose.yml), en eventueel een `.env` met je instellingen ([`.env.example`](../.env.example) laat zien wat kan).
 2. `docker compose up -d`, of het equivalent in de app van je NAS.
-3. Open `http://<adres-van-je-server>:8080` en maak je gebruiker aan.
+3. Open `http://<adres-van-je-server>:8080` en maak je gebruiker aan. _Aan de slag_ helpt je daarna op weg; zet onder _Instellingen_ ook tweestapsverificatie aan.
+
+Wil je eerst rondkijken zonder iets in te stellen? Start de demo: `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/OWNER/kluishuis:latest`.
 
 Kies bij twijfel de **standaardopstelling** (`docker-compose.yml`: Kluishuis met een eigen PostgreSQL). De variant met **één container** (`docker-compose.lite.yml`) is handig om het uit te proberen of op een laptop.
 

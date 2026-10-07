@@ -19,6 +19,7 @@ import {
   renewRecoveryCodes,
   startTwoFactor,
   twoFactorStatus,
+  TwoFactorUnreadable,
   verifySecondFactor,
 } from "../auth/twoFactor.js";
 
@@ -35,6 +36,21 @@ const newPassword = z
 export async function authRoutes(app: FastifyInstance) {
   const { db, config, secrets } = app.deps;
   const codeBody = z.object({ code: z.string().trim().min(1).max(20) });
+  // A key that can't be opened means APP_SECRET changed: say how to get back in instead of failing.
+  const checkCode = async (userId: number, code: string) => {
+    try {
+      return await verifySecondFactor(db, secrets, userId, code);
+    } catch (err) {
+      if (err instanceof TwoFactorUnreadable)
+        throw new HttpError(
+          500,
+          tr(
+            "Two-step verification can't be checked: its key can't be read (was APP_SECRET changed?). Turn it off on the server with node dist/cli.js disable-2fa, then set it up again.",
+          ),
+        );
+      throw err;
+    }
+  };
 
   const startSession = async (reply: FastifyReply, userId: number) => {
     const { token, expiresAt } = await createSession(db, userId, config.SESSION_DAYS);
@@ -72,7 +88,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (await isTwoFactorEnabled(db, user.id)) {
       if (!body.code)
         return reply.code(401).send({ error: tr("Enter the code from your authenticator app"), needsCode: true });
-      if (!(await verifySecondFactor(db, secrets, user.id, body.code)))
+      if (!(await checkCode(user.id, body.code)))
         return reply.code(401).send({ error: tr("That code isn't right, or was already used"), needsCode: true });
     }
     await startSession(reply, user.id);
@@ -102,7 +118,7 @@ export async function authRoutes(app: FastifyInstance) {
     const { password, code } = codeBody.extend({ password: z.string() }).parse(req.body);
     const ok = await checkCredentials(db, req.user!.username, password);
     if (!ok) throw new HttpError(400, tr("Current password is incorrect"));
-    if (!(await verifySecondFactor(db, secrets, req.user!.id, code)))
+    if (!(await checkCode(req.user!.id, code)))
       throw new HttpError(400, tr("That code isn't right, or was already used"));
     await disableTwoFactor(db, req.user!.id);
     return twoFactorStatus(db, req.user!.id);
@@ -110,9 +126,9 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.post("/2fa/recovery-codes", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
     const { code } = codeBody.parse(req.body);
-    if (!(await verifySecondFactor(db, secrets, req.user!.id, code)))
+    if (!(await checkCode(req.user!.id, code)))
       throw new HttpError(400, tr("That code isn't right, or was already used"));
-    return { recoveryCodes: await renewRecoveryCodes(db, req.user!.id) };
+    return { recoveryCodes: await renewRecoveryCodes(db, secrets, req.user!.id) };
   });
 
   app.post("/logout", async (req, reply) => {

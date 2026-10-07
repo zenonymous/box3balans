@@ -84,9 +84,7 @@ export function OverviewPage() {
             })}
           </Alert>
         )}
-        {summary.warnings.map((w) => (
-          <Alert key={w}>{w}</Alert>
-        ))}
+        {/* The ledger's own warnings (selling more than held) appear under Needs attention as a negative balance. */}
       </div>
 
       <section className="mb-6">

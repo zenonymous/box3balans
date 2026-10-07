@@ -10,7 +10,7 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
-**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Het Belastingplan 2027 staat in [belastingregels.md](belastingregels.md) als volgende stap: 2027 komt erin als voorlopig jaar zodra de keuze tussen die twee bekend is. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
+**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Volgens [belastingregels.md](belastingregels.md) komt 2027 erin zodra het Belastingplan is aangenomen (december), als voorlopig jaar. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
 
 - Holdwise, _Box 3 in 2027_: https://holdwise.nl/kennisbank/box-3-2027
 
