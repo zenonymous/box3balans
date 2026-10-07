@@ -12,8 +12,9 @@ data="${DATA_DIR:-/data}"
 
 random_hex() { node -e 'process.stdout.write(require("node:crypto").randomBytes(32).toString("hex"))'; }
 
-# Writes a file in one go (write, then rename), so the database never reads half a password.
-put() { printf '%s' "$2" > "$1.tmp" && chmod "$3" "$1.tmp" && mv "$1.tmp" "$1"; }
+# Writes a file in one go (write, then rename), so the database never reads half a password. The
+# file starts out private (umask 077) and only then gets its final mode.
+put() { (umask 077 && printf '%s' "$2" > "$1.tmp") && chmod "$3" "$1.tmp" && mv "$1.tmp" "$1"; }
 
 prepare() {
   mkdir -p "$data" "$BACKUP_DIR"
