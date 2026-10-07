@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { disableTwoFactor } from "../src/auth/twoFactor.js";
 import { users } from "../src/db/schema.js";
 import { base32Decode, base32Encode, hotp, matchTotp, otpauthUri, totpStep } from "../src/lib/totp.js";
@@ -81,6 +81,37 @@ describe("signing in with a second factor", () => {
       recoveryCodesLeft: 0,
     });
     expect((await login()).statusCode).toBe(200);
+  });
+
+  it("stops checking codes for a while after five wrong ones", async () => {
+    t = await createTestApp();
+    const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
+    const enabled = (
+      await t.api("POST", "/api/auth/2fa/enable", { code: hotp(base32Decode(setup.secret), totpStep() - 1) })
+    ).json();
+    const login = (code: string) =>
+      t!.app.inject({
+        method: "POST",
+        url: "/api/auth/login",
+        headers: { "x-requested-with": "portfolio" },
+        payload: { username: "me", password: "correct horse battery", code },
+      });
+    for (const code of ["111111", "222222", "333333", "444444", "555555"])
+      expect((await login(code)).statusCode).toBe(401);
+    // Locked: even the right code, or a recovery code elsewhere, isn't checked now.
+    const locked = await login(hotp(base32Decode(setup.secret), totpStep()));
+    expect(locked.statusCode).toBe(429);
+    expect(locked.json().error).toBe("Too many wrong codes. Try again in 15 minutes.");
+    const renew = await t.api("POST", "/api/auth/2fa/recovery-codes", { code: enabled.recoveryCodes[0] });
+    expect(renew.statusCode).toBe(429);
+
+    const later = Date.now() + 16 * 60_000;
+    const clock = vi.spyOn(Date, "now").mockReturnValue(later);
+    try {
+      expect((await login(hotp(base32Decode(setup.secret), totpStep(later)))).statusCode).toBe(200);
+    } finally {
+      clock.mockRestore();
+    }
   });
 
   it("explains a key that can't be read after APP_SECRET changed", async () => {

@@ -433,6 +433,8 @@ export const NL: Record<string, string> = {
   "No releases found yet": "Nog geen versies gevonden",
   "Enter the code from your authenticator app": "Vul de code uit je authenticator-app in",
   "That code isn't right, or was already used": "Die code klopt niet, of is al gebruikt",
+  "Too many wrong codes. Try again in {n} minute.": "Te veel verkeerde codes. Probeer het over {n} minuut opnieuw.",
+  "Too many wrong codes. Try again in {n} minutes.": "Te veel verkeerde codes. Probeer het over {n} minuten opnieuw.",
   "Two-step verification is already on": "Tweestapsverificatie staat al aan",
   "That code isn't right; check the time on your phone and try again":
     "Die code klopt niet; controleer de tijd op je telefoon en probeer het opnieuw",

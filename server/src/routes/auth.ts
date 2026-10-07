@@ -11,7 +11,7 @@ import {
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
-import { tr } from "../i18n/index.js";
+import { tr, trn } from "../i18n/index.js";
 import {
   disableTwoFactor,
   enableTwoFactor,
@@ -36,8 +36,34 @@ const newPassword = z
 export async function authRoutes(app: FastifyInstance) {
   const { db, config, secrets } = app.deps;
   const codeBody = z.object({ code: z.string().trim().min(1).max(20) });
-  // A key that can't be opened means APP_SECRET changed: say how to get back in instead of failing.
+  // Wrong codes per account: after five in a row, codes aren't checked for 15 minutes, doubling with
+  // each lockout up to a day. The login rate limit counts per IP address; this holds however many
+  // addresses someone uses. Kept in memory, like the rate limits.
+  const wrongCodes = new Map<number, { count: number; lockouts: number; until: number }>();
   const checkCode = async (userId: number, code: string) => {
+    const w = wrongCodes.get(userId) ?? { count: 0, lockouts: 0, until: 0 };
+    if (w.until > Date.now()) {
+      const minutes = Math.ceil((w.until - Date.now()) / 60_000);
+      throw new HttpError(
+        429,
+        trn(
+          minutes,
+          "Too many wrong codes. Try again in {n} minute.",
+          "Too many wrong codes. Try again in {n} minutes.",
+        ),
+      );
+    }
+    const result = await verifyCode(userId, code);
+    if (result) wrongCodes.delete(userId);
+    else if (++w.count >= 5) {
+      w.until = Date.now() + Math.min(15 * 60_000 * 2 ** w.lockouts++, 86_400_000);
+      w.count = 0;
+      wrongCodes.set(userId, w);
+    } else wrongCodes.set(userId, w);
+    return result;
+  };
+  // A key that can't be opened means APP_SECRET changed: say how to get back in instead of failing.
+  const verifyCode = async (userId: number, code: string) => {
     try {
       return await verifySecondFactor(db, secrets, userId, code);
     } catch (err) {
