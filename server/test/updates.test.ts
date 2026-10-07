@@ -21,10 +21,10 @@ describe("update check", () => {
   it("asks GitHub only when turned on, and forgets the answer when turned off", async () => {
     t = await createTestApp({
       ...defaultRoutes,
-      "api.github.com/repos/OWNER/box3balans/releases/latest": {
+      "api.github.com/repos/zenonymous/box3balans/releases/latest": {
         tag_name: "v1.2.0",
         name: "Box3balans 1.2.0",
-        html_url: "https://github.com/OWNER/box3balans/releases/tag/v1.2.0",
+        html_url: "https://github.com/zenonymous/box3balans/releases/tag/v1.2.0",
         published_at: "2026-10-01T10:00:00Z",
       },
     });

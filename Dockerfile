@@ -33,7 +33,7 @@ COPY VERSION ./
 ARG VERSION=""
 RUN if [ -n "$VERSION" ]; then printf '%s\n' "$VERSION" > VERSION; fi
 # Where the source of this build is (the AGPL asks a network service to offer it).
-ARG SOURCE_URL="https://github.com/OWNER/box3balans"
+ARG SOURCE_URL="https://github.com/zenonymous/box3balans"
 
 COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 

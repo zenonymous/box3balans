@@ -65,7 +65,7 @@ export function isNewer(a: string, b: string): boolean | null {
   return x[3] > y[3];
 }
 
-/** owner/repo from a GitHub URL ("https://github.com/OWNER/box3balans"), or null. */
+/** owner/repo from a GitHub URL ("https://github.com/zenonymous/box3balans"), or null. */
 export function githubRepo(url: string): string | null {
   const m = /^https:\/\/github\.com\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/.exec(url.trim());
   return m ? `${m[1]}/${m[2]}` : null;

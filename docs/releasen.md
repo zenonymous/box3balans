@@ -2,13 +2,15 @@
 
 ## Eenmalig, bij het publiceren op GitHub
 
-1. Vervang de plaatshouder `OWNER` door de GitHub-naam (of organisatie) van de repository, in alle bestanden:
+Gedaan voor `zenonymous/box3balans`. Publiceer je een eigen fork met eigen images, doe dan hetzelfde voor die repository:
+
+1. Vervang `zenonymous` door de GitHub-naam (of organisatie) van de repository, in alle bestanden:
 
    ```bash
-   grep -rl --exclude-dir=node_modules --exclude-dir=.git --exclude=releasen.md '/OWNER/' . | xargs sed -i '' 's#/OWNER/#/<github-naam>/#g'
+   grep -rl --exclude-dir=node_modules --exclude-dir=.git --exclude=releasen.md '/zenonymous/' . | xargs sed -i '' 's#/zenonymous/#/<github-naam>/#g'
    ```
 
-   (Op Linux zonder `''` na `-i`.) Controleer daarna met `grep -rn /OWNER/ --exclude-dir=node_modules --exclude=releasen.md .` dat er niets meer staat.
+   (Op Linux zonder `''` na `-i`.) Controleer daarna met `grep -rn /zenonymous/ --exclude-dir=node_modules --exclude=releasen.md .` dat er niets meer staat.
 
 2. Maak de repository aan en push `main`. De workflow **CI** test elke push en publiceert `ghcr.io/<github-naam>/box3balans:edge`.
 3. Zet het package openbaar: GitHub → je profiel → **Packages** → `box3balans` → **Package settings** → **Change visibility** → Public. Een nieuw package is standaard privé, en dan kan niemand het image downloaden.

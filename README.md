@@ -27,7 +27,7 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 
    ```bash
    mkdir box3balans && cd box3balans
-   curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.yml
+   curl -fsSLO https://raw.githubusercontent.com/zenonymous/box3balans/main/docker-compose.yml
    ```
 
 2. Start Box3balans:
@@ -59,7 +59,7 @@ Een `.env` is niet verplicht. Bij de eerste start maakt Box3balans zelf een sleu
 Om het uit te proberen, of op een laptop met Docker Desktop, kan Box3balans ook in één container draaien, met de database ingebouwd (PGlite):
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.lite.yml
+curl -fsSLO https://raw.githubusercontent.com/zenonymous/box3balans/main/docker-compose.lite.yml
 docker compose -f docker-compose.lite.yml up -d
 ```
 
@@ -76,7 +76,7 @@ docker compose -f docker-compose.lite.yml start
 Eerst rondkijken? De demo draait Box3balans met een voorbeeldhuishouden: Sanne, haar fiscale partner Daan en hun dochter Noor, met spaarrekeningen, beleggingen, crypto, edelmetaal, een vakantiehuis, uitgeleend geld en een studieschuld. De koersen zijn verzonnen. Je bent meteen ingelogd en er wordt niets bewaard; koppelingen, wallets en koersen ophalen staan uit.
 
 ```bash
-docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/OWNER/box3balans:latest
+docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest
 ```
 
 Open `http://localhost:8080`. Met Ctrl+C stop je de demo, en alles is weg.
@@ -86,7 +86,7 @@ Open `http://localhost:8080`. Met Ctrl+C stop je de demo, en alles is weg.
 Wil je eigen wijzigingen draaien, bouw het image dan vanuit de broncode:
 
 ```bash
-git clone https://github.com/OWNER/box3balans.git && cd box3balans
+git clone https://github.com/zenonymous/box3balans.git && cd box3balans
 docker compose -f docker-compose.yml -f docker-compose.build.yml up -d --build
 ```
 
@@ -99,7 +99,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Je instellingen, database en back-ups blijven zoals ze zijn; databasemigraties draaien vanzelf bij het opstarten. Wil je horen wanneer er een nieuwe versie is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan: Box3balans vraagt GitHub dan één keer per dag naar de nieuwste versie (GitHub ziet daarbij je IP-adres) en meldt een nieuwe versie bij _Aandacht nodig_. Standaard staat dat uit. Wil je eerst een back-up: `docker compose exec app node dist/cli.js backup`. Wil je op een vaste versie blijven, zet dan bijvoorbeeld `BOX3BALANS_VERSION=1.2.0` in `.env`. Wat er per versie verandert, staat bij de [releases](https://github.com/OWNER/box3balans/releases).
+Je instellingen, database en back-ups blijven zoals ze zijn; databasemigraties draaien vanzelf bij het opstarten. Wil je horen wanneer er een nieuwe versie is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan: Box3balans vraagt GitHub dan één keer per dag naar de nieuwste versie (GitHub ziet daarbij je IP-adres) en meldt een nieuwe versie bij _Aandacht nodig_. Standaard staat dat uit. Wil je eerst een back-up: `docker compose exec app node dist/cli.js backup`. Wil je op een vaste versie blijven, zet dan bijvoorbeeld `BOX3BALANS_VERSION=1.2.0` in `.env`. Wat er per versie verandert, staat bij de [releases](https://github.com/zenonymous/box3balans/releases).
 
 ### PostgreSQL upgraden
 
@@ -249,7 +249,7 @@ _Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of
 | Saxo              | Transactieoverzicht (Excel, opgeslagen als CSV)                       | Aankopen, verkopen met kosten, dividend                                                       |
 | Revolut           | Aandelenoverzicht (CSV)                                               | Aankopen, verkopen, dividend                                                                  |
 
-Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Box3balans het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten. Deze formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/OWNER/box3balans/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
+Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Box3balans het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten. Deze formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/zenonymous/box3balans/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
 
 Bij andere bestanden:
 
@@ -268,7 +268,7 @@ Tijden zonder tijdzone worden gelezen als lokale tijd (`TIME_ZONE`). Prijzen in 
 
 **Sjabloon:** voor alles zonder bruikbare export vul je [het sjabloon](server/src/import/mapping.ts) in (_↓ Template_ op de importpagina). Kolommen: `date` (JJJJ-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (bij een split: de verhouding, bijvoorbeeld 4), `price`, `total`, `currency`, `fee`, `amount` en `tax_withheld` (dividenden), `notes`, `id`.
 
-Wil je dat Box3balans het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/OWNER/box3balans/issues/new/choose).
+Wil je dat Box3balans het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).
 
 ### Koppelingen met beurzen en brokers
 

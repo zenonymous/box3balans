@@ -40,7 +40,7 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Herkende exports** van DEGIRO (rekeningoverzicht en transacties), Bitvavo, Coinbase, Kraken (ledgers), Rabobank Beleggen, Trade Republic, Trading 212, BUX, Saxo en Revolut. Gebouwd op openbare voorbeeldbestanden, nog niet getest met echte exports. Banken (ING, Rabobank, ABN AMRO …) lees je in via _Waarden per jaar_ met hun eigen export.
 - **Voor de aangifte:** per jaar box 3 in de volgorde van de aangifte, per rekening en eigenaar, met dividendbelasting en het werkelijk rendement (vanaf 2025 in de aangifte zelf, daarvoor met de _Opgaaf werkelijk rendement_).
 - **Rekenvoorbeelden van de Belastingdienst** als tests: de vijf forfaitaire voorbeelden voor 2025 komen precies uit (met dezelfde afronding), en drie voorbeelden van het werkelijk rendement.
-- **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/OWNER/box3balans/issues/new/choose) nodig.
+- **Nog open:** formaten voor ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital. Daarvoor zijn [geanonimiseerde voorbeeldbestanden](https://github.com/zenonymous/box3balans/issues/new/choose) nodig.
 
 ## Fase E: onderhoud en extra veiligheid ✅
 
@@ -50,4 +50,4 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 ## Oorspronkelijke opzet
 
-Het project begon met acht mijlpalen (zie [PROMPT.md](PROMPT.md)). Alleen mijlpaal 3, ingebouwde formaten voor specifieke brokers, is nog open en zit nu in fase D.
+Het project begon als persoonlijk dashboard voor beleggingen, crypto en edelmetaal, gebouwd in acht mijlpalen. Die zijn allemaal af; de laatste, ingebouwde formaten voor specifieke brokers, kwam in fase D.

@@ -6,7 +6,7 @@ Box3balans draait in Docker. Hieronder per systeem hoe je het installeert. Overa
 2. `docker compose up -d`, of het equivalent in de app van je NAS.
 3. Open `http://<adres-van-je-server>:8080` en maak je gebruiker aan. _Aan de slag_ helpt je daarna op weg; zet onder _Instellingen_ ook tweestapsverificatie aan.
 
-Wil je eerst rondkijken zonder iets in te stellen? Start de demo: `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/OWNER/box3balans:latest`.
+Wil je eerst rondkijken zonder iets in te stellen? Start de demo: `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`.
 
 Kies bij twijfel de **standaardopstelling** (`docker-compose.yml`: Box3balans met een eigen PostgreSQL). De variant met **één container** (`docker-compose.lite.yml`) is handig om het uit te proberen of op een laptop.
 
@@ -61,7 +61,7 @@ Gebruik de **64-bit**-versie van Raspberry Pi OS, en bij voorkeur een SSD in pla
 curl -fsSL https://get.docker.com | sh       # installeert Docker en Docker Compose
 sudo usermod -aG docker $USER                # Docker zonder sudo; log daarna opnieuw in
 mkdir ~/box3balans && cd ~/box3balans
-curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.yml
+curl -fsSLO https://raw.githubusercontent.com/zenonymous/box3balans/main/docker-compose.yml
 docker compose up -d
 ```
 
@@ -74,7 +74,7 @@ Installeer Docker Engine met de Compose-plug-in volgens [de handleiding van Dock
 ## Windows of Mac met Docker Desktop
 
 1. Installeer [Docker Desktop](https://www.docker.com/products/docker-desktop/) en start het.
-2. Maak een map, bijvoorbeeld `box3balans` in je documenten, en zet `docker-compose.lite.yml` erin (download het bestand via de link, of met `curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compose.lite.yml`; gebruik op Windows `curl.exe`).
+2. Maak een map, bijvoorbeeld `box3balans` in je documenten, en zet `docker-compose.lite.yml` erin (download het bestand via de link, of met `curl -fsSLO https://raw.githubusercontent.com/zenonymous/box3balans/main/docker-compose.lite.yml`; gebruik op Windows `curl.exe`).
 3. Open een terminal (op Windows PowerShell) in die map en voer uit:
 
    ```bash
@@ -89,4 +89,4 @@ Een laptop staat niet altijd aan: zolang hij slaapt, worden koersen en koppeling
 
 - **Toegang buitenshuis:** gebruik een VPN, zie de [README](../README.md#toegang-buitenshuis-vpn). Zet poort 8080 niet open in je router.
 - **Bijwerken:** `docker compose pull && docker compose up -d` (met `-f docker-compose.lite.yml` voor de variant met één container).
-- **Problemen:** `docker compose logs app --tail 50`, en de tabel [Problemen oplossen](../README.md#problemen-oplossen). Kom je er niet uit, open dan [een issue](https://github.com/OWNER/box3balans/issues/new/choose).
+- **Problemen:** `docker compose logs app --tail 50`, en de tabel [Problemen oplossen](../README.md#problemen-oplossen). Kom je er niet uit, open dan [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).

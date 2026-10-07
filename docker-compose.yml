@@ -9,7 +9,7 @@ name: box3balans
 
 services:
   app:
-    image: ghcr.io/OWNER/box3balans:${BOX3BALANS_VERSION:-latest}
+    image: ghcr.io/zenonymous/box3balans:${BOX3BALANS_VERSION:-latest}
     restart: unless-stopped
     environment:
       TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
