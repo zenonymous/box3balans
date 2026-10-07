@@ -324,6 +324,29 @@ describe("exchange connections", () => {
     expect(Number(summary.incomeEur)).toBeCloseTo(1.02 / 1.1 + 2.5, 2);
   });
 
+  it("sends the IBKR token only to IBKR, whatever statement address the answer names", async () => {
+    const elsewhere: string[] = [];
+    t = await createTestApp({
+      ...defaultRoutes,
+      "FlexWebService/SendRequest": raw(
+        `<FlexStatementResponse timestamp="x"><Status>Success</Status><ReferenceCode>9988776655</ReferenceCode><Url>https://ibkr.example.net/GetStatement</Url></FlexStatementResponse>`,
+      ),
+      "ibkr.example.net": (url: string) => {
+        elsewhere.push(url);
+        return raw(FLEX_XML);
+      },
+      "interactivebrokers.com/AccountManagement/FlexWebService/GetStatement": raw(FLEX_XML),
+    });
+    const conn = json(
+      await t.api("POST", "/api/integrations", {
+        provider: "ibkr",
+        credentials: { token: "123456789012345678901234", queryId: "987654" },
+      }),
+    );
+    expect((await connResult(conn.id)).error).toBeUndefined();
+    expect(elsewhere).toEqual([]);
+  });
+
   it("syncing manual edits: a re-sync never overwrites an edited transaction", async () => {
     t = await createTestApp(bitvavoRoutes());
     const { id, accountId } = await connectBitvavo();

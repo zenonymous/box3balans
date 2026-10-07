@@ -97,7 +97,8 @@ export async function checkForUpdate(db: DB, config: Config, fetchFn: FetchFn = 
       latest: {
         version,
         name: r.name || r.tag_name,
-        url: r.html_url ?? config.SOURCE_URL,
+        // Shown as a link: only a GitHub page, never another scheme or site.
+        url: r.html_url?.startsWith("https://github.com/") ? r.html_url : config.SOURCE_URL,
         publishedAt: r.published_at ?? "",
       },
       newer: isNewer(version, APP_VERSION),

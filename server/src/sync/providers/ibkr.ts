@@ -55,6 +55,19 @@ interface FlexStatusResponse {
   };
 }
 
+/** True for an https address on IBKR's own servers: the only place the token may go. */
+function isIbkrUrl(url: string | undefined): url is string {
+  try {
+    const u = new URL(url ?? "");
+    return (
+      u.protocol === "https:" &&
+      (u.hostname === "interactivebrokers.com" || u.hostname.endsWith(".interactivebrokers.com"))
+    );
+  } catch {
+    return false;
+  }
+}
+
 /** Runs the two-step Flex Web Service flow and returns the statement XML. */
 async function fetchStatement(c: Creds, ctx: ProviderContext): Promise<string> {
   const send = parser.parse(
@@ -66,10 +79,11 @@ async function fetchStatement(c: Creds, ctx: ProviderContext): Promise<string> {
       `IBKR: ${s?.ErrorMessage ?? "SendRequest failed"}${s?.ErrorCode ? ` (code ${s.ErrorCode})` : ""}`,
     );
   }
-  const url = s.Url || `${BASE}/GetStatement`;
+  // The statement address comes from IBKR's answer; anything not on IBKR's servers is ignored.
+  const url = isIbkrUrl(s.Url) ? s.Url.split("?")[0]! : `${BASE}/GetStatement`;
   for (let attempt = 0; attempt < 12; attempt++) {
     if (attempt > 0) await ctx.sleep(5_000);
-    const xml = await getText(ctx, `${url}?t=${c.token}&q=${s.ReferenceCode}&v=3`);
+    const xml = await getText(ctx, `${url}?t=${c.token}&q=${encodeURIComponent(String(s.ReferenceCode))}&v=3`);
     if (xml.includes("<FlexQueryResponse")) return xml;
     const r = (parser.parse(xml) as FlexStatusResponse).FlexStatementResponse;
     if (r?.ErrorCode && RETRY_CODES.has(String(r.ErrorCode))) continue;
