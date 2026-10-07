@@ -63,7 +63,13 @@ curl -fsSLO https://raw.githubusercontent.com/OWNER/box3balans/main/docker-compo
 docker compose -f docker-compose.lite.yml up -d
 ```
 
-Voor een NAS of server is de standaardopstelling met een eigen PostgreSQL de stevigere keuze. Overstappen gaat met een back-up en terugzetten. Maak in deze variant back-ups vanuit de app (_Instellingen → Back-ups en export_): de back-up via de opdrachtregel kan niet zolang de app de database open heeft.
+Voor een NAS of server is de standaardopstelling met een eigen PostgreSQL de stevigere keuze. Overstappen gaat met een back-up en terugzetten. Maak in deze variant back-ups vanuit de app (_Instellingen → Back-ups en export_): de opdrachtregel kan niet bij de database zolang de app hem open heeft. Moet het toch via de opdrachtregel (terugzetten, tweestapsverificatie uitzetten), stop dan eerst de app en voer de opdracht uit met `run --rm` in plaats van `exec`:
+
+```bash
+docker compose -f docker-compose.lite.yml stop
+docker compose -f docker-compose.lite.yml run --rm app node dist/cli.js disable-2fa
+docker compose -f docker-compose.lite.yml start
+```
 
 ### Demo
 
@@ -426,8 +432,8 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 | De container is unhealthy                                 | `docker compose logs app`. De gezondheidscontrole (`/api/health`) faalt ook als de database niet bereikbaar is.                                                                                                                                               |
 | Pagina's zijn traag                                       | Zet `LOG_LEVEL=debug` en voer `docker compose up -d` uit; elk verzoek logt dan zijn `responseTime` in milliseconden (`docker compose logs app \| grep responseTime`). Zet het daarna terug op `info`.                                                         |
 | De `db`-container herstart steeds na een update           | Het log noemt oude databases of onverenigbare databestanden: de hoofdversie van PostgreSQL is veranderd. Ga terug naar de vorige image-tag en volg [PostgreSQL upgraden](#postgresql-upgraden).                                                               |
-| "The database … is in use by the running Box3balans"      | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Instellingen → Back-ups en export_, of stop eerst de app.                                                                              |
-| Telefoon met de authenticator-app kwijt                   | Log in met een van je herstelcodes en stel tweestapsverificatie opnieuw in. Geen herstelcodes meer: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: stop eerst de app).                                  |
+| "The database … is in use by the running Box3balans"      | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Instellingen → Back-ups en export_, of stop eerst de app (zie [In één container](#in-één-container)).                                  |
+| Telefoon met de authenticator-app kwijt                   | Log in met een van je herstelcodes en stel tweestapsverificatie opnieuw in. Geen herstelcodes meer: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: zie [In één container](#in-één-container)).          |
 | Buitengesloten                                            | Er is één gebruiker en geen herstel via e-mail. Zet een back-up terug, of wis de gebruiker in de database: `docker compose exec db psql -U box3balans -c "delete from users"`, en open de app om de eerste installatie opnieuw te doen (je gegevens blijven). |
 
 ## Licentie
