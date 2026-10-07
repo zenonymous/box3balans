@@ -13,7 +13,7 @@ Gedaan voor `zenonymous/box3balans`. Publiceer je een eigen fork met eigen image
    (Op Linux zonder `''` na `-i`.) Controleer daarna met `grep -rn /zenonymous/ --exclude-dir=node_modules --exclude=releasen.md .` dat er niets meer staat.
 
 2. Maak de repository aan en push `main`. De workflow **CI** test elke push en publiceert `ghcr.io/<github-naam>/box3balans:edge`.
-3. Zet het package openbaar: GitHub → je profiel → **Packages** → `box3balans` → **Package settings** → **Change visibility** → Public. Een nieuw package is standaard privé, en dan kan niemand het image downloaden.
+3. Controleer na de eerste run dat het package openbaar is, anders kan niemand het image downloaden. Bij een openbare repository is het dat meteen (zo ging het bij `zenonymous/box3balans`); zo niet: GitHub → je profiel → **Packages** → `box3balans` → **Package settings** → **Change visibility** → Public.
 4. Zet onder **Settings → Security** de optie **Private vulnerability reporting** aan, zodat [SECURITY.md](../SECURITY.md) werkt.
 5. Optioneel: bescherm `main` (**Settings → Branches**) zodat pull requests eerst door CI moeten.
 
