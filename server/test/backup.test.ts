@@ -239,6 +239,14 @@ describe("encrypted backups", () => {
     expect((await encryptBackup(plain, PASS)).equals(enc)).toBe(false);
   });
 
+  it("uses 128 MiB scrypt for new backups and still opens ones made with the earlier 32 MiB", async () => {
+    const plain = Buffer.from("hello backup");
+    expect((await encryptBackup(plain, PASS))[8]).toBe(17);
+    const older = await encryptBackup(plain, PASS, 15);
+    expect(older[8]).toBe(15);
+    expect((await decryptBackup(older, PASS)).equals(plain)).toBe(true);
+  });
+
   it("writes .enc backups with BACKUP_PASSPHRASE and restores them through the API", async () => {
     t = await createTestApp(undefined, { env: { BACKUP_PASSPHRASE: PASS } });
     await populate();

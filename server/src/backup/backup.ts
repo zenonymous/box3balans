@@ -80,7 +80,9 @@ export const encodeBackup = (b: BackupFile): Buffer => gzipSync(Buffer.from(JSON
 export function decodeBackup(buf: Buffer): BackupFile {
   let parsed: unknown;
   try {
-    parsed = JSON.parse((buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf) : buf).toString("utf8"));
+    // A cap, so a crafted file can't unpack into all the memory there is.
+    const json = buf[0] === 0x1f && buf[1] === 0x8b ? gunzipSync(buf, { maxOutputLength: 1024 ** 3 }) : buf;
+    parsed = JSON.parse(json.toString("utf8"));
   } catch {
     throw new Error("Not a readable backup file");
   }

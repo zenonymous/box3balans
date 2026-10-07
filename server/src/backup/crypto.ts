@@ -15,7 +15,9 @@ const scrypt = promisify(scryptCb) as (
  * tampered file fails to decrypt instead of producing garbage.
  */
 const MAGIC = Buffer.from("KHBAK1\n\0", "latin1");
-const LOG_N = 15; // 32 MiB of memory per derivation: slow to brute-force, quick enough to use
+// 128 MiB of memory per derivation (OWASP's recommendation for scrypt): slow to brute-force, quick
+// enough for a backup. Files keep their own parameters, so backups made with 2^15 still open.
+const LOG_N = 17;
 const R = 8;
 const P = 1;
 
@@ -31,12 +33,12 @@ export const isEncryptedBackup = (buf: Buffer) =>
 const deriveKey = (passphrase: string, salt: Buffer, logN: number, r: number, p: number) =>
   scrypt(passphrase.normalize("NFC"), salt, 32, { N: 2 ** logN, r, p, maxmem: 256 * 2 ** logN * r + 1024 * 1024 });
 
-export async function encryptBackup(plain: Buffer, passphrase: string): Promise<Buffer> {
+export async function encryptBackup(plain: Buffer, passphrase: string, logN = LOG_N): Promise<Buffer> {
   const salt = randomBytes(16);
   const iv = randomBytes(12);
-  const key = await deriveKey(passphrase, salt, LOG_N, R, P);
+  const key = await deriveKey(passphrase, salt, logN, R, P);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const header = Buffer.concat([MAGIC, Buffer.from([LOG_N, R, P]), salt, iv]);
+  const header = Buffer.concat([MAGIC, Buffer.from([logN, R, P]), salt, iv]);
   // The header is authenticated too, so its parameters can't be swapped.
   cipher.setAAD(header);
   const body = Buffer.concat([cipher.update(plain), cipher.final()]);
