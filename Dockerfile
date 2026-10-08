@@ -8,7 +8,9 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
 COPY web/package.json web/
-RUN npm ci --no-audit --no-fund
+# --ignore-scripts: no package needs an install script, and the repo's own `prepare` (git hooks) has
+# nothing to do in an image.
+RUN npm ci --ignore-scripts --no-audit --no-fund
 COPY server server
 COPY web web
 RUN npm run build
@@ -22,7 +24,7 @@ ENV NODE_ENV=production
 COPY package.json package-lock.json ./
 COPY server/package.json server/
 COPY web/package.json web/
-RUN npm ci --omit=dev --workspace server --no-audit --no-fund && npm cache clean --force
+RUN npm ci --omit=dev --workspace server --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY --from=build /app/server/dist server/dist
 COPY --from=build /app/server/drizzle server/drizzle
 COPY --from=build /app/web/dist web/dist

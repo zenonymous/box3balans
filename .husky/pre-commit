@@ -1,0 +1,4 @@
+# Formatting and lint on the staged files, then a type check (a few seconds). Skip in an emergency
+# with `git commit --no-verify`; CI checks everything again.
+npx lint-staged
+npm run typecheck

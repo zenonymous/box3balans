@@ -26,6 +26,10 @@ Maak in de app een gebruiker aan. Voorbeeldgegevens laad je met `SESSION=<waarde
 
 ## Voor je een pull request opent
 
+`npm install` zet ook git-hooks klaar (Husky). Vóór elke commit worden de gewijzigde bestanden opgemaakt (Prettier) en gecontroleerd (ESLint, met type-informatie), en draait de typecontrole: samen een paar seconden. Vóór elke push draaien de tests, ongeveer een halve minuut. Moet het in een noodgeval toch, sla ze dan over met `--no-verify`; de GitHub-workflow controleert alles opnieuw.
+
+Alles zelf in één keer draaien:
+
 ```bash
 npm run lint
 npm run typecheck
@@ -33,7 +37,7 @@ npm test
 npx prettier --check .    # of: npm run format
 ```
 
-De GitHub-workflow doet hetzelfde en bouwt daarna het Docker-image.
+De GitHub-workflow doet hetzelfde, controleert de shell-scripts met ShellCheck en de workflow zelf met actionlint, en bouwt daarna het Docker-image. Heb je ShellCheck en actionlint geïnstalleerd (bijvoorbeeld `brew install shellcheck actionlint`), dan draai je die twee met `npm run lint:scripts`.
 
 ## Afspraken
 

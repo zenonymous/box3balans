@@ -1,0 +1,2 @@
+# The tests (about half a minute) run before a push rather than on every commit.
+npm test
