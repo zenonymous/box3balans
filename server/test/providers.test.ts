@@ -1,7 +1,7 @@
 import { generateKeyPairSync, verify } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { bitvavoSignature, mapBitvavoHistory, mapBitvavoItem } from "../src/sync/providers/bitvavo.js";
-import { coinbaseJwt, mapCoinbaseTx, mapCoinbaseTxs } from "../src/sync/providers/coinbase.js";
+import { coinbase, coinbaseJwt, mapCoinbaseTx, mapCoinbaseTxs } from "../src/sync/providers/coinbase.js";
 import { parseFlexStatement, parseIbDate } from "../src/sync/providers/ibkr.js";
 import { krakenEvents, krakenSignature, mapKrakenLedger, normaliseKrakenAsset } from "../src/sync/providers/kraken.js";
 import type { SyncEvent } from "../src/sync/types.js";
@@ -357,6 +357,26 @@ describe("Coinbase", () => {
         "1",
       ),
     ).toBeNull();
+  });
+
+  it("warns when the key sees no transactions and no balances (a key for another portfolio)", async () => {
+    const empty = { data: [], pagination: { next_uri: null } };
+    const wallet = { id: "w1", currency: { code: "BTC" }, balance: { amount: "0.00000000", currency: "BTC" } };
+    const ctx = (accounts: unknown[]) => ({
+      fetchFn: (async (url: string) =>
+        Response.json(
+          url.includes("/transactions") ? empty : { data: accounts, pagination: { next_uri: null } },
+        )) as typeof fetch,
+      cursor: null,
+      isKnown: async () => new Set<string>(),
+      sleep: async () => {},
+    });
+    const warning =
+      "Coinbase shows no transactions and no balances for this API key. A Coinbase key belongs to one portfolio: check that you made it for the portfolio that holds your crypto.";
+    expect((await coinbase.fetch(creds, ctx([]))).warnings).toContain(warning);
+    expect((await coinbase.fetch(creds, ctx([wallet]))).warnings).toContain(warning);
+    const held = { ...wallet, balance: { amount: "0.5", currency: "BTC" } };
+    expect((await coinbase.fetch(creds, ctx([held]))).warnings).not.toContain(warning);
   });
 
   it("treats the ETH2 wallet as ether and drops moves between Coinbase wallets", () => {

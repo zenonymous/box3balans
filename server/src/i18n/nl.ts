@@ -296,6 +296,8 @@ export const NL: Record<string, string> = {
     "Geef alleen “View”-rechten op je Coinbase App-portfolio. Geen rechten om te handelen of over te maken.",
   "Paste the key name (organizations/…/apiKeys/…) and the full private key including the BEGIN/END lines.":
     "Plak de naam van de sleutel (organizations/…/apiKeys/…) en de volledige privésleutel inclusief de BEGIN- en END-regels.",
+  "Coinbase shows no transactions and no balances for this API key. A Coinbase key belongs to one portfolio: check that you made it for the portfolio that holds your crypto.":
+    "Coinbase toont voor deze API-sleutel geen transacties en geen saldi. Een Coinbase-sleutel hoort bij één portfolio: controleer of je hem hebt gemaakt voor het portfolio met je crypto.",
   "Your Coinbase native currency is not EUR; set it to EUR in Coinbase settings so trades can be valued exactly.":
     "Je standaardvaluta bij Coinbase is niet EUR; zet die op EUR in de instellingen van Coinbase, zodat transacties exact gewaardeerd kunnen worden.",
   // sync/providers/ibkr.ts

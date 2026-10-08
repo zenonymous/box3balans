@@ -328,6 +328,13 @@ export const coinbase: ExchangeProvider<Creds> = {
     const balances: Balance[] = [...totals]
       .filter(([, q]) => !q.isZero())
       .map(([sym, q]) => ({ asset: assetRef(sym), quantity: q.toFixed() }));
+    // A key for an empty portfolio looks like an empty account: say so instead of a silent "0 new".
+    if (list.length === 0 && balances.length === 0)
+      warnings.push(
+        tr(
+          "Coinbase shows no transactions and no balances for this API key. A Coinbase key belongs to one portfolio: check that you made it for the portfolio that holds your crypto.",
+        ),
+      );
 
     return {
       events,
