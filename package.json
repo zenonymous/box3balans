@@ -17,6 +17,7 @@
     "lint": "eslint .",
     "lint:scripts": "shellcheck docker-entrypoint.sh scripts/*.sh && actionlint",
     "format": "prettier --write .",
+    "screenshots": "node scripts/screenshots.js",
     "prepare": "husky"
   },
   "devDependencies": {
@@ -27,6 +28,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.9",
+    "puppeteer-core": "^25.13.0",
     "typescript-eslint": "^8.71.0"
   }
 }

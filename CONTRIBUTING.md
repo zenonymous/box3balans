@@ -39,6 +39,8 @@ npx prettier --check .    # of: npm run format
 
 De GitHub-workflow doet hetzelfde, controleert de shell-scripts met ShellCheck en de workflow zelf met actionlint, en bouwt daarna het Docker-image. Heb je ShellCheck en actionlint geïnstalleerd (bijvoorbeeld `brew install shellcheck actionlint`), dan draai je die twee met `npm run lint:scripts`.
 
+Verandert de app zichtbaar? Maak de screenshots in de README dan opnieuw: start de demo (`npm run demo`) en draai `npm run screenshots`. Dat vraagt Chrome, Chromium, Brave of Edge.
+
 ## Afspraken
 
 - **Geld en hoeveelheden** rekenen met `decimal.js` en worden in de database als `NUMERIC` opgeslagen, nooit als gewone getallen met afrondingsfouten.

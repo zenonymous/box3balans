@@ -15,6 +15,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // Node scripts; screenshots.js also runs functions inside the page (puppeteer's evaluate).
+    files: ["scripts/**/*.js"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ["web/**/*.{ts,tsx,js}"],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },

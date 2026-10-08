@@ -4,6 +4,11 @@ _Je box 3 in balans._
 
 Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen en ETF's, crypto, goud en zilver** (thuis of in een kluis), een tweede woning, uitgeleend geld en schulden, alles in **euro's**. Met een schatting van je belasting, je werkelijk rendement en een overzicht voor de aangifte. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Box3balans stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/overzicht-dark.webp">
+  <img src="docs/images/overzicht-light.webp" alt="Het overzicht in de demo: vermogen, resultaat, en het vermogen door de tijd per soort belegging" width="800">
+</picture>
+
 > **Geen belastingadvies.** Box3balans maakt schattingen. Controleer de bedragen met de jaaroverzichten van je bank en broker voordat je ze in je aangifte gebruikt. Gebruik op eigen risico; er is geen garantie (zie de [licentie](LICENSE)).
 
 **Status:** in ontwikkeling en bruikbaar. De app is in het Nederlands, met de termen uit de aangifte; Engels kan ook (_Instellingen → Weergave → Taal_). Wat er nog komt, staat op de [roadmap](docs/ROADMAP.md).
@@ -18,6 +23,31 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 - **Rendement:** tijd- en geldgewogen rendement tegen een benchmark, een kostenoverzicht en verwachte dividenden.
 - **Box 3 voor je hele huishouden:** jij, je fiscale partner en minderjarige kinderen; spaarrekeningen, beleggingen, een tweede of verhuurde woning, uitgeleend geld en schulden. Per rekening houd je transacties bij, of alleen de waarde op 1 januari, die je ook uit de export van je bank kunt laten halen. Per jaar het forfaitaire stelsel (met de afronding van de Belastingdienst), je **werkelijk rendement** voor de tegenbewijsregeling, een overzicht **voor de aangifte** in de volgorde waarin je het invult, en een vooruitblik op het stelsel vanaf 2028. Een startwizard helpt je in vier stappen op weg.
 - **Veilig bewaard:** versleutelde back-ups in een map die je NAS elders kan kopiëren, tweestapsverificatie, een volledige wijzigingsgeschiedenis, en een lijst met wat aandacht nodig heeft.
+
+### Zo ziet het eruit
+
+Met de verzonnen gegevens van de [demo](#demo).
+
+**Box 3 over een jaar:** de forfaitaire berekening, en het werkelijk rendement voor de tegenbewijsregeling, met wat het je scheelt.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/box3-dark.webp">
+  <img src="docs/images/box3-light.webp" alt="Box 3 over 2025 in de demo: de forfaitaire berekening en het werkelijk rendement, dat lager uitkomt dan het forfaitaire" width="800">
+</picture>
+
+**Voor de aangifte:** per onderdeel, per rekening en per eigenaar, in de volgorde van het formulier.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/aangifte-dark.webp">
+  <img src="docs/images/aangifte-light.webp" alt="Het overzicht voor de aangifte over 2025, per onderdeel, rekening en eigenaar" width="800">
+</picture>
+
+**Edelmetaal:** munten en baren met fijngewicht, waarde en de betaalde opslag, thuis of in een kluis.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/edelmetaal-dark.webp">
+  <img src="docs/images/edelmetaal-light.webp" alt="Edelmetaal in de demo: totalen per metaal, fysieke stukken en goud in een kluis" width="800">
+</picture>
 
 ## Installeren
 
