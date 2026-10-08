@@ -28,7 +28,7 @@ describe("update check", () => {
         published_at: "2026-10-01T10:00:00Z",
       },
     });
-    const github = () => t!.fetch.calls.filter((u) => u.includes("api.github.com")).length;
+    const github = () => t!.fetch.calls.filter((u) => new URL(u).host === "api.github.com").length;
     expect((await t.api("GET", "/api/updates")).json()).toMatchObject({ enabled: false, current: "dev" });
     expect((await t.api("POST", "/api/updates/check")).json().enabled).toBe(false);
     expect(github()).toBe(0);
