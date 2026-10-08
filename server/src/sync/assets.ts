@@ -385,9 +385,21 @@ export class AssetResolver {
     let lookups = 0;
     for (const a of manual.sort(() => Math.random() - 0.5)) {
       const onBitvavo = !!(await this.bitvavoMarket(a.symbol.toUpperCase()));
+      if (!onBitvavo) await this.nameFromBitvavo(a);
       if (!onBitvavo && (venue === "bitvavo" || lookups++ >= coingeckoLookups)) continue;
       await this.upgradeManual(a, onBitvavo ? "bitvavo" : venue);
     }
+  }
+
+  /**
+   * A coin Bitvavo no longer trades usually still has its name there ("Theta Network"). A real name
+   * instead of the symbol lets price history be matched to it (see history.ts).
+   */
+  private async nameFromBitvavo(a: Asset) {
+    if (a.name !== a.symbol) return;
+    this.bitvavoNames ??= bitvavoAssetNames(this.fetchFn).catch(() => new Map<string, string>());
+    const name = (await this.bitvavoNames).get(a.symbol.toUpperCase());
+    if (name && name !== a.name) await this.db.update(assets).set({ name }).where(eq(assets.id, a.id));
   }
 
   private async upgradeManual(a: Asset, venue?: "bitvavo"): Promise<Asset | null> {

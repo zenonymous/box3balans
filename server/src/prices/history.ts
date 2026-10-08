@@ -1,8 +1,9 @@
-import { and, desc, eq, gte, lte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import type { DB } from "../db/client.js";
-import { assets, priceHistory, pricesLatest } from "../db/schema.js";
+import { assets, priceHistory, pricesLatest, transactions } from "../db/schema.js";
 import { D, type Decimal, TROY_OUNCE_G, str } from "../lib/decimal.js";
 import { getJson, type FetchFn } from "../lib/http.js";
+import { binanceDailyCloses } from "./binance.js";
 import { bitvavoCandles, bitvavoTickers } from "./bitvavo.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { plausible } from "./fallbacks.js";
@@ -19,7 +20,7 @@ interface ChartHistory {
   chart: {
     result:
       | {
-          meta: { currency: string; regularMarketPrice?: number };
+          meta: { currency: string; regularMarketPrice?: number; longName?: string; shortName?: string };
           timestamp?: number[];
           indicators: { quote: { close: (number | null)[] }[] };
         }[]
@@ -86,6 +87,7 @@ export class HistoryService {
   }
 
   private async fetchHistory(asset: Asset, from: string, to: string) {
+    if (asset.assetClass === "crypto" && asset.priceSource === "manual") return this.delistedCoin(asset, from, to);
     // Metals: COMEX/NYMEX front-month futures in USD per troy ounce, converted to per gram below.
     const futures = asset.priceSource === "metal" && asset.priceRef ? METAL_FUTURES[asset.priceRef] : undefined;
     if (futures) {
@@ -150,6 +152,65 @@ export class HistoryService {
    * Whether a guessed Yahoo pair prices the same coin: its current price within half to double of
    * this asset's latest quote (or CoinGecko's, for a coin not priced yet), as for price fallbacks.
    */
+  /**
+   * A manually priced coin, typically one its exchange has delisted: history from Yahoo's EUR pair or
+   * Binance's USDT pair, but only when it demonstrably is this coin. Its closes must match the prices
+   * of your own trades in it, or (Yahoo) carry the coin's name.
+   */
+  private async delistedCoin(asset: Asset, from: string, to: string) {
+    const symbol = asset.symbol.toUpperCase();
+    const trades = await this.tradePrices(asset.id);
+    try {
+      const y = await this.yahoo(`${symbol}-EUR`, from, to);
+      if (y.points.length && ((await this.matchesTrades(y.points, trades)) ?? sameName(asset, y.name))) return y.points;
+    } catch {
+      // try the next source
+    }
+    try {
+      // Binance names nothing, so it needs your own trades to compare against.
+      const points = (await binanceDailyCloses(`${symbol}USDT`, from, to, this.fetchFn)).map((p) => ({
+        ...p,
+        currency: "USD",
+      }));
+      if (points.length && (await this.matchesTrades(points, trades))) return points;
+    } catch {
+      // not on Binance
+    }
+    return [];
+  }
+
+  /** EUR unit prices of your buys and sells of an asset, by day. */
+  private async tradePrices(assetId: number): Promise<{ day: string; eur: Decimal }[]> {
+    const rows = await this.db
+      .select({ at: transactions.occurredAt, price: transactions.price, fxRate: transactions.fxRate })
+      .from(transactions)
+      .where(and(eq(transactions.assetId, assetId), inArray(transactions.type, ["buy", "sell"])));
+    return rows.map((r) => ({ day: isoDay(r.at.getTime()), eur: D(r.price).mul(r.fxRate) })).filter((r) => r.eur.gt(0));
+  }
+
+  /**
+   * Whether a price series is the coin you traded: on the days of your trades (or up to three days
+   * before), its closes are within half to double of what you paid or got, going by the median.
+   * Null when there's nothing to compare.
+   */
+  private async matchesTrades(
+    points: { day: string; close: Decimal; currency: string }[],
+    trades: { day: string; eur: Decimal }[],
+  ): Promise<boolean | null> {
+    const byDay = new Map(points.map((p) => [p.day, p]));
+    const ratios: number[] = [];
+    for (const t of trades.slice(-12)) {
+      let p;
+      for (let back = 0; back <= 3 && !p; back++) p = byDay.get(isoDay(Date.parse(t.day) - back * DAY));
+      if (!p) continue;
+      const eur = p.currency === "EUR" ? p.close : p.close.mul(await this.fx.eurPerUnit(p.currency, p.day));
+      ratios.push(eur.div(t.eur).toNumber());
+    }
+    if (ratios.length === 0) return null;
+    const median = ratios.sort((a, b) => a - b)[Math.floor(ratios.length / 2)]!;
+    return median >= 0.5 && median <= 2;
+  }
+
   private async sameCoin(
     asset: Asset,
     series: { points: { day: string; close: Decimal; currency: string }[]; current?: Decimal },
@@ -196,7 +257,7 @@ export class HistoryService {
       r.meta.regularMarketPrice != null
         ? normaliseCurrency(r.meta.currency, D(r.meta.regularMarketPrice)).price
         : undefined;
-    return { points, current };
+    return { points, current, name: r.meta.longName ?? r.meta.shortName };
   }
 
   private async coingecko(id: string, from: string, to: string) {
@@ -208,4 +269,18 @@ export class HistoryService {
     for (const [ms, price] of data.prices ?? []) byDay.set(isoDay(ms), D(price));
     return [...byDay].map(([day, close]) => ({ day, close, currency: "EUR" }));
   }
+}
+
+/**
+ * Whether Yahoo's name for a pair ("Theta Network EUR") is this coin's name. A coin still named after
+ * its symbol proves nothing, so that never matches.
+ */
+function sameName(asset: Asset, yahooName: string | undefined): boolean {
+  const norm = (s: string) =>
+    s
+      .toLowerCase()
+      .replace(/\s+(eur|usd|usdt)$/, "")
+      .replace(/[^a-z0-9]/g, "");
+  if (!yahooName || norm(asset.name) === norm(asset.symbol)) return false;
+  return norm(yahooName) === norm(asset.name);
 }

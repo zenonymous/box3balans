@@ -97,7 +97,8 @@ export class BackfillService {
 
     for (const asset of rows) {
       const from = first.get(asset.id);
-      if (!from || asset.priceSource === "manual") continue;
+      // Manual coins too: for one an exchange delisted, history may still be found (see history.ts).
+      if (!from || (asset.priceSource === "manual" && asset.assetClass !== "crypto")) continue;
       if (asset.priceSource === "fx" && asset.priceRef === "EUR") continue; // always 1
       result.checked++;
       const prev = state[asset.id];
