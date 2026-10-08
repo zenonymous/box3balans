@@ -151,7 +151,7 @@ export function evmAdapter(c: EvmChain): ChainAdapter {
       for (const input of inputs) {
         const a = lc(input.address);
         // Re-read a few blocks of overlap; duplicates are dropped by id.
-        const since = lastBlocks[a] ? lastBlocks[a]! - 50 : 0;
+        const since = lastBlocks[a] ? lastBlocks[a] - 50 : 0;
         let maxBlock = lastBlocks[a] ?? 0;
 
         for (const t of await pages<BsTx>(ctx, `/addresses/${input.address}/transactions`, since)) {

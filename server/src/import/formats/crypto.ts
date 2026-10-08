@@ -189,7 +189,7 @@ export const coinbase: BrokerFormat = {
           date,
           type: "buy",
           ...crypto(to),
-          quantity: abs(num(m[3]!, "."))!,
+          quantity: abs(num(m[3], "."))!,
           total: subtotal ?? undefined,
           currency,
           notes,

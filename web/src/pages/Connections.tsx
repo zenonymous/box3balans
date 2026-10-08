@@ -66,7 +66,7 @@ export function ConnectionsPage() {
       {list.isLoading ? (
         <Spinner />
       ) : list.error ? (
-        <Alert tone="danger">{(list.error as Error).message}</Alert>
+        <Alert tone="danger">{list.error.message}</Alert>
       ) : !list.data?.length ? (
         <Card>
           <Empty title={t("No connections yet")}>

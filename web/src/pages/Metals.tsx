@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { del, get, post, put, type MetalItem, type MetalName, type MetalProduct } from "../api";
+import { del, get, post, put, type MetalItem, type MetalProduct } from "../api";
 import { PhotoStrip, photoUrl } from "../components/Photos";
 import { RefreshButton } from "../components/RefreshButton";
 import {
@@ -31,7 +31,7 @@ export function MetalsPage() {
   const [showSold, setShowSold] = useState(false);
 
   if (metals.isLoading) return <Spinner />;
-  if (metals.error) return <Alert tone="danger">{(metals.error as Error).message}</Alert>;
+  if (metals.error) return <Alert tone="danger">{metals.error.message}</Alert>;
   const m = metals.data!;
   const items = m.items.filter((i) => showSold || !i.soldDate);
   const soldCount = m.items.filter((i) => i.soldDate).length;
@@ -243,7 +243,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
   });
   const [f, setF] = useState({
     accountId: item ? String(item.accountId) : "",
-    metal: (item?.metal ?? "gold") as MetalName,
+    metal: item?.metal ?? "gold",
     product: item?.product ?? "",
     grossWeightG: strip(item?.grossWeightG),
     purity: strip(item?.purity),

@@ -79,7 +79,7 @@ export function xrpAdapter(rpcUrl = "https://xrplcluster.com"): ChainAdapter {
         do {
           const r: AccountTxResult = await rpc<AccountTxResult>(ctx, "account_tx", {
             account: address,
-            ledger_index_min: lastLedger[address] ? lastLedger[address]! + 1 : -1,
+            ledger_index_min: lastLedger[address] ? lastLedger[address] + 1 : -1,
             ledger_index_max: -1,
             forward: true,
             limit: 200,

@@ -304,7 +304,7 @@ export const kraken: ExchangeProvider<Creds> = {
       // normaliseKrakenAsset has built-in fallbacks for the common codes
     }
 
-    const lastTime = typeof ctx.cursor?.lastTime === "number" ? (ctx.cursor.lastTime as number) : null;
+    const lastTime = typeof ctx.cursor?.lastTime === "number" ? ctx.cursor.lastTime : null;
     const start = lastTime ? lastTime - 2 * 86_400 : undefined;
     const entries: LedgerEntry[] = [];
     let maxTime = lastTime ?? 0;

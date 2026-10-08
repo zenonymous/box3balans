@@ -1,5 +1,5 @@
 import type { DB } from "../db/client.js";
-import { type AccountYearDetails, accountYears, type accounts } from "../db/schema.js";
+import { accountYears, type accounts } from "../db/schema.js";
 import { D, type Decimal } from "../lib/decimal.js";
 import { RULES } from "../rules/index.js";
 
@@ -26,7 +26,7 @@ export function leegwaarderatio(rentEur: Decimal, wozEur: Decimal): Decimal {
 export function yearlyValue(kind: Account["kind"], row: Pick<AccountYear, "valueEur" | "details"> | undefined) {
   if (!row || row.valueEur == null) return null;
   const v = D(row.valueEur);
-  const details = (row.details ?? {}) as AccountYearDetails;
+  const details = row.details ?? {};
   if (kind === "property" && details.rented) return v.mul(leegwaarderatio(D(details.rentEur || 0), v));
   return v;
 }

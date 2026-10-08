@@ -1,5 +1,5 @@
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { AssetClass, HistoryPoint } from "../api";
+import type { HistoryPoint } from "../api";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, date, eur, getLocale } from "../format";
 import { Swatch } from "../components/ui";
 import { t } from "../i18n";
@@ -78,13 +78,11 @@ export function NetWorthChart({ points, showInvested }: { points: HistoryPoint[]
                     <div className="text-ink-2">{date(p.day)}</div>
                     <div className="tabular mb-1 mt-0.5 text-sm font-medium text-ink">{eur(p.total)}</div>
                     {[...classes].reverse().map((c) =>
-                      p[c as AssetClass] ? (
+                      p[c] ? (
                         <div key={c} className="flex items-center gap-1.5">
                           <Swatch color={CLASS_COLOR[c]!} />
                           <span className="text-ink-2">{CLASS_LABEL[c]}</span>
-                          <span className="tabular ml-auto pl-3 text-ink">
-                            {eur(p[c as AssetClass], { decimals: 0 })}
-                          </span>
+                          <span className="tabular ml-auto pl-3 text-ink">{eur(p[c], { decimals: 0 })}</span>
                         </div>
                       ) : null,
                     )}

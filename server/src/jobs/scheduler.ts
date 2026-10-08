@@ -48,8 +48,8 @@ export function startScheduler(
       running = false;
     }
   };
-  const first = setTimeout(tick, 2_000);
-  const timer = setInterval(tick, config.PRICE_REFRESH_MINUTES * 60_000);
+  const first = setTimeout(() => void tick(), 2_000);
+  const timer = setInterval(() => void tick(), config.PRICE_REFRESH_MINUTES * 60_000);
 
   let syncing = false;
   const syncTick = async () => {
@@ -73,8 +73,8 @@ export function startScheduler(
     }
   };
   const syncMs = config.SYNC_INTERVAL_HOURS * 3_600_000;
-  const firstSync = syncMs > 0 ? setTimeout(syncTick, 60_000) : undefined;
-  const syncTimer = syncMs > 0 ? setInterval(syncTick, syncMs) : undefined;
+  const firstSync = syncMs > 0 ? setTimeout(() => void syncTick(), 60_000) : undefined;
+  const syncTimer = syncMs > 0 ? setInterval(() => void syncTick(), syncMs) : undefined;
 
   // Price history: shortly after startup, then daily.
   const runBackfill = () =>
@@ -106,8 +106,8 @@ export function startScheduler(
       );
     }
   };
-  const firstBackup = backupMs > 0 ? setTimeout(backupTick, 5 * 60_000) : undefined;
-  const backupTimer = backupMs > 0 ? setInterval(backupTick, 3_600_000) : undefined;
+  const firstBackup = backupMs > 0 ? setTimeout(() => void backupTick(), 5 * 60_000) : undefined;
+  const backupTimer = backupMs > 0 ? setInterval(() => void backupTick(), 3_600_000) : undefined;
 
   // New version: daily, only when the check is turned on (it asks GitHub).
   const updateTick = () =>

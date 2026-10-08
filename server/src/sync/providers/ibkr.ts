@@ -140,8 +140,7 @@ export function parseFlexStatement(xml: string): ParsedFlex {
   let hasCashReport = false;
 
   for (const st of statements) {
-    const section = <T>(name: string, item: string) =>
-      ((st[name] as Record<string, T[]> | undefined)?.[item] ?? []) as T[];
+    const section = <T>(name: string, item: string) => (st[name] as Record<string, T[]> | undefined)?.[item] ?? [];
 
     for (const t of section<Attrs>("Trades", "Trade")) {
       if (t.levelOfDetail && t.levelOfDetail !== "EXECUTION") continue;

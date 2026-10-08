@@ -58,7 +58,7 @@ export function Box3Page() {
   });
 
   if (overview.isLoading) return <Spinner />;
-  if (overview.error) return <Alert tone="danger">{(overview.error as Error).message}</Alert>;
+  if (overview.error) return <Alert tone="danger">{overview.error.message}</Alert>;
   const o = overview.data!;
   if (o.years.length === 0) {
     return (
@@ -112,7 +112,7 @@ export function Box3Page() {
       {detail.isLoading || !year ? (
         <Spinner />
       ) : detail.error ? (
-        <Alert tone="danger">{(detail.error as Error).message}</Alert>
+        <Alert tone="danger">{detail.error.message}</Alert>
       ) : (
         <YearView y={detail.data!} overview={o} />
       )}

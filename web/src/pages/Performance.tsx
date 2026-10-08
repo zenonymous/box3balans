@@ -50,7 +50,7 @@ export function PerformancePage() {
   );
 
   if (perf.isLoading) return <Spinner />;
-  if (perf.error) return <Alert tone="danger">{(perf.error as Error).message}</Alert>;
+  if (perf.error) return <Alert tone="danger">{perf.error.message}</Alert>;
   const p = perf.data!;
   if (p.years.length === 0) {
     return (

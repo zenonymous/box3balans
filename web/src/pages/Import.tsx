@@ -236,7 +236,7 @@ export function ImportPage() {
         include: [...include],
       });
       setResult(r);
-      invalidate();
+      void invalidate();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -352,7 +352,7 @@ export function ImportPage() {
               <ReviewCard
                 plan={plan.data}
                 loading={plan.isFetching}
-                error={plan.error && !expired ? (plan.error as Error).message : undefined}
+                error={plan.error && !expired ? plan.error.message : undefined}
                 mapping={mapping}
                 setMapping={setMapping}
                 include={include}
@@ -1015,7 +1015,7 @@ function PastImports() {
     try {
       await del(`/api/imports/${undoing.id}`);
       setUndoing(null);
-      invalidate();
+      void invalidate();
       await qc.invalidateQueries({ queryKey: ["imports"] });
     } finally {
       setBusy(false);

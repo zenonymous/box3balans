@@ -58,9 +58,7 @@ function AuthGate() {
 
   if (auth.isLoading) return <Spinner />;
   if (auth.error)
-    return (
-      <p className="p-6 text-loss">{t("Cannot reach the server: {error}", { error: (auth.error as Error).message })}</p>
-    );
+    return <p className="p-6 text-loss">{t("Cannot reach the server: {error}", { error: auth.error.message })}</p>;
   if (!auth.data?.user) return <Login setup={auth.data?.needsSetup ?? false} />;
 
   return (

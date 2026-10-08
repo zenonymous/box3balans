@@ -201,7 +201,7 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
           </p>
           <div className="mt-3">
             {search.isFetching && <Spinner />}
-            {search.error && <Alert tone="danger">{(search.error as Error).message}</Alert>}
+            {search.error && <Alert tone="danger">{search.error.message}</Alert>}
             {search.data && search.data.length === 0 && <Empty title={t("No matches")} />}
             {search.data && search.data.length > 0 && (
               <ul className="divide-y divide-line rounded-lg border border-line">

@@ -67,7 +67,7 @@ export function WalletsPage() {
       {wallets.isLoading || chains.isLoading ? (
         <Spinner />
       ) : wallets.error ? (
-        <Alert tone="danger">{(wallets.error as Error).message}</Alert>
+        <Alert tone="danger">{wallets.error.message}</Alert>
       ) : groups.length === 0 ? (
         <Card>
           <Empty title={t("No wallets yet")}>

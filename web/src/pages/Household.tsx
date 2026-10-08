@@ -28,7 +28,7 @@ export function HouseholdPage() {
 export function HouseholdEditor() {
   const people = useHousehold();
   if (people.isLoading) return <Spinner />;
-  if (people.error) return <Alert tone="danger">{(people.error as Error).message}</Alert>;
+  if (people.error) return <Alert tone="danger">{people.error.message}</Alert>;
   const list = people.data ?? [];
   const self = list.find((p) => p.role === "self") ?? null;
   const partner = list.find((p) => p.role === "partner") ?? null;
@@ -117,7 +117,7 @@ function ChildRow({ child }: { child: Person | null }) {
   const [f, setF] = useState({
     name: child?.name ?? "",
     birthDate: child?.birthDate ?? "",
-    custody: child?.custody ?? ("together" as Custody),
+    custody: child?.custody ?? "together",
   });
   const [error, setError] = useState<string>();
   const [open, setOpen] = useState(!!child);

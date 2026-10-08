@@ -38,7 +38,7 @@ export function OverviewPage() {
   };
 
   if (portfolio.isLoading) return <Spinner />;
-  if (portfolio.error) return <Alert tone="danger">{(portfolio.error as Error).message}</Alert>;
+  if (portfolio.error) return <Alert tone="danger">{portfolio.error.message}</Alert>;
   const { summary, holdings } = portfolio.data!;
   const failed = status.data?.status?.failed ?? [];
 

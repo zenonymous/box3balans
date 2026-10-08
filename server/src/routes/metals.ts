@@ -164,7 +164,7 @@ export async function metalRoutes(app: FastifyInstance) {
         tot.costEur = tot.costEur.plus(D(i.purchasePriceEur));
         if (premium) {
           tot.premiumEur = tot.premiumEur.plus(premium);
-          tot.premiumKnownCostEur = tot.premiumKnownCostEur.plus(D(i.spotValueAtPurchaseEur!));
+          tot.premiumKnownCostEur = tot.premiumKnownCostEur.plus(D(i.spotValueAtPurchaseEur));
         }
       }
       const pnl = sold
@@ -181,8 +181,8 @@ export async function metalRoutes(app: FastifyInstance) {
         valueEur: sold ? null : value ? money2(value) : null,
         premiumEur: premium ? money2(premium) : null,
         premiumPct:
-          premium && !D(i.spotValueAtPurchaseEur!).isZero()
-            ? premium.div(D(i.spotValueAtPurchaseEur!)).mul(100).toFixed(2)
+          premium && !D(i.spotValueAtPurchaseEur).isZero()
+            ? premium.div(D(i.spotValueAtPurchaseEur)).mul(100).toFixed(2)
             : null,
         pnlEur: pnl ? money2(pnl) : null,
         pnlPct: pnl && !D(i.purchasePriceEur).isZero() ? pnl.div(D(i.purchasePriceEur)).mul(100).toFixed(2) : null,

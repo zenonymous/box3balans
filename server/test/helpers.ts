@@ -24,7 +24,8 @@ export const raw = (body: string, status = 200) => ({ __raw: true as const, body
  * Handlers may return JSON-able data or `raw(...)`.
  */
 export function fakeFetch(
-  routes: Record<string, unknown | RouteHandler>,
+  // Per URL part: a response body, or a RouteHandler that makes one.
+  routes: Record<string, unknown>,
 ): FetchFn & { calls: string[]; requests: { url: string; init?: RequestInit }[] } {
   const calls: string[] = [];
   const requests: { url: string; init?: RequestInit }[] = [];

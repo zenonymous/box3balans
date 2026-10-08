@@ -66,7 +66,7 @@ describe("chain parsers", () => {
     const order: string[] = [];
     const fetchFn = fakeFetch({
       "solana.test": (_url: string, init?: RequestInit) => {
-        const body = JSON.parse(String(init!.body));
+        const body = JSON.parse(init!.body as string);
         const result = (() => {
           switch (body.method) {
             case "getSignaturesForAddress":
@@ -120,7 +120,7 @@ describe("chain parsers", () => {
     const A = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
     const fetchFn = fakeFetch({
       "xrpl.test": (_url: string, init?: RequestInit) => {
-        const body = JSON.parse(String(init!.body));
+        const body = JSON.parse(init!.body as string);
         if (body.method === "account_info") return { result: { account_data: { Balance: "79999988" } } };
         const tx = (h: string, fields: object, delivered: unknown) => ({
           tx: { hash: h, Fee: "12", date: 700_000_000, ledger_index: 10, ...fields },

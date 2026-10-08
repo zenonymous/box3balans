@@ -150,7 +150,7 @@ export function TransactionsPage() {
           <Spinner />
         ) : list.error ? (
           <div className="p-4">
-            <Alert tone="danger">{(list.error as Error).message}</Alert>
+            <Alert tone="danger">{list.error.message}</Alert>
           </div>
         ) : list.data!.items.length === 0 ? (
           <Empty title={t("No transactions yet")}>{t("Add a buy, deposit or dividend to get started.")}</Empty>
@@ -289,7 +289,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
   const invalidate = useInvalidateAll();
   const isTransfer = tx?.transferGroup != null;
   const [f, setF] = useState({
-    type: (tx?.type ?? "buy") as TxType,
+    type: tx?.type ?? "buy",
     accountId: tx ? String(tx.accountId) : "",
     assetId: tx ? String(tx.assetId) : "",
     day: tx ? toLocalInput(tx.occurredAt) : todayIso(),
@@ -343,7 +343,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
       tx && f.day === toLocalInput(tx.occurredAt) ? tx.occurredAt : new Date(`${f.day}T12:00:00`).toISOString();
     try {
       if (isTransfer) {
-        await put(`/api/transactions/${tx!.id}`, {
+        await put(`/api/transactions/${tx.id}`, {
           occurredAt,
           quantity: toApiNumber(f.quantity, t("Quantity")),
           feeEur: toApiNumber(f.feeEur, t("Fee")) || "0",
@@ -448,9 +448,9 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
         {isTransfer ? (
           <p className="text-sm text-ink-2 sm:col-span-2">
             {t("{type} of {asset} at {account}. Changing the date moves both legs.", {
-              type: TX_LABEL[tx!.type] ?? tx!.type,
-              asset: tx!.assetSymbol,
-              account: tx!.accountName,
+              type: TX_LABEL[tx.type] ?? tx.type,
+              asset: tx.assetSymbol,
+              account: tx.accountName,
             })}
           </p>
         ) : (

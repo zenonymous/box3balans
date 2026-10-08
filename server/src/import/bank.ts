@@ -151,8 +151,13 @@ function fromAbnTab(text: string): { lines: BankLine[]; warnings: string[] } {
 }
 
 const arr = <T>(v: T | T[] | undefined): T[] => (v == null ? [] : Array.isArray(v) ? v : [v]);
-const text = (v: unknown): string =>
-  v == null ? "" : typeof v === "object" ? String((v as Record<string, unknown>)["#text"] ?? "") : String(v);
+// An XML value: plain text, or the text of an element that also has attributes.
+const text = (v: unknown): string => {
+  if (v == null) return "";
+  if (typeof v === "object") return text((v as Record<string, unknown>)["#text"]);
+  if (typeof v === "string") return v;
+  return typeof v === "number" || typeof v === "boolean" ? String(v) : "";
+};
 
 /** CAMT.053 (ISO 20022 bank statement): balances and entries per statement. */
 function fromCamt(xml: string): { lines: BankLine[]; warnings: string[] } {

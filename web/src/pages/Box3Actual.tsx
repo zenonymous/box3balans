@@ -315,7 +315,7 @@ export function FuturePreviewCard() {
       {q.isLoading ? (
         <Spinner />
       ) : q.error ? (
-        <Alert tone="danger">{(q.error as Error).message}</Alert>
+        <Alert tone="danger">{q.error.message}</Alert>
       ) : (
         <>
           <div className="overflow-x-auto">

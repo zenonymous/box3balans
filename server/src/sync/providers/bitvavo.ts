@@ -39,7 +39,7 @@ async function call<T>(
       signal: AbortSignal.timeout(20_000),
     });
     const data = (await res.json().catch(() => null)) as (T & { errorCode?: number; error?: string }) | null;
-    if (res.ok && data && !(data as { errorCode?: number }).errorCode) return data as T;
+    if (res.ok && data && !(data as { errorCode?: number }).errorCode) return data;
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
       await ctx.sleep(2_000 * (attempt + 1));
       continue;
@@ -277,7 +277,7 @@ export const bitvavo: ExchangeProvider<Creds> = {
   },
 
   async fetch(c, ctx) {
-    const cursorMs = typeof ctx.cursor?.lastMs === "number" ? (ctx.cursor.lastMs as number) : null;
+    const cursorMs = typeof ctx.cursor?.lastMs === "number" ? ctx.cursor.lastMs : null;
     // Re-read two days of overlap; duplicates are ignored on insert.
     const fromDate = cursorMs ? cursorMs - 2 * 86_400_000 : 0;
     const items: HistoryItem[] = [];

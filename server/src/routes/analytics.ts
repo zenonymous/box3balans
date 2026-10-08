@@ -100,9 +100,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
       number,
       { symbol: string; name: string; gross: Decimal; tax: Decimal; net: Decimal; count: number }
     >();
-    const key = (k: string) =>
-      (k === "dividend" ? "dividends" : k === "interest" ? "interest" : "rewards") as
-        "dividends" | "rewards" | "interest";
+    const key = (k: string) => (k === "dividend" ? "dividends" : k === "interest" ? "interest" : "rewards");
     for (const e of income) {
       const y = Number(e.date.slice(0, 4));
       const yr = byYear.get(y) ?? { dividends: ZERO, rewards: ZERO, interest: ZERO, tax: ZERO };

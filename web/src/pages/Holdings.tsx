@@ -40,7 +40,7 @@ export function HoldingsPage() {
   }, [portfolio.data, cls, q, sort, showClosed]);
 
   if (portfolio.isLoading) return <Spinner />;
-  if (portfolio.error) return <Alert tone="danger">{(portfolio.error as Error).message}</Alert>;
+  if (portfolio.error) return <Alert tone="danger">{portfolio.error.message}</Alert>;
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => (s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: key === "name" ? 1 : -1 }));

@@ -580,7 +580,7 @@ function ValueRow({
 function ResultStep({ year }: { year: number }) {
   const box3 = useQuery({ queryKey: ["box3", year], queryFn: () => get<Box3Year>(`/api/box3/${year}`) });
   if (box3.isLoading) return <Spinner />;
-  if (box3.error) return <Alert tone="danger">{(box3.error as Error).message}</Alert>;
+  if (box3.error) return <Alert tone="danger">{box3.error.message}</Alert>;
   const y = box3.data!;
   const c = y.calculation;
   return (

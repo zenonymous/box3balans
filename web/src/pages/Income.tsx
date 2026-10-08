@@ -58,7 +58,7 @@ export function IncomePage() {
   })();
 
   if (income.isLoading) return <Spinner />;
-  if (income.error) return <Alert tone="danger">{(income.error as Error).message}</Alert>;
+  if (income.error) return <Alert tone="danger">{income.error.message}</Alert>;
   const d = income.data!;
   if (d.events.length === 0) {
     return (

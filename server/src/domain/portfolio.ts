@@ -210,7 +210,7 @@ export async function buildPortfolio(db: DB, opts: { staleAfterMs: number; now?:
     const asset = assetById.get(a.assetId)!;
     const price = priceByAsset.get(a.assetId);
     const open = !a.quantity.isZero();
-    const cls = asset.assetClass as AssetClassKey;
+    const cls = asset.assetClass;
     byClass[cls] = byClass[cls].plus(a.valueEur);
     // Cash is valued at face; its "cost" is not an investment cost basis.
     const isCash = cls === "cash";

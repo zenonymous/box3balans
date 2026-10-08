@@ -379,8 +379,8 @@ export const saxo: BrokerFormat = {
       const trade = /^(buy|sell)\s+([\d.,]+)\s*@\s*([\d.,]+)\s*([A-Za-z]{3})/i.exec(event);
       if (trade) {
         const side = trade[1]!.toLowerCase() as "buy" | "sell";
-        const quantity = looseNum(trade[2]!)!;
-        const p = pounds(looseNum(trade[3]!), trade[4]!);
+        const quantity = looseNum(trade[2])!;
+        const p = pounds(looseNum(trade[3]), trade[4]!);
         // The amount (account currency) includes the commission; in the trade's currency:
         const value = Math.abs(Number(amount ?? 0)) / rate;
         const gross = Number(quantity) * Number(p.price ?? 0);

@@ -220,7 +220,7 @@ export function ReturnsView() {
   const [view, setView] = useState<"index" | "euros">("index");
   const [saving, setSaving] = useState(false);
   if (returns.isLoading) return <Spinner />;
-  if (returns.error) return <Alert tone="danger">{(returns.error as Error).message}</Alert>;
+  if (returns.error) return <Alert tone="danger">{returns.error.message}</Alert>;
   const r = returns.data!;
   if (!r.allTime) {
     return (

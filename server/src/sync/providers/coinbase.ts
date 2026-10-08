@@ -70,7 +70,7 @@ async function call<T>(c: Creds, ctx: ProviderContext, path: string): Promise<T>
       signal: AbortSignal.timeout(20_000),
     });
     const data = (await res.json().catch(() => null)) as (T & { errors?: { message: string }[] }) | null;
-    if (res.ok && data) return data as T;
+    if (res.ok && data) return data;
     if ((res.status === 429 || res.status >= 500) && attempt < 3) {
       await ctx.sleep(2_000 * (attempt + 1));
       continue;

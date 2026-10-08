@@ -100,7 +100,7 @@ function ankrRoutes(calls: { method: string; params: any }[]) {
   return {
     ...defaultRoutes,
     "rpc.ankr.com/multichain/test-key": (_url: string, init?: RequestInit) => {
-      const { method, params } = JSON.parse(String(init!.body));
+      const { method, params } = JSON.parse(init!.body as string);
       calls.push({ method, params });
       const page = (items: unknown[], key: string) => {
         const live = items.filter((i: any) => Number(i.blockHeight ?? i.blockNumber) >= params.fromBlock);

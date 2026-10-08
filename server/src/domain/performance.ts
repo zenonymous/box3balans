@@ -107,9 +107,7 @@ export async function loadEvents(db: DB, method: CostMethod) {
       txId: e.txId,
       date: localDay(e.occurredAt),
       // Rewards paid on cash balances are interest.
-      kind: (e.kind === "reward" && asset.get(e.assetId)?.assetClass === "cash"
-        ? "interest"
-        : e.kind) as IncomeRow["kind"],
+      kind: e.kind === "reward" && asset.get(e.assetId)?.assetClass === "cash" ? ("interest" as const) : e.kind,
       assetId: e.assetId,
       symbol: asset.get(e.assetId)?.symbol ?? "?",
       name: asset.get(e.assetId)?.name ?? "?",

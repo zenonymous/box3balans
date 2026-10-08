@@ -71,7 +71,7 @@ export interface BackupFile {
 
 export async function createBackup(db: DB): Promise<BackupFile> {
   const tables: Record<string, Record<string, unknown>[]> = {};
-  for (const t of TABLES) tables[getTableName(t)] = (await db.select().from(t as never)) as Record<string, unknown>[];
+  for (const t of TABLES) tables[getTableName(t)] = await db.select().from(t as never);
   return { format: BACKUP_FORMAT, schemaVersion: schemaVersion(), createdAt: new Date().toISOString(), tables };
 }
 
@@ -126,7 +126,7 @@ export async function restoreBackup(db: DB, b: BackupFile): Promise<Record<strin
         return out;
       });
       for (let i = 0; i < values.length; i += 500) {
-        await trx.insert(t as never).values(values.slice(i, i + 500) as never);
+        await trx.insert(t as never).values(values.slice(i, i + 500));
       }
     }
     for (const name of SERIAL_TABLES) {

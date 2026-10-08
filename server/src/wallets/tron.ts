@@ -91,7 +91,7 @@ export function tronAdapter(): ChainAdapter {
 
       for (const { address } of inputs) {
         // Re-read an hour of overlap; duplicates are dropped by id.
-        const min = since[address] ? since[address]! - 3_600_000 : 0;
+        const min = since[address] ? since[address] - 3_600_000 : 0;
         let maxTs = since[address] ?? 0;
         const decimals = new Map<string, { decimals: number; symbol: string; name: string }>();
 

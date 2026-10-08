@@ -142,7 +142,7 @@ export async function computeHistory(db: DB, method: CostMethod): Promise<Histor
       if (p.quantity.isZero()) continue;
       const a = assetById.get(p.assetId);
       if (!a || a.hidden) continue;
-      const cls = a.assetClass as AssetClassKey;
+      const cls = a.assetClass;
       const price = unitPrice(p.assetId);
       let value: Decimal;
       if (price) value = p.quantity.mul(price);

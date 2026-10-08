@@ -156,7 +156,7 @@ export function ankrAdapter(c: AnkrChain, apiKey = process.env.ANKR_API_KEY?.tri
       const fees: Fee[] = [];
       const balances: Balance[] = [];
       // Re-read a few blocks of overlap; the same transaction yields the same event ids.
-      const since = (a: string) => (lastBlocks[a] ? Math.max(0, lastBlocks[a]! - 50) : 0);
+      const since = (a: string) => (lastBlocks[a] ? Math.max(0, lastBlocks[a] - 50) : 0);
 
       const seenTx = new Set<string>();
       for (const input of inputs) {

@@ -66,7 +66,7 @@ const ROUTES = {
       ? ["t1", "t2", "t3", "t4"].map((h) => ({ tx_hash: h, block_height: Number(h.slice(1)) + 10 }))
       : [],
   "api.koios.rest/api/v1/tx_info": (_url: string, init?: RequestInit) =>
-    (JSON.parse(String(init!.body))._tx_hashes as string[]).map((h) => TXS[h]),
+    (JSON.parse(init!.body as string)._tx_hashes as string[]).map((h) => TXS[h]),
   "api.koios.rest/api/v1/tip": [{ epoch_no: 403 }],
   "api.koios.rest/api/v1/account_reward_history": [
     { earned_epoch: 400, spendable_epoch: 402, amount: "3000000", type: "member" },

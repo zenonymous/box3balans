@@ -142,9 +142,9 @@ function AccountModal({
   const invalidate = useInvalidateAll();
   const [f, setF] = useState({
     name: account?.name ?? "",
-    kind: account?.kind ?? ("bank" as AccountKind),
-    tracking: account?.tracking ?? ("transactions" as Account["tracking"]),
-    owner: account?.owner ?? ("self" as AccountOwner),
+    kind: account?.kind ?? "bank",
+    tracking: account?.tracking ?? "transactions",
+    owner: account?.owner ?? "self",
     ownerChildId: account?.ownerChildId ?? null,
     jointSelfPct: account?.jointSelfPct ? String(Number(account.jointSelfPct)) : "50",
     foreign: account?.foreign ?? false,

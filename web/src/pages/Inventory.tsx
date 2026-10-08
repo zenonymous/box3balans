@@ -12,7 +12,7 @@ const sum = (xs: (string | null)[]) => xs.reduce((a, x) => a + Number(x ?? 0), 0
 export function InventoryPage() {
   const metals = useMetals();
   if (metals.isLoading) return <Spinner />;
-  if (metals.error) return <Alert tone="danger">{(metals.error as Error).message}</Alert>;
+  if (metals.error) return <Alert tone="danger">{metals.error.message}</Alert>;
   const items = metals.data!.items.filter((i) => !i.soldDate);
   const byLocation = new Map<string, MetalItem[]>();
   for (const i of items) byLocation.set(i.accountName, [...(byLocation.get(i.accountName) ?? []), i]);

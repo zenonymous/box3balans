@@ -84,7 +84,7 @@ export function dogecoinAdapter(c: UtxoChain = DOGECOIN): ChainAdapter {
       // `before` is exclusive; ask from the lowest block again so a block split over pages isn't lost.
       before = Math.min(...(page.txs ?? []).filter((t) => t.block_height >= 0).map((t) => t.block_height)) + 1;
     }
-    return { info: info!, txs: [...txs.values()] };
+    return { info: info, txs: [...txs.values()] };
   }
 
   return {

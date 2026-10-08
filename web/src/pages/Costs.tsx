@@ -48,7 +48,7 @@ const CATEGORY_LABEL: Record<Category, string> = {
   premiums: t("Premium above spot"),
 };
 
-const group = (y: CostYear, g: (typeof GROUPS)[number]) => g.of.reduce((a, c) => a + y[c as Category], 0);
+const group = (y: CostYear, g: (typeof GROUPS)[number]) => g.of.reduce((a, c) => a + y[c], 0);
 
 const compact = (v: number) =>
   new Intl.NumberFormat(getLocale(), {
@@ -62,7 +62,7 @@ export function CostsView() {
   const costs = useQuery({ queryKey: ["costs"], queryFn: () => get<Costs>("/api/costs") });
   const [year, setYear] = useState<string>("");
   if (costs.isLoading) return <Spinner />;
-  if (costs.error) return <Alert tone="danger">{(costs.error as Error).message}</Alert>;
+  if (costs.error) return <Alert tone="danger">{costs.error.message}</Alert>;
   const c = costs.data!;
   if (!c.years.length) {
     return (

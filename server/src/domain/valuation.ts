@@ -80,7 +80,7 @@ export async function holdingsOn(db: DB, day: string): Promise<HoldingOn[]> {
       assetId: a.id,
       symbol: a.symbol,
       name: a.assetClass === "metal" ? tr("{name} (vaulted)", { name: displayName(a) }) : displayName(a),
-      assetClass: a.assetClass as AssetClassKey,
+      assetClass: a.assetClass,
       physical: false,
       quantity: p.quantity,
       unit: a.unit,

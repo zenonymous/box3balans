@@ -54,6 +54,14 @@ function tidy(v: unknown): unknown {
   return v;
 }
 
+/** A snapshot value as text: `fallback` when missing, JSON for objects (never "[object Object]"). */
+function text(v: unknown, fallback = ""): string {
+  if (v == null) return fallback;
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean" || typeof v === "bigint") return String(v);
+  return JSON.stringify(v);
+}
+
 interface Names {
   account: Map<number, string>;
   asset: Map<number, string>;
@@ -68,30 +76,30 @@ function title(entity: string, s: Snapshot | null, names: Names, entityId: numbe
         account: names.account.get(entityId) ?? tr("account #{id}", { id: entityId }),
       });
     case "person":
-      return `${s.name ?? tr("Person")} (${s.role === "self" ? tr("you") : s.role === "partner" ? tr("partner") : tr("child")})`;
+      return `${text(s.name, tr("Person"))} (${s.role === "self" ? tr("you") : s.role === "partner" ? tr("partner") : tr("child")})`;
     case "transaction": {
-      const asset = names.asset.get(n(s.assetId)) ?? tr("asset #{id}", { id: String(s.assetId) });
-      const account = names.account.get(n(s.accountId)) ?? tr("account #{id}", { id: String(s.accountId) });
-      const label = TX_LABEL[String(s.type)];
-      const type = label ? tr(label) : String(s.type ?? tr("Transaction"));
-      const qty = s.type === "dividend" ? "" : ` ${tidy(s.quantity) ?? ""}`;
+      const asset = names.asset.get(n(s.assetId)) ?? tr("asset #{id}", { id: text(s.assetId) });
+      const account = names.account.get(n(s.accountId)) ?? tr("account #{id}", { id: text(s.accountId) });
+      const label = TX_LABEL[text(s.type)];
+      const type = label ? tr(label) : text(s.type, tr("Transaction"));
+      const qty = s.type === "dividend" ? "" : ` ${text(tidy(s.quantity))}`;
       return `${type}${qty} ${asset} · ${account}`.replace(/\s+/g, " ");
     }
     case "asset":
       return [s.symbol, s.name].filter(Boolean).join(" · ") || tr("Asset");
     case "account":
-      return String(s.name ?? tr("Account"));
+      return text(s.name, tr("Account"));
     case "metal_item":
-      return `${s.quantity ?? 1}× ${s.product ?? tr("item")}`;
+      return `${text(s.quantity, "1")}× ${text(s.product, tr("item"))}`;
     case "metal_photo":
-      return s.product ? tr("Photo of {product}", { product: String(s.product) }) : tr("Photo of an item");
+      return s.product ? tr("Photo of {product}", { product: text(s.product) }) : tr("Photo of an item");
     case "import":
-      return String(s.fileName ?? tr("CSV import"));
+      return text(s.fileName, tr("CSV import"));
     case "integration":
-      return tr("Connection {provider}", { provider: String(s.provider ?? "") }).trim();
+      return tr("Connection {provider}", { provider: text(s.provider) }).trim();
     case "wallet_address": {
-      const a = String(s.address ?? "");
-      return `${s.chain ?? tr("Wallet")} ${a.length > 16 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a}`;
+      const a = text(s.address);
+      return `${text(s.chain, tr("Wallet"))} ${a.length > 16 ? `${a.slice(0, 8)}…${a.slice(-6)}` : a}`;
     }
     default:
       return entity;
@@ -120,8 +128,8 @@ function changes(entity: string, before: Snapshot | null, after: Snapshot | null
   if (entity === "account_years") return yearChanges(before, after);
   const show = (field: string, v: unknown) => {
     if (v == null) return null;
-    if (field === "assetId" || field === "settleAssetId") return names.asset.get(Number(v)) ?? `#${v}`;
-    if (field === "accountId") return names.account.get(Number(v)) ?? `#${v}`;
+    if (field === "assetId" || field === "settleAssetId") return names.asset.get(Number(v)) ?? `#${text(v)}`;
+    if (field === "accountId") return names.account.get(Number(v)) ?? `#${text(v)}`;
     return tidy(v);
   };
   const out: { field: string; from: unknown; to: unknown }[] = [];
@@ -267,7 +275,7 @@ export async function activityRoutes(app: FastifyInstance) {
     );
 
     const restored = await db.transaction(async (trx) => {
-      const out = [];
+      const out: Snapshot[] = [];
       for (const s of todo) {
         const row = toRow(table, s);
         if (entry.entity === "transaction") {
@@ -279,7 +287,7 @@ export async function activityRoutes(app: FastifyInstance) {
           .insert(table)
           .values(row as never)
           .returning();
-        out.push(ins as Snapshot);
+        out.push(ins!);
         // A synced row was remembered as deleted; forget that so syncs keep it.
         if (entry.entity === "transaction" && s.source !== "manual" && typeof s.externalId === "string") {
           await trx

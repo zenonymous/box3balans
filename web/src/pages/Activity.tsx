@@ -117,7 +117,8 @@ function value(field: string, v: unknown): string {
     return `${date(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
   }
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return date(v);
-  return String(v);
+  if (typeof v === "number" || typeof v === "bigint") return String(v);
+  return typeof v === "string" ? v : JSON.stringify(v);
 }
 
 const PAGE = 50;
@@ -144,7 +145,7 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
     setError(undefined);
     try {
       await post(`/api/activity/${e.id}/restore`);
-      invalidate();
+      void invalidate();
       await qc.invalidateQueries({ queryKey: ["activity"] });
     } catch (err) {
       setError((err as Error).message);

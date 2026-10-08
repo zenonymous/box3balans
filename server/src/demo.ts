@@ -53,7 +53,7 @@ export async function seedDemo(app: FastifyInstance, db: DB): Promise<void> {
       headers: { ...headers, cookie },
     });
     if (res.statusCode !== 200) throw new Error(`demo ${method} ${url}: ${res.body}`);
-    return res.json() as T;
+    return res.json<T>();
   };
   const at = (d: string) => `${d}T12:00:00Z`;
 

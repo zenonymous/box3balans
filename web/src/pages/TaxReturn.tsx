@@ -96,7 +96,7 @@ export function TaxReturnPage() {
   const people = useHousehold();
 
   if (overview.isLoading || data.isLoading) return <Spinner />;
-  if (data.error) return <Alert tone="danger">{(data.error as Error).message}</Alert>;
+  if (data.error) return <Alert tone="danger">{data.error.message}</Alert>;
   const r = data.data;
 
   return (

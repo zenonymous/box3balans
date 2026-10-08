@@ -92,9 +92,9 @@ export async function collectIssues(
         key: `${kind}-error:${id}`,
         severity: "problem",
         title: tr("{name}: the last sync failed", { name }),
-        detail: String(r.error ?? tr("Unknown error")),
+        detail: typeof r.error === "string" ? r.error : tr("Unknown error"),
         link: { to, label: kind === "wallet" ? tr("Wallets") : tr("Connections") },
-        fingerprint: String(r.at ?? ""),
+        fingerprint: typeof r.at === "string" ? r.at : "",
       });
     }
     const mismatches = (r.mismatches as { symbol: string; difference: string }[] | undefined) ?? [];
@@ -129,7 +129,7 @@ export async function collectIssues(
         title: tr("{name}: history still importing", { name }),
         detail: tr("Rate-limited sources load older history over several syncs."),
         link: { to, label: tr("Wallets") },
-        fingerprint: String(r.at ?? ""),
+        fingerprint: typeof r.at === "string" ? r.at : "",
       });
     }
     if (
