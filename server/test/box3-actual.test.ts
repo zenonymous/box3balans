@@ -195,8 +195,12 @@ describe("2028 system preview", () => {
     ]);
   });
 
-  it("carries a loss back one year with the novelle preset", () => {
-    const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], FUTURE_PRESETS.novelle!);
+  it("carries a loss back one year when that's switched on", () => {
+    const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], {
+      ...FUTURE_PRESETS.bill!,
+      allowanceEur: 1900,
+      carryBackYears: 1,
+    });
     expect(rows.map((r) => [r.year, r.taxableEur, r.taxEur, r.carriedBackEur, r.lossBalanceEur])).toEqual([
       [2024, 5100, 1836, 3000, 0],
       [2025, 0, 0, 0, 0],
@@ -222,12 +226,12 @@ describe("2028 system preview", () => {
 
   it("serves the preview with overridable parameters", async () => {
     await scenario(90_000);
-    const r = json(await t.api("GET", "/api/box3/future?preset=novelle&ratePct=35"));
-    expect(r.params).toEqual({ ratePct: 35, allowanceEur: 1900, lossThresholdEur: 500, carryBackYears: 1 });
-    expect(r.presets.map((p: any) => p.id)).toEqual(["bill", "novelle"]);
+    const r = json(await t.api("GET", "/api/box3/future?preset=letter&ratePct=35"));
+    expect(r.params).toEqual({ ratePct: 35, allowanceEur: 1000, lossThresholdEur: 500, carryBackYears: 0 });
+    expect(r.presets.map((p: any) => p.id)).toEqual(["bill", "letter"]);
     const y2024 = r.rows.find((x: any) => x.year === 2024);
-    // 5,500 actual − 63 deductible costs − 1,900 = 3,537 at 35%.
-    expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 3537, taxEur: 1237.95 });
+    // 5,500 actual − 63 deductible costs − 1,000 = 4,437 at 35%.
+    expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 4437, taxEur: 1552.95 });
     expect((await t.api("GET", "/api/box3/future?preset=nonsense")).statusCode).toBe(400);
   });
 });

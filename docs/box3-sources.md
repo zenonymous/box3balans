@@ -83,7 +83,7 @@ Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstel
 - **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de brief van 29 september zegt daar niets over.
 - **Groene beleggingen** houden een heffingskorting.
 
-Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De instelling "novelle" in de app gebruikt nog die opties (€ 1.900 en één jaar terugwenteling bij 36%) en **loopt dus achter op de brief**: die kiest voor € 1.000 en voor belasting bij verkoop van financiële instrumenten, wat de vooruitblik nog niet nabootst. Elke instelling is aan te passen.
+Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De vooruitblik in de app heeft daarom naast het wetsvoorstel de instelling _Kabinetsbrief 29 sep 2026_: € 1.000 heffingsvrij resultaat, 36% en geen terugwenteling (de brief noemt die niet). **Belasting bij verkoop van financiële instrumenten bootst de vooruitblik nog niet na** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); voor beleggingen die je niet verkoopt, toont hij dus meer belasting dan de novelle zou heffen. Elke instelling is aan te passen.
 
 Niet beschreven in de bronnen, en aangenomen door de app:
 

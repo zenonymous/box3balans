@@ -34,7 +34,7 @@ export interface FutureParams {
   carryBackYears: 0 | 1;
 }
 
-/** See docs/box3-sources.md. The novelle's details aren't final, hence everything is editable. */
+/** See docs/box3-sources.md. Neither is law yet, hence everything is editable. */
 export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = {
   bill: {
     label: "Bill as passed by the Tweede Kamer (12 Feb 2026)",
@@ -43,12 +43,14 @@ export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = 
     lossThresholdEur: 500,
     carryBackYears: 0,
   },
-  novelle: {
-    label: "With the announced novelle (Sep 2026, details not final)",
+  // The letter announcing the novelle names the tax-free amount; tax on sale for financial
+  // instruments isn't modelled (issue #11), so this still taxes unrealised gains each year.
+  letter: {
+    label: "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)",
     ratePct: 36,
-    allowanceEur: 1900,
+    allowanceEur: 1000,
     lossThresholdEur: 500,
-    carryBackYears: 1,
+    carryBackYears: 0,
   },
 };
 

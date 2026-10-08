@@ -230,7 +230,7 @@ interface FutureResponse {
 const presetLabel = (id: string, fallback: string) =>
   ({
     bill: t("Bill as passed by the Tweede Kamer (12 Feb 2026)"),
-    novelle: t("With the announced novelle (Sep 2026, details not final)"),
+    letter: t("Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)"),
   })[id] ?? fallback;
 
 /** The planned actual-return system (2028) applied to your past years, with editable assumptions. */
@@ -274,7 +274,7 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The planned system taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. The bill passed the Tweede Kamer on 12 February 2026; the Eerste Kamer is waiting for an amendment (novelle) announced in September 2026. Here it is applied to your past years to show what it would mean for you.",
+          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. Tax on sale isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
         )}
       </p>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-6">
@@ -396,7 +396,7 @@ export function FuturePreviewCard() {
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. The current system's tax follows the deemed-return rules for that year. Details of the novelle (rate, tax-free result, carry-back) are not final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>
