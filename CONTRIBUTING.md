@@ -2,7 +2,9 @@
 
 Fijn dat je wilt helpen! Box3balans is een hobbyproject voor iedereen in Nederland die zijn beleggingen en box 3 zelf wil bijhouden, op eigen hardware. Bijdragen in het Nederlands of Engels zijn allebei welkom.
 
-_In English: contributions in English are welcome too. Issues and pull requests may be written in either language._
+**Een vraag?** Stel die bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a), niet als issue: issues zijn voor fouten, exportformaten en concrete voorstellen. Een los idee bespreek je eerst bij [Ideas](https://github.com/zenonymous/box3balans/discussions/categories/ideas).
+
+_In English: contributions in English are welcome too. Issues and pull requests may be written in either language; questions go to Discussions._
 
 ## Waar je het meest mee helpt
 

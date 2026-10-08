@@ -89,4 +89,4 @@ Een laptop staat niet altijd aan: zolang hij slaapt, worden koersen en koppeling
 
 - **Toegang buitenshuis:** gebruik een VPN, zie de [README](../README.md#toegang-buitenshuis-vpn). Zet poort 8080 niet open in je router.
 - **Bijwerken:** `docker compose pull && docker compose up -d` (met `-f docker-compose.lite.yml` voor de variant met één container).
-- **Problemen:** `docker compose logs app --tail 50`, en de tabel [Problemen oplossen](../README.md#problemen-oplossen). Kom je er niet uit, open dan [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).
+- **Problemen:** `docker compose logs app --tail 50`, en de tabel [Problemen oplossen](../README.md#problemen-oplossen). Kom je er niet uit, stel je vraag dan bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a). Is er iets kapot, open dan [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).

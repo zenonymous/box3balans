@@ -15,6 +15,8 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 
 **Eerst kijken?** Start de [demo](#demo): een voorbeeldhuishouden met verzonnen koersen, zonder iets in te stellen.
 
+**Vragen?** Stel ze bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a). Een fout of een concreet voorstel meld je als [issue](https://github.com/zenonymous/box3balans/issues/new/choose).
+
 ## Wat het kan
 
 - **Overzicht:** vermogen door de tijd, de verdeling over beleggingssoorten, posities en rekeningen, en per positie de kostprijs en het gerealiseerde en ongerealiseerde resultaat.
@@ -466,6 +468,8 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 | "The database … is in use by the running Box3balans"      | In de variant met één container kan de opdrachtregel geen back-up maken of terugzetten terwijl de app draait. Gebruik _Instellingen → Back-ups en export_, of stop eerst de app (zie [In één container](#in-één-container)).                                  |
 | Telefoon met de authenticator-app kwijt                   | Log in met een van je herstelcodes en stel tweestapsverificatie opnieuw in. Geen herstelcodes meer: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: zie [In één container](#in-één-container)).          |
 | Buitengesloten                                            | Er is één gebruiker en geen herstel via e-mail. Zet een back-up terug, of wis de gebruiker in de database: `docker compose exec db psql -U box3balans -c "delete from users"`, en open de app om de eerste installatie opnieuw te doen (je gegevens blijven). |
+
+Staat je probleem er niet bij, of kom je er niet uit? Stel je vraag bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a).
 
 ## Licentie
 
