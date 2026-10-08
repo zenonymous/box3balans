@@ -8,6 +8,7 @@ import { AssetResolver } from "../sync/assets.js";
 import { Importer } from "../sync/importer.js";
 import { purgeSynced } from "../sync/purge.js";
 import { type Mismatch, reconcile } from "../sync/reconcile.js";
+import { revalueUnpriced } from "../sync/revalue.js";
 import { matchTransfers } from "../sync/transfers.js";
 import type { AssetRef, Balance, SyncEvent } from "../sync/types.js";
 import { movementsToEvents } from "./netting.js";
@@ -24,6 +25,8 @@ export interface WalletSyncResult {
   duplicates: number;
   ignored: number;
   transfersMatched: number;
+  /** Rewards and deposits booked at €0 earlier that now have a value. */
+  revalued?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   skippedTokens: { symbol: string; contract: string }[];
@@ -171,12 +174,8 @@ export class WalletService {
       );
       result.fetched = events.length;
 
-      const importer = new Importer(
-        this.db,
-        resolver,
-        this.prices.fx,
-        new HistoryService(this.db, this.prices.fx, this.fetchFn),
-      );
+      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn);
+      const importer = new Importer(this.db, resolver, this.prices.fx, history);
       const imported = await importer.import(accountId, "chain", events);
       Object.assign(result, {
         inserted: imported.inserted,
@@ -184,6 +183,7 @@ export class WalletService {
         ignored: imported.ignored,
       });
       result.warnings.push(...imported.warnings);
+      result.revalued = await revalueUnpriced(this.db, history, accountId);
       result.transfersMatched = await matchTransfers(this.db);
 
       // Reconcile only once the whole history is in, and only this chain's assets.
@@ -197,7 +197,8 @@ export class WalletService {
       }
       result.warnings.push(...resolver.warnings);
       result.newAssets = resolver.describeCreated();
-      if (resolver.created.length) await this.prices.refreshAll(resolver.created.map((a) => a.id));
+      const fresh = [...resolver.created, ...resolver.upgraded].map((a) => a.id);
+      if (fresh.length) await this.prices.refreshAll(fresh);
 
       cursor = { ...fetched.cursor, addrSet };
       if (result.warnings.length || result.mismatches.length || result.partial || result.pendingTokens)

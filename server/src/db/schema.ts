@@ -50,7 +50,7 @@ export const childCustody = pgEnum("child_custody", ["together", "self", "self_h
 
 export const assetClass = pgEnum("asset_class", ["stock", "etf", "crypto", "metal", "cash", "other"]);
 
-export const priceSource = pgEnum("price_source", ["yahoo", "coingecko", "metal", "fx", "manual"]);
+export const priceSource = pgEnum("price_source", ["yahoo", "coingecko", "bitvavo", "metal", "fx", "manual"]);
 
 export const txType = pgEnum("tx_type", [
   "buy",

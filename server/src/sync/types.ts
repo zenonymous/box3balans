@@ -12,6 +12,8 @@ export type AssetRef =
       chain?: string;
       contract?: string;
       name?: string;
+      // The exchange it came from, when that exchange's own EUR market can price it.
+      venue?: "bitvavo";
     }
   | { kind: "fiat"; currency: string }
   | {

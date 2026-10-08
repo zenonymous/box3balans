@@ -12,6 +12,7 @@ import { coinbase } from "./providers/coinbase.js";
 import { ibkr } from "./providers/ibkr.js";
 import { kraken } from "./providers/kraken.js";
 import { type Mismatch, reconcile } from "./reconcile.js";
+import { revalueUnpriced } from "./revalue.js";
 import { matchTransfers } from "./transfers.js";
 import type { ExchangeProvider, ProviderContext } from "./types.js";
 
@@ -26,6 +27,8 @@ export interface SyncResult {
   duplicates: number;
   ignored: number;
   transfersMatched: number;
+  /** Rewards and deposits booked at €0 earlier that now have a value. */
+  revalued?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   warnings: string[];
@@ -115,13 +118,10 @@ export class SyncService {
       result.fetched = fetched.events.length;
       result.warnings.push(...fetched.warnings);
 
-      const resolver = new AssetResolver(this.db, this.fetchFn);
-      const importer = new Importer(
-        this.db,
-        resolver,
-        this.prices.fx,
-        new HistoryService(this.db, this.prices.fx, this.fetchFn),
-      );
+      // CoinGecko lookups spaced out: its free tier answers a burst with a rate limit.
+      const resolver = new AssetResolver(this.db, this.fetchFn, 2_500, this.sleep);
+      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn);
+      const importer = new Importer(this.db, resolver, this.prices.fx, history);
       const imported = await importer.import(row.accountId, "api", fetched.events);
       Object.assign(result, {
         inserted: imported.inserted,
@@ -129,6 +129,7 @@ export class SyncService {
         ignored: imported.ignored,
       });
       result.warnings.push(...imported.warnings);
+      result.revalued = await revalueUnpriced(this.db, history, row.accountId);
 
       result.transfersMatched = await matchTransfers(this.db);
       if (fetched.balances) {
@@ -136,7 +137,8 @@ export class SyncService {
       }
       result.warnings.push(...resolver.warnings);
       result.newAssets = resolver.describeCreated();
-      if (resolver.created.length) await this.prices.refreshAll(resolver.created.map((a) => a.id));
+      const fresh = [...resolver.created, ...resolver.upgraded].map((a) => a.id);
+      if (fresh.length) await this.prices.refreshAll(fresh);
       cursor = fetched.cursor;
       if (result.warnings.length || result.mismatches.length) result.status = "warning";
     } catch (err) {

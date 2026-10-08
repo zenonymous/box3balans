@@ -206,6 +206,14 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
             </dd>
             <dt className="text-ink-2">{t("Transfers linked")}</dt>
             <dd>{r.transfersMatched}</dd>
+            {!!r.revalued && (
+              <>
+                <dt className="text-ink-2">{t("Valued after all")}</dt>
+                <dd title={t("Rewards and deposits that were booked at €0 because no price was known yet")}>
+                  {r.revalued}
+                </dd>
+              </>
+            )}
           </>
         )}
       </dl>

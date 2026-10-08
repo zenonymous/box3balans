@@ -23,6 +23,7 @@ import { t } from "../i18n";
 const SOURCE_LABEL: Record<string, string> = {
   yahoo: "Yahoo Finance",
   coingecko: "CoinGecko",
+  bitvavo: "Bitvavo",
   metal: t("Spot"),
   fx: t("ECB rate"),
   manual: t("Manual"),
@@ -362,7 +363,8 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
   const [price, setPrice] = useState("");
   const [error, setError] = useState<string>();
   const builtin = asset.priceSource === "metal" || (asset.priceSource === "fx" && asset.priceRef === "EUR");
-  const editableRef = asset.priceSource === "yahoo" || asset.priceSource === "coingecko";
+  const editableRef =
+    asset.priceSource === "yahoo" || asset.priceSource === "coingecko" || asset.priceSource === "bitvavo";
   const isFund = asset.assetClass === "etf";
 
   const run = async (fn: () => Promise<unknown>) => {
@@ -450,7 +452,13 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
         )}
         {editableRef && (
           <Field
-            label={asset.priceSource === "yahoo" ? t("Yahoo ticker") : t("CoinGecko id")}
+            label={
+              asset.priceSource === "yahoo"
+                ? t("Yahoo ticker")
+                : asset.priceSource === "bitvavo"
+                  ? t("Bitvavo market")
+                  : t("CoinGecko id")
+            }
             hint={t("Change only if the price feed is wrong")}
           >
             {(id) => (

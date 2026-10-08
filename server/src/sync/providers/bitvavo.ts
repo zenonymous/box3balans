@@ -96,7 +96,7 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
         id,
         at,
         side: buy ? "buy" : "sell",
-        asset: assetRef(asset),
+        asset: assetRef(asset, "bitvavo"),
         quantity: (buy ? recv : sent).toFixed(),
         quote: { amount: (buy ? sent : recv).toFixed(), currency: quoteCur },
         feeQuote: feeCur === quoteCur ? fee.toFixed() : undefined,
@@ -113,7 +113,7 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
             kind: "reward",
             id: sentCur ? `${id}:in` : id,
             at,
-            asset: assetRef(recvCur),
+            asset: assetRef(recvCur, "bitvavo"),
             quantity: recv.toFixed(),
             note,
           }
@@ -121,7 +121,7 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
             kind: "deposit",
             id: sentCur ? `${id}:in` : id,
             at,
-            asset: assetRef(recvCur),
+            asset: assetRef(recvCur, "bitvavo"),
             quantity: recv.toFixed(),
             note,
           },
@@ -132,7 +132,7 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
       kind: "withdrawal",
       id: recvCur ? `${id}:out` : id,
       at,
-      asset: assetRef(sentCur),
+      asset: assetRef(sentCur, "bitvavo"),
       quantity: sent.toFixed(),
       note,
     });
@@ -143,7 +143,7 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
       kind: "withdrawal",
       id: `${id}:fee`,
       at,
-      asset: assetRef(feeCur),
+      asset: assetRef(feeCur, "bitvavo"),
       quantity: fee.toFixed(),
       note: "Bitvavo fee",
     });
@@ -230,7 +230,7 @@ export function mapBitvavoHistory(
             kind: "withdrawal",
             id: w.transactionId,
             at: new Date(w.executedAt),
-            asset: assetRef(side.currency),
+            asset: assetRef(side.currency, "bitvavo"),
             quantity: kept.toFixed(),
             note: "Bitvavo fee on a cancelled withdrawal",
           },
@@ -329,7 +329,7 @@ export const bitvavo: ExchangeProvider<Creds> = {
     }
     const balances: Balance[] = [...totals]
       .filter(([, q]) => !q.isZero())
-      .map(([symbol, q]) => ({ asset: assetRef(symbol), quantity: q.toFixed() }));
+      .map(([symbol, q]) => ({ asset: assetRef(symbol, "bitvavo"), quantity: q.toFixed() }));
 
     return {
       events,

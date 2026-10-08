@@ -3,6 +3,7 @@ import type { DB } from "../db/client.js";
 import { assets, priceHistory, pricesLatest, settings } from "../db/schema.js";
 import { D, type Decimal, str } from "../lib/decimal.js";
 import type { FetchFn } from "../lib/http.js";
+import { bitvavoProvider } from "./bitvavo.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { FxService } from "./fx.js";
 import { metalsProvider } from "./metals.js";
@@ -40,6 +41,7 @@ export class PriceService {
     this.providers = {
       yahoo: yahooProvider(fetchFn),
       coingecko: coingeckoProvider(fetchFn),
+      bitvavo: bitvavoProvider(fetchFn),
       metal: metalsProvider(fetchFn),
     };
     // Tried in this order for assets the main provider gave no quote for.
@@ -106,7 +108,7 @@ export class PriceService {
 
     // Second sources for what the main ones missed; a quote far from the last known price is ignored.
     for (const fb of this.fallbacks) {
-      const todo = missed.filter((m) => m.asset.priceSource === fb.covers && fb.applies(m.asset));
+      const todo = missed.filter((m) => fb.covers.includes(m.asset.priceSource) && fb.applies(m.asset));
       if (!todo.length) continue;
       let quotes: Map<number, Quote>;
       try {

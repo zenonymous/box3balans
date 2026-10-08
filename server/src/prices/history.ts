@@ -3,6 +3,7 @@ import type { DB } from "../db/client.js";
 import { assets, priceHistory, pricesLatest } from "../db/schema.js";
 import { D, type Decimal, TROY_OUNCE_G, str } from "../lib/decimal.js";
 import { getJson, type FetchFn } from "../lib/http.js";
+import { bitvavoCandles, bitvavoTickers } from "./bitvavo.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { plausible } from "./fallbacks.js";
 import type { FxService } from "./fx.js";
@@ -37,6 +38,13 @@ export class HistoryService {
     private fx: FxService,
     private fetchFn?: FetchFn,
   ) {}
+
+  // Bitvavo's current prices, loaded once per service (one call covers every market).
+  private bitvavoQuotes?: Promise<Awaited<ReturnType<typeof bitvavoTickers>>>;
+  private bitvavoNow() {
+    this.bitvavoQuotes ??= bitvavoTickers(this.fetchFn).catch(() => new Map());
+    return this.bitvavoQuotes;
+  }
 
   /** Makes sure price_history covers [from, to] for the asset, fetching what is missing. */
   async ensureRange(asset: Asset, from: string, to: string): Promise<void> {
@@ -92,6 +100,28 @@ export class HistoryService {
       try {
         const { points } = await this.yahoo(asset.priceRef, from, to);
         if (points.length) return points;
+      } catch {
+        // try the next source
+      }
+    }
+    if (asset.priceSource === "bitvavo" && asset.priceRef) {
+      try {
+        const points = await bitvavoCandles(asset.priceRef, from, to, this.fetchFn);
+        if (points.length) return points.map((p) => ({ ...p, currency: "EUR" }));
+      } catch {
+        // try the next source
+      }
+    }
+    // Bitvavo's EUR market of the same symbol: daily back to 2019, but for a coin priced elsewhere a
+    // guess, so only used when its current price matches this coin's (like Yahoo's pairs below).
+    if (asset.assetClass === "crypto" && asset.priceSource !== "bitvavo" && asset.priceSource !== "yahoo") {
+      try {
+        const market = `${asset.symbol.toUpperCase()}-EUR`;
+        const current = (await this.bitvavoNow()).get(market)?.last;
+        if (current) {
+          const points = (await bitvavoCandles(market, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "EUR" }));
+          if (points.length && (await this.sameCoin(asset, { points, current }))) return points;
+        }
       } catch {
         // try the next source
       }

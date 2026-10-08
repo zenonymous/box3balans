@@ -1,6 +1,7 @@
 import type { assets } from "../db/schema.js";
 import { D, type Decimal } from "../lib/decimal.js";
 import { getJson, type FetchFn } from "../lib/http.js";
+import { bitvavoTickers } from "./bitvavo.js";
 import type { FxService } from "./fx.js";
 import type { Quote } from "./types.js";
 import { yahooQuote } from "./yahoo.js";
@@ -14,8 +15,8 @@ type Asset = typeof assets.$inferSelect;
  */
 export interface Fallback {
   name: string;
-  /** Primary price source this fallback stands in for. */
-  covers: string;
+  /** Primary price sources this fallback stands in for. */
+  covers: string[];
   applies(a: Asset): boolean;
   quotes(list: Asset[]): Promise<Map<number, Quote>>;
 }
@@ -24,20 +25,16 @@ export interface Fallback {
 export function bitvavoFallback(fetchFn?: FetchFn): Fallback {
   return {
     name: "bitvavo",
-    covers: "coingecko",
+    covers: ["coingecko"],
     applies: (a) => a.assetClass === "crypto",
     async quotes(list) {
-      const data = await getJson<{ market: string; open: string | null; last: string | null }[]>(
-        "https://api.bitvavo.com/v2/ticker/24h",
-        { fetchFn, retries: 1 },
-      );
-      const byMarket = new Map(data.map((m) => [m.market, m]));
+      const tickers = await bitvavoTickers(fetchFn);
       const out = new Map<number, Quote>();
       for (const a of list) {
-        const m = byMarket.get(`${a.symbol.toUpperCase()}-EUR`);
-        if (!m?.last || D(m.last).lte(0)) continue;
-        const change = m.open && D(m.open).gt(0) ? D(m.last).div(m.open).minus(1).mul(100) : undefined;
-        out.set(a.id, { price: D(m.last), currency: "EUR", changePct24h: change, source: "bitvavo" });
+        const t = tickers.get(`${a.symbol.toUpperCase()}-EUR`);
+        if (!t) continue;
+        const change = t.open ? t.last.div(t.open).minus(1).mul(100) : undefined;
+        out.set(a.id, { price: t.last, currency: "EUR", changePct24h: change, source: "bitvavo" });
       }
       return out;
     },
@@ -48,7 +45,7 @@ export function bitvavoFallback(fetchFn?: FetchFn): Fallback {
 export function yahooCryptoFallback(fetchFn?: FetchFn): Fallback {
   return {
     name: "yahoo",
-    covers: "coingecko",
+    covers: ["coingecko", "bitvavo"],
     applies: (a) => a.assetClass === "crypto",
     async quotes(list) {
       const out = new Map<number, Quote>();
@@ -86,7 +83,7 @@ export function tradegateFallback(
 ): Fallback {
   return {
     name: "tradegate",
-    covers: "yahoo",
+    covers: ["yahoo"],
     applies: (a) => !!a.isin && (a.assetClass === "stock" || a.assetClass === "etf"),
     async quotes(list) {
       const out = new Map<number, Quote>();

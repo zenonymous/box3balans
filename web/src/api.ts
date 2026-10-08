@@ -152,7 +152,7 @@ export interface Asset {
   symbol: string;
   isin: string | null;
   currency: string;
-  priceSource: "yahoo" | "coingecko" | "metal" | "fx" | "manual";
+  priceSource: "yahoo" | "coingecko" | "bitvavo" | "metal" | "fx" | "manual";
   priceRef: string | null;
   unit: string;
   hidden: boolean;
@@ -340,6 +340,8 @@ export interface SyncResult {
   duplicates: number;
   ignored: number;
   transfersMatched: number;
+  /** Rewards and deposits booked at €0 earlier that now have a value. */
+  revalued?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   warnings: string[];
@@ -381,6 +383,8 @@ export interface WalletSyncResult {
   duplicates: number;
   ignored: number;
   transfersMatched: number;
+  /** Rewards and deposits booked at €0 earlier that now have a value. */
+  revalued?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   skippedTokens: { symbol: string; contract: string }[];

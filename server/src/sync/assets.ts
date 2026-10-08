@@ -1,8 +1,9 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
-import { assets, tokenContracts } from "../db/schema.js";
+import { assets, pricesLatest, tokenContracts } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
 import { getJson, HttpRequestError, type FetchFn } from "../lib/http.js";
+import { bitvavoAssetNames, bitvavoEurMarkets } from "../prices/bitvavo.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
 import { yahooQuote, yahooSearch } from "../prices/yahoo.js";
 import type { AssetRef } from "./types.js";
@@ -38,8 +39,10 @@ const UNLISTED_RECHECK_MS = 30 * 86_400_000;
 
 export const isFiat = (code: string) => FIAT.has(code.toUpperCase());
 
-export const assetRef = (code: string): AssetRef =>
-  isFiat(code) ? { kind: "fiat", currency: code.toUpperCase() } : { kind: "crypto", symbol: code.toUpperCase() };
+export const assetRef = (code: string, venue?: "bitvavo"): AssetRef =>
+  isFiat(code)
+    ? { kind: "fiat", currency: code.toUpperCase() }
+    : { kind: "crypto", symbol: code.toUpperCase(), ...(venue ? { venue } : {}) };
 
 // IBKR listing exchange -> Yahoo ticker suffix.
 const YAHOO_SUFFIX: Record<string, string> = {
@@ -84,7 +87,12 @@ const YAHOO_SUFFIX: Record<string, string> = {
 export class AssetResolver {
   private cache = new Map<string, Asset>();
   readonly created: Asset[] = [];
+  /** Manually priced assets this resolver found a price feed for after all. */
+  readonly upgraded: Asset[] = [];
   readonly warnings: string[] = [];
+  private triedUpgrade = new Set<number>();
+  private bitvavoMarkets?: Promise<Map<string, string>>;
+  private bitvavoNames?: Promise<Map<string, string>>;
 
   private lastLookup = 0;
   /** CoinGecko contract lookups made by this resolver (callers cap them per sync). */
@@ -93,7 +101,7 @@ export class AssetResolver {
   constructor(
     private db: DB,
     private fetchFn?: FetchFn,
-    // Minimum spacing between CoinGecko contract lookups (free tier is ~10–30 calls/min).
+    // Minimum spacing between CoinGecko lookups (free tier is ~10–30 calls/min).
     private throttleMs = 0,
     private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
     // Look everything up but create nothing: new assets get negative ids (for import previews).
@@ -108,14 +116,14 @@ export class AssetResolver {
    * "LUNA"), so the user sees exactly what was chosen and can fix it under Assets.
    */
   describeCreated(): string[] {
-    const src: Record<string, string> = { coingecko: "CoinGecko", yahoo: "Yahoo" };
-    return this.created.map((a) =>
-      a.priceSource === "fx"
-        ? a.symbol
-        : a.priceSource === "manual"
-          ? `${a.symbol} (manual price)`
-          : `${a.symbol} → ${src[a.priceSource] ?? a.priceSource} ${a.priceRef}`,
-    );
+    const src: Record<string, string> = { coingecko: "CoinGecko", yahoo: "Yahoo", bitvavo: "Bitvavo" };
+    const feed = (a: Asset) => `${a.symbol} → ${src[a.priceSource] ?? a.priceSource} ${a.priceRef}`;
+    return [
+      ...this.created.map((a) =>
+        a.priceSource === "fx" ? a.symbol : a.priceSource === "manual" ? `${a.symbol} (manual price)` : feed(a),
+      ),
+      ...this.upgraded.map((a) => `${feed(a)} (was manual)`),
+    ];
   }
 
   async resolve(ref: AssetRef): Promise<Asset> {
@@ -131,7 +139,7 @@ export class AssetResolver {
             ? await this.token(ref)
             : ref.coingeckoId
               ? await this.byCoingeckoId(ref.coingeckoId, ref.symbol, ref.name)
-              : await this.crypto(ref.symbol);
+              : await this.crypto(ref.symbol, ref.venue);
     this.cache.set(key, asset);
     return asset;
   }
@@ -275,28 +283,36 @@ export class AssetResolver {
     });
   }
 
-  private async crypto(symbol: string): Promise<Asset> {
+  private async crypto(symbol: string, venue?: "bitvavo"): Promise<Asset> {
     const rows = await this.db
       .select()
       .from(assets)
       .where(and(eq(assets.assetClass, "crypto"), sql`upper(${assets.symbol}) = ${symbol}`));
-    const best = rows.find((r) => r.priceSource === "coingecko" && !r.hidden) ?? rows[0];
-    if (best) return best;
-    try {
-      // CoinGecko ranks search results by market cap, so the first exact symbol match is the
-      // well-known coin rather than a copycat token.
-      const match = (await coingeckoSearch(symbol, this.fetchFn)).find((c) => c.symbol.toUpperCase() === symbol);
-      if (match) {
-        const [byRef] = await this.db
-          .select()
-          .from(assets)
-          .where(and(eq(assets.priceSource, "coingecko"), eq(assets.priceRef, match.priceRef)));
-        if (byRef) return byRef;
-        return this.create({ ...match, currency: "EUR" });
-      }
-    } catch {
-      // fall through to a manual asset
+    const best =
+      rows.find((r) => r.priceSource === "coingecko" && !r.hidden) ??
+      rows.find((r) => r.priceSource === "bitvavo" && !r.hidden) ??
+      rows[0];
+    if (best) return (await this.upgradeManual(best, venue)) ?? best;
+
+    // From Bitvavo: priced on Bitvavo itself, in euros and without CoinGecko's rate limits. It is
+    // the very coin traded there, so no symbol guessing either.
+    if (venue === "bitvavo") {
+      const market = await this.bitvavoMarket(symbol);
+      if (market) return this.bitvavoAsset(symbol, market);
     }
+    const match = await this.coingeckoMatch(symbol);
+    if (match) {
+      const [byRef] = await this.db
+        .select()
+        .from(assets)
+        .where(and(eq(assets.priceSource, "coingecko"), eq(assets.priceRef, match.priceRef)));
+      if (byRef) return byRef;
+      return this.create({ ...match, currency: "EUR" });
+    }
+    // CoinGecko doesn't know it, or didn't answer (a rate limit): Bitvavo's EUR market, if any.
+    const market = await this.bitvavoMarket(symbol);
+    if (market) return this.bitvavoAsset(symbol, market);
+
     this.warnings.push(tr("No price feed found for {symbol}; created it as a manually priced asset.", { symbol }));
     return this.create({
       assetClass: "crypto",
@@ -306,6 +322,98 @@ export class AssetResolver {
       priceRef: `manual:${symbol}`,
       currency: "EUR",
     });
+  }
+
+  /**
+   * CoinGecko's best match for a symbol: it ranks search results by market cap, so the first exact
+   * symbol match is the well-known coin rather than a copycat token. Null when there's none,
+   * undefined when the lookup failed (try again next sync, don't conclude anything).
+   */
+  private async coingeckoMatch(symbol: string) {
+    const wait = this.lastLookup + this.throttleMs - Date.now();
+    if (wait > 0) await this.sleep(wait);
+    this.lastLookup = Date.now();
+    try {
+      return (await coingeckoSearch(symbol, this.fetchFn)).find((c) => c.symbol.toUpperCase() === symbol) ?? null;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /** Bitvavo's EUR market for a symbol ("BTC-EUR"), or null; the market list is loaded once. */
+  private async bitvavoMarket(symbol: string): Promise<string | null> {
+    this.bitvavoMarkets ??= bitvavoEurMarkets(this.fetchFn).catch(() => new Map<string, string>());
+    return (await this.bitvavoMarkets).get(symbol) ?? null;
+  }
+
+  private async bitvavoAsset(symbol: string, market: string): Promise<Asset> {
+    const [existing] = await this.db
+      .select()
+      .from(assets)
+      .where(and(eq(assets.priceSource, "bitvavo"), eq(assets.priceRef, market)));
+    if (existing) return existing;
+    this.bitvavoNames ??= bitvavoAssetNames(this.fetchFn).catch(() => new Map<string, string>());
+    return this.create({
+      assetClass: "crypto",
+      name: (await this.bitvavoNames).get(symbol) ?? symbol,
+      symbol,
+      priceSource: "bitvavo",
+      priceRef: market,
+      currency: "EUR",
+    });
+  }
+
+  /**
+   * An asset made "manual" automatically because no price feed answered at the time (e.g. CoinGecko's
+   * rate limit) gets one now if there is one. A price you entered yourself keeps it manual.
+   */
+  private async upgradeManual(a: Asset, venue?: "bitvavo"): Promise<Asset | null> {
+    if (a.assetClass !== "crypto" || a.priceSource !== "manual" || a.priceRef !== `manual:${a.symbol}`) return null;
+    if (this.opts.dryRun || this.triedUpgrade.has(a.id)) return null;
+    this.triedUpgrade.add(a.id);
+    const [price] = await this.db
+      .select({ source: pricesLatest.source })
+      .from(pricesLatest)
+      .where(eq(pricesLatest.assetId, a.id));
+    if (price?.source === "manual") return null;
+
+    const symbol = a.symbol.toUpperCase();
+    let feed: { priceSource: "bitvavo" | "coingecko"; priceRef: string; name?: string } | null = null;
+    const viaBitvavo = async () => {
+      const market = await this.bitvavoMarket(symbol);
+      if (!market) return null;
+      this.bitvavoNames ??= bitvavoAssetNames(this.fetchFn).catch(() => new Map<string, string>());
+      return { priceSource: "bitvavo" as const, priceRef: market, name: (await this.bitvavoNames).get(symbol) };
+    };
+    if (venue === "bitvavo") feed = await viaBitvavo();
+    if (!feed) {
+      const match = await this.coingeckoMatch(symbol);
+      feed = match ? { priceSource: "coingecko", priceRef: match.priceRef, name: match.name } : await viaBitvavo();
+    }
+    if (!feed) return null;
+    const set = {
+      priceSource: feed.priceSource,
+      priceRef: feed.priceRef,
+      // The automatic manual asset was named after its symbol; a real name is better.
+      ...(feed.name && a.name === a.symbol ? { name: feed.name } : {}),
+    };
+    let row: Asset | undefined;
+    try {
+      [row] = await this.db.update(assets).set(set).where(eq(assets.id, a.id)).returning();
+    } catch {
+      return null; // another asset already uses that feed
+    }
+    if (!row) return null;
+    await audit(
+      this.db,
+      "asset",
+      a.id,
+      "update",
+      { priceSource: a.priceSource, priceRef: a.priceRef },
+      { ...set, via: "sync" },
+    );
+    this.upgraded.push(row);
+    return row;
   }
 
   private async security(ref: Extract<AssetRef, { kind: "security" }>): Promise<Asset> {

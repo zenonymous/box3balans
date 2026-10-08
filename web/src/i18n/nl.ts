@@ -283,6 +283,10 @@ export const NL: Record<string, string> = {
   "Running costs": "Lopende kosten",
   "Delete {name}?": "{name} verwijderen?",
   "Yahoo ticker": "Yahoo-ticker",
+  "Bitvavo market": "Bitvavo-markt",
+  "Valued after all": "Alsnog gewaardeerd",
+  "Rewards and deposits that were booked at €0 because no price was known yet":
+    "Beloningen en stortingen die op € 0 stonden omdat er nog geen koers bekend was",
   "CoinGecko id": "CoinGecko-id",
   "Change only if the price feed is wrong": "Alleen wijzigen als de koersbron niet klopt",
   "Running costs per year (TER, %)": "Lopende kosten per jaar (TER, %)",
