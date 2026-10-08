@@ -131,6 +131,46 @@ describe("Bitvavo as a price source", () => {
     expect(await assetBySymbol("ETH")).toMatchObject({ id: eth!.id, priceSource: "manual" });
   });
 
+  it("upgrades older manual coins of the account too, not just those in the new events", async () => {
+    const r = routes();
+    t = await createTestApp(r);
+    const { id } = await syncBitvavo();
+    const { accountId } = json<{ id: number; accountId: number }[]>(await t.api("GET", "/api/integrations"))[0]!;
+    // A coin from long ago, made manual back then, outside the overlap an incremental sync re-reads.
+    const [ada] = await t.database.db
+      .insert(assets)
+      .values({
+        assetClass: "crypto",
+        name: "ADA",
+        symbol: "ADA",
+        priceSource: "manual",
+        priceRef: "manual:ADA",
+        currency: "EUR",
+      })
+      .returning();
+    await t.database.db.insert(transactions).values({
+      accountId,
+      assetId: ada!.id,
+      type: "deposit",
+      quantity: "5",
+      occurredAt: new Date("2021-05-01T10:00:00Z"),
+      source: "api",
+      externalId: "bitvavo:old-ada",
+    });
+    (r["api.bitvavo.com/v2/markets"] as object[]).push({
+      market: "ADA-EUR",
+      base: "ADA",
+      quote: "EUR",
+      status: "trading",
+    });
+
+    expect((await t.api("POST", `/api/integrations/${id}/sync`)).statusCode).toBe(202);
+    await t.sync.whenIdle(id);
+    const result = json<any[]>(await t.api("GET", "/api/integrations")).find((i) => i.id === id).lastResult;
+    expect(result.newAssets).toContain("ADA → Bitvavo ADA-EUR (was manual)");
+    expect(await assetBySymbol("ADA")).toMatchObject({ id: ada!.id, priceSource: "bitvavo", priceRef: "ADA-EUR" });
+  });
+
   it("falls back to Bitvavo's market when CoinGecko is rate limited, and to manual when neither knows it", async () => {
     t = await createTestApp(
       {

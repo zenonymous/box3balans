@@ -129,6 +129,7 @@ export class SyncService {
         ignored: imported.ignored,
       });
       result.warnings.push(...imported.warnings);
+      await resolver.upgradeManualIn(row.accountId, row.provider === "bitvavo" ? "bitvavo" : undefined);
       result.revalued = await revalueUnpriced(this.db, history, row.accountId);
 
       result.transfersMatched = await matchTransfers(this.db);

@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
-import { assets, pricesLatest, tokenContracts } from "../db/schema.js";
+import { assets, pricesLatest, tokenContracts, transactions } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
 import { getJson, HttpRequestError, type FetchFn } from "../lib/http.js";
 import { bitvavoAssetNames, bitvavoEurMarkets } from "../prices/bitvavo.js";
@@ -367,6 +367,29 @@ export class AssetResolver {
    * An asset made "manual" automatically because no price feed answered at the time (e.g. CoinGecko's
    * rate limit) gets one now if there is one. A price you entered yourself keeps it manual.
    */
+  /**
+   * Upgrades every automatically "manual" coin of an account, not just those in this sync's events:
+   * coins seen only in older history aren't looked at again by an incremental sync. Bitvavo's
+   * market list costs one call; CoinGecko lookups are slow, so a few per sync, in random order.
+   */
+  async upgradeManualIn(accountId: number, venue?: "bitvavo", coingeckoLookups = 10): Promise<void> {
+    if (this.opts.dryRun) return;
+    const rows = await this.db
+      .selectDistinct({ asset: assets })
+      .from(transactions)
+      .innerJoin(assets, eq(assets.id, transactions.assetId))
+      .where(
+        and(eq(transactions.accountId, accountId), eq(assets.assetClass, "crypto"), eq(assets.priceSource, "manual")),
+      );
+    const manual = rows.map((r) => r.asset).filter((a) => a.priceRef === `manual:${a.symbol}`);
+    let lookups = 0;
+    for (const a of manual.sort(() => Math.random() - 0.5)) {
+      const onBitvavo = !!(await this.bitvavoMarket(a.symbol.toUpperCase()));
+      if (!onBitvavo && (venue === "bitvavo" || lookups++ >= coingeckoLookups)) continue;
+      await this.upgradeManual(a, onBitvavo ? "bitvavo" : venue);
+    }
+  }
+
   private async upgradeManual(a: Asset, venue?: "bitvavo"): Promise<Asset | null> {
     if (a.assetClass !== "crypto" || a.priceSource !== "manual" || a.priceRef !== `manual:${a.symbol}`) return null;
     if (this.opts.dryRun || this.triedUpgrade.has(a.id)) return null;
