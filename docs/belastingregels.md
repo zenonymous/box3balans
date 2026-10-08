@@ -13,7 +13,7 @@ De app toont die datum op de pagina Box 3 (onder _Regels en tarieven_), met per 
 | Na afloop van het jaar (januari–februari) | De Belastingdienst maakt de definitieve percentages voor banktegoeden en schulden bekend. Werk ze bij en zet `"final": true`.                                                                                                                          |
 | Bij elke wijziging                        | Zet `checkedAt` op de datum van controle en zet de bron bij het jaar.                                                                                                                                                                                  |
 
-Controleer ook of de regels zelf veranderen, niet alleen de cijfers: bijvoorbeeld het eind van de vrijstelling voor groene beleggingen (2027) of het stelsel op basis van werkelijk rendement (wetsvoorstel 36.748). Zulke wijzigingen vragen om code en tests, niet alleen om het bestand. Zet bronnen en uitleg in [`box3-sources.md`](box3-sources.md).
+Controleer ook of de regels zelf veranderen, niet alleen de cijfers: bijvoorbeeld het eind van de vrijstelling voor groene beleggingen (per 2028) of het stelsel op basis van werkelijk rendement (wetsvoorstel 36.748, met de novelle die vanaf 2028 vermogenswinst belast). Zulke wijzigingen vragen om code en tests, niet alleen om het bestand. Zet bronnen en uitleg in [`box3-sources.md`](box3-sources.md).
 
 ## Hoe
 

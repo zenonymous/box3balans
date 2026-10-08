@@ -1,6 +1,6 @@
 # Box 3: gebruikte regels en hun bronnen
 
-Gecontroleerd op 5 oktober 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
+Gecontroleerd op 8 oktober 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
 
 ## Forfaitair rendement (belastingjaren vanaf 2023)
 
@@ -10,8 +10,20 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
-**2027 zit er nog niet in.** De kerncijfers bij het Belastingplan 2027 (30 september 2026) noemen een heffingsvrij vermogen van € 60.098. Maar de brief van het kabinet van 29 september 2026 stelt voor dat te verlagen naar € 30.846 en het forfaitaire rendement op overige bezittingen met 1,5 procentpunt te verhogen, naar 7,87%, om de novelle hieronder te betalen. Volgens [belastingregels.md](belastingregels.md) komt 2027 erin zodra het Belastingplan is aangenomen (december), als voorlopig jaar. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
+**2027 zit er nog niet in.** Stand op 8 oktober 2026:
 
+- **Belastingplan 2027** (Prinsjesdag, 15 september 2026; wetsvoorstel 37.022): box 3 staat niet in het pakket zelf. De kerncijfers gingen uit van een heffingsvrij vermogen van € 60.098 en een tarief van 36%; de gewone actualisatie brengt het forfaitaire rendement op overige bezittingen op 6,37% (was 6,00%).
+- **Brief van het kabinet van 29 september 2026** (Tweede Kamer 2026Z20444): per 2027 gaat het heffingsvrij vermogen terug naar het niveau van 2020, **€ 30.846** per persoon, en het forfait voor overige bezittingen, inclusief huurinkomsten en voordelen uit eigen gebruik van onroerende zaken, gaat **1,5 procentpunt omhoog** (dus naar 7,87%). Dat betaalt mee aan de novelle hieronder.
+- **Nog niet aangenomen:** de Tweede Kamer moet nog stemmen, en de bedragen kunnen in het debat nog veranderen.
+- **Groene beleggingen:** de vrijstelling en de heffingskorting vervallen per 1 januari 2028, niet al in 2027 zoals eerst gepland. De bedragen voor 2027 volgen met de vaste cijfers.
+- De percentages voor banktegoeden en schulden over 2027 zijn pas na afloop van het jaar definitief.
+
+Volgens [belastingregels.md](belastingregels.md) komt 2027 erin zodra het Belastingplan is aangenomen (december), als voorlopig jaar. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
+
+- Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026, afschrift aan de Eerste Kamer): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
+- Eerste Kamer, _Belastingplan 2027 (37.022)_: https://www.eerstekamer.nl/wetsvoorstel/37022_belastingplan_2027
+- Deloitte, _Pakket Belastingplan 2027: tarieven en heffingskortingen_ (forfait 6,37%): https://www.deloitte.com/nl/nl/services/tax/blogs/pakket-belastingplan-2027-tarieven-heffingskortingen.html
+- Rendement, _Vrijstelling groene beleggingen vervalt pas per 2028_: https://www.rendement.nl/inkomen-uit-sparen-en-beleggen/nieuws/vrijstelling-groene-beleggingen-vervalt-pas-per-2028.html
 - Holdwise, _Box 3 in 2027_: https://holdwise.nl/kennisbank/box-3-2027
 
 ## Wat in welke categorie valt, en van wie het is
@@ -56,11 +68,11 @@ Bronnen:
 
 ## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
 
-Stand op 5 oktober 2026:
+Stand op 8 oktober 2026:
 
 - **Tweede Kamer:** nam het wetsvoorstel aan op 12 februari 2026.
-- **Eerste Kamer:** stelde de stemming uit tot ze een novelle (wijzigingswet) heeft behandeld, verwacht vanaf januari 2027.
-- **Novelle:** op 29 september 2026 bevestigde het kabinet dat die komt, met onder meer één jaar verliesverrekening naar achteren en een hoger heffingsvrij resultaat.
+- **Eerste Kamer:** stelde de stemming uit tot ze een novelle (wijzigingswet) heeft behandeld.
+- **Novelle** (brief van het kabinet van 29 september 2026): in plaats van elk jaar de waardeverandering te belasten (vermogensaanwas), komt er per 2028 een **vermogenswinstbelasting**, belasting bij verkoop, voor alle financiële instrumenten zoals aandelen, obligaties en opties. Volgens het kabinet is dat circa 90% van het vermogen met waardeontwikkeling in box 3. In 2030 volgen de overige bezittingen. Het **heffingsvrij resultaat wordt € 1.000** (in het wetsvoorstel € 1.800). De novelle moet vóór 31 december 2026 door de Eerste Kamer zijn aangenomen. Banken kunnen in het eerste jaar nog geen gegevens aanleveren voor de vooraf ingevulde aangifte.
 
 Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstelling van de vooruitblik in de app):
 
@@ -68,10 +80,10 @@ Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstel
 - **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
 - **Tarief:** 36%.
 - **Heffingsvrij resultaat:** € 1.800 per belastingplichtige.
-- **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de novelle voegt één jaar toe.
+- **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de brief van 29 september zegt daar niets over.
 - **Groene beleggingen** houden een heffingskorting.
 
-Opties die het kabinet voor de novelle onderzocht (juni–augustus 2026): een tarief van 35%, een heffingsvrij resultaat van € 1.900, en één jaar verliesverrekening naar achteren. De instelling "novelle" in de app gebruikt € 1.900 en één jaar terugwenteling bij 36%. **Deze details zijn niet definitief**, daarom is elke instelling aan te passen.
+Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De instelling "novelle" in de app gebruikt nog die opties (€ 1.900 en één jaar terugwenteling bij 36%) en **loopt dus achter op de brief**: die kiest voor € 1.000 en voor belasting bij verkoop van financiële instrumenten, wat de vooruitblik nog niet nabootst. Elke instelling is aan te passen.
 
 Niet beschreven in de bronnen, en aangenomen door de app:
 
@@ -81,6 +93,7 @@ Niet beschreven in de bronnen, en aangenomen door de app:
 Bronnen:
 
 - Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - SRA, _Wet werkelijk rendement box 3 (voorlopig) nog niet aangenomen_: https://www.sra.nl/nieuwsoverzicht/2026/wet-werkelijk-rendement-box-3-voorlopig-nog-niet-aangenomen
 - SRA, overzicht van het wetsvoorstel (tarief, € 1.800, € 500, aftrekbare kosten): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027
 - Rijksoverheid, _Plannen werkelijk rendement box 3_: https://www.rijksoverheid.nl/onderwerpen/inkomstenbelasting/plannen-werkelijk-rendement-box-3
