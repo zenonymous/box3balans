@@ -38,7 +38,7 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 
    De eerste keer worden de images gedownload. Na ongeveer een halve minuut toont `docker compose ps` beide containers als `healthy`.
 
-3. Open `http://<je-server>:8080` en maak je gebruiker aan, met een wachtwoord van minstens 12 tekens. _Aan de slag_ (te vinden op het lege overzicht) helpt je daarna in vier stappen op weg. Zet ook meteen tweestapsverificatie aan (_Instellingen_).
+3. Open `http://<je-server>:8080` en maak meteen je gebruiker aan, met een wachtwoord van minstens 12 tekens. Tot dat gebeurd is, kan iedereen die de server bereikt dat doen. _Aan de slag_ (te vinden op het lege overzicht) helpt je daarna in vier stappen op weg. Zet ook meteen tweestapsverificatie aan (_Instellingen_).
 
 4. **Aanbevolen:** maak naast `docker-compose.yml` een bestand `.env` (voorbeeld: [`.env.example`](.env.example)) met minstens:
 
@@ -416,6 +416,7 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 - Elke toevoeging, wijziging en verwijdering wordt vastgelegd in `audit_log`, met de situatie ervoor en erna.
 - Antwoorden hebben een strikte Content-Security-Policy (alleen scripts van de eigen site, niet in een frame te laden), `nosniff`, `no-referrer` en een beperkende Permissions-Policy. Met `COOKIE_SECURE=true` komt er HSTS bij.
 - De app draait als gewone gebruiker, niet als root. Back-ups zijn alleen leesbaar voor de eigenaar, en back-upnamen worden gecontroleerd zodat verzoeken niet buiten de back-upmap kunnen komen.
+- Zolang er nog geen gebruiker is, kan iedereen die de app bereikt die aanmaken, ook een website die je op hetzelfde netwerk bezoekt (via DNS-rebinding). Maak je gebruiker dus meteen na het installeren aan.
 - Box3balans op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
 - API-sleutels van beurzen worden versleuteld opgeslagen (AES-256-GCM, HKDF van de app-sleutel) en nooit teruggestuurd of gelogd. Verandert de app-sleutel, dan moet je ze opnieuw invoeren.
 - Een kwetsbaarheid gevonden? Meld het privé: zie [SECURITY.md](SECURITY.md).
