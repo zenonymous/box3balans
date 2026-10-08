@@ -7,6 +7,9 @@
 #
 # Only committed files are sent: never .env, the database or backups. The server keeps its own
 # .env and data; code folders (server, web, docs) are replaced so deleted files don't linger.
+#
+# $dir, $host and $docker are meant to expand here, before ssh sends the commands ($dir is checked below).
+# shellcheck disable=SC2029
 set -euo pipefail
 
 host=${1:?"Usage: scripts/deploy.sh user@nas [folder-on-nas]"}

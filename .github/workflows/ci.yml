@@ -36,9 +36,28 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  scripts:
+    name: Shell scripts and workflows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      # Pinned images (Dependabot doesn't update these; bump them by hand now and then).
+      - name: ShellCheck
+        run: >-
+          docker run --rm -v "$PWD:/mnt"
+          koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
+          docker-entrypoint.sh scripts/deploy.sh
+      - name: actionlint
+        run: >-
+          docker run --rm -v "$PWD:/repo" --workdir /repo
+          rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+          -color
+
   image:
     name: Docker image
-    needs: check
+    needs: [check, scripts]
     runs-on: ubuntu-latest
     permissions:
       contents: read

@@ -15,6 +15,7 @@
     "test": "npm test -w server && npm test -w web",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
     "lint": "eslint .",
+    "lint:scripts": "shellcheck docker-entrypoint.sh scripts/*.sh && actionlint",
     "format": "prettier --write ."
   },
   "devDependencies": {
