@@ -427,7 +427,8 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
         }),
       );
     }
-    if (h.quantity.lt(0))
+    // Below zero by more than rounding dust (sums of many decimals leave ~1e-11 behind).
+    if (h.quantity.lt("-0.00000001"))
       warnings.push(
         tr("{account} has a negative {symbol} balance on {day}; check its history.", {
           account: h.accountName,

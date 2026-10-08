@@ -153,6 +153,22 @@ describe("box 3 calculation (official steps)", () => {
 });
 
 describe("box 3 overview", () => {
+  it("flags a negative balance on the peildatum, but not rounding dust", async () => {
+    t = await createTestApp();
+    const mk = async (name: string) => json(await t.api("POST", "/api/accounts", { name, kind: "exchange" }));
+    const [bitvavo, kraken] = [await mk("Bitvavo"), await mk("Kraken")];
+    const eur = json<any[]>(await t.api("GET", "/api/assets")).find((a) => a.priceRef === "EUR");
+    const tx = (accountId: number, body: object) =>
+      t.api("POST", "/api/transactions", { accountId, assetId: eur.id, price: "1", ...body });
+    await tx(bitvavo.id, { type: "deposit", occurredAt: "2024-06-01T12:00:00Z", quantity: "100" });
+    await tx(bitvavo.id, { type: "withdrawal", occurredAt: "2024-07-01T12:00:00Z", quantity: "100.00000000001" });
+    await tx(kraken.id, { type: "withdrawal", occurredAt: "2024-07-01T12:00:00Z", quantity: "5" });
+    const warnings: string[] = json(await t.api("GET", "/api/box3/2025")).warnings;
+    expect(warnings.filter((w) => w.includes("negative"))).toEqual([
+      "Kraken has a negative EUR balance on 2024-12-31; check its history.",
+    ]);
+  });
+
   async function scenario() {
     t = await createTestApp();
     const mk = async (name: string, kind: string) => json(await t.api("POST", "/api/accounts", { name, kind }));
