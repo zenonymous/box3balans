@@ -7,9 +7,10 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 ## Klaar
 
 - **Basis:** handmatige invoer, live koersen, overzicht en posities, fysiek en bewaard edelmetaal, koersgeschiedenis, resultaten, inkomsten en dividenden, box 3 met export, back-ups.
-- **Koppelingen** met Bitvavo, Kraken, Coinbase en Interactive Brokers, met staking op die beurzen. Nog niet getest met echte accounts (fase F).
+- **Koppelingen** met Bitvavo, Kraken, Coinbase en Interactive Brokers, met staking op die beurzen. Bitvavo en Coinbase zijn getest met echte accounts, Kraken en Interactive Brokers nog niet (fase F).
 - **Wallets:** Bitcoin (ook xpub), Ethereum en L2's, BNB Chain, Solana, Cardano, Dogecoin, Litecoin, XRP en Tron. Bitcoin, Cardano, Dogecoin, Unichain, Ink en Soneium zijn getest met echte adressen.
 - **CSV-import** met kolomindeling, voorbeeld, dubbelherkenning en ongedaan maken. Ingebouwde formaten voor specifieke brokers kwamen in fase D.
+- **Koersen voor crypto:** Bitvavo als koersbron; koersgeschiedenis voor munten die een beurs niet meer verhandelt en voor ingeruilde munten (NU → T, FTM → S, MATIC → POL en andere), van Yahoo of Binance, maar alleen als vaststaat dat het dezelfde munt is; omwisselingen door Bitvavo als verkoop en aankoop. Uitgebracht in 0.1.4 tot en met 0.1.7, na het testen met echte accounts.
 - **Rendement:** tijd- en geldgewogen rendement met een benchmark, een kostenoverzicht en verwachte dividenden.
 - **Box 3:** werkelijk rendement voor de tegenbewijsregeling en een vooruitblik op het stelsel vanaf 2028.
 - **Beheer:** versleutelde back-ups, wijzigingsgeschiedenis met terugzetten, _Aandacht nodig_, tweede koersbronnen, PostgreSQL 18 met een geteste upgrade.
@@ -52,16 +53,16 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 
 De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zenonymous/box3balans/milestone/1).
 
-- **Box 3-regels voor 2027:** de voorstellen uit het Belastingplan 2027 nu, de vaste cijfers in december ([#4](https://github.com/zenonymous/box3balans/issues/4)).
-- **Testen met echte gegevens:** de koppelingen met Bitvavo, Kraken, Coinbase en Interactive Brokers met echte sleutels met alleen leesrechten ([#5](https://github.com/zenonymous/box3balans/issues/5)), en de herkende exports met echte, geanonimiseerde bestanden ([#6](https://github.com/zenonymous/box3balans/issues/6)). Een verkeerd gelezen bedrag is nu het grootste risico.
-- **Vindbaar worden:** screenshots in de README ([#7](https://github.com/zenonymous/box3balans/issues/7)), box3balans.nl als Nederlandstalige landingspagina ([#8](https://github.com/zenonymous/box3balans/issues/8)), een plek voor vragen ([#9](https://github.com/zenonymous/box3balans/issues/9)), en daarna een aankondiging in Nederlandse communities zoals Tweakers, het IEX-forum en r/DutchFIRE ([#10](https://github.com/zenonymous/box3balans/issues/10)).
+- **Box 3-regels voor 2027:** de voorstellen uit het Belastingplan 2027 en de kabinetsbrief van 29 september staan in [box3-sources.md](box3-sources.md); de cijfers komen in de app zodra het Belastingplan in december is aangenomen ([#4](https://github.com/zenonymous/box3balans/issues/4)).
+- **Testen met echte gegevens:** de koppelingen met echte sleutels met alleen leesrechten ([#5](https://github.com/zenonymous/box3balans/issues/5)). Bitvavo en Coinbase zijn getest en wat dat opleverde, is opgelost in 0.1.4 tot en met 0.1.7 (zie de [stand van zaken](https://github.com/zenonymous/box3balans/issues/5#issuecomment-6078821954)); Kraken en Interactive Brokers wachten op iemand met een account. De herkende exports wachten nog op echte, geanonimiseerde bestanden ([#6](https://github.com/zenonymous/box3balans/issues/6)). Een verkeerd gelezen bedrag is nu het grootste risico.
+- **Vindbaar worden:** screenshots in de README ✅ ([#7](https://github.com/zenonymous/box3balans/issues/7)) en een plek voor vragen in [Discussions](https://github.com/zenonymous/box3balans/discussions) ✅ ([#9](https://github.com/zenonymous/box3balans/issues/9)). Nog open: box3balans.nl als Nederlandstalige landingspagina ([#8](https://github.com/zenonymous/box3balans/issues/8)), en daarna een aankondiging in Nederlandse communities zoals Tweakers, het IEX-forum en r/DutchFIRE ([#10](https://github.com/zenonymous/box3balans/issues/10)), in de eerste helft van januari.
 
 ## Fase G: het aangifteseizoen (januari – mei 2027)
 
 - **Definitieve percentages 2026** voor spaargeld en schulden, in een uitgave vóór de aangifte op 1 maart opengaat.
 - **Ontbrekende formaten:** ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital, zodra er voorbeeldbestanden zijn. En nagaan welke bankexports (bunq, ASN en SNS, Triodos, Knab) de algemene CSV- en CAMT-import al leest.
 - **Een dossier per jaar:** één afdrukbaar document met het box 3-overzicht, het werkelijk rendement, de waarden op 1 januari en waar elk bedrag vandaan komt. Voor je eigen administratie, en voor als de Belastingdienst vragen stelt.
-- **De Wet werkelijk rendement volgen:** de Eerste Kamer behandelt het wetsvoorstel en de novelle naar verwachting vanaf januari. De vooruitblik in de app gaat mee.
+- **De Wet werkelijk rendement volgen:** de Eerste Kamer behandelt het wetsvoorstel en de novelle naar verwachting vanaf januari. De vooruitblik in de app volgt sinds 0.1.3 de kabinetsbrief van 29 september (heffingsvrij resultaat € 1.000); belasting bij verkoop voor aandelen, obligaties en opties komt erin zodra de tekst van de novelle er is, na het advies van de Raad van State ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 ## Fase H: het nieuwe stelsel vanaf 2028 (vanaf medio 2027, als de wet er komt)
 
