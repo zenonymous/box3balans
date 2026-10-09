@@ -103,7 +103,7 @@ export function HoldingsPage() {
                         className="cursor-pointer hover:bg-surface-2"
                         onClick={() => setExpanded(expanded === h.key ? null : h.key)}
                       >
-                        <td className="px-4 py-2.5">
+                        <td className="min-w-64 px-4 py-2.5">
                           <div className="flex items-center gap-2.5">
                             <span
                               className="size-2.5 shrink-0 rounded-sm"
@@ -120,15 +120,15 @@ export function HoldingsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="tabular px-4 py-2.5 text-right text-ink">{eur(h.valueEur)}</td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="tabular whitespace-nowrap px-4 py-2.5 text-right text-ink">{eur(h.valueEur)}</td>
+                        <td className="whitespace-nowrap px-4 py-2.5 text-right">
                           {h.changePct24h != null ? (
                             <Delta percent={h.changePct24h} />
                           ) : (
                             <span className="text-muted">—</span>
                           )}
                         </td>
-                        <td className="px-4 py-2.5 text-right">
+                        <td className="whitespace-nowrap px-4 py-2.5 text-right">
                           {h.assetClass === "cash" ? (
                             <span className="text-muted">—</span>
                           ) : (
@@ -138,7 +138,7 @@ export function HoldingsPage() {
                         <td className="tabular px-4 py-2.5 text-right text-ink-2">
                           {pct(h.weightPct, { sign: false })}
                         </td>
-                        <td className="tabular px-4 py-2.5 text-right text-xs text-ink-2">
+                        <td className="tabular whitespace-nowrap px-4 py-2.5 text-right text-xs text-ink-2">
                           <div>
                             {eurPrice(h.priceEur)}
                             {h.unit === "g" ? "/g" : ""}

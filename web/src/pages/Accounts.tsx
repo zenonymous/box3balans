@@ -32,15 +32,28 @@ import { readText } from "../files";
 import { eur, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel } from "../labels";
-import { useAccounts, useHousehold, useInvalidateAll } from "../queries";
+import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
 
 const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "goldrepublic"];
+// How a provider is written, for the ones we know; anything else as entered.
+const PROVIDER_NAME: Record<string, string> = {
+  degiro: "DEGIRO",
+  "trade-republic": "Trade Republic",
+  ibkr: "Interactive Brokers",
+  bitvavo: "Bitvavo",
+  kraken: "Kraken",
+  coinbase: "Coinbase",
+  goldrepublic: "Gold Republic",
+};
 // Kinds that are always kept as values per year.
 const YEARLY_ONLY = new Set<AccountKind>(["property", "receivable", "debt", "insurance"]);
 
 export function AccountsPage() {
   const accounts = useAccounts();
   const people = useHousehold();
+  const portfolio = usePortfolio();
+  // What an account kept with transactions holds now.
+  const valueNow = new Map(portfolio.data?.summary.byAccount.map((b) => [b.accountId, b.valueEur]) ?? []);
   const [editing, setEditing] = useState<Account | "new" | null>(null);
   const [years, setYears] = useState<Account | null>(null);
   const persons = people.data ?? [];
@@ -83,7 +96,7 @@ export function AccountsPage() {
                     </div>
                     <div className="text-xs text-muted">
                       {kindLabel(a.kind)}
-                      {a.provider && ` · ${a.provider}`}
+                      {a.provider && ` · ${PROVIDER_NAME[a.provider.toLowerCase()] ?? a.provider}`}
                       {(a.owner !== "self" || persons.length > 0) && ` · ${ownerLabel(a, persons)}`}
                     </div>
                   </div>
@@ -99,8 +112,13 @@ export function AccountsPage() {
                       )
                     ) : (
                       <>
-                        {tn(a.txCount, "{n} transaction", "{n} transactions")}
-                        {a.itemCount ? ` · ${tn(a.itemCount, "{n} item", "{n} items")}` : ""}
+                        {valueNow.has(a.id) && (
+                          <div className="tabular text-sm text-ink">{eur(valueNow.get(a.id), { decimals: 0 })}</div>
+                        )}
+                        <div>
+                          {tn(a.txCount, "{n} transaction", "{n} transactions")}
+                          {a.itemCount ? ` · ${tn(a.itemCount, "{n} item", "{n} items")}` : ""}
+                        </div>
                       </>
                     )}
                   </div>

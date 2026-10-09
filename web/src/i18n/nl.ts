@@ -1088,7 +1088,6 @@ export const NL: Record<string, string> = {
   never: "nooit",
   Restore: "Terugzetten",
   "Cost basis": "Aankoopwaarde",
-  Manage: "Beheren",
   Appearance: "Weergave",
   Theme: "Thema",
   System: "Systeem",
@@ -1102,15 +1101,21 @@ export const NL: Record<string, string> = {
   "Failed:": "Mislukt:",
   "Main source unavailable, priced by the second source: {list}.":
     "Hoofdbron niet beschikbaar, koers van de tweede bron: {list}.",
-  "Sources: Yahoo Finance (stocks/ETFs), CoinGecko (crypto), gold-api.com with Yahoo futures fallback (metals), ECB via Frankfurter (FX). When the main source has no price, crypto falls back to Bitvavo and Yahoo, stocks and ETFs to Tradegate (by ISIN). Free feeds can lag ~15 minutes.":
-    "Bronnen: Yahoo Finance (aandelen/ETF's), CoinGecko (crypto), gold-api.com met Yahoo-futures als reserve (edelmetalen), ECB via Frankfurter (valuta). Als de hoofdbron geen koers heeft, valt crypto terug op Bitvavo en Yahoo, aandelen en ETF's op Tradegate (op ISIN). Gratis bronnen kunnen ~15 minuten achterlopen.",
+  "Sources: Yahoo Finance (stocks/ETFs), Bitvavo (coins held there) and CoinGecko (other crypto), gold-api.com with Yahoo futures fallback (metals), ECB via Frankfurter (FX). When the main source has no price, crypto falls back to Bitvavo and Yahoo, stocks and ETFs to Tradegate (by ISIN). For days older than CoinGecko's free year, price history comes from Binance when your own trades confirm the coin; a coin swapped for another (NU for T) follows its successor. Free feeds can lag ~15 minutes.":
+    "Bronnen: Yahoo Finance (aandelen/ETF's), Bitvavo (munten die je daar hebt) en CoinGecko (andere crypto), gold-api.com met Yahoo-futures als reserve (edelmetalen), ECB via Frankfurter (valuta). Als de hoofdbron geen koers heeft, valt crypto terug op Bitvavo en Yahoo, aandelen en ETF's op Tradegate (op ISIN). Voor dagen die ouder zijn dan het gratis jaar van CoinGecko komt de koersgeschiedenis van Binance, als je eigen aan- en verkopen bevestigen dat het dezelfde munt is; een ingeruilde munt (NU voor T) volgt zijn opvolger. Gratis bronnen kunnen ~15 minuten achterlopen.",
   Session: "Sessie",
   "Sign out": "Uitloggen",
   About: "Over",
   "Box3balans {version} is free software under the <0>GNU AGPL-3.0</0>, without any warranty. It estimates; it doesn't give tax advice.":
     "Box3balans {version} is vrije software onder de <0>GNU AGPL-3.0</0>, zonder enige garantie. Het maakt schattingen; het geeft geen belastingadvies.",
-  "<0>Source code</0> · report problems and suggest improvements there.":
-    "<0>Broncode</0> · meld daar problemen en stel verbeteringen voor.",
+  "<0>Source code</0> · report problems and suggest improvements there; ask questions in <1>Discussions</1>.":
+    "<0>Broncode</0> · meld daar problemen en stel verbeteringen voor; vragen stel je in <1>Discussions</1>.",
+  "More pages": "Meer pagina's",
+  "◆ Metals — coins and bars at home and in vaults": "◆ Edelmetalen — munten en baren, thuis en in kluizen",
+  Insight: "Inzicht",
+  Data: "Gegevens",
+  "Skip to content": "Naar de inhoud",
+  "Main menu": "Hoofdmenu",
   "New passwords do not match": "De nieuwe wachtwoorden zijn niet gelijk",
   "Password changed. Other sessions were signed out.": "Wachtwoord gewijzigd. Andere sessies zijn uitgelogd.",
   "Change password": "Wachtwoord wijzigen",
@@ -1132,7 +1137,6 @@ export const NL: Record<string, string> = {
     "◈ Wallets — volg Bitcoin, Ethereum en L2's, Solana en meer op adres",
   "↗ Performance — results per year, realized gains": "↗ Resultaat — resultaat per jaar, gerealiseerde winst",
   "❖ Income — dividends, staking rewards, interest": "❖ Inkomsten — dividend, stakingbeloningen, rente",
-  "§ Box 3: wealth on 1 January and tax estimate": "§ Box 3: vermogen op 1 januari en schatting van de belasting",
   "◇ Assets — instruments and price sources": "◇ Beleggingen — instrumenten en koersbronnen",
   "↺ History — every change, and restoring deleted transactions":
     "↺ Geschiedenis — elke wijziging, en verwijderde transacties terugzetten",

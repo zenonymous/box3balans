@@ -107,7 +107,7 @@ export function TaxReturnPage() {
           "What you fill in under box 3, in the order of the return: per part, per account and per owner, in whole euros (assets rounded down, debts up). Check it against the year statements of your banks and brokers.",
         )}
         actions={
-          <div className="flex items-center gap-2 print:hidden">
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
             <Select
               value={year ?? ""}
               onChange={(e) => setSearch({ year: e.target.value }, { replace: true })}
@@ -120,6 +120,15 @@ export function TaxReturnPage() {
                 </option>
               ))}
             </Select>
+            {year != null && (
+              <Link
+                to={`/box3/${year}/dossier`}
+                title={t("One document with the figures and where every amount comes from, to print or keep")}
+                className="whitespace-nowrap rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
+              >
+                {t("Dossier")}
+              </Link>
+            )}
             <Button onClick={() => window.print()} title={t("Use “Save as PDF” in the print dialog")}>
               {t("Print / PDF")}
             </Button>

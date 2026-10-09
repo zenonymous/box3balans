@@ -89,7 +89,7 @@ export function Box3Page() {
               value={year ?? ""}
               onChange={(e) => setSelected(Number(e.target.value))}
               aria-label={t("Tax year")}
-              className="max-w-40 print:hidden"
+              className="w-auto print:hidden"
             >
               {o.years.map((y) => (
                 <option key={y} value={y}>

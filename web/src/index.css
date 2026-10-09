@@ -10,15 +10,15 @@
   --surface-2: #f3f2ee;
   --ink: #0b0b0b;
   --ink-2: #52514e;
-  --muted: #898781;
+  --muted: #6f6d68; /* 4.6:1 or more on every light surface */
   --grid: #e1e0d9;
   --axis: #c3c2b7;
   --border: rgba(11, 11, 11, 0.1);
-  --accent: #2a78d6;
+  --accent: #1f6bc4;
   --accent-ink: #ffffff;
   --gain: #006300;
   --loss: #d03b3b;
-  --warn: #9a6700;
+  --warn: #8a5c00;
   --warn-bg: #fdf3dc;
   --danger-bg: #fbe9e9;
 

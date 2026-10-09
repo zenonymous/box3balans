@@ -27,7 +27,7 @@ export function Button({
       type="button"
       {...props}
       className={cx(
-        "inline-flex items-center justify-center gap-1.5 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
         size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
         variant === "primary" && "bg-accent text-accent-ink hover:opacity-90",
         variant === "secondary" && "border border-line bg-surface text-ink hover:bg-surface-2",
@@ -166,7 +166,13 @@ export function Modal({
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
-    if (open && !d.open) d.showModal();
+    if (open && !d.open) {
+      d.showModal();
+      // Start in the first field, not on the close button the browser picks.
+      d.querySelector<HTMLElement>(
+        "[data-modal-body] :is(input:not([type=hidden]), select, textarea):not([disabled])",
+      )?.focus();
+    }
     if (!open && d.open) d.close();
   }, [open]);
   return (
@@ -192,7 +198,9 @@ export function Modal({
               ✕
             </button>
           </header>
-          <div className="overflow-y-auto px-5 py-4">{children}</div>
+          <div data-modal-body className="overflow-y-auto px-5 py-4">
+            {children}
+          </div>
           {footer && <footer className="flex justify-end gap-2 border-t border-line px-5 py-3">{footer}</footer>}
         </div>
       )}

@@ -51,7 +51,8 @@ export function SettingsPage() {
     <>
       <PageHeader title={t("Settings")} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card title={t("Manage")}>
+        {/* On phones this page is "More": the pages the bottom bar doesn't show. The sidebar has them on larger screens. */}
+        <Card title={t("More pages")} className="md:hidden">
           <div className="flex flex-col gap-2 text-sm">
             {MANAGE.map(([to, text]) => (
               <Link key={to} to={to} className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
@@ -136,7 +137,7 @@ export function SettingsPage() {
           )}
           <p className="mt-3 text-xs text-muted">
             {t(
-              "Sources: Yahoo Finance (stocks/ETFs), CoinGecko (crypto), gold-api.com with Yahoo futures fallback (metals), ECB via Frankfurter (FX). When the main source has no price, crypto falls back to Bitvavo and Yahoo, stocks and ETFs to Tradegate (by ISIN). Free feeds can lag ~15 minutes.",
+              "Sources: Yahoo Finance (stocks/ETFs), Bitvavo (coins held there) and CoinGecko (other crypto), gold-api.com with Yahoo futures fallback (metals), ECB via Frankfurter (FX). When the main source has no price, crypto falls back to Bitvavo and Yahoo, stocks and ETFs to Tradegate (by ISIN). For days older than CoinGecko's free year, price history comes from Binance when your own trades confirm the coin; a coin swapped for another (NU for T) follows its successor. Free feeds can lag ~15 minutes.",
             )}
           </p>
         </Card>
@@ -184,9 +185,19 @@ function AboutCard() {
         </p>
         {version.data?.source && (
           <p>
-            {tj("<0>Source code</0> · report problems and suggest improvements there.", [
-              <a key="s" className="underline" href={version.data.source} target="_blank" rel="noreferrer" />,
-            ])}
+            {tj(
+              "<0>Source code</0> · report problems and suggest improvements there; ask questions in <1>Discussions</1>.",
+              [
+                <a key="s" className="underline" href={version.data.source} target="_blank" rel="noreferrer" />,
+                <a
+                  key="d"
+                  className="underline"
+                  href={`${version.data.source}/discussions/categories/q-a`}
+                  target="_blank"
+                  rel="noreferrer"
+                />,
+              ],
+            )}
           </p>
         )}
         <UpdateCheck />
@@ -615,14 +626,14 @@ interface BackupList {
 const FALLBACK_LABEL: Record<string, string> = { bitvavo: "Bitvavo", yahoo: "Yahoo", tradegate: "Tradegate" };
 
 const MANAGE: [string, string][] = [
-  ["/accounts", t("▣ Accounts — brokers, exchanges, wallets, vaults, storage")],
-  ["/household", t("⌂ Household — you, your partner and children, for box 3")],
-  ["/connections", t("⇅ Connections — sync Bitvavo, Kraken, Coinbase and IBKR")],
-  ["/wallets", t("◈ Wallets — track Bitcoin, Ethereum & L2s, Solana and more by address")],
   ["/performance", t("↗ Performance — results per year, realized gains")],
   ["/income", t("❖ Income — dividends, staking rewards, interest")],
-  ["/box3", t("§ Box 3: wealth on 1 January and tax estimate")],
+  ["/accounts", t("▣ Accounts — brokers, exchanges, wallets, vaults, storage")],
+  ["/connections", t("⇅ Connections — sync Bitvavo, Kraken, Coinbase and IBKR")],
+  ["/wallets", t("◈ Wallets — track Bitcoin, Ethereum & L2s, Solana and more by address")],
+  ["/metals", t("◆ Metals — coins and bars at home and in vaults")],
   ["/assets", t("◇ Assets — instruments and price sources")],
+  ["/household", t("⌂ Household — you, your partner and children, for box 3")],
   ["/activity", t("↺ History — every change, and restoring deleted transactions")],
   ["/start", t("✦ Start wizard — set up your household, accounts and values step by step")],
 ];
