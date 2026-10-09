@@ -14,6 +14,22 @@ _In English: please report vulnerabilities privately via **Security → Report a
 
 Oplossingen komen in de nieuwste uitgave. Werk bij met `docker compose pull && docker compose up -d`.
 
+## Images controleren
+
+De images op `ghcr.io/zenonymous/box3balans` worden gebouwd door de workflow **CI** in deze repository. Vanaf versie 0.1.9 ondertekent die workflow ze met [cosign](https://docs.sigstore.dev/), zonder sleutel: de handtekening is gekoppeld aan de identiteit van die workflow bij GitHub. Zo controleer je dat een image echt van hier komt en onderweg niet is veranderd:
+
+```bash
+cosign verify ghcr.io/zenonymous/box3balans:latest \
+  --certificate-identity-regexp '^https://github\.com/zenonymous/box3balans/\.github/workflows/ci\.yml@refs/(tags/v|heads/main)' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
+Die images hebben ook een lijst van alles wat erin zit (een SBOM in SPDX-formaat) en een beschrijving van hoe ze zijn gebouwd (provenance). Bekijken kan met Docker:
+
+```bash
+docker buildx imagetools inspect ghcr.io/zenonymous/box3balans:latest --format '{{ json (index .SBOM "linux/amd64").SPDX }}'
+```
+
 ## Veilig gebruik
 
 - Zet Box3balans **niet open naar het internet**. Gebruik voor toegang buitenshuis een VPN zoals WireGuard of Tailscale (zie de README).

@@ -74,7 +74,7 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 ## Doorlopend
 
 - **Eenvoudiger installeren:** Box3balans in de app-catalogi van Unraid, TrueNAS en CasaOS/Umbrel, zodat het zonder terminal kan.
-- **Controleerbare images:** ondertekende images (cosign) met een lijst van wat erin zit (SBOM).
+- **Controleerbare images** ✅: ondertekend met cosign, met een lijst van wat erin zit (SBOM) en hoe het is gebouwd (provenance). Zie [SECURITY.md](../SECURITY.md#images-controleren).
 - **Pull requests via CI** op `main` zodra anderen meebouwen.
 - **Versie 1.0** na het eerste aangifteseizoen met echte gebruikers: formaten getest met echte exports en geen bekende ernstige fouten.
 
