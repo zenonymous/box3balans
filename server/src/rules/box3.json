@@ -49,6 +49,18 @@
       "greenCreditPct": "0.1",
       "final": false,
       "source": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2026"
+    },
+    "2027": {
+      "bankPct": "1.28",
+      "otherPct": "7.87",
+      "debtPct": "2.70",
+      "allowanceEur": "30846",
+      "debtThresholdEur": "3800",
+      "taxRatePct": "36",
+      "greenExemptEur": "26715",
+      "greenCreditPct": "0.1",
+      "final": false,
+      "source": "https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf"
     }
   },
   "leegwaarderatio": [
