@@ -11,6 +11,10 @@ services:
   app:
     image: ghcr.io/zenonymous/box3balans:${BOX3BALANS_VERSION:-latest}
     restart: unless-stopped
+    # Nothing in the container can gain rights it didn't start with (setuid programs); the entrypoint
+    # only drops from root to PUID:PGID.
+    security_opt:
+      - no-new-privileges:true
     environment:
       TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
@@ -46,6 +50,8 @@ services:
     # Major versions need a backup and restore to upgrade (README → PostgreSQL upgraden).
     image: postgres:18-alpine
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
     # The app creates the database password on its first start; the database uses it from there.
     depends_on:
       - app
