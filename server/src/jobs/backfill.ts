@@ -15,7 +15,14 @@ const RECHECK_MS = 20 * 3_600_000;
 // 2: delisted and swapped coins. 3: CoinGecko's last year, Binance for older days.
 const SOURCES = 3;
 
-type State = Record<string, { from: string; at: string; v?: number }>;
+// History that starts well after an asset was first held (a source answered only partly, or not at
+// all) gets a full load again this often: a source may have it by then (a new listing, a coin
+// matched to its price feed later). Days of slack for weekends and holidays.
+const GAP_RETRY_MS = 7 * 86_400_000;
+const GAP_SLACK_DAYS = { crypto: 3, other: 7 };
+
+// `full`: when the asset last had a full load.
+type State = Record<string, { from: string; at: string; v?: number; full?: string }>;
 
 export interface BackfillResult {
   at: string;
@@ -98,6 +105,14 @@ export class BackfillService {
     const [stateRow] = await this.db.select().from(settings).where(eq(settings.key, STATE_KEY));
     const state: State = (stateRow?.value as State | undefined) ?? {};
     const first = await this.firstDays();
+    const firstClose = new Map(
+      (
+        await this.db
+          .select({ id: priceHistory.assetId, day: sql<string>`min(${priceHistory.day})` })
+          .from(priceHistory)
+          .groupBy(priceHistory.assetId)
+      ).map((r) => [r.id, String(r.day)]),
+    );
     const rows = await this.db.select().from(assets);
 
     for (const asset of rows) {
@@ -109,15 +124,30 @@ export class BackfillService {
       const prev = state[asset.id];
       const loaded = prev && prev.from <= from && (prev.v ?? 1) >= SOURCES;
       if (loaded && Date.now() - Date.parse(prev.at) < RECHECK_MS && !force) continue;
+      const closes = firstClose.get(asset.id);
+      const slack = asset.assetClass === "crypto" ? GAP_SLACK_DAYS.crypto : GAP_SLACK_DAYS.other;
+      const gap = !closes || Date.parse(closes) - Date.parse(from) > slack * 86_400_000;
+      const retry = loaded && gap && Date.now() - Date.parse(prev.full ?? prev.at) >= GAP_RETRY_MS;
       // After the first full load only the recent days need filling.
       const start = loaded && !force ? isoDay(new Date(Date.parse(prev.at) - 5 * 86_400_000)) : from;
       try {
-        if (asset.priceSource === "fx") await this.cashHistory(asset.id, asset.priceRef!, start, today);
-        else await this.history.ensureRange(asset, start, today);
+        if (asset.priceSource === "fx") await this.cashHistory(asset.id, asset.priceRef!, retry ? from : start, today);
+        else {
+          // Only the missing start: the range as a whole may look loaded enough to be skipped.
+          if (retry)
+            await this.history.ensureRange(
+              asset,
+              from,
+              closes ? isoDay(new Date(Date.parse(closes) - 86_400_000)) : today,
+            );
+          await this.history.ensureRange(asset, start, today);
+        }
+        const now = new Date().toISOString();
         state[asset.id] = {
           from: prev && prev.from < from ? prev.from : from,
-          at: new Date().toISOString(),
+          at: now,
           v: SOURCES,
+          full: start === from || retry ? now : (prev?.full ?? prev?.at),
         };
         result.fetched++;
       } catch (err) {

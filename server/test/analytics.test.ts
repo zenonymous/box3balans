@@ -1,4 +1,6 @@
+import { and, eq, lt } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
+import { priceHistory, settings } from "../src/db/schema.js";
 import { createTestApp, defaultRoutes, type TestApp } from "./helpers.js";
 
 let t: TestApp;
@@ -103,6 +105,39 @@ describe("price history backfill", () => {
     const again = await t.backfill.run();
     expect(again.fetched).toBe(0);
     expect(t.fetch.calls.filter((u) => u.includes("chart/AAPL") && u.includes("period1")).length).toBe(1);
+  });
+});
+
+describe("price history gaps", () => {
+  it("tries the missing start of a history again, once a week", async () => {
+    const { stock } = await scenario();
+    const db = t.database.db;
+    // As if the source had answered only from June 2024 on. (This fake Yahoo answers every request
+    // with the whole series, so each run below starts from that gap again.)
+    const gap = () =>
+      db.delete(priceHistory).where(and(eq(priceHistory.assetId, stock.id), lt(priceHistory.day, "2024-06-01")));
+    const ago = (days: number) => new Date(Date.now() - days * 86_400_000).toISOString();
+    const lastFull = async (days: number) => {
+      const [row] = await db.select().from(settings).where(eq(settings.key, "history_backfill"));
+      const state = row!.value as Record<string, object>;
+      state[stock.id] = { ...state[stock.id], at: ago(1), full: ago(days) };
+      await db.update(settings).set({ value: state }).where(eq(settings.key, "history_backfill"));
+    };
+    // Yahoo is asked from the day before the first transaction (15 January 2024).
+    const fromStart = () =>
+      t.fetch.calls.filter((u) => u.includes("chart/AAPL") && u.includes(`period1=${Date.parse("2024-01-14") / 1000}&`))
+        .length;
+    const before = fromStart();
+
+    await gap();
+    await lastFull(2);
+    await t.backfill.run();
+    expect(fromStart()).toBe(before);
+
+    await gap();
+    await lastFull(8);
+    await t.backfill.run();
+    expect(fromStart()).toBe(before + 1);
   });
 });
 
