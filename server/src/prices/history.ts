@@ -102,8 +102,9 @@ export class HistoryService {
   }
 
   /**
-   * Records where a stored close came from, for closes stored before sources were (0.1.9): only
-   * when a source still gives the very same close, so the label is never a guess. True if labelled.
+   * Records where a stored close came from, for closes stored before sources were (0.1.9): the
+   * asset's own sources, then the pairs earlier versions may have used, and only a source that still
+   * gives the very same close, so the label is never a guess. True if labelled.
    */
   async labelClose(asset: Asset, day: string): Promise<boolean> {
     const [row] = await this.db
@@ -111,26 +112,57 @@ export class HistoryService {
       .from(priceHistory)
       .where(and(eq(priceHistory.assetId, asset.id), eq(priceHistory.day, day)));
     if (!row || row.source) return !!row?.source;
-    let points: Point[];
-    try {
-      points = await this.fetchHistory(asset, day, day);
-    } catch {
-      return false;
-    }
     const stored = D(row.close);
-    const same = points.find(
-      (p) =>
-        p.day === day &&
-        p.source &&
-        p.currency === row.currency &&
-        p.close.minus(stored).abs().lte(stored.abs().mul("0.000001")),
-    );
-    if (!same) return false;
-    await this.db
-      .update(priceHistory)
-      .set({ source: same.source })
-      .where(and(eq(priceHistory.assetId, asset.id), eq(priceHistory.day, day)));
-    return true;
+    const sym = asset.symbol.toUpperCase();
+    const yearAgo = isoDay(Date.now() - 364 * DAY);
+    const candidates: (() => Promise<Point[]>)[] = [() => this.fetchHistory(asset, day, day)];
+    if (asset.assetClass === "crypto") {
+      candidates.push(
+        async () =>
+          (await bitvavoCandles(`${sym}-EUR`, day, day, this.fetchFn)).map((p) => ({
+            ...p,
+            currency: "EUR",
+            source: `bitvavo:${sym}-EUR`,
+          })),
+        async () => (await this.yahoo(`${sym}-EUR`, day, day)).points,
+        async () => {
+          // Stored as Binance gave it (USD), or converted to EUR with it.
+          const raw = (await binanceDailyCloses(`${sym}USDT`, day, day, this.fetchFn)).map((p) => ({
+            ...p,
+            currency: "USD",
+            source: `binance:${sym}USDT`,
+          }));
+          return raw.length ? [...raw, ...(await this.inEur(raw, day, day))] : [];
+        },
+      );
+    }
+    if (asset.priceSource === "coingecko" && asset.priceRef && day >= yearAgo) {
+      // Over 90 days, as backfills ask: shorter ranges give hourly prices, not the daily close.
+      const from = isoDay(Math.max(Date.parse(yearAgo), Date.parse(day) - 100 * DAY));
+      candidates.push(() => this.coingecko(asset.priceRef!, from, day));
+    }
+    for (const load of candidates) {
+      let points: Point[];
+      try {
+        points = await load();
+      } catch {
+        continue;
+      }
+      const same = points.find(
+        (p) =>
+          p.day === day &&
+          p.source &&
+          p.currency === row.currency &&
+          p.close.minus(stored).abs().lte(stored.abs().mul("0.000001")),
+      );
+      if (!same) continue;
+      await this.db
+        .update(priceHistory)
+        .set({ source: same.source })
+        .where(and(eq(priceHistory.assetId, asset.id), eq(priceHistory.day, day)));
+      return true;
+    }
+    return false;
   }
 
   private async fetchHistory(asset: Asset, from: string, to: string): Promise<Point[]> {

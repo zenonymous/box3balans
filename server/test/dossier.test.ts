@@ -78,6 +78,31 @@ describe("where prices come from", () => {
   });
 });
 
+describe("sources of closes stored by earlier versions", () => {
+  it("are found among the pairs an earlier version may have used", async () => {
+    const kline = (day: string, close: number) => [
+      Date.parse(day),
+      `${close}`,
+      `${close}`,
+      `${close}`,
+      `${close}`,
+      "1",
+    ];
+    t = await createTestApp({ ...defaultRoutes, "api/v3/klines?symbol=ADAUSDT": [kline("2024-12-31", 0.77)] });
+    const db = t.database.db;
+    const [ada] = await db
+      .insert(assets)
+      .values({ assetClass: "crypto", name: "Cardano", symbol: "ADA", priceSource: "coingecko", priceRef: "cardano" })
+      .returning();
+    // Binance's 0.77 USDT at the ECB rate of 1.10, as stored without a source.
+    await db
+      .insert(priceHistory)
+      .values({ assetId: ada!.id, day: "2024-12-31", close: "0.7", currency: "EUR", closeEur: "0.7" });
+    expect(await new HistoryService(db, t.prices.fx, t.fetch).labelClose(ada!, "2024-12-31")).toBe(true);
+    expect(await sourceOn(ada!.id, "2024-12-31")).toBe("binance:ADAUSDT");
+  });
+});
+
 describe("sources of earlier year-end closes", () => {
   it("are looked up by the backfill, for what you held on 31 December", async () => {
     t = await createTestApp({ ...defaultRoutes, "api.bitvavo.com/v2/SOL-EUR/candles": [candle("2024-12-31", 180)] });

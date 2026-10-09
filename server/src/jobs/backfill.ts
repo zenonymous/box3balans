@@ -10,8 +10,9 @@ import { availableYears } from "../domain/box3.js";
 import { holdingsOn } from "../domain/valuation.js";
 
 const STATE_KEY = "history_backfill";
-// 31 December closes of holdings already looked up for their source ("assetId:day").
-const LABELS_KEY = "history_labels";
+// 31 December closes of holdings already looked up for their source ("assetId:day"). A new key
+// when the lookup learns more sources, so earlier misses are tried again.
+const LABELS_KEY = "history_labels_2";
 // Re-check each asset at most this often (the price refresh keeps today's close current).
 const RECHECK_MS = 20 * 3_600_000;
 
