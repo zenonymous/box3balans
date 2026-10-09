@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Box3balans</title>
+    <meta
+      name="description"
+      content="Houd je beleggingen, crypto en edelmetaal bij en zie wat je in box 3 betaalt. Gratis en open source, op je eigen computer of NAS."
+    />
+    <link rel="canonical" href="https://box3balans.nl/" />
+    <style>
+      :root {
+        --bg: #f7f7f5;
+        --surface: #ffffff;
+        --ink: #1c1d1f;
+        --ink-2: #4a4d52;
+        --muted: #6b6f75;
+        --line: #e3e3df;
+        --accent: #2563eb;
+        --accent-ink: #ffffff;
+        color-scheme: light;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #121315;
+          --surface: #1b1c1f;
+          --ink: #ececea;
+          --ink-2: #b9bbbf;
+          --muted: #8d9096;
+          --line: #2c2e32;
+          --accent: #5b8def;
+          --accent-ink: #0b0c0e;
+          color-scheme: dark;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 56px 16px 40px;
+      }
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(30px, 6vw, 44px);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+      }
+      .lead {
+        max-width: 40em;
+        margin: 0 0 28px;
+        color: var(--ink-2);
+        font-size: 19px;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 40px;
+      }
+      .button {
+        display: inline-block;
+        padding: 10px 18px;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--ink);
+        font-weight: 600;
+        text-decoration: none;
+      }
+      .button.primary {
+        border-color: var(--accent);
+        background: var(--accent);
+        color: var(--accent-ink);
+      }
+      .button:hover {
+        filter: brightness(0.96);
+      }
+      .shot {
+        display: block;
+        width: 100%;
+        height: auto;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+      ul {
+        display: grid;
+        gap: 14px;
+        margin: 40px 0;
+        padding: 0;
+        list-style: none;
+      }
+      li {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--surface);
+      }
+      li strong {
+        display: block;
+        margin-bottom: 2px;
+      }
+      li span {
+        color: var(--ink-2);
+      }
+      footer {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      a {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Box3balans</h1>
+      <p class="lead">
+        Houd je beleggingen, crypto en edelmetaal bij en zie wat je in box 3 betaalt. Box3balans draait thuis, op je
+        eigen computer of NAS: je gegevens gaan nergens anders heen.
+      </p>
+      <div class="actions">
+        <a class="button primary" href="https://github.com/zenonymous/box3balans">Bekijk Box3balans</a>
+        <a class="button" href="https://github.com/zenonymous/box3balans/blob/main/docs/installatie.md">Installeren</a>
+        <a class="button" href="https://github.com/zenonymous/box3balans/discussions/categories/q-a">Een vraag stellen</a>
+      </div>
+
+      <picture>
+        <source srcset="img/overzicht-dark.webp" media="(prefers-color-scheme: dark)" />
+        <img
+          class="shot"
+          src="img/overzicht-light.webp"
+          width="1600"
+          height="1050"
+          alt="Het overzicht van Box3balans: je vermogen, de verdeling over soorten beleggingen en het verloop door de tijd"
+        />
+      </picture>
+
+      <ul>
+        <li>
+          <strong>Alles op één plek</strong>
+          <span
+            >Koppelingen met Bitvavo, Kraken, Coinbase en Interactive Brokers, wallets op Bitcoin, Ethereum, Solana,
+            Cardano en andere blockchains, en de exports van onder meer DEGIRO en Trade Republic. Spaargeld, een tweede
+            woning en schulden vul je per jaar in.</span
+          >
+        </li>
+        <li>
+          <strong>Box 3 per jaar, zoals de aangifte het vraagt</strong>
+          <span
+            >Wat je op 1 januari had, per onderdeel en per rekening, met de belasting, het werkelijk rendement voor de
+            tegenbewijsregeling en een dossier dat laat zien waar elk bedrag vandaan komt.</span
+          >
+        </li>
+        <li>
+          <strong>Van jou</strong>
+          <span
+            >Gratis en open source (AGPL-3.0). Geen account en geen abonnement; je installeert het zelf, bijvoorbeeld
+            met Docker.</span
+          >
+        </li>
+      </ul>
+
+      <footer>
+        Box3balans is een hulpmiddel, geen belastingadvies.
+        <a href="https://github.com/zenonymous/box3balans">github.com/zenonymous/box3balans</a>
+      </footer>
+    </main>
+  </body>
+</html>
