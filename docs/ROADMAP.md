@@ -61,7 +61,7 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 
 - **Definitieve percentages 2026** voor spaargeld en schulden, in een uitgave vóór de aangifte op 1 maart opengaat.
 - **Ontbrekende formaten:** ABN AMRO en ING Beleggen, Meesman, Brand New Day, Peaks, Lightyear en Scalable Capital, zodra er voorbeeldbestanden zijn. En nagaan welke bankexports (bunq, ASN en SNS, Triodos, Knab) de algemene CSV- en CAMT-import al leest.
-- **Een dossier per jaar:** één afdrukbaar document met het box 3-overzicht, het werkelijk rendement, de waarden op 1 januari en waar elk bedrag vandaan komt. Voor je eigen administratie, en voor als de Belastingdienst vragen stelt.
+- **Een dossier per jaar** ✅ (al in 0.1.9): één afdrukbaar document met het box 3-overzicht, het werkelijk rendement, de waarden op 1 januari en waar elk bedrag vandaan komt. Voor je eigen administratie, en voor als de Belastingdienst vragen stelt.
 - **De Wet werkelijk rendement volgen:** de Eerste Kamer behandelt het wetsvoorstel en de novelle naar verwachting vanaf januari. De vooruitblik in de app volgt sinds 0.1.3 de kabinetsbrief van 29 september (heffingsvrij resultaat € 1.000); belasting bij verkoop voor aandelen, obligaties en opties komt erin zodra de tekst van de novelle er is, na het advies van de Raad van State ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 ## Fase H: het nieuwe stelsel vanaf 2028 (vanaf medio 2027, als de wet er komt)

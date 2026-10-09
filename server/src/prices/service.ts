@@ -99,7 +99,7 @@ export class PriceService {
           continue;
         }
         try {
-          await this.store(a.id, q);
+          await this.store(a.id, { ...q, ref: a.priceRef! });
           result.updated++;
         } catch (err) {
           result.failed.push({ assetId: a.id, symbol: a.symbol, error: (err as Error).message });
@@ -172,7 +172,12 @@ export class PriceService {
         continue;
       }
       try {
-        await this.store(asset.id, { ...q, price: q.price.mul(swap.ratio), source: "migration" });
+        await this.store(asset.id, {
+          ...q,
+          price: q.price.mul(swap.ratio),
+          source: "migration",
+          ref: `${swap.to.symbol}×${swap.ratio.toString()}`,
+        });
         result.updated++;
       } catch (err) {
         result.failed.push({ assetId: asset.id, symbol: asset.symbol, error: (err as Error).message });
@@ -198,7 +203,12 @@ export class PriceService {
   /** Cash assets: price is 1 unit of the currency, in EUR. */
   private async storeFxAsset(a: typeof assets.$inferSelect, result: RefreshResult) {
     try {
-      await this.store(a.id, { price: D(1), currency: a.priceRef ?? a.currency, source: "ecb" });
+      await this.store(a.id, {
+        price: D(1),
+        currency: a.priceRef ?? a.currency,
+        source: "ecb",
+        ref: a.priceRef ?? a.currency,
+      });
       result.updated++;
     } catch (err) {
       result.failed.push({ assetId: a.id, symbol: a.symbol, error: (err as Error).message });
@@ -230,7 +240,12 @@ export class PriceService {
       .insert(pricesLatest)
       .values({ assetId, ...latest })
       .onConflictDoUpdate({ target: pricesLatest.assetId, set: latest });
-    const hist = { close: str(q.price), currency: q.currency, closeEur: str(priceEur) };
+    const hist = {
+      close: str(q.price),
+      currency: q.currency,
+      closeEur: str(priceEur),
+      source: q.ref ? `${q.source}:${q.ref}` : q.source,
+    };
     await this.db
       .insert(priceHistory)
       .values({ assetId, day, ...hist })

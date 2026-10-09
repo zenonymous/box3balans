@@ -12,7 +12,8 @@ import { migrationOf, type Migration } from "./migrations.js";
 import { normaliseCurrency } from "./yahoo.js";
 
 type Asset = typeof assets.$inferSelect;
-type Point = { day: string; close: Decimal; currency: string };
+// `source`: where the close came from, e.g. "bitvavo:BTC-EUR" (stored with it in price_history).
+type Point = { day: string; close: Decimal; currency: string; source?: string };
 
 const DAY = 86_400_000;
 const METAL_FUTURES: Record<string, string> = { XAU: "GC=F", XAG: "SI=F", XPT: "PL=F", XPD: "PA=F" };
@@ -71,7 +72,14 @@ export class HistoryService {
     const rows = [];
     for (const p of points) {
       const eur = p.close.mul(await this.fx.eurPerUnit(currency, p.day));
-      rows.push({ assetId: asset.id, day: p.day, close: str(p.close), currency, closeEur: str(eur) });
+      rows.push({
+        assetId: asset.id,
+        day: p.day,
+        close: str(p.close),
+        currency,
+        closeEur: str(eur),
+        source: p.source ?? null,
+      });
     }
     for (let i = 0; i < rows.length; i += 500) {
       await this.db
@@ -91,6 +99,38 @@ export class HistoryService {
       .orderBy(desc(priceHistory.day))
       .limit(1);
     return row ? D(row.closeEur) : null;
+  }
+
+  /**
+   * Records where a stored close came from, for closes stored before sources were (0.1.9): only
+   * when a source still gives the very same close, so the label is never a guess. True if labelled.
+   */
+  async labelClose(asset: Asset, day: string): Promise<boolean> {
+    const [row] = await this.db
+      .select()
+      .from(priceHistory)
+      .where(and(eq(priceHistory.assetId, asset.id), eq(priceHistory.day, day)));
+    if (!row || row.source) return !!row?.source;
+    let points: Point[];
+    try {
+      points = await this.fetchHistory(asset, day, day);
+    } catch {
+      return false;
+    }
+    const stored = D(row.close);
+    const same = points.find(
+      (p) =>
+        p.day === day &&
+        p.source &&
+        p.currency === row.currency &&
+        p.close.minus(stored).abs().lte(stored.abs().mul("0.000001")),
+    );
+    if (!same) return false;
+    await this.db
+      .update(priceHistory)
+      .set({ source: same.source })
+      .where(and(eq(priceHistory.assetId, asset.id), eq(priceHistory.day, day)));
+    return true;
   }
 
   private async fetchHistory(asset: Asset, from: string, to: string): Promise<Point[]> {
@@ -125,7 +165,7 @@ export class HistoryService {
     if (asset.priceSource === "bitvavo" && asset.priceRef) {
       try {
         const points = await bitvavoCandles(asset.priceRef, from, to, this.fetchFn);
-        if (points.length) return points.map((p) => ({ ...p, currency: "EUR" }));
+        if (points.length) return points.map((p) => ({ ...p, currency: "EUR", source: `bitvavo:${asset.priceRef}` }));
       } catch {
         // try the next source
       }
@@ -137,7 +177,11 @@ export class HistoryService {
         const market = `${asset.symbol.toUpperCase()}-EUR`;
         const current = (await this.bitvavoNow()).get(market)?.last;
         if (current) {
-          const points = (await bitvavoCandles(market, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "EUR" }));
+          const points = (await bitvavoCandles(market, from, to, this.fetchFn)).map((p) => ({
+            ...p,
+            currency: "EUR",
+            source: `bitvavo:${market}`,
+          }));
           if (points.length && (await this.sameCoin(asset, { points, current }))) return points;
         }
       } catch {
@@ -179,9 +223,12 @@ export class HistoryService {
     if (start && Date.parse(start) - Date.parse(from) <= 3 * DAY) return points;
     const until = start ? isoDay(Date.parse(start) - DAY) : to;
     try {
-      const older = (await binanceDailyCloses(`${asset.symbol.toUpperCase()}USDT`, from, until, this.fetchFn)).map(
-        (p) => ({ ...p, currency: "USD" }),
-      );
+      const pair = `${asset.symbol.toUpperCase()}USDT`;
+      const older = (await binanceDailyCloses(pair, from, until, this.fetchFn)).map((p) => ({
+        ...p,
+        currency: "USD",
+        source: `binance:${pair}`,
+      }));
       if (older.length && (await this.matchesTrades(older, await this.tradePrices(asset.id))) === true)
         return this.inEur([...older, ...points], from, to);
     } catch {
@@ -210,6 +257,7 @@ export class HistoryService {
       const points = (await binanceDailyCloses(`${symbol}USDT`, from, to, this.fetchFn)).map((p) => ({
         ...p,
         currency: "USD",
+        source: `binance:${symbol}USDT`,
       }));
       if (points.length && (await this.matchesTrades(points, trades))) return points;
     } catch {
@@ -232,6 +280,7 @@ export class HistoryService {
         own = (await binanceDailyCloses(swap.binance, from, ownTo, this.fetchFn)).map((p) => ({
           ...p,
           currency: "USD",
+          source: `binance:${swap.binance}`,
         }));
       } catch {
         // not on Binance (any more)
@@ -241,7 +290,12 @@ export class HistoryService {
     own = own.filter((p) => p.day <= lastOwn);
     const start = from > swap.since ? from : swap.since;
     const next = start <= to ? await this.successorCloses(swap, start, to) : [];
-    return this.inEur([...own, ...next.map((p) => ({ ...p, close: p.close.mul(swap.ratio) }))], from, to);
+    const scaled = next.map((p) => ({
+      ...p,
+      close: p.close.mul(swap.ratio),
+      source: p.source && `${p.source}×${swap.ratio.toString()}`,
+    }));
+    return this.inEur([...own, ...scaled], from, to);
   }
 
   /** Closes in EUR, at the ECB rate of their day. */
@@ -250,7 +304,7 @@ export class HistoryService {
     const out: Point[] = [];
     for (const p of points) {
       const close = p.currency === "EUR" ? p.close : p.close.mul(await this.fx.eurPerUnit(p.currency, p.day));
-      out.push({ day: p.day, close, currency: "EUR" });
+      out.push({ day: p.day, close, currency: "EUR", source: p.source });
     }
     return out;
   }
@@ -260,10 +314,19 @@ export class HistoryService {
     const { bitvavo, binance, yahoo } = swap.to;
     const sources = [
       bitvavo &&
-        (async () => (await bitvavoCandles(bitvavo, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "EUR" }))),
+        (async () =>
+          (await bitvavoCandles(bitvavo, from, to, this.fetchFn)).map((p) => ({
+            ...p,
+            currency: "EUR",
+            source: `bitvavo:${bitvavo}`,
+          }))),
       binance &&
         (async () =>
-          (await binanceDailyCloses(binance, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "USD" }))),
+          (await binanceDailyCloses(binance, from, to, this.fetchFn)).map((p) => ({
+            ...p,
+            currency: "USD",
+            source: `binance:${binance}`,
+          }))),
       yahoo && (async () => (await this.yahoo(yahoo, from, to)).points),
     ];
     const days = Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1;
@@ -356,12 +419,12 @@ export class HistoryService {
     const r = data.chart.result?.[0];
     if (!r?.timestamp) return { points: [] };
     const closes = r.indicators.quote[0]?.close ?? [];
-    const points: { day: string; close: Decimal; currency: string }[] = [];
+    const points: Point[] = [];
     r.timestamp.forEach((ts, i) => {
       const c = closes[i];
       if (c == null) return;
       const n = normaliseCurrency(r.meta.currency, D(c));
-      points.push({ day: isoDay(ts * 1000), close: n.price, currency: n.currency });
+      points.push({ day: isoDay(ts * 1000), close: n.price, currency: n.currency, source: `yahoo:${ticker}` });
     });
     const current =
       r.meta.regularMarketPrice != null
@@ -380,7 +443,7 @@ export class HistoryService {
     );
     const byDay = new Map<string, Decimal>();
     for (const [ms, price] of data.prices ?? []) byDay.set(isoDay(ms), D(price));
-    return [...byDay].map(([day, close]) => ({ day, close, currency: "EUR" }));
+    return [...byDay].map(([day, close]) => ({ day, close, currency: "EUR", source: `coingecko:${id}` }));
   }
 }
 

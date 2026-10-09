@@ -105,6 +105,15 @@ export function Box3Page() {
                 {t("For the tax return")}
               </Link>
             )}
+            {year != null && (
+              <Link
+                to={`/box3/${year}/dossier`}
+                title={t("One document with the figures and where every amount comes from, to print or keep")}
+                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2 print:hidden"
+              >
+                {t("Dossier")}
+              </Link>
+            )}
             {detail.data && <ExportButtons y={detail.data} />}
           </>
         }
@@ -312,74 +321,7 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
         </Card>
       )}
 
-      {c && r && (
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              {t("Calculation {year}", { year: y.year })}{" "}
-              {!r.final && <Badge tone="warn">{t("provisional rates")}</Badge>}
-              {r.source === "custom" && <Badge>{t("custom rates")}</Badge>}
-            </span>
-          }
-          padded={false}
-        >
-          <table className="tabular w-full text-sm">
-            <tbody className="divide-y divide-line">
-              <CalcRow
-                label={t("Bank balances × {pct}", { pct: pctFmt(r.bankPct) })}
-                value={(Number(c.bankEur) * Number(r.bankPct)) / 100}
-                hint={eur(c.bankEur)}
-              />
-              <CalcRow
-                label={t("Other assets × {pct}", { pct: pctFmt(r.otherPct) })}
-                value={(Number(c.otherEur) * Number(r.otherPct)) / 100}
-                hint={
-                  Number(c.greenAboveLimitEur) > 0
-                    ? t("{total}, incl. {green} of green investments above the limit", {
-                        total: eur(c.otherEur),
-                        green: eur(c.greenAboveLimitEur),
-                      })
-                    : eur(c.otherEur)
-                }
-              />
-              <CalcRow
-                label={t("Debts above {threshold} × {pct}", {
-                  threshold: eur(Number(r.debtThresholdEur) * (y.partner ? 2 : 1), { decimals: 0 }),
-                  pct: pctFmt(r.debtPct),
-                })}
-                value={-(Number(c.deductibleDebtsEur) * Number(r.debtPct)) / 100}
-                hint={eur(c.deductibleDebtsEur)}
-              />
-              <CalcRow label={t("Deemed return (forfaitair rendement)")} value={c.deemedReturnEur} strong />
-              <CalcRow label={t("Rendementsgrondslag (assets − deductible debts)")} value={c.baseEur} />
-              <CalcRow
-                label={y.partner ? t("Heffingsvrij vermogen (2 persons)") : t("Heffingsvrij vermogen")}
-                value={-Number(c.allowanceEur)}
-              />
-              <CalcRow label={t("Grondslag sparen en beleggen")} value={c.taxableBaseEur} />
-              <CalcRow label={t("Share of the rendementsgrondslag that is taxed")} text={`${num(c.sharePct, 2)}%`} />
-              <CalcRow
-                label={t("Voordeel uit sparen en beleggen (deemed return × share)")}
-                value={c.benefitEur}
-                strong
-              />
-              <CalcRow label={t("Box 3 tax at {pct}", { pct: pctFmt(r.taxRatePct) })} value={c.taxEur} strong />
-              {Number(c.greenCreditEur) > 0 && (
-                <>
-                  <CalcRow
-                    label={t("Tax credit for green investments ({pct} of {amount})", {
-                      pct: pctFmt(r.greenCreditPct),
-                      amount: eur(c.greenExemptEur, { decimals: 0 }),
-                    })}
-                    value={-Number(c.greenCreditEur)}
-                  />
-                  <CalcRow label={t("Box 3 tax after the credit")} value={c.netTaxEur} strong />
-                </>
-              )}
-            </tbody>
-          </table>
-        </Card>
-      )}
+      {c && r && <CalculationCard y={y} />}
 
       <ActualReturnCard y={y} />
 
@@ -471,6 +413,76 @@ function YearView({ y, overview }: { y: Box3Year; overview: Box3Overview }) {
         )}
       </Card>
     </div>
+  );
+}
+
+/** The forfaitaire calculation of a year, step by step (also in the dossier). */
+export function CalculationCard({ y }: { y: Box3Year }) {
+  const c = y.calculation;
+  const r = y.rates;
+  if (!c || !r) return null;
+  return (
+    <Card
+      title={
+        <span className="flex items-center gap-2">
+          {t("Calculation {year}", { year: y.year })} {!r.final && <Badge tone="warn">{t("provisional rates")}</Badge>}
+          {r.source === "custom" && <Badge>{t("custom rates")}</Badge>}
+        </span>
+      }
+      padded={false}
+    >
+      <table className="tabular w-full text-sm">
+        <tbody className="divide-y divide-line">
+          <CalcRow
+            label={t("Bank balances × {pct}", { pct: pctFmt(r.bankPct) })}
+            value={(Number(c.bankEur) * Number(r.bankPct)) / 100}
+            hint={eur(c.bankEur)}
+          />
+          <CalcRow
+            label={t("Other assets × {pct}", { pct: pctFmt(r.otherPct) })}
+            value={(Number(c.otherEur) * Number(r.otherPct)) / 100}
+            hint={
+              Number(c.greenAboveLimitEur) > 0
+                ? t("{total}, incl. {green} of green investments above the limit", {
+                    total: eur(c.otherEur),
+                    green: eur(c.greenAboveLimitEur),
+                  })
+                : eur(c.otherEur)
+            }
+          />
+          <CalcRow
+            label={t("Debts above {threshold} × {pct}", {
+              threshold: eur(Number(r.debtThresholdEur) * (y.partner ? 2 : 1), { decimals: 0 }),
+              pct: pctFmt(r.debtPct),
+            })}
+            value={-(Number(c.deductibleDebtsEur) * Number(r.debtPct)) / 100}
+            hint={eur(c.deductibleDebtsEur)}
+          />
+          <CalcRow label={t("Deemed return (forfaitair rendement)")} value={c.deemedReturnEur} strong />
+          <CalcRow label={t("Rendementsgrondslag (assets − deductible debts)")} value={c.baseEur} />
+          <CalcRow
+            label={y.partner ? t("Heffingsvrij vermogen (2 persons)") : t("Heffingsvrij vermogen")}
+            value={-Number(c.allowanceEur)}
+          />
+          <CalcRow label={t("Grondslag sparen en beleggen")} value={c.taxableBaseEur} />
+          <CalcRow label={t("Share of the rendementsgrondslag that is taxed")} text={`${num(c.sharePct, 2)}%`} />
+          <CalcRow label={t("Voordeel uit sparen en beleggen (deemed return × share)")} value={c.benefitEur} strong />
+          <CalcRow label={t("Box 3 tax at {pct}", { pct: pctFmt(r.taxRatePct) })} value={c.taxEur} strong />
+          {Number(c.greenCreditEur) > 0 && (
+            <>
+              <CalcRow
+                label={t("Tax credit for green investments ({pct} of {amount})", {
+                  pct: pctFmt(r.greenCreditPct),
+                  amount: eur(c.greenExemptEur, { decimals: 0 }),
+                })}
+                value={-Number(c.greenCreditEur)}
+              />
+              <CalcRow label={t("Box 3 tax after the credit")} value={c.netTaxEur} strong />
+            </>
+          )}
+        </tbody>
+      </table>
+    </Card>
   );
 }
 

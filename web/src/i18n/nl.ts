@@ -285,6 +285,40 @@ export const NL: Record<string, string> = {
   "Yahoo ticker": "Yahoo-ticker",
   "Bitvavo market": "Bitvavo-markt",
   "Valued after all": "Alsnog gewaardeerd",
+  "One document with the figures and where every amount comes from, to print or keep":
+    "Eén document met de cijfers en waar elk bedrag vandaan komt, om af te drukken of te bewaren",
+  Dossier: "Dossier",
+  "entered by you": "zelf ingevuld",
+  "{ratio} × {symbol}": "{ratio} × {symbol}",
+  "Box 3 dossier {year}": "Box 3-dossier {year}",
+  "Peildatum {date}": "Peildatum {date}",
+  "Made on {date} with Box3balans {version}": "Gemaakt op {date} met Box3balans {version}",
+  "Per account: values and where they come from": "Per rekening: waarden en waar ze vandaan komen",
+  "Synced with {provider} ({n} transactions up to the peildatum), last on {date}":
+    "Gesynchroniseerd met {provider} ({n} transacties tot de peildatum), laatst op {date}",
+  "Wallet on {chain}: {address}, read from the blockchain ({n} transactions)":
+    "Wallet op {chain}: {address}, gelezen van de blockchain ({n} transacties)",
+  "Imported from {file} on {date} ({n} transactions)": "Geïmporteerd uit {file} op {date} ({n} transacties)",
+  "Value on 1 January from {source}, last changed on {date}":
+    "Waarde op 1 januari uit {source}, laatst gewijzigd op {date}",
+  "Value on 1 January entered per year, last changed on {date}":
+    "Waarde op 1 januari per jaar ingevuld, laatst gewijzigd op {date}",
+  "1 transaction entered by hand": "1 transactie met de hand ingevoerd",
+  "{n} transactions entered by hand": "{n} transacties met de hand ingevoerd",
+  "Total on {date}": "Totaal op {date}",
+  "How the values are determined": "Hoe de waarden zijn bepaald",
+  "Box 3 counts what you had on {peildatum}: the holdings at the end of {day}, valued at that day's close or the last one before it.":
+    "Box 3 telt wat je had op {peildatum}: je bezit aan het eind van {day}, gewaardeerd tegen de slotkoers van die dag of de laatste daarvoor.",
+  "Amounts in a foreign currency are converted at the ECB reference rate of that day.":
+    "Bedragen in een vreemde valuta zijn omgerekend tegen de ECB-referentiekoers van die dag.",
+  "Crypto is valued at the price of the source shown. For a coin an exchange no longer trades, a price from Yahoo or Binance is only used when your own trades in it confirm it's the same coin; a coin swapped for a successor is valued at the successor's price times the fixed rate.":
+    "Crypto is gewaardeerd tegen de koers van de bron die erbij staat. Voor een munt die een beurs niet meer verhandelt, wordt een koers van Yahoo of Binance alleen gebruikt als je eigen aan- en verkopen bevestigen dat het dezelfde munt is. Een munt die is ingeruild voor een opvolger, heeft de koers van die opvolger maal de vaste ruilverhouding.",
+  "A value per year is the amount entered for 1 January, by hand or from your bank's export (the file is named).":
+    "Een waarde per jaar is het bedrag dat voor 1 januari is ingevuld, met de hand of uit de export van je bank (dan staat het bestand erbij).",
+  "* No recorded source: a price stored before version 0.1.9 that couldn't be traced back to its source. The holding's price source is shown instead.":
+    "* Geen vastgelegde bron: een koers die vóór versie 0.1.9 is opgeslagen en niet meer naar zijn bron te herleiden is. Daar staat de koersbron van de belegging.",
+  "This dossier is an aid for your own records, not tax advice. Check the amounts against the year statements of your banks and brokers before you copy them into your tax return.":
+    "Dit dossier is een hulpmiddel voor je eigen administratie, geen belastingadvies. Controleer de bedragen met de jaaroverzichten van je banken en brokers voordat je ze in je aangifte overneemt.",
   "Coin swaps booked": "Omwisselingen geboekt",
   "A coin the exchange swapped for another, booked as a sale and a purchase at the same value":
     "Een munt die de exchange omwisselde voor een andere, geboekt als verkoop en aankoop tegen dezelfde waarde",

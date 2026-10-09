@@ -6,8 +6,12 @@ import { D, str } from "../lib/decimal.js";
 import type { FetchFn } from "../lib/http.js";
 import type { FxService } from "../prices/fx.js";
 import { HistoryService } from "../prices/history.js";
+import { availableYears } from "../domain/box3.js";
+import { holdingsOn } from "../domain/valuation.js";
 
 const STATE_KEY = "history_backfill";
+// 31 December closes of holdings already looked up for their source ("assetId:day").
+const LABELS_KEY = "history_labels";
 // Re-check each asset at most this often (the price refresh keeps today's close current).
 const RECHECK_MS = 20 * 3_600_000;
 
@@ -159,8 +163,39 @@ export class BackfillService {
       .insert(settings)
       .values({ key: STATE_KEY, value: state })
       .onConflictDoUpdate({ target: settings.key, set: { value: state } });
+    try {
+      await this.labelYearEnds();
+    } catch {
+      // labels are a nicety; the next run tries again
+    }
     this.lastResult = result;
     return result;
+  }
+
+  /**
+   * Where each 31 December close of a holding came from: box 3 values them, and the dossier shows
+   * the source. Closes stored before sources were recorded (0.1.9) are looked up, each once.
+   */
+  private async labelYearEnds(): Promise<void> {
+    const [row] = await this.db.select().from(settings).where(eq(settings.key, LABELS_KEY));
+    const tried = new Set((row?.value as string[] | undefined) ?? []);
+    const before = tried.size;
+    const byId = new Map((await this.db.select().from(assets)).map((a) => [a.id, a]));
+    for (const year of await availableYears(this.db)) {
+      for (const h of await holdingsOn(this.db, `${year - 1}-12-31`)) {
+        const asset = byId.get(h.assetId);
+        const key = `${h.assetId}:${h.priceDay}`;
+        // Cash is valued at the ECB rate, which says so itself.
+        if (!h.priceDay || !asset || asset.priceSource === "fx" || tried.has(key)) continue;
+        tried.add(key);
+        await this.history.labelClose(asset, h.priceDay);
+      }
+    }
+    if (tried.size === before) return;
+    await this.db
+      .insert(settings)
+      .values({ key: LABELS_KEY, value: [...tried] })
+      .onConflictDoUpdate({ target: settings.key, set: { value: [...tried] } });
   }
 
   /** Foreign cash: 1 unit of the currency per day, in EUR from ECB rates. */
@@ -176,6 +211,7 @@ export class BackfillService {
       close: "1",
       currency,
       closeEur: str(D(1).div(D(r.perEur))),
+      source: `ecb:${currency}`,
     }));
     for (let i = 0; i < values.length; i += 500) {
       await this.db

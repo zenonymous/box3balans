@@ -5,6 +5,8 @@ export interface Quote {
   currency: string;
   changePct24h?: Decimal;
   source: string;
+  // What the source priced (a ticker, market or coin id), recorded with the day's close.
+  ref?: string;
 }
 
 export interface PriceProvider {

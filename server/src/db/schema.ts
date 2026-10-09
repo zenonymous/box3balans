@@ -321,6 +321,9 @@ export const priceHistory = pgTable(
     close: money("close").notNull(),
     currency: text("currency").notNull(),
     closeEur: money("close_eur").notNull(),
+    // Where the close came from, e.g. "bitvavo:BTC-EUR" or "binance:TONUSDT"; null for closes
+    // stored before 0.1.9 that couldn't be traced back to their source.
+    source: text("source"),
   },
   (t) => [primaryKey({ columns: [t.assetId, t.day] })],
 );

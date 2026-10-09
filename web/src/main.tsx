@@ -29,6 +29,7 @@ const SettingsPage = lazy(() => import("./pages/Settings").then((m) => ({ defaul
 const HouseholdPage = lazy(() => import("./pages/Household").then((m) => ({ default: m.HouseholdPage })));
 const StartPage = lazy(() => import("./pages/Start").then((m) => ({ default: m.StartPage })));
 const TaxReturnPage = lazy(() => import("./pages/TaxReturn").then((m) => ({ default: m.TaxReturnPage })));
+const DossierPage = lazy(() => import("./pages/Dossier").then((m) => ({ default: m.DossierPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -70,6 +71,7 @@ function AuthGate() {
         <Route path="income" element={<IncomePage />} />
         <Route path="box3" element={<Box3Page />} />
         <Route path="box3/aangifte" element={<TaxReturnPage />} />
+        <Route path="box3/:year/dossier" element={<DossierPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="transactions/import" element={<ImportPage />} />
         <Route path="metals" element={<MetalsPage />} />

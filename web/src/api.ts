@@ -600,6 +600,23 @@ export interface Box3PersonTax {
   taxEur: string;
 }
 
+/** Where a year's box 3 amounts come from (GET /api/box3/:year/dossier). */
+export interface Dossier {
+  year: number;
+  generatedAt: string;
+  version: string;
+  accounts: {
+    id: number;
+    sync: { provider: string; lastSyncAt: string | null } | null;
+    wallets: { chain: string; address: string }[];
+    imports: { fileName: string; at: string; inserted: number }[];
+    entries: { api: number; chain: number; csv: number; manual: number };
+    yearly: { source: string | null; updatedAt: string } | null;
+  }[];
+  // Source of each holding's close, e.g. "bitvavo:BTC-EUR"; null when not recorded (then `feed`).
+  prices: { assetId: number; day: string; source: string | null; feed: string | null }[];
+}
+
 export interface Box3Year {
   year: number;
   peildatum: string;
