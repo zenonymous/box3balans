@@ -322,6 +322,9 @@ export const NL: Record<string, string> = {
   "Interest paid": "Betaalde rente",
   Owner: "Eigenaar",
   "no price": "geen koers",
+  "swapped for {ratio} {symbol}": "ingeruild voor {ratio} {symbol}",
+  "Swapped for {name} ({symbol}) on {date}, so valued as {ratio} {symbol}. A price you enter here replaces that.":
+    "Op {date} ingeruild voor {name} ({symbol}), dus gewaardeerd als {ratio} {symbol}. Een koers die je hier invult, gaat daarvoor.",
   "Nothing to report yet": "Nog niets aan te geven",
   "Box 3 counts what you had on 1 January. Add your accounts under <0>Accounts</0>: with values per year, or with transactions (box 3 then starts the year after the first one).":
     "Box 3 telt wat je op 1 januari had. Voeg je rekeningen toe onder <0>Rekeningen</0>: met waarden per jaar, of met transacties (box 3 begint dan het jaar na de eerste).",

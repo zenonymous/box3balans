@@ -8,9 +8,11 @@ import { bitvavoCandles, bitvavoTickers } from "./bitvavo.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { plausible } from "./fallbacks.js";
 import type { FxService } from "./fx.js";
+import { migrationOf, type Migration } from "./migrations.js";
 import { normaliseCurrency } from "./yahoo.js";
 
 type Asset = typeof assets.$inferSelect;
+type Point = { day: string; close: Decimal; currency: string };
 
 const DAY = 86_400_000;
 const METAL_FUTURES: Record<string, string> = { XAU: "GC=F", XAG: "SI=F", XPT: "PL=F", XPD: "PA=F" };
@@ -86,8 +88,11 @@ export class HistoryService {
     return row ? D(row.closeEur) : null;
   }
 
-  private async fetchHistory(asset: Asset, from: string, to: string) {
-    if (asset.assetClass === "crypto" && asset.priceSource === "manual") return this.delistedCoin(asset, from, to);
+  private async fetchHistory(asset: Asset, from: string, to: string): Promise<Point[]> {
+    if (asset.assetClass === "crypto" && asset.priceSource === "manual") {
+      const swap = migrationOf(asset);
+      return swap ? this.swapped(asset, swap, from, to) : this.delistedCoin(asset, from, to);
+    }
     // Metals: COMEX/NYMEX front-month futures in USD per troy ounce, converted to per gram below.
     const futures = asset.priceSource === "metal" && asset.priceRef ? METAL_FUTURES[asset.priceRef] : undefined;
     if (futures) {
@@ -149,20 +154,17 @@ export class HistoryService {
   }
 
   /**
-   * Whether a guessed Yahoo pair prices the same coin: its current price within half to double of
-   * this asset's latest quote (or CoinGecko's, for a coin not priced yet), as for price fallbacks.
-   */
-  /**
    * A manually priced coin, typically one its exchange has delisted: history from Yahoo's EUR pair or
    * Binance's USDT pair, but only when it demonstrably is this coin. Its closes must match the prices
    * of your own trades in it, or (Yahoo) carry the coin's name.
    */
-  private async delistedCoin(asset: Asset, from: string, to: string) {
+  private async delistedCoin(asset: Asset, from: string, to: string, name = asset.name): Promise<Point[]> {
     const symbol = asset.symbol.toUpperCase();
     const trades = await this.tradePrices(asset.id);
     try {
       const y = await this.yahoo(`${symbol}-EUR`, from, to);
-      if (y.points.length && ((await this.matchesTrades(y.points, trades)) ?? sameName(asset, y.name))) return y.points;
+      if (y.points.length && ((await this.matchesTrades(y.points, trades)) ?? sameName(name, symbol, y.name)))
+        return y.points;
     } catch {
       // try the next source
     }
@@ -177,6 +179,54 @@ export class HistoryService {
       // not on Binance
     }
     return [];
+  }
+
+  /**
+   * A coin swapped for a successor (NU for T): its own history until the swap, from its exchanges'
+   * old pairs (known by the coin's old name), then the successor's closes times the rate. In EUR,
+   * as the two parts may come in different currencies.
+   */
+  private async swapped(asset: Asset, swap: Migration, from: string, to: string): Promise<Point[]> {
+    const lastOwn = isoDay(Date.parse(swap.since) - DAY);
+    // Yahoo pads the range by a day; from the swap day on it's the successor's.
+    const own =
+      from <= lastOwn
+        ? (await this.delistedCoin(asset, from, to < lastOwn ? to : lastOwn, swap.name)).filter((p) => p.day <= lastOwn)
+        : [];
+    const start = from > swap.since ? from : swap.since;
+    const next = start <= to ? await this.successorCloses(swap, start, to) : [];
+    const points = [...own, ...next.map((p) => ({ ...p, close: p.close.mul(swap.ratio) }))];
+    await this.fx.ensureRange([...new Set(points.map((p) => p.currency))], from, to);
+    const out: Point[] = [];
+    for (const p of points) {
+      const close = p.currency === "EUR" ? p.close : p.close.mul(await this.fx.eurPerUnit(p.currency, p.day));
+      out.push({ day: p.day, close, currency: "EUR" });
+    }
+    return out;
+  }
+
+  /** Daily closes of a successor coin: its Bitvavo market, with Binance and Yahoo for days it lacks. */
+  private async successorCloses(swap: Migration, from: string, to: string): Promise<Point[]> {
+    const { bitvavo, binance, yahoo } = swap.to;
+    const sources = [
+      bitvavo &&
+        (async () => (await bitvavoCandles(bitvavo, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "EUR" }))),
+      binance &&
+        (async () =>
+          (await binanceDailyCloses(binance, from, to, this.fetchFn)).map((p) => ({ ...p, currency: "USD" }))),
+      yahoo && (async () => (await this.yahoo(yahoo, from, to)).points),
+    ];
+    const days = Math.round((Date.parse(to) - Date.parse(from)) / DAY) + 1;
+    const byDay = new Map<string, Point>();
+    for (const load of sources) {
+      if (!load || byDay.size >= days) continue;
+      try {
+        for (const p of await load()) if (p.day >= from && p.day <= to && !byDay.has(p.day)) byDay.set(p.day, p);
+      } catch {
+        // try the next source
+      }
+    }
+    return [...byDay.values()];
   }
 
   /** EUR unit prices of your buys and sells of an asset, by day. */
@@ -211,6 +261,10 @@ export class HistoryService {
     return median >= 0.5 && median <= 2;
   }
 
+  /**
+   * Whether a guessed Yahoo pair prices the same coin: its current price within half to double of
+   * this asset's latest quote (or CoinGecko's, for a coin not priced yet), as for price fallbacks.
+   */
   private async sameCoin(
     asset: Asset,
     series: { points: { day: string; close: Decimal; currency: string }[]; current?: Decimal },
@@ -236,7 +290,11 @@ export class HistoryService {
     }
   }
 
-  private async yahoo(ticker: string, from: string, to: string) {
+  private async yahoo(
+    ticker: string,
+    from: string,
+    to: string,
+  ): Promise<{ points: Point[]; current?: Decimal; name?: string }> {
     const p1 = Math.floor(Date.parse(from) / 1000) - DAY / 1000;
     const p2 = Math.floor(Date.parse(to) / 1000) + DAY / 1000;
     const data = await getJson<ChartHistory>(
@@ -275,12 +333,12 @@ export class HistoryService {
  * Whether Yahoo's name for a pair ("Theta Network EUR") is this coin's name. A coin still named after
  * its symbol proves nothing, so that never matches.
  */
-function sameName(asset: Asset, yahooName: string | undefined): boolean {
+function sameName(name: string, symbol: string, yahooName: string | undefined): boolean {
   const norm = (s: string) =>
     s
       .toLowerCase()
       .replace(/\s+(eur|usd|usdt)$/, "")
       .replace(/[^a-z0-9]/g, "");
-  if (!yahooName || norm(asset.name) === norm(asset.symbol)) return false;
-  return norm(yahooName) === norm(asset.name);
+  if (!yahooName || norm(name) === norm(symbol)) return false;
+  return norm(yahooName) === norm(name);
 }

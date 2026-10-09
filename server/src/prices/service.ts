@@ -7,6 +7,7 @@ import { bitvavoProvider } from "./bitvavo.js";
 import { coingeckoProvider } from "./coingecko.js";
 import { FxService } from "./fx.js";
 import { metalsProvider } from "./metals.js";
+import { migrationOf, successorQuotes } from "./migrations.js";
 import type { PriceProvider, Quote } from "./types.js";
 import { bitvavoFallback, type Fallback, plausible, tradegateFallback, yahooCryptoFallback } from "./fallbacks.js";
 import { yahooProvider } from "./yahoo.js";
@@ -132,6 +133,7 @@ export class PriceService {
       }
     }
     for (const m of missed) result.failed.push({ assetId: m.asset.id, symbol: m.asset.symbol, error: m.error });
+    await this.refreshSwapped(assetIds, result);
 
     if (!assetIds) {
       await this.db
@@ -140,6 +142,42 @@ export class PriceService {
         .onConflictDoUpdate({ target: settings.key, set: { value: result } });
     }
     return result;
+  }
+
+  /**
+   * Coins swapped for a successor (NU for T, see migrations.ts): the successor's price times the
+   * rate. A price you entered yourself stays.
+   */
+  private async refreshSwapped(assetIds: number[] | undefined, result: RefreshResult) {
+    const conditions = [eq(assets.assetClass, "crypto"), eq(assets.priceSource, "manual")];
+    if (assetIds) conditions.push(inArray(assets.id, assetIds));
+    const rows = await this.db
+      .select({ asset: assets, source: pricesLatest.source })
+      .from(assets)
+      .leftJoin(pricesLatest, eq(pricesLatest.assetId, assets.id))
+      .where(and(...conditions));
+    const todo = rows.flatMap((r) => {
+      const swap = r.source === "manual" ? undefined : migrationOf(r.asset);
+      return swap ? [{ asset: r.asset, swap }] : [];
+    });
+    if (!todo.length) return;
+    const quotes = await successorQuotes(
+      todo.map((t) => t.swap),
+      this.fetchFn,
+    );
+    for (const { asset, swap } of todo) {
+      const q = quotes.get(swap.to.symbol);
+      if (!q) {
+        result.failed.push({ assetId: asset.id, symbol: asset.symbol, error: `no quote for ${swap.to.symbol}` });
+        continue;
+      }
+      try {
+        await this.store(asset.id, { ...q, price: q.price.mul(swap.ratio), source: "migration" });
+        result.updated++;
+      } catch (err) {
+        result.failed.push({ assetId: asset.id, symbol: asset.symbol, error: (err as Error).message });
+      }
+    }
   }
 
   private async lastKnownEur(assetId: number): Promise<Decimal | null> {

@@ -158,6 +158,8 @@ export interface Asset {
   hidden: boolean;
   terPct: string | null;
   price: LatestPrice | null;
+  /** A coin swapped for another (NU for T), valued as `ratio` of its successor from `since`. */
+  swappedFor: { symbol: string; name: string; ratio: string; since: string } | null;
 }
 
 export interface AssetCandidate {

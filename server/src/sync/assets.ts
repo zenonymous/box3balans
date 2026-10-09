@@ -5,6 +5,7 @@ import { audit } from "../lib/audit.js";
 import { getJson, HttpRequestError, type FetchFn } from "../lib/http.js";
 import { bitvavoAssetNames, bitvavoEurMarkets } from "../prices/bitvavo.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
+import { MIGRATIONS, migrationOf } from "../prices/migrations.js";
 import { yahooQuote, yahooSearch } from "../prices/yahoo.js";
 import type { AssetRef } from "./types.js";
 import { tr } from "../i18n/index.js";
@@ -118,9 +119,13 @@ export class AssetResolver {
   describeCreated(): string[] {
     const src: Record<string, string> = { coingecko: "CoinGecko", yahoo: "Yahoo", bitvavo: "Bitvavo" };
     const feed = (a: Asset) => `${a.symbol} → ${src[a.priceSource] ?? a.priceSource} ${a.priceRef}`;
+    const manual = (a: Asset) => {
+      const swap = migrationOf(a);
+      return swap ? `${a.symbol} → ${swap.ratio.toString()} ${swap.to.symbol} (swapped)` : `${a.symbol} (manual price)`;
+    };
     return [
       ...this.created.map((a) =>
-        a.priceSource === "fx" ? a.symbol : a.priceSource === "manual" ? `${a.symbol} (manual price)` : feed(a),
+        a.priceSource === "fx" ? a.symbol : a.priceSource === "manual" ? manual(a) : feed(a),
       ),
       ...this.upgraded.map((a) => `${feed(a)} (was manual)`),
     ];
@@ -300,6 +305,18 @@ export class AssetResolver {
       const market = await this.bitvavoMarket(symbol);
       if (market) return this.bitvavoAsset(symbol, market);
     }
+    // A coin swapped for another (NU for T) is valued through its successor, see prices/migrations.ts.
+    const swap = MIGRATIONS.find((m) => m.symbol === symbol);
+    if (swap) {
+      return this.create({
+        assetClass: "crypto",
+        name: swap.name,
+        symbol,
+        priceSource: "manual",
+        priceRef: `manual:${symbol}`,
+        currency: "EUR",
+      });
+    }
     const match = await this.coingeckoMatch(symbol);
     if (match) {
       const [byRef] = await this.db
@@ -364,10 +381,6 @@ export class AssetResolver {
   }
 
   /**
-   * An asset made "manual" automatically because no price feed answered at the time (e.g. CoinGecko's
-   * rate limit) gets one now if there is one. A price you entered yourself keeps it manual.
-   */
-  /**
    * Upgrades every automatically "manual" coin of an account, not just those in this sync's events:
    * coins seen only in older history aren't looked at again by an incremental sync. Bitvavo's
    * market list costs one call; CoinGecko lookups are slow, so a few per sync, in random order.
@@ -384,6 +397,11 @@ export class AssetResolver {
     const manual = rows.map((r) => r.asset).filter((a) => a.priceRef === `manual:${a.symbol}`);
     let lookups = 0;
     for (const a of manual.sort(() => Math.random() - 0.5)) {
+      const swap = migrationOf(a);
+      if (swap) {
+        await this.rename(a, swap.name);
+        continue;
+      }
       const onBitvavo = !!(await this.bitvavoMarket(a.symbol.toUpperCase()));
       if (!onBitvavo) await this.nameFromBitvavo(a);
       if (!onBitvavo && (venue === "bitvavo" || lookups++ >= coingeckoLookups)) continue;
@@ -399,11 +417,21 @@ export class AssetResolver {
     if (a.name !== a.symbol) return;
     this.bitvavoNames ??= bitvavoAssetNames(this.fetchFn).catch(() => new Map<string, string>());
     const name = (await this.bitvavoNames).get(a.symbol.toUpperCase());
-    if (name && name !== a.name) await this.db.update(assets).set({ name }).where(eq(assets.id, a.id));
+    if (name) await this.rename(a, name);
   }
 
+  /** Names a coin still named after its symbol; a name you gave it stays. */
+  private async rename(a: Asset, name: string) {
+    if (a.name === a.symbol && name !== a.name) await this.db.update(assets).set({ name }).where(eq(assets.id, a.id));
+  }
+
+  /**
+   * An asset made "manual" automatically because no price feed answered at the time (e.g. CoinGecko's
+   * rate limit) gets one now if there is one. A price you entered yourself keeps it manual.
+   */
   private async upgradeManual(a: Asset, venue?: "bitvavo"): Promise<Asset | null> {
     if (a.assetClass !== "crypto" || a.priceSource !== "manual" || a.priceRef !== `manual:${a.symbol}`) return null;
+    if (migrationOf(a)) return null;
     if (this.opts.dryRun || this.triedUpgrade.has(a.id)) return null;
     this.triedUpgrade.add(a.id);
     const [price] = await this.db

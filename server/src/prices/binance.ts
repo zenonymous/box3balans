@@ -31,3 +31,15 @@ export async function binanceDailyCloses(
   }
   return out;
 }
+
+/** Last price and 24h change (%) of a Binance pair, in its quote currency. */
+export async function binanceQuote(
+  pair: string,
+  fetchFn?: FetchFn,
+): Promise<{ price: Decimal; changePct24h: Decimal }> {
+  const t = await getJson<{ lastPrice: string; priceChangePercent: string }>(
+    `https://api.binance.com/api/v3/ticker/24hr?symbol=${encodeURIComponent(pair)}`,
+    { fetchFn, retries: 1 },
+  );
+  return { price: D(t.lastPrice), changePct24h: D(t.priceChangePercent) };
+}

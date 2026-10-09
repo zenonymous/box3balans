@@ -6,6 +6,7 @@ import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import { currencyCode, decimalString, idParam } from "../lib/validation.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
+import { migrationOf } from "../prices/migrations.js";
 import { yahooQuote, yahooSearch } from "../prices/yahoo.js";
 import { tr } from "../i18n/index.js";
 import { displayName, isBuiltin } from "../db/seed.js";
@@ -53,7 +54,18 @@ export async function assetRoutes(app: FastifyInstance) {
       .from(assets)
       .leftJoin(pricesLatest, eq(pricesLatest.assetId, assets.id))
       .orderBy(asc(assets.assetClass), asc(assets.name));
-    return rows.map((r) => ({ ...r.asset, name: displayName(r.asset), price: r.price }));
+    return rows.map((r) => {
+      // A coin swapped for another (NU for T) is valued as its successor; see prices/migrations.ts.
+      const swap = migrationOf(r.asset);
+      return {
+        ...r.asset,
+        name: displayName(r.asset),
+        price: r.price,
+        swappedFor: swap
+          ? { symbol: swap.to.symbol, name: swap.to.name, ratio: swap.ratio.toString(), since: swap.since }
+          : null,
+      };
+    });
   });
 
   // Look up instruments by name, ticker or ISIN (Yahoo) or coin name/symbol (CoinGecko).

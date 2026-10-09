@@ -11,7 +11,11 @@ const STATE_KEY = "history_backfill";
 // Re-check each asset at most this often (the price refresh keeps today's close current).
 const RECHECK_MS = 20 * 3_600_000;
 
-type State = Record<string, { from: string; at: string }>;
+// Raise this when history gets new sources: assets loaded before then get one full load again.
+// 2: delisted and swapped coins.
+const SOURCES = 2;
+
+type State = Record<string, { from: string; at: string; v?: number }>;
 
 export interface BackfillResult {
   at: string;
@@ -102,14 +106,18 @@ export class BackfillService {
       if (asset.priceSource === "fx" && asset.priceRef === "EUR") continue; // always 1
       result.checked++;
       const prev = state[asset.id];
-      const fresh = prev && prev.from <= from && Date.now() - Date.parse(prev.at) < RECHECK_MS;
-      if (fresh && !force) continue;
+      const loaded = prev && prev.from <= from && (prev.v ?? 1) >= SOURCES;
+      if (loaded && Date.now() - Date.parse(prev.at) < RECHECK_MS && !force) continue;
       // After the first full load only the recent days need filling.
-      const start = prev && prev.from <= from && !force ? isoDay(new Date(Date.parse(prev.at) - 5 * 86_400_000)) : from;
+      const start = loaded && !force ? isoDay(new Date(Date.parse(prev.at) - 5 * 86_400_000)) : from;
       try {
         if (asset.priceSource === "fx") await this.cashHistory(asset.id, asset.priceRef!, start, today);
         else await this.history.ensureRange(asset, start, today);
-        state[asset.id] = { from: prev && prev.from < from ? prev.from : from, at: new Date().toISOString() };
+        state[asset.id] = {
+          from: prev && prev.from < from ? prev.from : from,
+          at: new Date().toISOString(),
+          v: SOURCES,
+        };
         result.fetched++;
       } catch (err) {
         result.failed.push({ symbol: asset.symbol, error: (err as Error).message });

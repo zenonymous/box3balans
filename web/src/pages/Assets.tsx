@@ -16,7 +16,17 @@ import {
   Spinner,
   Tabs,
 } from "../components/ui";
-import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eurPrice, relativeTime, toApiNumber, toInputNumber } from "../format";
+import {
+  CLASS_COLOR,
+  CLASS_LABEL,
+  CLASS_ORDER,
+  date,
+  eurPrice,
+  num,
+  relativeTime,
+  toApiNumber,
+  toInputNumber,
+} from "../format";
 import { useAssets, useInvalidateAll } from "../queries";
 import { t } from "../i18n";
 
@@ -84,8 +94,21 @@ export function AssetsPage() {
                           </div>
                           <div className="truncate text-xs text-muted">
                             {a.symbol}
-                            {a.isin && ` · ${a.isin}`} · {SOURCE_LABEL[a.priceSource]}
-                            {a.priceRef && a.priceSource !== "fx" && a.priceSource !== "metal" && ` (${a.priceRef})`}
+                            {a.isin && ` · ${a.isin}`} ·{" "}
+                            {a.swappedFor ? (
+                              t("swapped for {ratio} {symbol}", {
+                                ratio: num(a.swappedFor.ratio),
+                                symbol: a.swappedFor.symbol,
+                              })
+                            ) : (
+                              <>
+                                {SOURCE_LABEL[a.priceSource]}
+                                {a.priceRef &&
+                                  a.priceSource !== "fx" &&
+                                  a.priceSource !== "metal" &&
+                                  ` (${a.priceRef})`}
+                              </>
+                            )}
                           </div>
                         </div>
                         <div className="shrink-0 text-right">
@@ -480,12 +503,22 @@ function EditAssetModal({ asset, onClose }: { asset: Asset; onClose: () => void 
           <Field
             label={t("Current price ({currency})", { currency: asset.currency })}
             hint={
-              asset.price
-                ? t("Last set {when}: {price}", {
-                    when: relativeTime(asset.price.fetchedAt),
-                    price: eurPrice(asset.price.price, asset.currency),
-                  })
-                : t("Not set yet")
+              asset.swappedFor && asset.price?.source !== "manual"
+                ? t(
+                    "Swapped for {name} ({symbol}) on {date}, so valued as {ratio} {symbol}. A price you enter here replaces that.",
+                    {
+                      name: asset.swappedFor.name,
+                      symbol: asset.swappedFor.symbol,
+                      date: date(asset.swappedFor.since),
+                      ratio: num(asset.swappedFor.ratio),
+                    },
+                  )
+                : asset.price
+                  ? t("Last set {when}: {price}", {
+                      when: relativeTime(asset.price.fetchedAt),
+                      price: eurPrice(asset.price.price, asset.currency),
+                    })
+                  : t("Not set yet")
             }
           >
             {(id) => <AmountInput id={id} value={price} onChange={(e) => setPrice(e.target.value)} />}
