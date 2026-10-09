@@ -10,7 +10,7 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
-**2027 zit er nog niet in.** Stand op 8 oktober 2026:
+**2027 staat erin als voorlopig jaar** (sinds 0.1.11), met de cijfers uit de kabinetsbrief hieronder. Stand op 9 oktober 2026:
 
 - **Belastingplan 2027** (Prinsjesdag, 15 september 2026; wetsvoorstel 37.022): box 3 staat niet in het pakket zelf. De kerncijfers gingen uit van een heffingsvrij vermogen van € 60.098 en een tarief van 36%; de gewone actualisatie brengt het forfaitaire rendement op overige bezittingen op 6,37% (was 6,00%).
 - **Brief van het kabinet van 29 september 2026** (Tweede Kamer 2026Z20444): per 2027 gaat het heffingsvrij vermogen terug naar het niveau van 2020, **€ 30.846** per persoon, en het forfait voor overige bezittingen, inclusief huurinkomsten en voordelen uit eigen gebruik van onroerende zaken, gaat **1,5 procentpunt omhoog** (dus naar 7,87%). Dat betaalt mee aan de novelle hieronder.
@@ -18,7 +18,7 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 - **Groene beleggingen:** de vrijstelling en de heffingskorting vervallen per 1 januari 2028, niet al in 2027 zoals eerst gepland. De bedragen voor 2027 volgen met de vaste cijfers.
 - De percentages voor banktegoeden en schulden over 2027 zijn pas na afloop van het jaar definitief.
 
-Volgens [belastingregels.md](belastingregels.md) komt 2027 erin zodra het Belastingplan is aangenomen (december), als voorlopig jaar. Tot die tijd kun je het zelf toevoegen onder _Regels en tarieven_.
+Eerder dan [belastingregels.md](belastingregels.md) voorschrijft: 2027 is al toegevoegd, zodat het jaar klaarstaat. De schuldendrempel, de groene vrijstelling en de percentages voor banktegoeden en schulden zijn die van 2026 tot de cijfers van 2027 bekend zijn. **In december controleren** zodra het Belastingplan is aangenomen, en de bron van 2027 vervangen door de aangenomen tekst of de pagina van de Belastingdienst ([#4](https://github.com/zenonymous/box3balans/issues/4)). Wie andere cijfers wil, past ze aan onder _Regels en tarieven_.
 
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026, afschrift aan de Eerste Kamer): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - Eerste Kamer, _Belastingplan 2027 (37.022)_: https://www.eerstekamer.nl/wetsvoorstel/37022_belastingplan_2027
