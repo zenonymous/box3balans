@@ -244,3 +244,99 @@ describe("Bitvavo market data", () => {
     expect(fetchFn.calls).toHaveLength(2);
   });
 });
+
+describe("coins Bitvavo swapped for another", () => {
+  const SWAP_HISTORY = [
+    {
+      transactionId: "d1",
+      executedAt: "2024-01-01T09:00:00Z",
+      type: "deposit",
+      receivedCurrency: "EUR",
+      receivedAmount: "1000",
+    },
+    {
+      transactionId: "b1",
+      executedAt: "2024-02-01T10:00:00Z",
+      type: "buy",
+      sentCurrency: "EUR",
+      sentAmount: "500",
+      receivedCurrency: "MATIC",
+      receivedAmount: "1000",
+    },
+    // Bitvavo's MATIC → POL migration: the new coin in a minute before the old one out.
+    {
+      transactionId: "m-in",
+      executedAt: "2024-09-10T11:45:00Z",
+      type: "manually_assigned",
+      receivedCurrency: "POL",
+      receivedAmount: "1000",
+    },
+    {
+      transactionId: "m-out",
+      executedAt: "2024-09-10T11:46:00Z",
+      type: "manually_assigned",
+      sentCurrency: "MATIC",
+      sentAmount: "1000",
+    },
+    // Dust taken away, nothing given for it.
+    {
+      transactionId: "dai",
+      executedAt: "2024-12-24T08:37:00Z",
+      type: "manually_assigned",
+      sentCurrency: "DAI",
+      sentAmount: "0.0049",
+    },
+  ];
+  const swapRoutes = (candles: unknown[]) =>
+    routes({
+      "api.bitvavo.com/v2/balance": [
+        { symbol: "EUR", available: "500", inOrder: "0" },
+        { symbol: "POL", available: "1000", inOrder: "0" },
+      ],
+      "api.bitvavo.com/v2/account/history": { items: SWAP_HISTORY, currentPage: 1, totalPages: 1, maxItems: 100 },
+      "api.bitvavo.com/v2/markets": [
+        { market: "POL-EUR", base: "POL", quote: "EUR", status: "trading" },
+        { market: "DAI-EUR", base: "DAI", quote: "EUR", status: "trading" },
+      ],
+      "api.bitvavo.com/v2/assets": [{ symbol: "POL", name: "POL" }],
+      "api.bitvavo.com/v2/POL-EUR/candles": candles,
+    });
+  const byExternal = async (id: string) =>
+    (await t!.database.db.select().from(transactions).where(eq(transactions.externalId, id)))[0]!;
+
+  it("books the old coin out and the new one in as a sale and a purchase at the same value", async () => {
+    t = await createTestApp(swapRoutes([candle("2024-09-10", 0.35)]));
+    const { id, result } = await syncBitvavo();
+    expect(result.swaps).toBe(1);
+    const out = await byExternal("m-out");
+    const into = await byExternal("m-in");
+    expect(out).toMatchObject({ type: "sell", notes: "Bitvavo manually assigned · swap MATIC → POL" });
+    expect(into).toMatchObject({ type: "buy", notes: "Bitvavo manually assigned · swap MATIC → POL" });
+    // MATIC is valued as POL from the swap on (prices/migrations.ts): 1,000 × €0.35 on both sides.
+    expect(Number(out.price)).toBe(0.35);
+    expect(Number(into.price)).toBe(0.35);
+    expect(await byExternal("dai")).toMatchObject({ type: "withdrawal" });
+
+    // Booked once: the next sync finds nothing left to pair.
+    expect((await t.api("POST", `/api/integrations/${id}/sync`)).statusCode).toBe(202);
+    await t.sync.whenIdle(id);
+    const again = json<any[]>(await t.api("GET", "/api/integrations")).find((i) => i.id === id).lastResult;
+    expect(again.swaps ?? 0).toBe(0);
+  });
+
+  it("waits for a value, and leaves a pair you edited alone", async () => {
+    const r = swapRoutes([]);
+    t = await createTestApp(r);
+    const { id, result } = await syncBitvavo();
+    expect(result.swaps ?? 0).toBe(0);
+    expect(await byExternal("m-in")).toMatchObject({ type: "deposit" });
+
+    const into = await byExternal("m-in");
+    expect((await t.api("PUT", `/api/transactions/${into.id}`, { price: "0.30" })).statusCode).toBe(200);
+    r["api.bitvavo.com/v2/POL-EUR/candles"] = [candle("2024-09-10", 0.35)];
+    expect((await t.api("POST", `/api/integrations/${id}/sync`)).statusCode).toBe(202);
+    await t.sync.whenIdle(id);
+    expect(await byExternal("m-in")).toMatchObject({ type: "deposit" });
+    expect(await byExternal("m-out")).toMatchObject({ type: "withdrawal" });
+  });
+});

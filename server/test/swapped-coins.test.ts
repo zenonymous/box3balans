@@ -96,6 +96,27 @@ describe("coins swapped for a successor", () => {
     expect((await t.backfill.run()).fetched).toBe(0);
   });
 
+  it("takes an old coin's own Binance pair from the list, without trades to check it against", async () => {
+    t = await createTestApp(
+      {
+        ...defaultRoutes,
+        "api/v3/klines?symbol=LITUSDT": [kline("2024-12-31", 0.77)],
+        "api.bitvavo.com/v2/HEI-EUR/candles": [kline("2025-02-14", 0.52)],
+        "api/v3/klines?symbol=HEIUSDT": [kline("2025-02-13", 0.55)],
+        "frankfurter.dev/v1/2025-": { date: "2025-02-12", rates: { USD: 1.1 } },
+      },
+      { login: false },
+    );
+    const { asset } = await holding("LIT", "2024-12-01");
+    const history = new HistoryService(t.database.db, t.prices.fx, t.fetch);
+    await history.ensureRange(asset, "2024-12-01", "2025-02-14");
+    const eurOn = async (day: string) => Number(await history.eurOn(asset.id, day));
+    expect(await eurOn("2024-12-31")).toBeCloseTo(0.7, 8);
+    // From the swap on, Heima: Binance for the first day, Bitvavo's market after.
+    expect(await eurOn("2025-02-13")).toBeCloseTo(0.5, 8);
+    expect(await eurOn("2025-02-14")).toBe(0.52);
+  });
+
   it("prices an old coin as its successor today, but keeps a price you entered", async () => {
     t = await createTestApp({
       ...defaultRoutes,

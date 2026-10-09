@@ -179,6 +179,18 @@ function ConnectionCard({
                 </dd>
               </>
             )}
+            {!!r.swaps && (
+              <>
+                <dt className="text-ink-2">{t("Coin swaps booked")}</dt>
+                <dd
+                  title={t(
+                    "A coin the exchange swapped for another, booked as a sale and a purchase at the same value",
+                  )}
+                >
+                  {r.swaps}
+                </dd>
+              </>
+            )}
           </>
         )}
       </dl>

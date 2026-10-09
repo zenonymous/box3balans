@@ -344,6 +344,8 @@ export interface SyncResult {
   transfersMatched: number;
   /** Rewards and deposits booked at €0 earlier that now have a value. */
   revalued?: number;
+  /** Bitvavo coin swaps (old coin out, new coin in) booked as a sale and a purchase. */
+  swaps?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   warnings: string[];

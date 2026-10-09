@@ -13,6 +13,7 @@ import { ibkr } from "./providers/ibkr.js";
 import { kraken } from "./providers/kraken.js";
 import { type Mismatch, reconcile } from "./reconcile.js";
 import { revalueUnpriced } from "./revalue.js";
+import { bookBitvavoSwaps } from "./swaps.js";
 import { matchTransfers } from "./transfers.js";
 import type { ExchangeProvider, ProviderContext } from "./types.js";
 
@@ -29,6 +30,8 @@ export interface SyncResult {
   transfersMatched: number;
   /** Rewards and deposits booked at €0 earlier that now have a value. */
   revalued?: number;
+  // Bitvavo coin swaps (old coin out, new coin in) booked as a sale and a purchase.
+  swaps?: number;
   newAssets: string[];
   mismatches: Mismatch[];
   warnings: string[];
@@ -130,6 +133,7 @@ export class SyncService {
       });
       result.warnings.push(...imported.warnings);
       await resolver.upgradeManualIn(row.accountId, row.provider === "bitvavo" ? "bitvavo" : undefined);
+      if (row.provider === "bitvavo") result.swaps = await bookBitvavoSwaps(this.db, history, row.accountId);
       result.revalued = await revalueUnpriced(this.db, history, row.accountId);
 
       result.transfersMatched = await matchTransfers(this.db);

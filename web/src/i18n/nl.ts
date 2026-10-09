@@ -285,6 +285,9 @@ export const NL: Record<string, string> = {
   "Yahoo ticker": "Yahoo-ticker",
   "Bitvavo market": "Bitvavo-markt",
   "Valued after all": "Alsnog gewaardeerd",
+  "Coin swaps booked": "Omwisselingen geboekt",
+  "A coin the exchange swapped for another, booked as a sale and a purchase at the same value":
+    "Een munt die de exchange omwisselde voor een andere, geboekt als verkoop en aankoop tegen dezelfde waarde",
   "Rewards and deposits that were booked at €0 because no price was known yet":
     "Beloningen en stortingen die op € 0 stonden omdat er nog geen koers bekend was",
   "CoinGecko id": "CoinGecko-id",

@@ -183,16 +183,25 @@ export class HistoryService {
 
   /**
    * A coin swapped for a successor (NU for T): its own history until the swap, from its exchanges'
-   * old pairs (known by the coin's old name), then the successor's closes times the rate. In EUR,
-   * as the two parts may come in different currencies.
+   * old pairs (known by the coin's old name) or else its Binance pair from the list, then the
+   * successor's closes times the rate. In EUR, as the two parts may come in different currencies.
    */
   private async swapped(asset: Asset, swap: Migration, from: string, to: string): Promise<Point[]> {
     const lastOwn = isoDay(Date.parse(swap.since) - DAY);
+    const ownTo = to < lastOwn ? to : lastOwn;
+    let own = from <= lastOwn ? await this.delistedCoin(asset, from, ownTo, swap.name) : [];
+    if (!own.length && swap.binance && from <= lastOwn) {
+      try {
+        own = (await binanceDailyCloses(swap.binance, from, ownTo, this.fetchFn)).map((p) => ({
+          ...p,
+          currency: "USD",
+        }));
+      } catch {
+        // not on Binance (any more)
+      }
+    }
     // Yahoo pads the range by a day; from the swap day on it's the successor's.
-    const own =
-      from <= lastOwn
-        ? (await this.delistedCoin(asset, from, to < lastOwn ? to : lastOwn, swap.name)).filter((p) => p.day <= lastOwn)
-        : [];
+    own = own.filter((p) => p.day <= lastOwn);
     const start = from > swap.since ? from : swap.since;
     const next = start <= to ? await this.successorCloses(swap, start, to) : [];
     const points = [...own, ...next.map((p) => ({ ...p, close: p.close.mul(swap.ratio) }))];
