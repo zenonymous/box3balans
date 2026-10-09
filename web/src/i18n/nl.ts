@@ -181,8 +181,8 @@ export const NL: Record<string, string> = {
   "Add a year": "Jaar toevoegen",
   "Read a bank export": "Bankexport inlezen",
   "Balance after the last line": "Saldo na de laatste regel",
-  "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
-    "Download je mutaties van de website van je bank, als CSV of CAMT.053, over de jaren die je wilt, en kies het bestand hier. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
+  "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
+    "Download je mutaties van de website van je bank, als CSV, CAMT.053 of MT940, over de jaren die je wilt, en kies het bestand hier. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Reading…": "Inlezen…",
   "This export has no balances; with one known balance the rest follows.":
     "Deze export heeft geen saldi; met één bekend saldo volgt de rest.",

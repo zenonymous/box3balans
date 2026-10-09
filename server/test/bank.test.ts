@@ -116,6 +116,70 @@ describe("bank exports → values per year", () => {
     expect(acc!.years[0]).toMatchObject({ interestEur: "25.00", outEur: "100.00" });
   });
 
+  const MT940 = [
+    "{1:F01KNABNL2HAXXX0000000000}{2:I940KNABNL2HXXXXN3020}{4:",
+    ":20:STMT1",
+    ":25:NL12KNAB0123456789 EUR",
+    ":28C:00001",
+    ":60F:C241201EUR1000,00",
+    ":61:2412101210C250,00NTRFNONREF//X1",
+    ":86:/TRTP/SEPA OVERBOEKING/NAME/Ik",
+    "/REMI/Sparen",
+    // Valued 1 January, booked 31 December: the booking date counts, in the year before.
+    ":61:2501011231C12,34NINTNONREF",
+    ":86:Creditrente 2024",
+    ":62F:C241231EUR1262,34",
+    "-",
+    ":20:STMT2",
+    ":25:NL12KNAB0123456789 EUR",
+    ":60F:C241231EUR1262,34",
+    ":61:250115D100,00NTRFNONREF",
+    ":86:/TRTP/SEPA OVERBOEKING/NAME/Verhuurder",
+    // A debit reversed, and a credit with a funds code.
+    ":61:250120RD100,00NTRFNONREF",
+    ":86:Storno",
+    ":61:250201CR50,00NTRFNONREF",
+    ":86:Gift",
+    ":62F:C250201EUR1312,34",
+    "-}",
+  ].join("\r\n");
+
+  it("reads MT940 statements, in their SWIFT envelope, with balances and interest", () => {
+    const r = readBankExport(MT940, { today });
+    expect(r).toMatchObject({ format: "mt940", needsClosingBalance: false, warnings: [] });
+    expect(r.accounts).toHaveLength(1);
+    expect(r.accounts[0]).toMatchObject({
+      account: "NL12KNAB0123456789",
+      from: "2024-12-10",
+      to: "2025-02-01",
+      lines: 5,
+    });
+    expect(pick(r.accounts[0]!.years)).toEqual([
+      [2024, "1000.00", true],
+      [2025, "1262.34", false],
+      [2026, "1312.34", true],
+    ]);
+    expect(r.accounts[0]!.years[0]).toMatchObject({ interestEur: "12.34", inEur: "250.00" });
+    expect(r.accounts[0]!.years[1]).toMatchObject({ inEur: "150.00", outEur: "100.00", interestEur: "0.00" });
+  });
+
+  it("says when an MT940 statement doesn't add up to its closing balance", () => {
+    const r = readBankExport(MT940.replace(":62F:C250201EUR1312,34", ":62F:C250201EUR1300,00"), { today });
+    expect(r.warnings).toEqual([
+      "Statement for NL12KNAB0123456789 up to 2025-02-01 doesn't add up to its closing balance.",
+    ]);
+  });
+
+  it("reads a CreditDebet column as the sign of unsigned amounts", () => {
+    const csv = [
+      '"Rekeningnummer";"Transactiedatum";"Valutacode";"CreditDebet";"Bedrag";"Tegenrekeninghouder";"Omschrijving"',
+      '"NL12KNAB0123456789";"10-01-2025";"EUR";"D";"20,00";"Winkel";"Boodschappen"',
+      '"NL12KNAB0123456789";"05-01-2025";"EUR";"C";"100,00";"Ik";"Storting"',
+    ].join("\n");
+    const r = readBankExport(csv, { today, closingBalance: "580,00" });
+    expect(r.accounts[0]!.years[0]).toMatchObject({ year: 2025, valueEur: "500.00", inEur: "100.00", outEur: "20.00" });
+  });
+
   it("keeps the accounts in a combined export apart", () => {
     const head =
       '"Datum";"Naam / Omschrijving";"Rekening";"Tegenrekening";"Code";"Af Bij";"Bedrag (EUR)";"Mutatiesoort";"Mededelingen";"Saldo na mutatie";"Tag"';

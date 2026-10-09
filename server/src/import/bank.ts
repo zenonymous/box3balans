@@ -4,7 +4,7 @@ import { type DecimalMark, detectDateOrder, detectDecimal, detectDelimiter, pars
 import { tr } from "../i18n/index.js";
 
 /**
- * Reads a bank's transaction export (CSV, ABN AMRO's TAB file or CAMT.053) and turns it into what
+ * Reads a bank's transaction export (CSV, ABN AMRO's TAB file, CAMT.053 or MT940) and turns it into what
  * box 3 needs per year: the balance on 1 January, interest received, and money in and out.
  */
 
@@ -39,7 +39,7 @@ export interface BankAccountSummary {
 }
 
 export interface BankImport {
-  format: "camt053" | "abn-tab" | "csv";
+  format: "camt053" | "mt940" | "abn-tab" | "csv";
   accounts: BankAccountSummary[];
   // No balances in the file: the balance after its last line is needed to work out the others.
   needsClosingBalance: boolean;
@@ -65,7 +65,7 @@ function toDay(raw: string, dmy: boolean): string | null {
 const HEADERS = {
   date: /^(datum|date|transactiedatum|boekdatum|boekingsdatum|transaction ?date|booking ?date)$/i,
   amount: /^(bedrag( \(eur\))?|bedrag eur|amount|transactiebedrag|amount \(eur\))$/i,
-  sign: /^(af ?\/? ?bij|debet ?\/ ?credit|credit ?\/ ?debet|d\/c|af\/bij)$/i,
+  sign: /^(af ?\/? ?bij|debet ?\/? ?credit|credit ?\/? ?debet|d\/c)$/i,
   balance: /^(saldo na (mutatie|trn|boeking|transactie)|saldo|balance( after)?|saldo na mutatie \(eur\))$/i,
   account: /^(rekening|iban\/bban|rekeningnummer|account|iban)$/i,
   description:
@@ -236,6 +236,91 @@ function fromCamt(xml: string): { lines: BankLine[]; warnings: string[] } {
   return { lines, warnings };
 }
 
+/**
+ * MT940 (SWIFT customer statement, which most Dutch banks offer, Knab by default): per statement the
+ * account (:25:), opening balance (:60F:/:60M:), entries (:61:, with their description in :86:) and
+ * closing balance (:62F:/:62M:). Amounts use a decimal comma; C is credit, D debit, RC/RD reversals.
+ */
+function looksLikeMt940(text: string): boolean {
+  return /^:20:/m.test(text) && /^:61:/m.test(text) && /^:6[02][FM]:/m.test(text);
+}
+
+function fromMt940(text: string): { lines: BankLine[]; warnings: string[] } {
+  // Fields start with ":tag:" on a new line; other lines continue the field before.
+  const fields: { tag: string; value: string }[] = [];
+  for (const raw of text.replace(/\r/g, "").split("\n")) {
+    const m = /^:(\d{2}[A-Z]?):(.*)$/.exec(raw);
+    if (m) fields.push({ tag: m[1]!, value: m[2]! });
+    else if (fields.length && raw.trim() && !/^-\}?$/.test(raw.trim())) fields.at(-1)!.value += ` ${raw.trim()}`;
+  }
+  const year = (yy: string) => 2000 + Number(yy);
+  const balance = (v: string) => {
+    const m = /^([CD])(\d{2})(\d{2})(\d{2})[A-Z]{3}([\d,.]+)/.exec(v.trim());
+    if (!m) return null;
+    const amount = D(m[5]!.replace(",", "."));
+    return { day: `${year(m[2]!)}-${m[3]}-${m[4]}`, amount: m[1] === "D" ? amount.neg() : amount };
+  };
+  type Entry = { day: string; amount: Decimal; description: string };
+  const statements: {
+    account: string;
+    opening: ReturnType<typeof balance>;
+    closing: ReturnType<typeof balance>;
+    entries: Entry[];
+  }[] = [];
+  const warnings: string[] = [];
+  let st: (typeof statements)[number] | null = null;
+  for (const f of fields) {
+    if (f.tag === "20" || !st) {
+      st = { account: "", opening: null, closing: null, entries: [] };
+      statements.push(st);
+      if (f.tag === "20") continue;
+    }
+    if (f.tag === "25") st.account = (f.value.trim().split(/\s+/)[0] ?? "").replace(/EUR$/, "");
+    else if (f.tag === "60F" || f.tag === "60M") st.opening = balance(f.value);
+    else if (f.tag === "62F" || f.tag === "62M") st.closing = balance(f.value);
+    else if (f.tag === "61") {
+      // Value date YYMMDD, booking date MMDD (optional), mark, funds code (optional), amount.
+      const m = /^(\d{2})(\d{2})(\d{2})(\d{2})?(\d{2})?(RC|RD|EC|ED|C|D)[A-Z]?(\d+(?:,\d*)?)/.exec(f.value.trim());
+      if (!m) {
+        warnings.push(tr("Skipped a line that couldn't be read: {line}", { line: f.value.slice(0, 80) }));
+        continue;
+      }
+      let y = year(m[1]!);
+      const [vm, bm] = [Number(m[2]), m[4] ? Number(m[4]) : null];
+      // A booking date across the turn of the year from its value date.
+      if (bm != null && bm === 12 && vm === 1) y -= 1;
+      else if (bm != null && bm === 1 && vm === 12) y += 1;
+      const day = bm != null ? `${y}-${m[4]}-${m[5]}` : `${year(m[1]!)}-${m[2]}-${m[3]}`;
+      const amount = D(m[7]!.replace(",", "."));
+      // Credit and a reversed debit add to the balance; debit and a reversed credit take away.
+      const out = m[6] === "D" || m[6] === "RC" || m[6] === "ED";
+      st.entries.push({ day, amount: out ? amount.neg() : amount, description: "" });
+    } else if (f.tag === "86" && st.entries.length) st.entries.at(-1)!.description = f.value.trim();
+  }
+  const lines: BankLine[] = [];
+  const kept = statements.filter((s) => s.entries.length || s.opening || s.closing);
+  kept.sort((a, b) =>
+    (a.opening?.day ?? a.entries[0]?.day ?? "").localeCompare(b.opening?.day ?? b.entries[0]?.day ?? ""),
+  );
+  for (const s of kept) {
+    let bal = s.opening?.amount ?? (s.closing ? s.entries.reduce((b, e) => b.minus(e.amount), s.closing.amount) : null);
+    for (const e of s.entries) {
+      bal = bal == null ? null : bal.plus(e.amount);
+      lines.push({ ...e, balanceAfter: bal, account: s.account });
+    }
+    if (bal != null && s.closing && !bal.eq(s.closing.amount))
+      warnings.push(
+        s.account
+          ? tr("Statement for {account} up to {day} doesn't add up to its closing balance.", {
+              account: s.account,
+              day: s.closing.day,
+            })
+          : tr("Statement for the account up to {day} doesn't add up to its closing balance.", { day: s.closing.day }),
+      );
+  }
+  return { lines, warnings };
+}
+
 // ---- Balances and years ----
 
 /**
@@ -316,6 +401,9 @@ export function readBankExport(content: string, opts: { closingBalance?: string;
   if (trimmed.startsWith("<") && /BkToCstmrStmt/.test(trimmed)) {
     format = "camt053";
     parsed = fromCamt(trimmed);
+  } else if (looksLikeMt940(trimmed)) {
+    format = "mt940";
+    parsed = fromMt940(trimmed);
   } else if (looksLikeAbnTab(trimmed)) {
     format = "abn-tab";
     parsed = fromAbnTab(trimmed);

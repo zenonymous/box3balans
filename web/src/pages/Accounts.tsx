@@ -686,7 +686,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
   );
 }
 
-/** Reads a bank export (CSV, TAB or CAMT.053) into values per year, for the user to check. */
+/** Reads a bank export (CSV, TAB, CAMT.053 or MT940) into values per year, for the user to check. */
 function BankImportPanel({
   account,
   onApply,
@@ -735,12 +735,12 @@ function BankImportPanel({
     <div className="flex flex-col gap-3 text-sm">
       <p className="text-ink-2">
         {t(
-          "Download your transactions from your bank's website, as CSV or CAMT.053, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
+          "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
         )}
       </p>
       <input
         type="file"
-        accept=".csv,.txt,.tab,.xml,.053"
+        accept=".csv,.txt,.tab,.xml,.053,.sta,.940,.mt940"
         onChange={async (e) => {
           const fl = e.target.files?.[0];
           if (!fl) return;

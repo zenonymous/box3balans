@@ -254,10 +254,25 @@ Bij een **woning** vul je de WOZ-waarde in die voor dat jaar geldt (die met waar
 
 **Bankexport inlezen.** Bij een bankrekening haalt _Bankexport inlezen_ de saldi op 1 januari, de rente en het geld erin en eruit per jaar uit de transacties die je bij je bank downloadt. Box3balans leest:
 
-- **CSV met een saldokolom**, zoals van ING (_Saldo na mutatie_), Rabobank (_Saldo na trn_), Knab, Triodos en andere banken; meerdere rekeningen in één bestand worden uit elkaar gehouden;
+- **CAMT.053**, het standaard afschriftformaat met saldo's: de beste keus als je bank het aanbiedt;
+- **MT940**, het oudere standaardformaat, ook met saldo's;
+- **CSV met een kopregel en een saldokolom**, zoals van ING (_Saldo na mutatie_) en Rabobank (_Saldo na trn_); meerdere rekeningen in één bestand worden uit elkaar gehouden;
 - **het TAB-bestand van ABN AMRO**;
-- **CAMT.053**, het standaard afschriftformaat dat de meeste banken aanbieden;
 - **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Box3balans de rest terug.
+
+Welk bestand je per bank kiest:
+
+| Bank                                 | Kies bij het downloaden                                                                  |
+| ------------------------------------ | ---------------------------------------------------------------------------------------- |
+| ING                                  | CSV                                                                                      |
+| Rabobank                             | CSV                                                                                      |
+| ABN AMRO                             | TAB of CAMT.053                                                                          |
+| ASN Bank (ook voor SNS en RegioBank) | CAMT.053 (hun CSV is niet getest)                                                        |
+| Triodos                              | CAMT.053 of MT940 (de CSV is niet getest)                                                |
+| Knab                                 | MT940 (de standaard onder _Bij- en afschrijvingen → Boekhoudexport_)                     |
+| bunq                                 | CAMT.053 of MT940 als de app het aanbiedt; anders CSV, met het saldo na de laatste regel |
+
+CAMT.053 en MT940 zijn gebouwd op de openbare standaarden. De exports van ASN Bank, Triodos, Knab en bunq zijn nog niet getest met echte bestanden; lukt het inlezen niet, meld dat dan (zonder bedragen) in [#6](https://github.com/zenonymous/box3balans/issues/6).
 
 Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je ziet eerst per jaar wat er gevonden is: een geschat saldo (omdat het bestand halverwege een jaar begint of eindigt) en de totalen van jaren die het bestand maar deels beslaat, staan uit tot je ze aanvinkt. Er wordt pas iets opgeslagen als je in de tabel op _Opslaan_ drukt.
 

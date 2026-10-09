@@ -130,7 +130,7 @@ export interface BankYear {
 }
 
 export interface BankImport {
-  format: "camt053" | "abn-tab" | "csv";
+  format: "camt053" | "mt940" | "abn-tab" | "csv";
   accounts: { account: string; from: string; to: string; lines: number; years: BankYear[] }[];
   needsClosingBalance: boolean;
   warnings: string[];
