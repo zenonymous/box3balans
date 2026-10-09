@@ -40,7 +40,12 @@ export class HistoryService {
     private db: DB,
     private fx: FxService,
     private fetchFn?: FetchFn,
+    // CoinGecko's free tier answers a burst with a rate limit, so its calls are spaced out.
+    private coingeckoGapMs = 0,
+    private sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
   ) {}
+
+  private lastCoingecko = 0;
 
   // Bitvavo's current prices, loaded once per service (one call covers every market).
   private bitvavoQuotes?: Promise<Awaited<ReturnType<typeof bitvavoTickers>>>;
@@ -93,6 +98,12 @@ export class HistoryService {
       const swap = migrationOf(asset);
       return swap ? this.swapped(asset, swap, from, to) : this.delistedCoin(asset, from, to);
     }
+    const points = await this.fromSources(asset, from, to);
+    return asset.assetClass === "crypto" ? this.withOlder(asset, from, to, points) : points;
+  }
+
+  /** History from the asset's own price source, or a pair that matches it. */
+  private async fromSources(asset: Asset, from: string, to: string): Promise<Point[]> {
     // Metals: COMEX/NYMEX front-month futures in USD per troy ounce, converted to per gram below.
     const futures = asset.priceSource === "metal" && asset.priceRef ? METAL_FUTURES[asset.priceRef] : undefined;
     if (futures) {
@@ -143,14 +154,40 @@ export class HistoryService {
         // try the next source
       }
     }
+    // CoinGecko's free tier serves the last 365 days, and refuses a range reaching back further.
     if (asset.priceSource === "coingecko" && asset.priceRef) {
-      try {
-        return await this.coingecko(asset.priceRef, from, to);
-      } catch {
-        // CoinGecko's free tier only serves the last 365 days.
+      const yearAgo = isoDay(Date.now() - 364 * DAY);
+      const start = from > yearAgo ? from : yearAgo;
+      if (start <= to) {
+        try {
+          return await this.coingecko(asset.priceRef, start, to);
+        } catch {
+          // no history this time
+        }
       }
     }
     return [];
+  }
+
+  /**
+   * The days before what a coin's sources cover (CoinGecko's free year, a market Bitvavo has since
+   * closed) from Binance's USDT pair, but only when your own trades in the coin confirm it's the same
+   * coin: Binance names nothing. In EUR, as the two parts may come in different currencies.
+   */
+  private async withOlder(asset: Asset, from: string, to: string, points: Point[]): Promise<Point[]> {
+    const start = points.reduce<string | undefined>((min, p) => (min && min <= p.day ? min : p.day), undefined);
+    if (start && Date.parse(start) - Date.parse(from) <= 3 * DAY) return points;
+    const until = start ? isoDay(Date.parse(start) - DAY) : to;
+    try {
+      const older = (await binanceDailyCloses(`${asset.symbol.toUpperCase()}USDT`, from, until, this.fetchFn)).map(
+        (p) => ({ ...p, currency: "USD" }),
+      );
+      if (older.length && (await this.matchesTrades(older, await this.tradePrices(asset.id))) === true)
+        return this.inEur([...older, ...points], from, to);
+    } catch {
+      // not on Binance
+    }
+    return points;
   }
 
   /**
@@ -204,7 +241,11 @@ export class HistoryService {
     own = own.filter((p) => p.day <= lastOwn);
     const start = from > swap.since ? from : swap.since;
     const next = start <= to ? await this.successorCloses(swap, start, to) : [];
-    const points = [...own, ...next.map((p) => ({ ...p, close: p.close.mul(swap.ratio) }))];
+    return this.inEur([...own, ...next.map((p) => ({ ...p, close: p.close.mul(swap.ratio) }))], from, to);
+  }
+
+  /** Closes in EUR, at the ECB rate of their day. */
+  private async inEur(points: Point[], from: string, to: string): Promise<Point[]> {
     await this.fx.ensureRange([...new Set(points.map((p) => p.currency))], from, to);
     const out: Point[] = [];
     for (const p of points) {
@@ -328,6 +369,9 @@ export class HistoryService {
   }
 
   private async coingecko(id: string, from: string, to: string) {
+    const wait = this.lastCoingecko + this.coingeckoGapMs - Date.now();
+    if (wait > 0) await this.sleep(wait);
+    this.lastCoingecko = Date.now();
     const data = await getJson<{ prices: [number, number][] }>(
       `https://api.coingecko.com/api/v3/coins/${encodeURIComponent(id)}/market_chart/range?vs_currency=eur&from=${Math.floor(Date.parse(from) / 1000)}&to=${Math.floor(Date.parse(to) / 1000) + 86_400}`,
       { fetchFn: this.fetchFn },

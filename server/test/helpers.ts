@@ -103,7 +103,7 @@ export async function createTestApp(
   const secrets = new SecretBox(config.APP_SECRET);
   const sync = new SyncService(database.db, secrets, prices, fetch, async () => {});
   const wallets = new WalletService(database.db, prices, { fetchFn: fetch, sleep: async () => {}, tokenThrottleMs: 0 });
-  const backfill = new BackfillService(database.db, prices.fx, fetch);
+  const backfill = new BackfillService(database.db, prices.fx, fetch, async () => {});
   // Tests run backfills explicitly; don't let request() fire timers in the background.
   backfill.request = () => {};
   const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill });

@@ -174,7 +174,7 @@ export class WalletService {
       );
       result.fetched = events.length;
 
-      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn);
+      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn, 2_500, this.sleep);
       const importer = new Importer(this.db, resolver, this.prices.fx, history);
       const imported = await importer.import(accountId, "chain", events);
       Object.assign(result, {

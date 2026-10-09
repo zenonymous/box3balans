@@ -123,7 +123,7 @@ export class SyncService {
 
       // CoinGecko lookups spaced out: its free tier answers a burst with a rate limit.
       const resolver = new AssetResolver(this.db, this.fetchFn, 2_500, this.sleep);
-      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn);
+      const history = new HistoryService(this.db, this.prices.fx, this.fetchFn, 2_500, this.sleep);
       const importer = new Importer(this.db, resolver, this.prices.fx, history);
       const imported = await importer.import(row.accountId, "api", fetched.events);
       Object.assign(result, {

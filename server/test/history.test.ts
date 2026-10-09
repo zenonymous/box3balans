@@ -11,12 +11,16 @@ afterEach(async () => {
 });
 
 const day = (d: string) => Date.parse(`${d}T00:00:00Z`);
+// Two days within the last year: CoinGecko's free tier serves no further back.
+const DAY = 86_400_000;
+const D1 = new Date(Date.now() - 30 * DAY).toISOString().slice(0, 10);
+const D2 = new Date(Date.now() - 29 * DAY).toISOString().slice(0, 10);
 const yahoo = (closes: number[], current?: number) => ({
   chart: {
     result: [
       {
         meta: { currency: "EUR", ...(current != null ? { regularMarketPrice: current } : {}) },
-        timestamp: [day("2024-01-01") / 1000, day("2024-01-02") / 1000],
+        timestamp: [day(D1) / 1000, day(D2) / 1000],
         indicators: { quote: [{ close: closes }] },
       },
     ],
@@ -25,8 +29,8 @@ const yahoo = (closes: number[], current?: number) => ({
 });
 const coingeckoChart = {
   prices: [
-    [day("2024-01-01"), 2.5],
-    [day("2024-01-02"), 2.6],
+    [day(D1), 2.5],
+    [day(D2), 2.6],
   ],
 };
 
@@ -51,7 +55,7 @@ async function cake(routes: Record<string, unknown>) {
       contract: "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
     })
     .returning();
-  await new HistoryService(db, t.prices.fx, t.fetch).ensureRange(asset!, "2024-01-01", "2024-01-02");
+  await new HistoryService(db, t.prices.fx, t.fetch).ensureRange(asset!, D1, D2);
   const rows = await db
     .select({ day: priceHistory.day, closeEur: priceHistory.closeEur })
     .from(priceHistory)

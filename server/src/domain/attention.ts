@@ -1,7 +1,16 @@
 import { and, eq, inArray, isNull, lt } from "drizzle-orm";
 import type { Config } from "../config.js";
 import type { DB } from "../db/client.js";
-import { accounts, accountYears, assets, integrations, settings, transactions, walletAddresses } from "../db/schema.js";
+import {
+  accounts,
+  accountYears,
+  assets,
+  auditLog,
+  integrations,
+  settings,
+  transactions,
+  walletAddresses,
+} from "../db/schema.js";
 import { isAutomatic, listBackups } from "../backup/backup.js";
 import { getBackupStatus } from "../backup/status.js";
 import { D } from "../lib/decimal.js";
@@ -223,7 +232,7 @@ export async function collectIssues(
   // ---- Data that looks wrong ----
   const ledger = await loadLedger(db);
   const assetRows = await db
-    .select({ id: assets.id, symbol: assets.symbol, assetClass: assets.assetClass })
+    .select({ id: assets.id, symbol: assets.symbol, assetClass: assets.assetClass, hidden: assets.hidden })
     .from(assets);
   const assetById = new Map(assetRows.map((a) => [a.id, a]));
   const negative = ledger.positions.filter((p) => p.quantity.lt("-0.00000001"));
@@ -251,9 +260,10 @@ export async function collectIssues(
     });
   }
 
-  const nonCash = assetRows.filter((a) => a.assetClass !== "cash").map((a) => a.id);
+  // Hidden assets (spam, worthless leftovers) are out of the totals, so their €0 doesn't matter.
+  const nonCash = assetRows.filter((a) => a.assetClass !== "cash" && !a.hidden).map((a) => a.id);
   if (nonCash.length) {
-    const zero = await db
+    const unpriced = await db
       .select({ id: transactions.id, assetId: transactions.assetId, type: transactions.type })
       .from(transactions)
       .where(
@@ -263,6 +273,27 @@ export async function collectIssues(
           inArray(transactions.assetId, nonCash),
         ),
       );
+    // A €0 you kept when editing the row is a choice (the revaluation after a sync leaves it too).
+    const edited = new Set(
+      unpriced.length
+        ? (
+            await db
+              .select({ id: auditLog.entityId })
+              .from(auditLog)
+              .where(
+                and(
+                  eq(auditLog.entity, "transaction"),
+                  eq(auditLog.action, "update"),
+                  inArray(
+                    auditLog.entityId,
+                    unpriced.map((z) => z.id),
+                  ),
+                ),
+              )
+          ).map((r) => r.id)
+        : [],
+    );
+    const zero = unpriced.filter((z) => !edited.has(z.id));
     if (zero.length) {
       add({
         key: "zero-cost",

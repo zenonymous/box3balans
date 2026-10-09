@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { accounts, assets, transactions } from "../src/db/schema.js";
 import { HistoryService } from "../src/prices/history.js";
-import { createTestApp, defaultRoutes, type TestApp } from "./helpers.js";
+import { createTestApp, defaultRoutes, raw, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
 afterEach(async () => {
@@ -126,5 +126,66 @@ describe("price history for a coin its exchange delisted", () => {
       [["2024-12-20", "0.70"]],
     );
     expect(await eurOn("2024-12-31")).toBeCloseTo(0.7, 6);
+  });
+});
+
+describe("price history further back than CoinGecko's free year", () => {
+  async function coingeckoCoin(paid: string) {
+    const yearAgo = Date.now() - 365 * DAY;
+    t = await createTestApp(
+      {
+        ...defaultRoutes,
+        "coins/the-open-network/market_chart/range": (url: string) => {
+          // The free tier refuses a range starting more than 365 days back.
+          if (Number(new URL(url).searchParams.get("from")) * 1000 < yearAgo)
+            return raw("exceeds the allowed time range", 401);
+          return { prices: [[Date.now() - 10 * DAY, 5]] };
+        },
+        "api/v3/klines?symbol=TONUSDT": binance([
+          ["2024-11-28", 6.8],
+          ["2024-12-31", 6.0],
+        ]),
+      },
+      { login: false },
+    );
+    const db = t.database.db;
+    const [acc] = await db.insert(accounts).values({ name: "Bitvavo", kind: "exchange" }).returning();
+    const [asset] = await db
+      .insert(assets)
+      .values({
+        assetClass: "crypto",
+        name: "Toncoin",
+        symbol: "TON",
+        priceSource: "coingecko",
+        priceRef: "the-open-network",
+        currency: "EUR",
+      })
+      .returning();
+    await db.insert(transactions).values({
+      accountId: acc!.id,
+      assetId: asset!.id,
+      type: "buy",
+      quantity: "1",
+      price: paid,
+      currency: "EUR",
+      fxRate: "1",
+      occurredAt: new Date("2024-11-28T12:00:00Z"),
+      source: "api",
+    });
+    const history = new HistoryService(db, t.prices.fx, t.fetch);
+    await history.ensureRange(asset!, "2024-11-28", new Date().toISOString().slice(0, 10));
+    return (day: string) => history.eurOn(asset!.id, day).then((v) => (v == null ? null : Number(v)));
+  }
+
+  it("takes CoinGecko's last year, and Binance's pair before it when your buy confirms the coin", async () => {
+    const eurOn = await coingeckoCoin("6.15");
+    expect(await eurOn(new Date(Date.now() - 10 * DAY).toISOString().slice(0, 10))).toBe(5);
+    // 6.00 USDT at the ECB rate of 1.10.
+    expect(await eurOn("2024-12-31")).toBeCloseTo(6.0 / 1.1, 8);
+  });
+
+  it("leaves the older days out when your buy says it's another coin", async () => {
+    const eurOn = await coingeckoCoin("50");
+    expect(await eurOn("2024-12-31")).toBeNull();
   });
 });

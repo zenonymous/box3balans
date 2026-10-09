@@ -12,8 +12,8 @@ const STATE_KEY = "history_backfill";
 const RECHECK_MS = 20 * 3_600_000;
 
 // Raise this when history gets new sources: assets loaded before then get one full load again.
-// 2: delisted and swapped coins.
-const SOURCES = 2;
+// 2: delisted and swapped coins. 3: CoinGecko's last year, Binance for older days.
+const SOURCES = 3;
 
 type State = Record<string, { from: string; at: string; v?: number }>;
 
@@ -40,8 +40,9 @@ export class BackfillService {
     private db: DB,
     private fx: FxService,
     fetchFn?: FetchFn,
+    sleep?: (ms: number) => Promise<void>,
   ) {
-    this.history = new HistoryService(db, fx, fetchFn);
+    this.history = new HistoryService(db, fx, fetchFn, 2_500, sleep);
   }
 
   /** Schedules a run shortly (coalescing bursts of changes, e.g. a sync importing many rows). */

@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { recordBackupStatus } from "../src/backup/status.js";
-import { integrations, settings, transactions, walletAddresses } from "../src/db/schema.js";
+import { assets, integrations, settings, transactions, walletAddresses } from "../src/db/schema.js";
 import { REFRESH_STATUS_KEY } from "../src/prices/service.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
@@ -143,6 +143,30 @@ describe("needs attention", () => {
       title: "1 crypto withdrawal from exchanges not linked to a deposit",
     });
     expect(list.find((i) => i.key === "price-failed")).toMatchObject({ detail: "BTC" });
+  });
+
+  it("leaves out a €0 you kept when editing, and hidden assets", async () => {
+    const { wallet, btc } = await setup();
+    const db = t.database.db;
+    const deposit = (assetId: number) => ({
+      accountId: wallet.id,
+      assetId,
+      type: "deposit" as const,
+      occurredAt: new Date("2024-01-01"),
+      quantity: "1",
+      price: "0",
+    });
+    const [kept] = await db.insert(transactions).values(deposit(btc.id)).returning();
+    const [junk] = await db
+      .insert(assets)
+      .values({ assetClass: "crypto", name: "UXOLD", symbol: "UXOLD", priceSource: "manual", currency: "EUR" })
+      .returning();
+    await db.insert(transactions).values(deposit(junk!.id));
+    expect((await byKey("zero-cost"))[0]).toMatchObject({ title: "2 deposits or rewards without a value" });
+
+    expect((await t.api("PUT", `/api/transactions/${kept!.id}`, { notes: "a gift, no value" })).statusCode).toBe(200);
+    expect((await t.api("PUT", `/api/assets/${junk!.id}`, { hidden: true })).statusCode).toBe(200);
+    expect(await byKey("zero-cost")).toEqual([]);
   });
 
   it("reports failed and overdue automatic backups", async () => {
