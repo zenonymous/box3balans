@@ -40,8 +40,10 @@ const UNLISTED_RECHECK_MS = 30 * 86_400_000;
 
 export const isFiat = (code: string) => FIAT.has(code.toUpperCase());
 
+// On Bitvavo only EUR is money: every other code is a coin there, also one that is a currency code
+// elsewhere (RON is Ronin, not the Romanian leu).
 export const assetRef = (code: string, venue?: "bitvavo"): AssetRef =>
-  isFiat(code)
+  (venue === "bitvavo" ? code.toUpperCase() === "EUR" : isFiat(code))
     ? { kind: "fiat", currency: code.toUpperCase() }
     : { kind: "crypto", symbol: code.toUpperCase(), ...(venue ? { venue } : {}) };
 

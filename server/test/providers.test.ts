@@ -198,6 +198,25 @@ describe("Bitvavo", () => {
     expect(sig).not.toBe(bitvavoSignature("secret", 1548172481125, "GET", "/balance?symbol=BTC"));
   });
 
+  it("reads every code but EUR as a coin: RON is Ronin there, not the Romanian leu", () => {
+    const [buy] = mapBitvavoItem({
+      transactionId: "r1",
+      executedAt: "2024-11-29T17:53:44Z",
+      type: "buy",
+      sentCurrency: "EUR",
+      sentAmount: "5.985037",
+      receivedCurrency: "RON",
+      receivedAmount: "3.10862587",
+      feesCurrency: "EUR",
+      feesAmount: "0.014963",
+    });
+    expect(buy).toMatchObject({
+      kind: "trade",
+      asset: { kind: "crypto", symbol: "RON", venue: "bitvavo" },
+      quote: { amount: "6", currency: "EUR" },
+    });
+  });
+
   it("maps history items to net balance changes", () => {
     const buy = mapBitvavoItem({
       transactionId: "b1",

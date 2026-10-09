@@ -193,6 +193,24 @@ describe("exchange connections", () => {
     expect(third.status).toBe("warning");
   });
 
+  it("ignores fractions of a cent in a money balance, but reports a cent", async () => {
+    const withEur = (eur: string) => ({
+      ...bitvavoRoutes(),
+      "api.bitvavo.com/v2/balance": [
+        { symbol: "EUR", available: eur, inOrder: "0" },
+        { symbol: "BTC", available: "0.00099", inOrder: "0" },
+        { symbol: "ETH", available: "0.101", inOrder: "0" },
+      ],
+    });
+    t = await createTestApp(withEur("537.654"));
+    expect((await connResult((await connectBitvavo()).id)).mismatches).toEqual([]);
+    await t.close();
+    t = await createTestApp(withEur("537.66"));
+    expect((await connResult((await connectBitvavo()).id)).mismatches).toEqual([
+      expect.objectContaining({ symbol: "EUR", reported: "537.66", computed: "537.65" }),
+    ]);
+  });
+
   it("counts Bitvavo assets in fixed staking and doesn't book the lock as a withdrawal", async () => {
     t = await createTestApp({
       ...bitvavoRoutes([

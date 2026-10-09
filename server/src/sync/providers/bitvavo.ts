@@ -1,7 +1,7 @@
 import { createHmac } from "node:crypto";
 import { z } from "zod";
 import { D, type Decimal } from "../../lib/decimal.js";
-import { assetRef, isFiat } from "../assets.js";
+import { assetRef } from "../assets.js";
 import { type Balance, type ExchangeProvider, ProviderError, type ProviderContext, type SyncEvent } from "../types.js";
 import { msg, tr } from "../../i18n/index.js";
 
@@ -88,8 +88,8 @@ export function mapBitvavoItem(it: HistoryItem): SyncEvent[] {
     const buy = it.type === "buy";
     const asset = buy ? recvCur : sentCur;
     const quoteCur = buy ? sentCur : recvCur;
-    // Bitvavo markets quote in EUR; if the asset itself is fiat something is off — skip.
-    if (isFiat(asset)) return [];
+    // Bitvavo markets quote in EUR; if the asset itself is EUR something is off — skip.
+    if (asset === "EUR") return [];
     return [
       {
         kind: "trade",

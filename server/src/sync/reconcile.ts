@@ -51,8 +51,10 @@ export async function reconcile(
     const r = reported.get(id) ?? D(0);
     const c = computed.get(id) ?? D(0);
     const diff = r.minus(c);
-    // Ignore dust: below 1e-8 or 0.0001% of the balance.
-    const tolerance = Decimal.max(D("0.00000001"), Decimal.max(r.abs(), c.abs()).mul("0.000001"));
+    // Ignore dust: below 1e-8 or 0.0001% of the balance. Money is reported in cents, while sums of
+    // many trades in tiny unit prices leave fractions of a cent: below half a cent is no difference.
+    const floor = a.assetClass === "cash" ? D("0.005") : D("0.00000001");
+    const tolerance = Decimal.max(floor, Decimal.max(r.abs(), c.abs()).mul("0.000001"));
     if (diff.abs().gt(tolerance)) {
       out.push({
         assetId: id,
