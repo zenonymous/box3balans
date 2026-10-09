@@ -41,6 +41,8 @@ sudo docker compose up -d
 
 ## Unraid
 
+Er is een sjabloon voor Community Applications ([`deploy/unraid/box3balans.xml`](../deploy/unraid/box3balans.xml)): één container met de ingebouwde database, als gebruiker `99` en groep `100`. Zodra Box3balans in **Apps** staat, zoek je daar op _Box3balans_, vul je eventueel een back-upwachtwoord in en kies je **Apply**. Tot die tijd, of als je liever PostgreSQL als aparte database hebt, gaat het zo:
+
 1. Installeer via **Apps** (Community Applications) de plug-in **Docker Compose Manager**.
 2. Ga naar **Docker** → **Compose** → **Add New Stack**, noem hem `box3balans` en plak de inhoud van `docker-compose.yml` bij **Edit Stack → Compose File**.
 3. Verander `./backups:/backups` in `/mnt/user/appdata/box3balans/backups:/backups`. Unraid gebruikt meestal `PUID=99` en `PGID=100`; zet die bij **Edit Stack → Env File**, met eventueel je andere instellingen.
@@ -52,6 +54,15 @@ sudo docker compose up -d
 2. Ga naar **Apps** → **Discover Apps** → het menu (⋮) → **Install via YAML**.
 3. Geef als naam `box3balans` en plak de inhoud van `docker-compose.yml`. Verander `./backups:/backups` in `/mnt/tank/box3balans/backups:/backups` en zet de instellingen die je wilt direct onder `environment:` (zoals bij QNAP hierboven). TrueNAS-apps draaien vaak als gebruiker `568`; zet `PUID: "568"` en `PGID: "568"`, of je eigen gebruiker.
 4. Sla op en open `http://<ip-van-je-server>:8080`.
+
+## CasaOS en ZimaOS
+
+1. Open de **App Store** en kies rechtsboven **Custom Install** (het plusje), en dan **Import**.
+2. Plak de inhoud van [`deploy/casaos/docker-compose.yml`](../deploy/casaos/docker-compose.yml) en kies **Submit**.
+3. Vul eventueel een back-upwachtwoord in (`BACKUP_PASSPHRASE`) en kies **Install**.
+4. Open `http://<ip-van-je-server>:8080`. De database en de sleutel staan in `/DATA/AppData/box3balans/data`, de back-ups in `/DATA/AppData/box3balans/backups`.
+
+Dit is de variant met één container en de ingebouwde database, net als `docker-compose.lite.yml`.
 
 ## Raspberry Pi 4 of 5
 

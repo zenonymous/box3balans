@@ -1,0 +1,89 @@
+# Box3balans for CasaOS and ZimaOS: one container, with the database built in (PGlite).
+# Install: App Store → Custom Install → Import, and paste this file (see docs/installatie.md).
+name: box3balans
+services:
+  app:
+    image: ghcr.io/zenonymous/box3balans:latest
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TIME_ZONE: Europe/Amsterdam
+      PUID: $PUID
+      PGID: $PGID
+      BACKUP_PASSPHRASE: ""
+    ports:
+      - target: 8080
+        published: "8080"
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: /DATA/AppData/box3balans/data
+        target: /data
+      - type: bind
+        source: /DATA/AppData/box3balans/backups
+        target: /backups
+    x-casaos:
+      envs:
+        - container: TIME_ZONE
+          description:
+            en_us: Time zone for days and peildata
+            nl_nl: Tijdzone voor dagen en peildata
+        - container: BACKUP_PASSPHRASE
+          description:
+            en_us: Encrypts the automatic backups (recommended; keep it in your password manager)
+            nl_nl: Versleutelt de automatische back-ups (aangeraden; bewaar hem in je wachtwoordmanager)
+      ports:
+        - container: "8080"
+          description:
+            en_us: Web interface
+            nl_nl: Webinterface
+      volumes:
+        - container: /data
+          description:
+            en_us: The database and the encryption key created on first start
+            nl_nl: De database en de versleutelsleutel die bij de eerste start wordt aangemaakt
+        - container: /backups
+          description:
+            en_us: Automatic backups
+            nl_nl: Automatische back-ups
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: app
+  author: zenonymous
+  developer: zenonymous
+  category: Finance
+  index: /
+  port_map: "8080"
+  icon: https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/icon.png
+  screenshot_link:
+    - https://raw.githubusercontent.com/zenonymous/box3balans/main/docs/images/overzicht-light.webp
+    - https://raw.githubusercontent.com/zenonymous/box3balans/main/docs/images/box3-light.webp
+  title:
+    en_us: Box3balans
+  tagline:
+    en_us: Your investments and the Dutch box 3 tax, on your own server
+    nl_nl: Je beleggingen en box 3, op je eigen server
+  description:
+    en_us: >-
+      Keeps track of your investments, crypto and precious metals and works out the Dutch box 3
+      wealth tax: what you had on 1 January, the tax, the actual return, and a yearly dossier of where
+      every amount comes from. Connects to Bitvavo, Kraken, Coinbase and Interactive Brokers with
+      read-only keys. The interface is in Dutch, with English available.
+    nl_nl: >-
+      Houdt je beleggingen, crypto en edelmetaal bij en rekent box 3 uit: wat je op 1 januari had,
+      de belasting, het werkelijk rendement en per jaar een dossier met waar elk bedrag vandaan komt.
+      Met koppelingen naar Bitvavo, Kraken, Coinbase en Interactive Brokers (alleen leesrechten).
+  tips:
+    before_install:
+      en_us: >-
+        Don't open Box3balans to the internet; use a VPN such as WireGuard or Tailscale to reach it
+        from outside. After the first start, keep a copy of /DATA/AppData/box3balans/data/app-secret
+        in your password manager.
+      nl_nl: >-
+        Zet Box3balans niet open naar het internet; gebruik een VPN zoals WireGuard of Tailscale voor
+        toegang van buitenaf. Bewaar na de eerste start een kopie van
+        /DATA/AppData/box3balans/data/app-secret in je wachtwoordmanager.

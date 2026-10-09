@@ -56,6 +56,11 @@ jobs:
           docker run --rm -v "$PWD:/repo" --workdir /repo
           rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
           -color
+      # The app-catalog templates (Unraid, CasaOS): valid XML and a valid compose file.
+      - name: Deploy templates
+        run: |
+          python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('deploy/unraid/box3balans.xml')"
+          PUID=1000 PGID=1000 docker compose -f deploy/casaos/docker-compose.yml config -q
 
   image:
     name: Docker image

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!--
+  Unraid template (Community Applications): Box3balans in one container, with the database built in
+  (PGlite) under /data. Install it from Apps once it's listed there, or see docs/installatie.md.
+-->
+<Container version="2">
+  <Name>Box3balans</Name>
+  <Repository>ghcr.io/zenonymous/box3balans:latest</Repository>
+  <Registry>https://github.com/zenonymous/box3balans/pkgs/container/box3balans</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/zenonymous/box3balans/discussions/categories/q-a</Support>
+  <Project>https://github.com/zenonymous/box3balans</Project>
+  <Overview>Self-hosted overview of your investments, crypto and precious metals, with the Dutch box 3 wealth tax: what you had on 1 January, the tax under the current system, the actual return, and a yearly dossier of where every amount comes from. Connects to Bitvavo, Kraken, Coinbase and Interactive Brokers (read-only keys), reads wallets on Bitcoin, Ethereum, Solana, Cardano and other chains, and imports exports from DEGIRO, Trade Republic and others. The interface is in Dutch, with English available. Open source (AGPL-3.0); your data stays on your server.</Overview>
+  <Category>Productivity: Tools:</Category>
+  <WebUI>http://[IP]:[PORT:8080]/</WebUI>
+  <TemplateURL>https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/unraid/box3balans.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/icon.png</Icon>
+  <ExtraParams>--security-opt no-new-privileges:true</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="Web UI" Target="8080" Default="8080" Mode="tcp" Description="Port of the web interface. Don't open it to the internet: use a VPN such as WireGuard or Tailscale to reach it from outside." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/box3balans" Mode="rw" Description="The database and the encryption key created on first start (keep a copy of app-secret in your password manager)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/box3balans</Config>
+  <Config Name="Backups" Target="/backups" Default="/mnt/user/appdata/box3balans-backups" Mode="rw" Description="Automatic backups, for your own backup tool to copy off-site." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/box3balans-backups</Config>
+  <Config Name="Time zone" Target="TIME_ZONE" Default="Europe/Amsterdam" Mode="" Description="Time zone for days and peildata." Type="Variable" Display="always" Required="true" Mask="false">Europe/Amsterdam</Config>
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User the app runs as and who owns its files (Unraid: 99, nobody)." Type="Variable" Display="advanced" Required="true" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group the app runs as (Unraid: 100, users)." Type="Variable" Display="advanced" Required="true" Mask="false">100</Config>
+  <Config Name="Backup passphrase" Target="BACKUP_PASSPHRASE" Default="" Mode="" Description="Encrypts the automatic backups. Recommended; keep it in your password manager." Type="Variable" Display="always" Required="false" Mask="true"/>
+  <Config Name="Ankr API key" Target="ANKR_API_KEY" Default="" Mode="" Description="Free key from ankr.com, only needed for BNB Chain wallets." Type="Variable" Display="advanced" Required="false" Mask="true"/>
+  <Config Name="Secure cookies" Target="COOKIE_SECURE" Default="false" Mode="" Description="true when you reach the app through HTTPS (a reverse proxy)." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+  <Config Name="Trust proxy" Target="TRUST_PROXY" Default="false" Mode="" Description="true behind a reverse proxy, so the app sees your own IP address." Type="Variable" Display="advanced" Required="false" Mask="false">false</Config>
+</Container>

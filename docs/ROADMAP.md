@@ -73,7 +73,7 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 
 ## Doorlopend
 
-- **Eenvoudiger installeren:** Box3balans in de app-catalogi van Unraid, TrueNAS en CasaOS/Umbrel, zodat het zonder terminal kan.
+- **Eenvoudiger installeren:** Box3balans in de app-catalogi van Unraid, TrueNAS en CasaOS/Umbrel, zodat het zonder terminal kan. Een sjabloon voor Unraid (Community Applications) en een bestand voor CasaOS en ZimaOS (_Custom Install → Import_) staan klaar in [`deploy/`](../deploy); TrueNAS werkt al via _Install via YAML_. Nog te doen: Box3balans aanmelden bij Community Applications, en een app voor Umbrel.
 - **Controleerbare images** ✅: ondertekend met cosign, met een lijst van wat erin zit (SBOM) en hoe het is gebouwd (provenance). Zie [SECURITY.md](../SECURITY.md#images-controleren).
 - **Pull requests via CI** op `main` zodra anderen meebouwen.
 - **Versie 1.0** na het eerste aangifteseizoen met echte gebruikers: formaten getest met echte exports en geen bekende ernstige fouten.
