@@ -130,7 +130,7 @@ describe("price history for a coin its exchange delisted", () => {
 });
 
 describe("price history further back than CoinGecko's free year", () => {
-  async function coingeckoCoin(paid: string) {
+  async function coingeckoCoin(paid: string, recentBuys = 0) {
     const yearAgo = Date.now() - 365 * DAY;
     t = await createTestApp(
       {
@@ -172,6 +172,20 @@ describe("price history further back than CoinGecko's free year", () => {
       occurredAt: new Date("2024-11-28T12:00:00Z"),
       source: "api",
     });
+    // Trades the older series doesn't cover, inserted after the old one.
+    for (let i = 0; i < recentBuys; i++) {
+      await db.insert(transactions).values({
+        accountId: acc!.id,
+        assetId: asset!.id,
+        type: "buy",
+        quantity: "1",
+        price: "5",
+        currency: "EUR",
+        fxRate: "1",
+        occurredAt: new Date(Date.now() - (20 + i) * DAY),
+        source: "api",
+      });
+    }
     const history = new HistoryService(db, t.prices.fx, t.fetch);
     await history.ensureRange(asset!, "2024-11-28", new Date().toISOString().slice(0, 10));
     return (day: string) => history.eurOn(asset!.id, day).then((v) => (v == null ? null : Number(v)));
@@ -181,6 +195,11 @@ describe("price history further back than CoinGecko's free year", () => {
     const eurOn = await coingeckoCoin("6.15");
     expect(await eurOn(new Date(Date.now() - 10 * DAY).toISOString().slice(0, 10))).toBe(5);
     // 6.00 USDT at the ECB rate of 1.10.
+    expect(await eurOn("2024-12-31")).toBeCloseTo(6.0 / 1.1, 8);
+  });
+
+  it("finds the old buy among many later ones", async () => {
+    const eurOn = await coingeckoCoin("6.15", 15);
     expect(await eurOn("2024-12-31")).toBeCloseTo(6.0 / 1.1, 8);
   });
 

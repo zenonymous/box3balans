@@ -324,6 +324,51 @@ describe("coins Bitvavo swapped for another", () => {
     expect(again.swaps ?? 0).toBe(0);
   });
 
+  it("pairs each old coin with the new one of the same amount when two swaps happen at once", async () => {
+    const at = (time: string) => `2024-09-10T${time}Z`;
+    const history = [
+      ...SWAP_HISTORY.filter((it) => it.transactionId !== "dai"),
+      {
+        transactionId: "b2",
+        executedAt: "2024-02-01T11:00:00Z",
+        type: "buy",
+        sentCurrency: "EUR",
+        sentAmount: "10",
+        receivedCurrency: "XAA",
+        receivedAmount: "5",
+      },
+      // The new XBB comes in closer to MATIC's exit than POL does.
+      {
+        transactionId: "x-in",
+        executedAt: at("11:45:50"),
+        type: "manually_assigned",
+        receivedCurrency: "XBB",
+        receivedAmount: "5",
+      },
+      {
+        transactionId: "x-out",
+        executedAt: at("11:46:20"),
+        type: "manually_assigned",
+        sentCurrency: "XAA",
+        sentAmount: "5",
+      },
+    ];
+    const r = swapRoutes([candle("2024-09-10", 0.35)]);
+    r["api.bitvavo.com/v2/account/history"] = { items: history, currentPage: 1, totalPages: 1, maxItems: 100 };
+    (r["api.bitvavo.com/v2/markets"] as object[]).push({
+      market: "XBB-EUR",
+      base: "XBB",
+      quote: "EUR",
+      status: "trading",
+    });
+    r["api.bitvavo.com/v2/XBB-EUR/candles"] = [candle("2024-09-10", 2)];
+    t = await createTestApp(r);
+    const { result } = await syncBitvavo();
+    expect(result.swaps).toBe(2);
+    expect((await byExternal("m-out")).notes).toBe("Bitvavo manually assigned · swap MATIC → POL");
+    expect((await byExternal("x-out")).notes).toBe("Bitvavo manually assigned · swap XAA → XBB");
+  });
+
   it("waits for a value, and leaves a pair you edited alone", async () => {
     const r = swapRoutes([]);
     t = await createTestApp(r);

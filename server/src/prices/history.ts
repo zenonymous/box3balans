@@ -279,19 +279,20 @@ export class HistoryService {
     return [...byDay.values()];
   }
 
-  /** EUR unit prices of your buys and sells of an asset, by day. */
+  /** EUR unit prices of your buys and sells of an asset, by day, newest first. */
   private async tradePrices(assetId: number): Promise<{ day: string; eur: Decimal }[]> {
     const rows = await this.db
       .select({ at: transactions.occurredAt, price: transactions.price, fxRate: transactions.fxRate })
       .from(transactions)
-      .where(and(eq(transactions.assetId, assetId), inArray(transactions.type, ["buy", "sell"])));
+      .where(and(eq(transactions.assetId, assetId), inArray(transactions.type, ["buy", "sell"])))
+      .orderBy(desc(transactions.occurredAt));
     return rows.map((r) => ({ day: isoDay(r.at.getTime()), eur: D(r.price).mul(r.fxRate) })).filter((r) => r.eur.gt(0));
   }
 
   /**
    * Whether a price series is the coin you traded: on the days of your trades (or up to three days
-   * before), its closes are within half to double of what you paid or got, going by the median.
-   * Null when there's nothing to compare.
+   * before), its closes are within half to double of what you paid or got, going by the median of
+   * the latest twelve trades the series covers. Null when there's nothing to compare.
    */
   private async matchesTrades(
     points: { day: string; close: Decimal; currency: string }[],
@@ -299,7 +300,8 @@ export class HistoryService {
   ): Promise<boolean | null> {
     const byDay = new Map(points.map((p) => [p.day, p]));
     const ratios: number[] = [];
-    for (const t of trades.slice(-12)) {
+    for (const t of trades) {
+      if (ratios.length >= 12) break;
       let p;
       for (let back = 0; back <= 3 && !p; back++) p = byDay.get(isoDay(Date.parse(t.day) - back * DAY));
       if (!p) continue;

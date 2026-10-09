@@ -69,7 +69,12 @@ export async function bookBitvavoSwaps(db: DB, history: HistoryService, accountI
         (r) =>
           !used.has(r.tx.id) && r.tx.assetId !== out.tx.assetId && Math.abs(r.tx.occurredAt.getTime() - t) <= WINDOW_MS,
       )
-      .sort((a, b) => Math.abs(a.tx.occurredAt.getTime() - t) - Math.abs(b.tx.occurredAt.getTime() - t));
+      // Most swaps are one for one: an equal amount first, then the nearest in time.
+      .sort(
+        (a, b) =>
+          Number(!D(a.tx.quantity).eq(out.tx.quantity)) - Number(!D(b.tx.quantity).eq(out.tx.quantity)) ||
+          Math.abs(a.tx.occurredAt.getTime() - t) - Math.abs(b.tx.occurredAt.getTime() - t),
+      );
     if (!into) continue;
     // Valued at what was given up if known, else at what was received.
     const value = (await valueOf(history, out.asset, out.tx)) ?? (await valueOf(history, into.asset, into.tx));
