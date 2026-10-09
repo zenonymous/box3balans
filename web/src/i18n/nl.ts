@@ -289,6 +289,7 @@ export const NL: Record<string, string> = {
     "Eén document met de cijfers en waar elk bedrag vandaan komt, om af te drukken of te bewaren",
   Dossier: "Dossier",
   "entered by you": "zelf ingevuld",
+  "not recorded": "niet vastgelegd",
   "{ratio} × {symbol}": "{ratio} × {symbol}",
   "Box 3 dossier {year}": "Box 3-dossier {year}",
   "Peildatum {date}": "Peildatum {date}",

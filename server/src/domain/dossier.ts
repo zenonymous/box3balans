@@ -39,6 +39,8 @@ export async function buildDossier(db: DB, y: Box3Year): Promise<Dossier> {
   const accountIds = [...new Set(y.rows.map((r) => r.accountId))];
   const priced = y.rows.filter((r) => r.source === "transactions" && r.priceDay);
   const assetIds = [...new Set(priced.map((r) => r.assetId))];
+  // Only the days the holdings are valued at (mostly 31 December), not each asset's whole history.
+  const days = [...new Set(priced.map((r) => r.priceDay!))];
   const peildatum = new Date(`${y.peildatum}T00:00:00Z`);
   const none = accountIds.length === 0;
 
@@ -64,7 +66,7 @@ export async function buildDossier(db: DB, y: Box3Year): Promise<Dossier> {
       ? db
           .select({ assetId: priceHistory.assetId, day: priceHistory.day, source: priceHistory.source })
           .from(priceHistory)
-          .where(inArray(priceHistory.assetId, assetIds))
+          .where(and(inArray(priceHistory.assetId, assetIds), inArray(priceHistory.day, days)))
       : [],
   ]);
 

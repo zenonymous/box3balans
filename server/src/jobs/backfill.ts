@@ -47,6 +47,7 @@ export class BackfillService {
   private running: Promise<BackfillResult> | null = null;
   private timer: NodeJS.Timeout | null = null;
   lastResult: BackfillResult | null = null;
+  private labelledAt = 0;
 
   constructor(
     private db: DB,
@@ -178,6 +179,10 @@ export class BackfillService {
    * the source. Closes stored before sources were recorded (0.1.9) are looked up, each once.
    */
   private async labelYearEnds(): Promise<void> {
+    // Mostly a one-off for closes stored before 0.1.9 (new ones carry their source): it replays
+    // each year's holdings, so not on every run after a sync.
+    if (this.labelledAt && Date.now() - this.labelledAt < RECHECK_MS) return;
+    this.labelledAt = Date.now();
     const [row] = await this.db.select().from(settings).where(eq(settings.key, LABELS_KEY));
     const tried = new Set((row?.value as string[] | undefined) ?? []);
     const before = tried.size;

@@ -269,7 +269,10 @@ function fromMt940(text: string): { lines: BankLine[]; warnings: string[] } {
   }[] = [];
   const warnings: string[] = [];
   let st: (typeof statements)[number] | null = null;
+  let previous = "";
   for (const f of fields) {
+    const after = previous;
+    previous = f.tag;
     if (f.tag === "20" || !st) {
       st = { account: "", opening: null, closing: null, entries: [] };
       statements.push(st);
@@ -295,7 +298,8 @@ function fromMt940(text: string): { lines: BankLine[]; warnings: string[] } {
       // Credit and a reversed debit add to the balance; debit and a reversed credit take away.
       const out = m[6] === "D" || m[6] === "RC" || m[6] === "ED";
       st.entries.push({ day, amount: out ? amount.neg() : amount, description: "" });
-    } else if (f.tag === "86" && st.entries.length) st.entries.at(-1)!.description = f.value.trim();
+      // Describes the entry right before it; an :86: elsewhere is about the whole statement.
+    } else if (f.tag === "86" && after === "61" && st.entries.length) st.entries.at(-1)!.description = f.value.trim();
   }
   const lines: BankLine[] = [];
   const kept = statements.filter((s) => s.entries.length || s.opening || s.closing);

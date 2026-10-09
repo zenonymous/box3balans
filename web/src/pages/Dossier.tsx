@@ -46,7 +46,9 @@ function priceSource(p: Dossier["prices"][number] | undefined): string {
   // A euro is a euro; other money is always at the ECB rate, recorded or not.
   if (!what || what === "fx:EUR" || what === "ecb:EUR") return "—";
   if (what.startsWith("fx:") || what.startsWith("ecb:")) return sourceLabel(`ecb:${what.split(":")[1]}`);
-  return p.source ? sourceLabel(p.source) : `${sourceLabel(what)} *`;
+  if (p.source) return sourceLabel(p.source);
+  // A coin without a price feed got its history elsewhere; "entered by you" would be wrong.
+  return what === "manual" ? `${t("not recorded")} *` : `${sourceLabel(what)} *`;
 }
 
 const short = (address: string) => (address.length > 20 ? `${address.slice(0, 10)}…${address.slice(-6)}` : address);

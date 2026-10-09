@@ -163,6 +163,14 @@ describe("bank exports → values per year", () => {
     expect(r.accounts[0]!.years[1]).toMatchObject({ inEur: "150.00", outEur: "100.00", interestEur: "0.00" });
   });
 
+  it("keeps an MT940 :86: about the whole statement off its last entry", () => {
+    // Some banks close a statement with an :86: of their own, after the balance.
+    const r = readBankExport(MT940.replace(":62F:C241231EUR1262,34", ":62F:C241231EUR1262,34\r\n:86:Saldo per 31-12"), {
+      today,
+    });
+    expect(r.accounts[0]!.years[0]).toMatchObject({ interestEur: "12.34" });
+  });
+
   it("says when an MT940 statement doesn't add up to its closing balance", () => {
     const r = readBankExport(MT940.replace(":62F:C250201EUR1312,34", ":62F:C250201EUR1300,00"), { today });
     expect(r.warnings).toEqual([
