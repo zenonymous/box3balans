@@ -5,6 +5,6 @@ export default defineConfig({
   test: {
     testTimeout: 20_000,
     hookTimeout: 30_000,
-    setupFiles: ["./test/no-network.setup.ts", "./test/messages-en.setup.ts"],
+    setupFiles: ["./test/no-network.setup.ts", "./test/messages-en.setup.ts", "./test/clock.setup.ts"],
   },
 });

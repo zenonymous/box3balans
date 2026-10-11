@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { localToday } from "../src/lib/time.js";
+import { localDay, localToday } from "../src/lib/time.js";
 import { createTestApp, defaultRoutes, type TestApp } from "./helpers.js";
 
 let t: TestApp;
@@ -109,7 +109,10 @@ describe("dividends", () => {
   it("totals dividends and tax withheld per year and country", async () => {
     const { aapl, asml } = await scenario();
     const broker = json<any[]>(await t.api("GET", "/api/accounts"))[0];
-    const year = new Date().getUTCFullYear();
+    // A month ago, in the year that is in Dutch time. Was 15 January of this year, which is still
+    // ahead (and refused) in the first two weeks of January.
+    const paid = daysAgo(30);
+    const year = Number(localDay(paid).slice(0, 4));
     // A US dividend withheld at 30% (no W-8BEN) and a Dutch one at 15%.
     for (const body of [
       { assetId: aapl.id, amount: "10", taxWithheld: "3", currency: "USD", fxRate: "0.8" },
@@ -118,7 +121,7 @@ describe("dividends", () => {
       await t.api("POST", "/api/transactions", {
         accountId: broker.id,
         type: "dividend",
-        occurredAt: `${year}-01-15T12:00:00Z`,
+        occurredAt: paid.toISOString(),
         ...body,
       });
     }

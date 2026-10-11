@@ -36,6 +36,11 @@ jobs:
       - run: npm run typecheck
       - run: npx prettier --check .
       - run: npm test
+      - name: Tests on tricky dates
+        # New Year in Dutch time (still 31 December in UTC), early January and a leap day.
+        run: >-
+          TZS=UTC scripts/test-dates.sh
+          2027-01-01T00:30:00+01:00 2027-01-02T09:00:00+01:00 2028-02-29T12:00:00+01:00
       - run: npm run build
 
   scripts:
@@ -50,7 +55,7 @@ jobs:
         run: >-
           docker run --rm -v "$PWD:/mnt"
           koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
-          docker-entrypoint.sh scripts/deploy.sh
+          docker-entrypoint.sh scripts/deploy.sh scripts/test-dates.sh
       - name: actionlint
         run: >-
           docker run --rm -v "$PWD:/repo" --workdir /repo
