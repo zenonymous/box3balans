@@ -455,8 +455,6 @@ export const NL: Record<string, string> = {
   "Rules & rates": "Regels en tarieven",
   Hide: "Verbergen",
   Show: "Tonen",
-  "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official 2023–2026 figures are built in; edit them when the rules change.":
-    "Welk bezit telt als banktegoed, overige bezitting, groene belegging of niet in box 3, en de tarieven per jaar. De officiële cijfers voor 2023–2026 zijn ingebouwd; pas ze aan als de regels veranderen.",
   "Cash, by account type": "Geld, naar soort rekening",
   "Broker cash usually sits at a bank (e.g. flatex for DEGIRO). Euros on a crypto exchange usually don't, so they count as other assets.":
     "Geld bij een broker staat meestal bij een bank (bijv. flatex voor DEGIRO). Euro's op een crypto-exchange meestal niet, dus die tellen als overige bezittingen.",
@@ -468,8 +466,6 @@ export const NL: Record<string, string> = {
   Final: "Definitief",
   custom: "eigen",
   Reset: "Herstellen",
-  "Source: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per year. Years before 2023 used a different system.":
-    "Bron: belastingdienst.nl, “Hoe wordt mijn box 3-inkomen berekend?” per jaar. Jaren voor 2023 gebruikten een ander stelsel.",
   "Save rules & rates": "Regels en tarieven opslaan",
   // pages/Box3Actual.tsx
   "Bank balances": "Banktegoeden",

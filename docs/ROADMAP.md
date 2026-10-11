@@ -55,6 +55,7 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 
 - **Box 3-regels voor 2027:** de voorstellen uit het Belastingplan 2027 en de kabinetsbrief van 29 september staan in [box3-sources.md](box3-sources.md); ze staan sinds 0.1.11 als voorlopig jaar in de app, en worden gecontroleerd zodra het Belastingplan in december is aangenomen ([#4](https://github.com/zenonymous/box3balans/issues/4)).
 - **Testen met echte gegevens:** de koppelingen met echte sleutels met alleen leesrechten ([#5](https://github.com/zenonymous/box3balans/issues/5)). Bitvavo en Coinbase zijn getest en wat dat opleverde, is opgelost in 0.1.4 tot en met 0.1.7 (zie de [stand van zaken](https://github.com/zenonymous/box3balans/issues/5#issuecomment-6078821954)); Kraken en Interactive Brokers wachten op iemand met een account. De herkende exports wachten nog op echte, geanonimiseerde bestanden ([#6](https://github.com/zenonymous/box3balans/issues/6)). Een verkeerd gelezen bedrag is nu het grootste risico.
+- **DEGIRO beter inlezen:** DEGIRO heeft geen API, maar de export _Portefeuille_ kan op elke datum. Ingelezen op 31 december geeft hij de stand op de peildatum, met het geld bij DEGIRO, en een controle op de geïmporteerde transacties. Ook corporate actions (splitsingen, ISIN-wijzigingen, fusies) in het rekeningoverzicht worden herkend in plaats van stil overgeslagen. Zie het [onderzoek](degiro-koppeling.md).
 - **Vindbaar worden:** screenshots in de README ✅ ([#7](https://github.com/zenonymous/box3balans/issues/7)) en een plek voor vragen in [Discussions](https://github.com/zenonymous/box3balans/discussions) ✅ ([#9](https://github.com/zenonymous/box3balans/issues/9)). Nog open: box3balans.nl als Nederlandstalige landingspagina ([#8](https://github.com/zenonymous/box3balans/issues/8)), en daarna een aankondiging in Nederlandse communities zoals Tweakers, het IEX-forum en r/DutchFIRE ([#10](https://github.com/zenonymous/box3balans/issues/10)), in de eerste helft van januari.
 
 ## Fase G: het aangifteseizoen (januari – mei 2027)
@@ -83,6 +84,7 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 - **Box3balans voor anderen hosten.** Dat je gegevens thuis blijven, is juist het punt.
 - **Box 1 en box 2**, zoals de eigen woning of een aanmerkelijk belang.
 - **Beleggingsadvies**, zoals herbalanceren.
+- **Inloggen bij brokers zonder officiële API**, zoals DEGIRO. Dat vraagt je wachtwoord, met volledige handelsrechten, en hun voorwaarden staan het niet toe. Box3balans leest hun exports ([onderzoek](degiro-koppeling.md)).
 
 ## Oorspronkelijke opzet
 
