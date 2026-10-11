@@ -417,6 +417,14 @@ export const NL: Record<string, string> = {
   "Platform costs (connection fees)": "Platformkosten (aansluitingskosten)",
   "Interest on cash": "Rente op geld",
   "Interest lines without an amount": "Renteregels zonder bedrag",
+  "DEGIRO portfolio": "DEGIRO-portefeuille",
+  "This file isn't a portfolio statement": "Dit bestand is geen portefeuille-overzicht",
+  "A portfolio statement is for an account kept with transactions":
+    "Een portefeuille-overzicht hoort bij een rekening die je met transacties bijhoudt",
+  "{name}: {n} difference with the statement of {day}": "{name}: {n} verschil met het overzicht van {day}",
+  "{name}: {n} differences with the statement of {day}": "{name}: {n} verschillen met het overzicht van {day}",
+  "{list} don't add up to what the broker reported. Usually missing history; fix it or adjust.":
+    "{list} klopt niet met wat de broker meldt. Meestal ontbreekt er geschiedenis; vul die aan of corrigeer het saldo.",
   "Corporate action read as a purchase or sale: {line}": "Corporate action gelezen als aan- of verkoop: {line}",
   "Transaction tax on {date} without a purchase was left out.":
     "Transactiebelasting op {date} zonder aankoop is weggelaten.",

@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { assets, transactions } from "../db/schema.js";
 import { replayLedger } from "../domain/ledger.js";
@@ -27,16 +27,37 @@ export async function reconcile(
   // Only compare these assets plus whatever the provider reports (e.g. one chain of a wallet).
   onlyAssetIds?: Set<number>,
 ): Promise<Mismatch[]> {
-  const txs = await db.select().from(transactions).where(eq(transactions.accountId, accountId));
-  const computed = new Map<number, Decimal>();
-  for (const p of replayLedger(txs).positions) if (p.accountId === accountId) computed.set(p.assetId, p.quantity);
-
   const reported = new Map<number, Decimal>();
   for (const b of balances) {
     if (scope === "securities" && b.asset.kind === "fiat") continue;
     const asset = await resolver.resolve(b.asset);
     reported.set(asset.id, (reported.get(asset.id) ?? D(0)).plus(D(b.quantity)));
   }
+  return compareHoldings(db, accountId, reported, { scope, onlyAssetIds });
+}
+
+/**
+ * What a source says an account holds (per asset id) against what its transactions add up to,
+ * now or at the end of `asOf` (exclusive): the differences, ignoring dust. Used for providers'
+ * balances and for statements such as DEGIRO's portfolio export.
+ */
+export async function compareHoldings(
+  db: DB,
+  accountId: number,
+  reported: Map<number, Decimal>,
+  opts: { scope?: "all" | "securities"; onlyAssetIds?: Set<number>; asOf?: Date } = {},
+): Promise<Mismatch[]> {
+  const scope = opts.scope ?? "all";
+  const txs = await db
+    .select()
+    .from(transactions)
+    .where(
+      opts.asOf
+        ? and(eq(transactions.accountId, accountId), lt(transactions.occurredAt, opts.asOf))
+        : eq(transactions.accountId, accountId),
+    );
+  const computed = new Map<number, Decimal>();
+  for (const p of replayLedger(txs).positions) if (p.accountId === accountId) computed.set(p.assetId, p.quantity);
 
   const assetRows = await db
     .select({ id: assets.id, symbol: assets.symbol, assetClass: assets.assetClass })
@@ -47,7 +68,7 @@ export async function reconcile(
   for (const id of ids) {
     const a = byId.get(id);
     if (!a || (scope === "securities" && a.assetClass === "cash")) continue;
-    if (onlyAssetIds && !onlyAssetIds.has(id) && !reported.has(id)) continue;
+    if (opts.onlyAssetIds && !opts.onlyAssetIds.has(id) && !reported.has(id)) continue;
     const r = reported.get(id) ?? D(0);
     const c = computed.get(id) ?? D(0);
     const diff = r.minus(c);

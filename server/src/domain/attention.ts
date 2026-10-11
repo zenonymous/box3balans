@@ -22,6 +22,7 @@ import { loadLedger } from "./portfolio.js";
 import { tr, trn } from "../i18n/index.js";
 import { RULES } from "../rules/index.js";
 import { getUpdateStatus } from "./updates.js";
+import { storedChecks } from "../import/statement.js";
 
 export type Severity = "problem" | "warning" | "info";
 
@@ -166,6 +167,27 @@ export async function collectIssues(
     if (seenWallets.has(id) || !a.lastResult) continue;
     seenWallets.add(id);
     checkSync("wallet", id, `${accountName.get(a.accountId) ?? tr("Wallet")} (${a.chain})`, a, "/wallets");
+  }
+  // A broker's statement of positions (DEGIRO's portfolio export) that the transactions don't match.
+  for (const c of await storedChecks(db)) {
+    if (!c.differences) continue;
+    const name = accountName.get(c.accountId) ?? tr("account #{id}", { id: c.accountId });
+    const off = c.rows.filter((r) => !D(r.difference).isZero());
+    add({
+      key: `statement-mismatch:${c.accountId}`,
+      severity: "warning",
+      title: trn(
+        c.differences,
+        "{name}: {n} difference with the statement of {day}",
+        "{name}: {n} differences with the statement of {day}",
+        { name, day: c.day },
+      ),
+      detail: tr("{list} don't add up to what the broker reported. Usually missing history; fix it or adjust.", {
+        list: list(off.map((r) => r.name)),
+      }),
+      link: { to: `/transactions/import?statement=${c.accountId}`, label: tr("Review") },
+      fingerprint: off.map((r) => `${r.assetId ?? r.isin}:${r.difference}`).join(","),
+    });
   }
 
   // ---- Prices ----

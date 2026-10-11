@@ -1114,6 +1114,28 @@ export const NL: Record<string, string> = {
   "dd-mm-yyyy": "dd-mm-jjjj",
   "Choose from calendar": "Kies in de kalender",
   "Start wizard": "Startwizard",
+  "Record a deposit of {amount} {name} in {account} on {date}, so it matches the statement?":
+    "Een storting van {amount} {name} vastleggen in {account} op {date}, zodat het klopt met het overzicht?",
+  "Record a withdrawal of {amount} {name} in {account} on {date}, so it matches the statement?":
+    "Een opname van {amount} {name} vastleggen in {account} op {date}, zodat het klopt met het overzicht?",
+  "Balance adjustment to match the statement of {date}": "Saldocorrectie volgens het overzicht van {date}",
+  "{account}: everything matches the statement of {date}": "{account}: alles klopt met het overzicht van {date}",
+  "Usually history that is missing from the transactions. Import it, or record an adjustment on that day.":
+    "Meestal ontbreekt er geschiedenis in de transacties. Importeer die, of leg een correctie op die dag vast.",
+  Position: "Positie",
+  "Statement says": "Volgens het overzicht",
+  "No transactions yet: import them first": "Nog geen transacties: importeer die eerst",
+  "{account}: {n} difference with the statement of {date}": "{account}: {n} verschil met het overzicht van {date}",
+  "{account}: {n} differences with the statement of {date}": "{account}: {n} verschillen met het overzicht van {date}",
+  "Which day is it for?": "Van welke dag is het?",
+  "The file doesn't say; for box 3 it's usually 31 December.":
+    "Dat staat niet in het bestand; voor box 3 is het meestal 31 december.",
+  "Comparing…": "Vergelijken…",
+  "Compare with the transactions": "Vergelijken met de transacties",
+  "A statement of what {account} held on one day: {n} position, plus the cash. Box3balans compares it with the transactions up to that day, and counts the cash.":
+    "Een overzicht van wat {account} op één dag had: {n} positie, plus het geld. Box3balans vergelijkt het met de transacties tot en met die dag, en telt het geld mee.",
+  "A statement of what {account} held on one day: {n} positions, plus the cash. Box3balans compares it with the transactions up to that day, and counts the cash.":
+    "Een overzicht van wat {account} op één dag had: {n} posities, plus het geld. Box3balans vergelijkt het met de transacties tot en met die dag, en telt het geld mee.",
   "Explanation of {term}": "Uitleg bij {term}",
   "Record a purchase of {name}": "Aankoop van {name} vastleggen",
   "+ Purchase": "+ Aankoop",

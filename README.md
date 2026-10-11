@@ -284,19 +284,22 @@ _Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of
 
 **Herkende exports.** Deze bestanden herkent Box3balans zelf; je hoeft dan geen kolommen te kiezen:
 
-| Aanbieder         | Welk bestand                                                          | Wat er wordt ingelezen                                                                        |
-| ----------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| DEGIRO            | _Rekeningoverzicht_ (Account.csv) of _Transacties_ (Transactions.csv) | Aankopen en verkopen met kosten; uit het rekeningoverzicht ook dividend met dividendbelasting |
-| Bitvavo           | Transactiegeschiedenis (CSV)                                          | Alles, met stortingen en opnames in euro's                                                    |
-| Coinbase          | Transactierapport (CSV)                                               | Aankopen, verkopen, omzettingen, versturen en ontvangen, beloningen                           |
-| Kraken            | _Ledgers_ (ledgers.csv)                                               | Alles tegen euro's, met staking; transacties tussen twee munten via de API-koppeling          |
-| Rabobank Beleggen | Mutaties & nota's (CSV)                                               | Alles, met stortingen, kosten en rente                                                        |
-| Trade Republic    | Transactie-export met acht kolommen (ook die van pytr)                | Alles, met stortingen, opnames en rente                                                       |
-| Trading 212, BUX  | Geschiedenis (CSV)                                                    | Aankopen, verkopen met kosten, dividend                                                       |
-| Saxo              | Transactieoverzicht (Excel, opgeslagen als CSV)                       | Aankopen, verkopen met kosten, dividend                                                       |
-| Revolut           | Aandelenoverzicht (CSV)                                               | Aankopen, verkopen, dividend                                                                  |
+| Aanbieder         | Welk bestand                                                          | Wat er wordt ingelezen                                                                                                                             |
+| ----------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| DEGIRO            | _Rekeningoverzicht_ (Account.csv) of _Transacties_ (Transactions.csv) | Aankopen en verkopen met kosten en transactiebelasting; uit het rekeningoverzicht ook corporate actions, dividend met dividendbelasting en rente   |
+| DEGIRO            | _Portefeuille_ (Portfolio.csv), op een dag die je kiest               | Geen transacties maar een controle: je posities en het geld bij DEGIRO op die dag, naast wat de transacties optellen; het geld telt mee voor box 3 |
+| Bitvavo           | Transactiegeschiedenis (CSV)                                          | Alles, met stortingen en opnames in euro's                                                                                                         |
+| Coinbase          | Transactierapport (CSV)                                               | Aankopen, verkopen, omzettingen, versturen en ontvangen, beloningen                                                                                |
+| Kraken            | _Ledgers_ (ledgers.csv)                                               | Alles tegen euro's, met staking; transacties tussen twee munten via de API-koppeling                                                               |
+| Rabobank Beleggen | Mutaties & nota's (CSV)                                               | Alles, met stortingen, kosten en rente                                                                                                             |
+| Trade Republic    | Transactie-export met acht kolommen (ook die van pytr)                | Alles, met stortingen, opnames en rente                                                                                                            |
+| Trading 212, BUX  | Geschiedenis (CSV)                                                    | Aankopen, verkopen met kosten, dividend                                                                                                            |
+| Saxo              | Transactieoverzicht (Excel, opgeslagen als CSV)                       | Aankopen, verkopen met kosten, dividend                                                                                                            |
+| Revolut           | Aandelenoverzicht (CSV)                                               | Aankopen, verkopen, dividend                                                                                                                       |
 
-Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Box3balans het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten. Deze formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/zenonymous/box3balans/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
+Waar een bestand alles in euro's heeft (Bitvavo, Kraken, Rabobank, Trade Republic), komen ook stortingen en opnames mee, zodat het geldsaldo klopt. Bij de andere laat Box3balans het geld weg en volgt het alleen je beleggingen; bij het controleren staat wat er is weggelaten.
+
+**DEGIRO elk jaar in januari:** exporteer het _Rekeningoverzicht_ van het jaar en de _Portefeuille_ op 31 december, en importeer ze in die volgorde. De portefeuille laat zien of de transacties optellen tot wat DEGIRO meldt; een verschil corrigeer je met één klik, en het geld bij DEGIRO op 31 december telt mee als banktegoed. Het rekeningoverzicht van DEGIRO is getest met een echte export; de andere formaten zijn gebouwd op openbare voorbeeldbestanden (onder meer van het project Export-To-Ghostfolio) en nog niet getest met echte exports: klopt er iets niet, kies dan _Zelf de kolommen kiezen_ en [meld het](https://github.com/zenonymous/box3balans/issues/new/choose), het liefst met een geanonimiseerd voorbeeld.
 
 Bij andere bestanden:
 

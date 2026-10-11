@@ -197,6 +197,10 @@ Transacties inlezen uit een bestand, met een kolomindeling.
 **Herkend formaat** (format):
 Een export van een bepaalde broker of beurs waarvan de import de kolommen vanzelf herkent.
 
+**Portefeuille-overzicht** (statement):
+Wat een broker zegt dat een rekening op één dag had, zoals de export _Portefeuille_ van DEGIRO. Wordt vergeleken met wat de transacties tot en met die dag optellen; het geld erop telt mee.
+_Vermijd_: snapshot, positierapport
+
 **Afwijkend saldo** (mismatch):
 Een saldo dat een beurs of broker meldt en dat niet klopt met wat de transacties optellen. Meestal ontbreekt er geschiedenis.
 _Vermijd_: mismatch

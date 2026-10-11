@@ -21,6 +21,16 @@ import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
 import { recognise } from "../import/formats/index.js";
+import {
+  type Statement,
+  checkStatement,
+  ensureCashAssets,
+  readStatement,
+  saveStatement,
+  storedChecks,
+} from "../import/statement.js";
+import { AssetResolver } from "../sync/assets.js";
+import { isoDay } from "../lib/validation.js";
 import { tr } from "../i18n/index.js";
 
 const PRESETS_KEY = "csv_import_presets";
@@ -95,6 +105,12 @@ const planBody = z.object({
   mapping: mappingSchema,
 });
 const commitBody = planBody.extend({ include: z.array(z.number().int().positive()).max(100_000).default([]) });
+const statementBody = z.object({
+  uploadId: z.string().uuid(),
+  accountId: z.number().int().positive(),
+  day: isoDay,
+});
+
 const presetBody = z.object({
   name: z.string().trim().min(1).max(60),
   headers: z.array(z.string().max(500)).max(500),
@@ -107,7 +123,11 @@ export async function importRoutes(app: FastifyInstance) {
 
   // Uploaded files wait here between preview and import (single user, so a small map will do).
   // A recognised export is kept converted to the template, with notes on what was left out.
-  const uploads = new Map<string, { fileName: string; content: string; notes: string[]; at: number }>();
+  // A statement of positions (DEGIRO's portfolio export) is kept parsed instead.
+  const uploads = new Map<
+    string,
+    { fileName: string; content: string; notes: string[]; at: number; statement?: Statement }
+  >();
   const upload = (id: string) => {
     for (const [k, v] of uploads) if (Date.now() - v.at > UPLOAD_TTL_MS) uploads.delete(k);
     const u = uploads.get(id);
@@ -128,10 +148,23 @@ export async function importRoutes(app: FastifyInstance) {
     if (content.includes("\u0000")) throw new HttpError(400, tr("That isn't a CSV text file"));
     const id = randomUUID();
     const known = raw ? null : recognise(content);
-    const keep = (c: string, notes: string[]) => {
-      uploads.set(id, { fileName, content: c, notes, at: Date.now() });
+    const keep = (c: string, notes: string[], statement?: Statement) => {
+      uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement });
       while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
     };
+    const statement = raw || known ? null : readStatement(content);
+    if (statement) {
+      keep(content, [], statement);
+      return {
+        uploadId: id,
+        fileName,
+        statement: {
+          label: tr("DEGIRO portfolio"),
+          positions: statement.positions.length,
+          currencies: statement.cash.map((c) => c.currency),
+        },
+      };
+    }
     if (known) {
       keep(known.content, known.notes);
       return {
@@ -174,6 +207,26 @@ export async function importRoutes(app: FastifyInstance) {
     backfill.request();
     uploads.delete(b.uploadId);
     return { ...result, transfersMatched };
+  });
+
+  // A statement of positions on a day: kept per account and checked against the transactions.
+  app.post("/import/statement", async (req) => {
+    const b = statementBody.parse(req.body);
+    const u = upload(b.uploadId);
+    if (!u.statement) throw new HttpError(400, tr("This file isn't a portfolio statement"));
+    const [account] = await db.select().from(accounts).where(eq(accounts.id, b.accountId));
+    if (!account) throw new HttpError(400, tr("Unknown account"));
+    if (account.tracking !== "transactions")
+      throw new HttpError(400, tr("A portfolio statement is for an account kept with transactions"));
+    await ensureCashAssets(new AssetResolver(db, prices.fetchFn, 0, undefined, { via: "import" }), u.statement);
+    await saveStatement(db, b.accountId, b.day, u.statement);
+    uploads.delete(b.uploadId);
+    return checkStatement(db, b.accountId, b.day, u.statement);
+  });
+
+  app.get("/import/statement/:id", async (req) => {
+    const { id } = idParam.parse(req.params);
+    return (await storedChecks(db, id))[0] ?? null;
   });
 
   app.get("/import/presets", async () => (await getPresets(db)).map(({ name, signature }) => ({ name, signature })));

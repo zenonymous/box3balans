@@ -333,6 +333,27 @@ export interface Mismatch {
   difference: string;
 }
 
+/** One position (or currency) of a broker's statement next to what the transactions add up to. */
+export interface StatementRow {
+  // Null when no asset has this ISIN yet.
+  assetId: number | null;
+  name: string;
+  isin: string | null;
+  reported: string;
+  computed: string;
+  difference: string;
+  price: string | null;
+  currency: string;
+}
+
+export interface StatementCheck {
+  accountId: number;
+  source: string;
+  day: string;
+  rows: StatementRow[];
+  differences: number;
+}
+
 export interface SyncResult {
   at: string;
   status: "ok" | "warning" | "error";

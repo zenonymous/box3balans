@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, del, get, post, type TxType } from "../api";
+import { ApiError, del, get, post, type StatementCheck, type TxType } from "../api";
+import { StatementCheckCard, statementKey } from "../components/StatementCheck";
 import {
   Alert,
   Badge,
   Button,
   ButtonLink,
   Card,
+  DateInput,
   Empty,
   Field,
   Input,
@@ -17,7 +19,7 @@ import {
   Tabs,
   cx,
 } from "../components/ui";
-import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime } from "../format";
+import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime, todayIso } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
 import { readText } from "../files";
 import { t, tj, tn } from "../i18n";
@@ -106,10 +108,12 @@ interface Plan {
 interface Upload {
   uploadId: string;
   fileName: string;
-  mapping: Mapping;
-  preset: string | null;
+  mapping?: Mapping;
+  preset?: string | null;
   // A known export (DEGIRO, Bitvavo …), converted to the Box3balans template.
-  format: { id: string; label: string; rows: number } | null;
+  format?: { id: string; label: string; rows: number } | null;
+  // Not transactions but a statement of positions on a day (DEGIRO's portfolio export).
+  statement?: { label: string; positions: number; currencies: string[] };
 }
 
 interface CommitResult {
@@ -186,8 +190,71 @@ function useDebounced<T>(value: T, ms: number): T {
 
 // ---- Page ----
 
+/** A portfolio statement: which day it's for, then the comparison with the transactions. */
+function StatementStep({
+  uploadId,
+  label,
+  positions,
+  accountId,
+  accountName,
+}: {
+  uploadId: string;
+  label: string;
+  positions: number;
+  accountId: number;
+  accountName: string;
+}) {
+  const qc = useQueryClient();
+  const [day, setDay] = useState(`${new Date().getFullYear() - 1}-12-31`);
+  const [done, setDone] = useState(false);
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const compare = async () => {
+    setBusy(true);
+    setError(undefined);
+    try {
+      const check = await post<StatementCheck>("/api/import/statement", { uploadId, accountId, day });
+      qc.setQueryData(statementKey(accountId), check);
+      setDone(true);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  if (done) return <StatementCheckCard accountId={accountId} accountName={accountName} />;
+  return (
+    <Card title={t("2 · Recognised: {name}", { name: label })}>
+      <p className="text-sm text-ink-2">
+        {tn(
+          positions,
+          "A statement of what {account} held on one day: {n} position, plus the cash. Box3balans compares it with the transactions up to that day, and counts the cash.",
+          "A statement of what {account} held on one day: {n} positions, plus the cash. Box3balans compares it with the transactions up to that day, and counts the cash.",
+          { account: accountName },
+        )}
+      </p>
+      <div className="mt-3 flex flex-wrap items-end gap-3">
+        <Field label={t("Which day is it for?")} hint={t("The file doesn't say; for box 3 it's usually 31 December.")}>
+          {(id) => <DateInput id={id} value={day} max={todayIso()} onChange={setDay} required />}
+        </Field>
+        <Button variant="primary" onClick={() => void compare()} disabled={busy || !day}>
+          {busy ? t("Comparing…") : t("Compare with the transactions")}
+        </Button>
+      </div>
+      {error && (
+        <div className="mt-3">
+          <Alert tone="danger">{error}</Alert>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export function ImportPage() {
   const accounts = useAccounts();
+  // Opened from "Needs attention": the stored statement of that account.
+  const [search] = useSearchParams();
+  const reviewing = search.get("statement") ? { id: Number(search.get("statement")) } : null;
   const [accountId, setAccountId] = useState("");
   const [upload, setUpload] = useState<Upload | null>(null);
   const [mapping, setMapping] = useState<Mapping | null>(null);
@@ -215,7 +282,10 @@ export function ImportPage() {
       const content = await readText(picked);
       const up = await post<Upload>("/api/import/upload", { fileName: picked.name, content, raw });
       setUpload(up);
-      setMapping(up.mapping);
+      setMapping(up.mapping ?? null);
+      // A portfolio statement belongs to the broker account it came from, when there's just one.
+      const degiro = accounts.data?.filter((a) => !a.archived && a.provider?.toLowerCase() === "degiro") ?? [];
+      if (up.statement && !accountId && degiro.length === 1) setAccountId(String(degiro[0]!.id));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -318,7 +388,21 @@ export function ImportPage() {
           )}
         </Card>
 
-        {result ? (
+        {upload?.statement && accountId ? (
+          <StatementStep
+            key={upload.uploadId}
+            uploadId={upload.uploadId}
+            label={upload.statement.label}
+            positions={upload.statement.positions}
+            accountId={Number(accountId)}
+            accountName={account?.name ?? ""}
+          />
+        ) : !upload && reviewing ? (
+          <StatementCheckCard
+            accountId={reviewing.id}
+            accountName={accounts.data?.find((a) => a.id === reviewing.id)?.name ?? ""}
+          />
+        ) : result ? (
           <ResultCard result={result} accountName={account?.name ?? ""} onAgain={reset} />
         ) : (
           upload &&
