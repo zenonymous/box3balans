@@ -90,6 +90,40 @@ export const todayIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+const isoOf = (y: number, m: number, d: number): string | null => {
+  if (y < 1900 || y > 2100 || m < 1 || m > 12 || d < 1) return null;
+  if (d > new Date(Date.UTC(y, m, 0)).getUTCDate()) return null;
+  return `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+};
+
+/**
+ * Reads a typed date, day first as in all the app's locales: 27-7-2020, 27/07/2020, 27.7.20,
+ * 27072020, and a pasted 2020-07-27. Returns the ISO day, "" for empty input, null if it isn't a
+ * date. A two-digit year is this century unless that lies in the future.
+ */
+export function parseDateInput(raw: string, today: string = todayIso()): string | null {
+  const s = raw.trim();
+  if (s === "") return "";
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(s);
+  if (iso) return isoOf(Number(iso[1]), Number(iso[2]), Number(iso[3]));
+  const parts = /^(\d{1,2})[-/. ](\d{1,2})[-/. ](\d{2}|\d{4})$/.exec(s);
+  if (parts) {
+    const [, d, m, yy] = parts as unknown as [string, string, string, string];
+    let y = Number(yy);
+    if (yy.length === 2) y += 2000 + y > Number(today.slice(0, 4)) ? 1900 : 2000;
+    return isoOf(y, Number(m), Number(d));
+  }
+  if (/^\d{8}$/.test(s))
+    return (
+      isoOf(Number(s.slice(4)), Number(s.slice(2, 4)), Number(s.slice(0, 2))) ??
+      isoOf(Number(s.slice(0, 4)), Number(s.slice(4, 6)), Number(s.slice(6)))
+    );
+  return null;
+}
+
+/** An ISO day as the date field shows it: 27-07-2020. */
+export const dateInputText = (iso: string) => (iso ? iso.split("-").reverse().join("-") : "");
+
 export const CLASS_LABEL: Record<string, string> = {
   stock: t("Stocks"),
   etf: t("ETFs and funds"),

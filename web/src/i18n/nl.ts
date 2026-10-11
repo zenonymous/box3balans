@@ -937,8 +937,6 @@ export const NL: Record<string, string> = {
     "Dit stuk en de foto's verwijderen? Als je het verkocht hebt, markeer het dan als verkocht om het gerealiseerde resultaat te bewaren.",
   "Edit item": "Stuk bewerken",
   "Add coin or bar": "Munt of baar toevoegen",
-  "Create a storage location first (an account of type “physical”, e.g. “Home safe”) on the <0>Accounts</0> page.":
-    "Maak eerst een opslaglocatie aan (een rekening van de soort “fysieke opslag”, bijv. “Kluis thuis”) op de pagina <0>Rekeningen</0>.",
   "Pick a preset to fill weight and purity, or type your own":
     "Kies een bekend product om gewicht en zuiverheid in te vullen, of typ je eigen",
   "Gross weight per piece (g)": "Brutogewicht per stuk (g)",
@@ -1115,6 +1113,32 @@ export const NL: Record<string, string> = {
   Insight: "Inzicht",
   Data: "Gegevens",
   "Skip to content": "Naar de inhoud",
+  "Enter a date as dd-mm-yyyy": "Vul een datum in als dd-mm-jjjj",
+  "Can't be after {date}": "Kan niet na {date} liggen",
+  "dd-mm-yyyy": "dd-mm-jjjj",
+  "Choose from calendar": "Kies in de kalender",
+  "Explanation of {term}": "Uitleg bij {term}",
+  "Record a purchase of {name}": "Aankoop van {name} vastleggen",
+  "+ Purchase": "+ Aankoop",
+  "Purchase of {name}": "Aankoop van {name}",
+  Skip: "Overslaan",
+  "{name} has been added. Record your purchase now, or skip this and do it later from Assets.":
+    "{name} is toegevoegd. Leg je aankoop nu vast, of sla dit over en doe het later vanuit Beleggingen.",
+  "Hide positions under {amount}": "Posities onder {amount} verbergen",
+  "{n} hidden": "{n} verborgen",
+  "At home": "Thuis",
+  "+ New place…": "+ Nieuwe plek…",
+  "Name of the new place": "Naam van de nieuwe plek",
+  "Such as a safe at home or a safe-deposit box. You'll find it under Accounts.":
+    "Zoals een kluis thuis of een bankkluis. Je vindt hem terug onder Rekeningen.",
+  "What you paid for what you hold now, including transaction costs. Cash doesn't count, and neither does what you've sold.":
+    "Wat je hebt betaald voor wat je nu bezit, inclusief transactiekosten. Geld telt niet mee, en wat je hebt verkocht ook niet.",
+  "How much more (or less) what you hold now is worth than you paid for it. It isn't fixed yet: that happens when you sell.":
+    "Hoeveel meer (of minder) wat je nu bezit waard is dan je ervoor betaalde. Het staat nog niet vast: dat gebeurt pas als je verkoopt.",
+  "Profit or loss on everything you've sold: what you got for it, minus the costs and what you paid.":
+    "Winst of verlies op alles wat je hebt verkocht: wat je ervoor kreeg, min de kosten en wat je ervoor betaalde.",
+  "Dividends after the dividend tax withheld, plus rewards such as staking and interest in crypto, valued on the day they came in.":
+    "Dividend na ingehouden dividendbelasting, plus beloningen zoals staking en rente in crypto, gewaardeerd op de dag dat ze binnenkwamen.",
   "Main menu": "Hoofdmenu",
   "New passwords do not match": "De nieuwe wachtwoorden zijn niet gelijk",
   "Password changed. Other sessions were signed out.": "Wachtwoord gewijzigd. Andere sessies zijn uitgelogd.",

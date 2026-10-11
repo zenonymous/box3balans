@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseNumberInput, toApiNumber, unambiguous } from "./format";
+import { dateInputText, parseDateInput, parseNumberInput, toApiNumber, unambiguous } from "./format";
 
 const nl = (s: string) => parseNumberInput(s, "nl-NL");
 const en = (s: string) => parseNumberInput(s, "en-IE");
@@ -51,5 +51,44 @@ describe("helpers", () => {
     expect(unambiguous("5000", "nl-NL")).toBe("5\u202f000");
     expect(unambiguous("1234.56", "nl-NL")).toBe("1\u202f234,56");
     expect(() => toApiNumber("1.2.3,4", "Quantity")).toThrow(/“1\.2\.3,4”/);
+  });
+});
+
+describe("parseDateInput (day first)", () => {
+  const p = (s: string) => parseDateInput(s, "2026-10-11");
+
+  // UI review: the browser's own date field took "27" as month 2 and day 7.
+  it("reads the day first, with any common separator", () => {
+    expect(p("27-7-2020")).toBe("2020-07-27");
+    expect(p("27/07/2020")).toBe("2020-07-27");
+    expect(p("27.7.2020")).toBe("2020-07-27");
+    expect(p(" 1 2 2021 ")).toBe("2021-02-01");
+  });
+
+  it("reads two-digit years as this century unless that is in the future", () => {
+    expect(p("27-7-20")).toBe("2020-07-27");
+    expect(p("1-1-26")).toBe("2026-01-01");
+    expect(p("3-4-85")).toBe("1985-04-03");
+  });
+
+  it("accepts a pasted ISO date and eight digits", () => {
+    expect(p("2020-07-27")).toBe("2020-07-27");
+    expect(p("27072020")).toBe("2020-07-27");
+    expect(p("20200727")).toBe("2020-07-27");
+  });
+
+  it("rejects days that don't exist and other input", () => {
+    expect(p("31-2-2021")).toBeNull();
+    expect(p("29-2-2023")).toBeNull();
+    expect(p("29-2-2024")).toBe("2024-02-29");
+    expect(p("13-13-2020")).toBeNull();
+    expect(p("27-7")).toBeNull();
+    expect(p("gisteren")).toBeNull();
+    expect(p("")).toBe("");
+  });
+
+  it("shows an ISO day back day first", () => {
+    expect(dateInputText("2020-07-27")).toBe("27-07-2020");
+    expect(dateInputText("")).toBe("");
   });
 });

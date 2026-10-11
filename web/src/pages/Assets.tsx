@@ -28,6 +28,7 @@ import {
   toInputNumber,
 } from "../format";
 import { useAssets, useInvalidateAll } from "../queries";
+import { TxModal } from "./Transactions";
 import { t } from "../i18n";
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -43,6 +44,7 @@ export function AssetsPage() {
   const assets = useAssets();
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<Asset | null>(null);
+  const [buying, setBuying] = useState<{ asset: Asset; added: boolean } | null>(null);
   const [showHidden, setShowHidden] = useState(false);
 
   const list = (assets.data ?? []).filter((a) => showHidden || !a.hidden);
@@ -82,11 +84,11 @@ export function AssetsPage() {
               >
                 <ul className="divide-y divide-line">
                   {rows.map((a) => (
-                    <li key={a.id}>
+                    <li key={a.id} className="flex items-stretch">
                       <button
                         type="button"
                         onClick={() => setEditing(a)}
-                        className="flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm hover:bg-surface-2"
+                        className="flex min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 text-left text-sm hover:bg-surface-2"
                       >
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium text-ink">
@@ -122,6 +124,16 @@ export function AssetsPage() {
                           </div>
                         </div>
                       </button>
+                      {c !== "cash" && (
+                        <button
+                          type="button"
+                          onClick={() => setBuying({ asset: a, added: false })}
+                          aria-label={t("Record a purchase of {name}", { name: a.name })}
+                          className="shrink-0 whitespace-nowrap px-4 text-xs text-accent hover:bg-surface-2"
+                        >
+                          {t("+ Purchase")}
+                        </button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -130,7 +142,16 @@ export function AssetsPage() {
           })}
         </div>
       )}
-      {adding && <AddAssetModal onClose={() => setAdding(false)} />}
+      {adding && (
+        <AddAssetModal
+          onClose={() => setAdding(false)}
+          onAdded={(asset) => {
+            setAdding(false);
+            if (asset.assetClass !== "cash") setBuying({ asset, added: true });
+          }}
+        />
+      )}
+      {buying && <TxModal tx={null} purchase={buying.asset} added={buying.added} onClose={() => setBuying(null)} />}
       {editing && <EditAssetModal asset={editing} onClose={() => setEditing(null)} />}
     </>
   );
@@ -138,7 +159,7 @@ export function AssetsPage() {
 
 type Mode = "securities" | "crypto" | "cash" | "manual";
 
-function AddAssetModal({ onClose }: { onClose: () => void }) {
+function AddAssetModal({ onClose, onAdded }: { onClose: () => void; onAdded: (asset: Asset) => void }) {
   const invalidate = useInvalidateAll();
   const [mode, setMode] = useState<Mode>("securities");
   const [q, setQ] = useState("");
@@ -165,9 +186,9 @@ function AddAssetModal({ onClose }: { onClose: () => void }) {
     setBusy(key);
     setError(undefined);
     try {
-      await post("/api/assets", body);
+      const asset = await post<Asset>("/api/assets", body);
       await invalidate();
-      onClose();
+      onAdded(asset);
     } catch (err) {
       setError((err as Error).message);
     } finally {

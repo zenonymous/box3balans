@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { del, post, put, type Custody, type Person } from "../api";
-import { Alert, Button, Card, Field, Input, PageHeader, Select, Spinner } from "../components/ui";
-import { date } from "../format";
+import { Alert, Button, Card, DateInput, Field, Input, PageHeader, Select, Spinner } from "../components/ui";
+import { date, todayIso } from "../format";
 import { t, tj } from "../i18n";
 import { custodyLabel } from "../labels";
 import { useHousehold, useInvalidateAll } from "../queries";
@@ -166,7 +166,7 @@ function ChildRow({ child }: { child: Person | null }) {
         hint={child?.birthDate ? t("18 on {date}", { date: date(adultOn(child.birthDate)) }) : undefined}
       >
         {(id) => (
-          <Input id={id} type="date" value={f.birthDate} onChange={(e) => setF({ ...f, birthDate: e.target.value })} />
+          <DateInput id={id} value={f.birthDate} max={todayIso()} onChange={(v) => setF({ ...f, birthDate: v })} />
         )}
       </Field>
       <Field label={t("Who has custody?")} className="sm:col-span-2">

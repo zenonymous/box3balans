@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { AllocationBar } from "../charts/AllocationBar";
+import { AllocationDonut } from "../charts/AllocationDonut";
 import { RankedBars, type RankedRow } from "../charts/RankedBars";
 import type { Holding, Summary } from "../api";
 import { NetWorthChart } from "../charts/NetWorthChart";
@@ -114,11 +114,17 @@ export function OverviewPage() {
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat
           label={t("Invested (cost basis)")}
+          info={t(
+            "What you paid for what you hold now, including transaction costs. Cash doesn't count, and neither does what you've sold.",
+          )}
           value={eur(summary.costEur, { decimals: 0 })}
           sub={<span className="text-muted">{t("excl. cash")}</span>}
         />
         <Stat
           label={t("Unrealized P&L")}
+          info={t(
+            "How much more (or less) what you hold now is worth than you paid for it. It isn't fixed yet: that happens when you sell.",
+          )}
           value={<Delta value={summary.unrealizedEur} />}
           sub={
             <span className="text-muted">
@@ -132,43 +138,21 @@ export function OverviewPage() {
         />
         <Stat
           label={t("Realized P&L")}
+          info={t("Profit or loss on everything you've sold: what you got for it, minus the costs and what you paid.")}
           value={<Delta value={summary.realizedEur} />}
           sub={<span className="text-muted">{t("all time")}</span>}
         />
         <Stat
           label={t("Dividends and rewards")}
+          info={t(
+            "Dividends after the dividend tax withheld, plus rewards such as staking and interest in crypto, valued on the day they came in.",
+          )}
           value={eur(summary.incomeEur)}
           sub={<span className="text-muted">{t("all time, net")}</span>}
         />
       </div>
 
-      <Card
-        title={t("Net worth over time")}
-        actions={
-          <div className="flex flex-wrap items-center justify-end gap-3">
-            <label className="flex items-center gap-1.5 text-xs text-ink-2">
-              <input type="checkbox" checked={showInvested} onChange={(e) => toggleInvested(e.target.checked)} />{" "}
-              {t("Invested")}
-            </label>
-            <Tabs value={range} onChange={setRange} options={RANGES.map((r) => ({ value: r, label: rangeLabel(r) }))} />
-          </div>
-        }
-      >
-        {history.isLoading ? (
-          <Spinner />
-        ) : (
-          <NetWorthChart points={history.data?.points ?? []} showInvested={showInvested} />
-        )}
-        {history.data && history.data.estimated.length > 0 && (
-          <p className="mt-2 text-xs text-muted">
-            {t("No price history yet for {list}; valued at cost where missing. History loads in the background.", {
-              list: history.data.estimated.map((e) => e.symbol).join(", "),
-            })}
-          </p>
-        )}
-      </Card>
-
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-5">
         <AllocationCard summary={summary} holdings={holdings} />
         <Card
           title={t("Top holdings")}
@@ -209,6 +193,31 @@ export function OverviewPage() {
           </ul>
         </Card>
       </div>
+      <Card
+        title={t("Net worth over time")}
+        actions={
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <label className="flex items-center gap-1.5 text-xs text-ink-2">
+              <input type="checkbox" checked={showInvested} onChange={(e) => toggleInvested(e.target.checked)} />{" "}
+              {t("Invested")}
+            </label>
+            <Tabs value={range} onChange={setRange} options={RANGES.map((r) => ({ value: r, label: rangeLabel(r) }))} />
+          </div>
+        }
+      >
+        {history.isLoading ? (
+          <Spinner />
+        ) : (
+          <NetWorthChart points={history.data?.points ?? []} showInvested={showInvested} />
+        )}
+        {history.data && history.data.estimated.length > 0 && (
+          <p className="mt-2 text-xs text-muted">
+            {t("No price history yet for {list}; valued at cost where missing. History loads in the background.", {
+              list: history.data.estimated.map((e) => e.symbol).join(", "),
+            })}
+          </p>
+        )}
+      </Card>
     </>
   );
 }
@@ -295,7 +304,7 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
         />
       }
     >
-      {view === "class" ? <AllocationBar slices={slices} /> : <RankedBars rows={rows} legend={legend} />}
+      {view === "class" ? <AllocationDonut slices={slices} /> : <RankedBars rows={rows} legend={legend} />}
     </Card>
   );
 }

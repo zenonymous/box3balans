@@ -18,26 +18,48 @@ const COLS: { key: SortKey; label: string; numeric?: boolean }[] = [
 
 const qtyLabel = (h: Holding) => (h.unit === "g" ? `${num(h.quantity, 2)} g` : num(h.quantity));
 
+function loadHideSmall(): boolean {
+  try {
+    return localStorage.getItem("hideSmallPositions") !== "false";
+  } catch {
+    return true;
+  }
+}
+
+// Dust: an open position with a price, worth less than €1. Unpriced ones stay visible.
+const isSmall = (h: Holding) => Number(h.quantity) !== 0 && h.priceEur != null && Math.abs(Number(h.valueEur)) < 1;
+
 export function HoldingsPage() {
   const portfolio = usePortfolio();
   const [cls, setCls] = useState("all");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "valueEur", dir: -1 });
   const [showClosed, setShowClosed] = useState(false);
+  const [hideSmall, setHideSmall] = useState(loadHideSmall);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const toggleHideSmall = (v: boolean) => {
+    setHideSmall(v);
+    try {
+      localStorage.setItem("hideSmallPositions", String(v));
+    } catch {}
+  };
 
-  const rows = useMemo(() => {
+  const { rows, smallHidden } = useMemo(() => {
     const all = portfolio.data?.holdings ?? [];
     const needle = q.trim().toLowerCase();
-    return all
+    const matching = all
       .filter((h) => showClosed || Number(h.quantity) !== 0)
       .filter((h) => cls === "all" || h.assetClass === cls)
-      .filter((h) => !needle || h.name.toLowerCase().includes(needle) || h.symbol.toLowerCase().includes(needle))
-      .sort((a, b) => {
+      .filter((h) => !needle || h.name.toLowerCase().includes(needle) || h.symbol.toLowerCase().includes(needle));
+    const shown = hideSmall ? matching.filter((h) => !isSmall(h)) : matching;
+    return {
+      smallHidden: matching.length - shown.length,
+      rows: shown.sort((a, b) => {
         if (sort.key === "name") return a.name.localeCompare(b.name) * sort.dir;
         return (Number(a[sort.key] ?? -Infinity) - Number(b[sort.key] ?? -Infinity)) * sort.dir;
-      });
-  }, [portfolio.data, cls, q, sort, showClosed]);
+      }),
+    };
+  }, [portfolio.data, cls, q, sort, showClosed, hideSmall]);
 
   if (portfolio.isLoading) return <Spinner />;
   if (portfolio.error) return <Alert tone="danger">{portfolio.error.message}</Alert>;
@@ -72,6 +94,13 @@ export function HoldingsPage() {
         <label className="flex items-center gap-1.5 text-sm text-ink-2">
           <input type="checkbox" checked={showClosed} onChange={(e) => setShowClosed(e.target.checked)} />{" "}
           {t("Show closed positions")}
+        </label>
+        <label className="flex items-center gap-1.5 text-sm text-ink-2">
+          <input type="checkbox" checked={hideSmall} onChange={(e) => toggleHideSmall(e.target.checked)} />{" "}
+          {t("Hide positions under {amount}", { amount: eur(1, { decimals: 0 }) })}
+          {hideSmall && smallHidden > 0 && (
+            <span className="text-muted">({tn(smallHidden, "{n} hidden", "{n} hidden")})</span>
+          )}
         </label>
       </div>
 

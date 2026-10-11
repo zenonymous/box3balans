@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery } from "@tanstack/react-query";
-import { del, get, post, put, type MetalItem, type MetalProduct } from "../api";
+import { del, get, post, put, type Account, type MetalItem, type MetalProduct } from "../api";
 import { PhotoStrip, photoUrl } from "../components/Photos";
 import { RefreshButton } from "../components/RefreshButton";
 import {
+  DateInput,
   Alert,
   AmountInput,
   Badge,
@@ -230,6 +231,8 @@ export function MetalsPage() {
 const strip = (v: string | null | undefined) =>
   v == null ? "" : toInputNumber(v.includes(".") ? v.replace(/\.?0+$/, "") : v);
 
+const NEW_PLACE = "new";
+
 function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => void }) {
   const accounts = useAccounts();
   const invalidate = useInvalidateAll();
@@ -260,7 +263,14 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const set = (k: keyof typeof f) => (v: string) => setF((s) => ({ ...s, [k]: v }));
-  const storage = accounts.data?.filter((a) => !a.archived || String(a.id) === f.accountId) ?? [];
+  // Places for physical items (accounts of kind "physical"), plus the item's own if it's elsewhere.
+  const places =
+    accounts.data?.filter((a) => String(a.id) === f.accountId || (a.kind === "physical" && !a.archived)) ?? [];
+  // What was picked; else the only place there is; with none yet, a new one.
+  const accountId =
+    f.accountId ||
+    (places.length === 1 ? String(places[0]!.id) : accounts.data && places.length === 0 ? NEW_PLACE : "");
+  const [newPlace, setNewPlace] = useState(t("At home"));
 
   const pickProduct = (name: string) => {
     const p = products.data?.find((x) => x.metal === f.metal && x.name === name);
@@ -282,8 +292,15 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
     setBusy(true);
     setError(undefined);
     try {
+      let placeId = Number(accountId);
+      if (accountId === NEW_PLACE) {
+        const created = await post<Account>("/api/accounts", { name: newPlace.trim(), kind: "physical" });
+        placeId = created.id;
+        // A retry after a failed save uses this place instead of creating another.
+        set("accountId")(String(created.id));
+      }
       const body = {
-        accountId: Number(f.accountId),
+        accountId: placeId,
         metal: f.metal,
         product: f.product,
         grossWeightG: toApiNumber(f.grossWeightG, t("Gross weight")),
@@ -348,16 +365,6 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
       }
     >
       <form id="item-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {storage.length === 0 && (
-          <div className="sm:col-span-2">
-            <Alert>
-              {tj(
-                "Create a storage location first (an account of type “physical”, e.g. “Home safe”) on the <0>Accounts</0> page.",
-                [<Link key="a" to="/accounts" className="underline" onClick={onClose} />],
-              )}
-            </Alert>
-          </div>
-        )}
         <Field label={t("Metal")}>
           {(id) => (
             <Select id={id} value={f.metal} onChange={(e) => set("metal")(e.target.value)}>
@@ -426,26 +433,30 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
         </Field>
         <Field label={t("Storage location")}>
           {(id) => (
-            <Select id={id} value={f.accountId} onChange={(e) => set("accountId")(e.target.value)} required>
-              <option value="">{t("Choose…")}</option>
-              {storage.map((a) => (
+            <Select id={id} value={accountId} onChange={(e) => set("accountId")(e.target.value)} required>
+              {places.length > 1 && !accountId && <option value="">{t("Choose…")}</option>}
+              {places.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
                 </option>
               ))}
+              <option value={NEW_PLACE}>{t("+ New place…")}</option>
             </Select>
           )}
         </Field>
+        {accountId === NEW_PLACE && (
+          <Field
+            label={t("Name of the new place")}
+            hint={t("Such as a safe at home or a safe-deposit box. You'll find it under Accounts.")}
+          >
+            {(id) => (
+              <Input id={id} value={newPlace} onChange={(e) => setNewPlace(e.target.value)} maxLength={100} required />
+            )}
+          </Field>
+        )}
         <Field label={t("Purchase date")}>
           {(id) => (
-            <Input
-              id={id}
-              type="date"
-              value={f.purchaseDate}
-              max={todayIso()}
-              onChange={(e) => set("purchaseDate")(e.target.value)}
-              required
-            />
+            <DateInput id={id} value={f.purchaseDate} max={todayIso()} onChange={set("purchaseDate")} required />
           )}
         </Field>
         <Field label={t("Total price paid (EUR)")} hint={t("All pieces, incl. premium and shipping")}>
@@ -497,14 +508,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
               <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <Field label={t("Sale date")}>
                   {(id) => (
-                    <Input
-                      id={id}
-                      type="date"
-                      value={f.soldDate}
-                      max={todayIso()}
-                      onChange={(e) => set("soldDate")(e.target.value)}
-                      required
-                    />
+                    <DateInput id={id} value={f.soldDate} max={todayIso()} onChange={set("soldDate")} required />
                   )}
                 </Field>
                 <Field label={t("Sale proceeds (EUR)")}>

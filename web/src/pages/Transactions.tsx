@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { del, get, post, put, type Asset, type Transaction, type TxType } from "../api";
 import {
+  DateInput,
   Alert,
   AmountInput,
   Badge,
@@ -283,7 +284,21 @@ const toLocalInput = (iso: string) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
-function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void }) {
+/**
+ * Add or edit a transaction. `purchase` opens it as a purchase of that asset (from Assets), `added`
+ * right after that asset was added.
+ */
+export function TxModal({
+  tx,
+  purchase,
+  added,
+  onClose,
+}: {
+  tx: Transaction | null;
+  purchase?: Asset;
+  added?: boolean;
+  onClose: () => void;
+}) {
   const accounts = useAccounts();
   const assets = useAssets();
   const invalidate = useInvalidateAll();
@@ -291,11 +306,11 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
   const [f, setF] = useState({
     type: tx?.type ?? "buy",
     accountId: tx ? String(tx.accountId) : "",
-    assetId: tx ? String(tx.assetId) : "",
+    assetId: tx ? String(tx.assetId) : purchase ? String(purchase.id) : "",
     day: tx ? toLocalInput(tx.occurredAt) : todayIso(),
     quantity: tx ? strip(tx.quantity) : "",
     price: tx ? strip(tx.price) : "",
-    currency: tx?.currency ?? "EUR",
+    currency: tx?.currency ?? purchase?.currency ?? "EUR",
     fxRate: tx && tx.currency !== "EUR" ? strip(tx.fxRate) : "",
     feeEur: tx && Number(tx.feeEur) ? strip(tx.feeEur) : "",
     amount: tx && Number(tx.amount) ? strip(tx.amount) : "",
@@ -426,7 +441,9 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
           ? isTransfer
             ? t("Edit {name}", { name: TX_LABEL[tx.type]?.toLowerCase() ?? tx.type })
             : t("Edit transaction")
-          : t("Add transaction")
+          : purchase
+            ? t("Purchase of {name}", { name: purchase.name })
+            : t("Add transaction")
       }
       wide
       footer={
@@ -437,7 +454,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
             </Button>
           )}
           {isTransfer && <Button onClick={unlink}>{t("Unlink")}</Button>}
-          <Button onClick={onClose}>{t("Cancel")}</Button>
+          <Button onClick={onClose}>{purchase ? t("Skip") : t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="tx-form" disabled={busy}>
             {busy ? t("Saving…") : t("Save")}
           </Button>
@@ -445,6 +462,13 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
       }
     >
       <form id="tx-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {purchase && added && (
+          <p className="text-sm text-ink-2 sm:col-span-2">
+            {t("{name} has been added. Record your purchase now, or skip this and do it later from Assets.", {
+              name: purchase.name,
+            })}
+          </p>
+        )}
         {isTransfer ? (
           <p className="text-sm text-ink-2 sm:col-span-2">
             {t("{type} of {asset} at {account}. Changing the date moves both legs.", {
@@ -467,16 +491,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
               )}
             </Field>
             <Field label={t("Date")}>
-              {(id) => (
-                <Input
-                  id={id}
-                  type="date"
-                  value={f.day}
-                  max={todayIso()}
-                  onChange={(e) => set("day")(e.target.value)}
-                  required
-                />
-              )}
+              {(id) => <DateInput id={id} value={f.day} max={todayIso()} onChange={set("day")} required />}
             </Field>
             <Field label={t("Account")}>
               {(id) => (
@@ -504,9 +519,7 @@ function TxModal({ tx, onClose }: { tx: Transaction | null; onClose: () => void 
         )}
 
         {isTransfer && (
-          <Field label={t("Date")}>
-            {(id) => <Input id={id} type="date" value={f.day} onChange={(e) => set("day")(e.target.value)} required />}
-          </Field>
+          <Field label={t("Date")}>{(id) => <DateInput id={id} value={f.day} onChange={set("day")} required />}</Field>
         )}
 
         {kind !== "dividend" && (
@@ -781,16 +794,7 @@ function TransferModal({ onClose }: { onClose: () => void }) {
           {(id) => <AssetSelect id={id} assets={assets.data ?? []} value={f.assetId} onChange={set("assetId")} />}
         </Field>
         <Field label={t("Date")}>
-          {(id) => (
-            <Input
-              id={id}
-              type="date"
-              value={f.day}
-              max={todayIso()}
-              onChange={(e) => set("day")(e.target.value)}
-              required
-            />
-          )}
+          {(id) => <DateInput id={id} value={f.day} max={todayIso()} onChange={set("day")} required />}
         </Field>
         <Field label={t("Quantity sent")}>
           {(id) => (

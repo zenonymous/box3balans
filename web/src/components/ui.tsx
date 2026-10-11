@@ -2,13 +2,14 @@ import {
   useEffect,
   useId,
   useRef,
+  useState,
   type ReactNode,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
-import { eur, getLocale, parseNumberInput, pct, unambiguous } from "../format";
+import { date, dateInputText, eur, getLocale, parseDateInput, parseNumberInput, pct, unambiguous } from "../format";
 import { t } from "../i18n";
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
@@ -134,6 +135,100 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement> & { val
           {parsed.ambiguous &&
             ` ${getLocale().startsWith("en") ? t("(thousands; for decimals use a dot)") : t("(thousands; for decimals use a comma)")}`}
         </span>
+      )}
+    </>
+  );
+}
+
+/**
+ * A date field that reads what you type day first (27-7-2020; see parseDateInput), with a calendar
+ * button. The browser's own date field orders day and month by the browser's language, so in an
+ * English browser "27" became month 2, day 7. Gives and takes an ISO day.
+ */
+export function DateInput({
+  id,
+  value,
+  onChange,
+  max,
+  required,
+}: {
+  id?: string;
+  value: string;
+  onChange: (iso: string) => void;
+  max?: string;
+  required?: boolean;
+}) {
+  const [text, setText] = useState(() => dateInputText(value));
+  const [seen, setSeen] = useState(value);
+  // A new value from outside (a reset, another field) replaces what was typed.
+  if (value !== seen) {
+    setSeen(value);
+    if (parseDateInput(text) !== value) setText(dateInputText(value));
+  }
+  const input = useRef<HTMLInputElement>(null);
+  const picker = useRef<HTMLInputElement>(null);
+  const parsed = parseDateInput(text);
+  const problem =
+    parsed === null
+      ? t("Enter a date as dd-mm-yyyy")
+      : parsed && max && parsed > max
+        ? t("Can't be after {date}", { date: date(max) })
+        : "";
+  useEffect(() => input.current?.setCustomValidity(problem), [problem]);
+  const type = (s: string) => {
+    setText(s);
+    const iso = parseDateInput(s);
+    if (iso !== null) onChange(iso);
+  };
+  return (
+    <>
+      <div className="relative">
+        <input
+          ref={input}
+          id={id}
+          value={text}
+          onChange={(e) => type(e.target.value)}
+          onBlur={() => parsed && setText(dateInputText(parsed))}
+          placeholder={t("dd-mm-yyyy")}
+          inputMode="numeric"
+          autoComplete="off"
+          required={required}
+          aria-invalid={!!problem || undefined}
+          className={cx(inputCls, "w-full pr-9", problem && "border-loss")}
+        />
+        <button
+          type="button"
+          onClick={() => {
+            // Browsers may refuse the picker (old ones lack it); then typing is the way.
+            try {
+              picker.current!.showPicker();
+            } catch {
+              input.current?.focus();
+            }
+          }}
+          aria-label={t("Choose from calendar")}
+          title={t("Choose from calendar")}
+          className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-ink-2 hover:text-ink"
+        >
+          <svg aria-hidden viewBox="0 0 16 16" className="size-4" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <rect x="2" y="3" width="12" height="11" rx="1.5" />
+            <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+          </svg>
+        </button>
+        <input
+          ref={picker}
+          type="date"
+          tabIndex={-1}
+          aria-hidden
+          value={parsed || ""}
+          max={max}
+          onChange={(e) => e.target.value && type(dateInputText(e.target.value))}
+          className="pointer-events-none absolute bottom-0 left-0 h-0 w-full opacity-0"
+        />
+      </div>
+      {problem && text !== "" && <span className="text-xs text-loss">{problem}</span>}
+      {!problem && parsed && text !== dateInputText(parsed) && (
+        <span className="tabular text-xs text-muted">= {date(parsed)}</span>
       )}
     </>
   );
@@ -292,10 +387,74 @@ export function Spinner() {
   return <div className="py-10 text-center text-sm text-muted">{t("Loading…")}</div>;
 }
 
-export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
+/**
+ * An ⓘ that explains a term: on mouse hover, on keyboard focus, and on tap (phones have no hover).
+ * Placed with fixed coordinates kept inside the window, so a tile at the edge doesn't push it off.
+ */
+export function InfoTip({ text, label }: { text: string; label: string }) {
+  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+  const button = useRef<HTMLButtonElement>(null);
+  const id = useId();
+  const show = () => {
+    const r = button.current?.getBoundingClientRect();
+    if (!r) return;
+    const width = Math.min(272, window.innerWidth - 32);
+    const left = Math.min(Math.max(r.left + r.width / 2 - width / 2, 16), window.innerWidth - 16 - width);
+    setPos({ left, top: r.bottom + 6, width });
+  };
+  const hide = () => setPos(null);
+  useEffect(() => {
+    if (!pos) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && hide();
+    window.addEventListener("scroll", hide, true);
+    window.addEventListener("resize", hide);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.removeEventListener("scroll", hide, true);
+      window.removeEventListener("resize", hide);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [pos]);
+  return (
+    <>
+      <button
+        ref={button}
+        type="button"
+        aria-label={t("Explanation of {term}", { term: label.toLowerCase() })}
+        aria-describedby={pos ? id : undefined}
+        onClick={() => (pos ? hide() : show())}
+        onPointerEnter={(e) => e.pointerType === "mouse" && show()}
+        onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && show()}
+        onBlur={hide}
+        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
+      >
+        <svg aria-hidden viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
+          <circle cx="8" cy="8" r="6.5" />
+          <path d="M8 7.2v4M8 4.6v.1" strokeLinecap="round" />
+        </svg>
+      </button>
+      {pos && (
+        <span
+          role="tooltip"
+          id={id}
+          style={{ left: pos.left, top: pos.top, width: pos.width }}
+          className="fixed z-30 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-normal leading-relaxed text-ink-2 shadow-lg"
+        >
+          {text}
+        </span>
+      )}
+    </>
+  );
+}
+
+export function Stat({ label, value, sub, info }: { label: string; value: ReactNode; sub?: ReactNode; info?: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-4 py-3">
-      <div className="text-xs font-medium text-ink-2">{label}</div>
+      <div className="flex items-center gap-1 text-xs font-medium text-ink-2">
+        {label}
+        {info && <InfoTip text={info} label={label} />}
+      </div>
       <div className="mt-1 text-lg font-semibold text-ink">{value}</div>
       {sub && <div className="mt-0.5 text-xs">{sub}</div>}
     </div>
