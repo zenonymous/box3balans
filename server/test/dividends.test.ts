@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { localToday } from "../src/lib/time.js";
 import { createTestApp, defaultRoutes, type TestApp } from "./helpers.js";
 
 let t: TestApp;
@@ -8,6 +9,9 @@ const json = <T = any>(res: { body: string }) => JSON.parse(res.body) as T;
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
 
 // Yahoo: a quote, or the dividend events when asked for them.
+// An event at noon UTC of today's local date: that day, whatever the time zone or hour.
+const TODAY = -1;
+const exAt = (n: number) => (n === TODAY ? new Date(`${localToday()}T12:00:00Z`) : daysAgo(n));
 const yahoo = (currency: string, price: number, dividends: { daysAgo: number; amount: number }[]) => (url: string) => ({
   chart: {
     result: [
@@ -18,7 +22,7 @@ const yahoo = (currency: string, price: number, dividends: { daysAgo: number; am
               events: {
                 dividends: Object.fromEntries(
                   dividends.map((d) => {
-                    const ts = Math.floor(daysAgo(d.daysAgo).getTime() / 1000);
+                    const ts = Math.floor(exAt(d.daysAgo).getTime() / 1000);
                     return [String(ts), { amount: d.amount, date: ts }];
                   }),
                 ),
@@ -34,12 +38,14 @@ const yahoo = (currency: string, price: number, dividends: { daysAgo: number; am
 async function scenario() {
   t = await createTestApp({
     ...defaultRoutes,
-    // Two dividends of $0.25 in the last year (plus an older one that doesn't count).
+    // Two dividends of $0.25 in the 12 calendar months before this one (31–364 days ago always
+    // are), an older one, and one today: this month's comes back next year, after the 12 months.
     // The full URL prefix, to override the shared AAPL quote fixture.
     "query1.finance.yahoo.com/v8/finance/chart/AAPL": yahoo("USD", 200, [
       { daysAgo: 400, amount: 0.24 },
+      { daysAgo: 200, amount: 0.25 },
       { daysAgo: 100, amount: 0.25 },
-      { daysAgo: 10, amount: 0.25 },
+      { daysAgo: TODAY, amount: 0.25 },
     ]),
     "chart/ASML.AS": yahoo("EUR", 600, [{ daysAgo: 50, amount: 1.6 }]),
     "chart/IWDA.AS": yahoo("EUR", 90, []),
@@ -85,6 +91,7 @@ describe("dividends", () => {
     const aapl = f.byAsset.find((a: any) => a.symbol === "AAPL");
     // 2 × $0.25 × 10 shares × €0.80 = €4; your own 15% → €3.40.
     expect(aapl).toMatchObject({ payments: 2, grossEur: 4, netEur: 3.4, taxPct: 15, taxSource: "yours" });
+    expect(aapl.nextExDate > localToday()).toBe(true);
     // No history for ASML yet: the Dutch default of 15%.
     expect(f.byAsset.find((a: any) => a.symbol === "ASML")).toMatchObject({
       grossEur: 3.2,
@@ -93,6 +100,8 @@ describe("dividends", () => {
     });
     expect(f.noDividends).toEqual(["IWDA"]);
     expect(f.months).toHaveLength(12);
+    // Review fix: the months add up to the total (a payment from earlier this month used to count
+    // in the total but in no month).
     expect(f.months.reduce((s: number, m: any) => s + m.grossEur, 0)).toBeCloseTo(7.2, 6);
     expect(f).toMatchObject({ totalGrossEur: 7.2, totalNetEur: 6.12, failed: [] });
   });

@@ -43,13 +43,16 @@ export interface ForecastAsset {
 }
 
 /**
- * Dividends to expect over the next 12 months: each holding's dividends of the last 12 months,
- * moved a year ahead, for what you hold now, in EUR at today's rate. Dates are ex-dividend dates;
- * the money usually arrives a few weeks later.
+ * Dividends to expect over the next 12 months: this calendar month and the 11 after it, each with
+ * what the holding paid in that month a year earlier, for what you hold now, in EUR at today's
+ * rate. Dates are ex-dividend dates; the money usually arrives a few weeks later.
  */
 export async function dividendForecast(db: DB, fx: FxService, fetchFn: FetchFn | undefined, staleAfterMs: number) {
   const today = localToday();
-  const yearAgo = `${Number(today.slice(0, 4)) - 1}${today.slice(4)}`;
+  // The same 12 calendar months a year earlier. A rolling year back from today covered 13 calendar
+  // months once moved ahead, so a payment from earlier this month fell outside the chart's months.
+  const thisMonth = `${today.slice(0, 7)}-01`;
+  const basisFrom = `${Number(today.slice(0, 4)) - 1}${thisMonth.slice(4)}`;
   const { holdings } = await buildPortfolio(db, { staleAfterMs });
   const held = holdings.filter(
     (h) => !h.physical && (h.assetClass === "stock" || h.assetClass === "etf") && Number(h.quantity) > 0,
@@ -92,7 +95,7 @@ export async function dividendForecast(db: DB, fx: FxService, fetchFn: FetchFn |
       failed.push(a.symbol);
       continue;
     }
-    const trailing = events.filter((e) => e.exDate > yearAgo && e.exDate <= today);
+    const trailing = events.filter((e) => e.exDate >= basisFrom && e.exDate < thisMonth);
     if (!trailing.length) {
       none.push(a.symbol);
       continue;
@@ -122,13 +125,15 @@ export async function dividendForecast(db: DB, fx: FxService, fetchFn: FetchFn |
         net: m.net.plus(taxPct == null ? eur : eur.mul(1 - taxPct / 100)),
       });
     }
+    // A projected date earlier this month has passed; the next one is a year after it.
+    const ahead = trailing.map((e) => plusYear(e.exDate));
     byAsset.push({
       assetId: a.id,
       symbol: a.symbol,
       name: h.name,
       quantity: h.quantity,
       payments: trailing.length,
-      nextExDate: plusYear(trailing[0]!.exDate),
+      nextExDate: ahead.find((d) => d >= today) ?? plusYear(ahead[0]!),
       grossEur: money(gross),
       netEur: money(taxPct == null ? gross : gross.mul(1 - taxPct / 100)),
       taxPct,
