@@ -45,6 +45,8 @@ Verandert de app zichtbaar? Maak de screenshots in de README dan opnieuw: start 
 
 ## Afspraken
 
+- **Begrippen en beslissingen:** de woorden die de app en de code gebruiken, met hun betekenis, staan in [CONTEXT.md](CONTEXT.md). Keuzes die bewust zo zijn gemaakt (en waarom) staan in [docs/adr/](docs/adr/). Wil je daarvan afwijken, begin dan met een issue.
+
 - **Geld en hoeveelheden** rekenen met `decimal.js` en worden in de database als `NUMERIC` opgeslagen, nooit als gewone getallen met afrondingsfouten.
 - **Tests gebruiken geen internet.** Alle externe API's krijgen nep-antwoorden via `fakeFetch` in `server/test/helpers.ts`; een test die toch naar buiten gaat, faalt. Let op: `fakeFetch` kiest de **langste** passende URL, dus geef je eigen nep-antwoord de volledige host en het volledige pad als een standaardantwoord er ook op past.
 - **Berekeningen krijgen een test met een uitgerekend voorbeeld**, met in een commentaar hoe je op het verwachte getal komt.

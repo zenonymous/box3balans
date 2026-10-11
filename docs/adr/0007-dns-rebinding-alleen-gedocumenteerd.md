@@ -1,0 +1,3 @@
+# DNS-rebinding: gedocumenteerd, geen lijst met toegestane hostnamen
+
+Zolang er nog geen gebruiker is, kan een website op hetzelfde netwerk via DNS-rebinding de eerste gebruiker aanmaken. Daarna is inloggen nodig, en de sessiecookie hoort bij de echte hostnaam, dus zo'n site krijgt hem niet mee. Een lijst met toegestane hostnamen zou dat gat dichten, maar vraagt van iedereen dat hij elke naam en elk IP-adres instelt waarmee hij de app bereikt (IP, `nas.local`, een VPN-naam, een reverse proxy), anders werkt de app niet. Daarom staat het risico in de README, met het advies om meteen na het installeren de gebruiker aan te maken.
