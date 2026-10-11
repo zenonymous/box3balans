@@ -2,7 +2,7 @@
 
 Onderzocht op 11 oktober 2026.
 
-**Kort:** DEGIRO heeft geen officiële API. Er is ook geen sleutel met alleen leesrechten, en geen token zoals de Flex Web Service van Interactive Brokers. De klantovereenkomst verbiedt scripts en API's binnen het handelsplatform, en ook het delen van je inloggegevens met wie dan ook. Elke automatische koppeling die wel bestaat, logt in met je gebruikersnaam en wachtwoord, en die geven volledige handelsrechten. Dat geldt voor de open-sourcebibliotheken, voor SnapTrade, getquin en Delta. De onofficiële webtrader-API brak sinds december 2022 minstens zes keer. PSD2 helpt niet: dat gaat alleen over geld, en de geldrekening bij flatexDEGIRO is vermoedelijk geen betaalrekening.
+**Kort:** DEGIRO heeft geen officiële API. Er is ook geen sleutel met alleen leesrechten, en geen token zoals de Flex Web Service van Interactive Brokers. De klantovereenkomst verbiedt scripts en API's binnen het handelsplatform, en ook het delen van je inloggegevens met wie dan ook. Elke automatische koppeling die wel bestaat, logt in met je gebruikersnaam en wachtwoord, en die geven volledige handelsrechten. Dat geldt voor de open-sourcebibliotheken, voor SnapTrade en getquin, en volgens een zoekresultaat ook voor Delta (de pagina zelf was niet te openen). De onofficiële webtrader-API brak sinds december 2022 minstens zes keer. PSD2 helpt niet: dat gaat alleen over geld, en de geldrekening bij flatexDEGIRO is vermoedelijk geen betaalrekening.
 
 **Advies:** bouw geen koppeling die inlogt. Maak de route met exports beter:
 
