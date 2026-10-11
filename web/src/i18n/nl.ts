@@ -1113,6 +1113,7 @@ export const NL: Record<string, string> = {
   "Can't be after {date}": "Kan niet na {date} liggen",
   "dd-mm-yyyy": "dd-mm-jjjj",
   "Choose from calendar": "Kies in de kalender",
+  "Start wizard": "Startwizard",
   "Explanation of {term}": "Uitleg bij {term}",
   "Record a purchase of {name}": "Aankoop van {name} vastleggen",
   "+ Purchase": "+ Aankoop",

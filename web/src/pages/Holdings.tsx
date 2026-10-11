@@ -4,6 +4,7 @@ import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Badge, Card, Delta, Empty, Input, PageHeader, Select, Spinner } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, eurPrice, num, pct, relativeTime } from "../format";
 import { usePortfolio } from "../queries";
+import { useStoredFlag } from "../storage";
 import { t, tn } from "../i18n";
 
 type SortKey = "name" | "valueEur" | "unrealizedEur" | "unrealizedPct" | "changePct24h" | "weightPct";
@@ -18,16 +19,10 @@ const COLS: { key: SortKey; label: string; numeric?: boolean }[] = [
 
 const qtyLabel = (h: Holding) => (h.unit === "g" ? `${num(h.quantity, 2)} g` : num(h.quantity));
 
-function loadHideSmall(): boolean {
-  try {
-    return localStorage.getItem("hideSmallPositions") !== "false";
-  } catch {
-    return true;
-  }
-}
-
-// Dust: an open position with a price, worth less than €1. Unpriced ones stay visible.
-const isSmall = (h: Holding) => Number(h.quantity) !== 0 && h.priceEur != null && Math.abs(Number(h.valueEur)) < 1;
+// Dust: an open position with a price, worth less than this. Unpriced ones stay visible.
+const SMALL_EUR = 1;
+const isSmall = (h: Holding) =>
+  Number(h.quantity) !== 0 && h.priceEur != null && Math.abs(Number(h.valueEur)) < SMALL_EUR;
 
 export function HoldingsPage() {
   const portfolio = usePortfolio();
@@ -35,14 +30,8 @@ export function HoldingsPage() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "valueEur", dir: -1 });
   const [showClosed, setShowClosed] = useState(false);
-  const [hideSmall, setHideSmall] = useState(loadHideSmall);
+  const [hideSmall, toggleHideSmall] = useStoredFlag("hideSmallPositions", true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const toggleHideSmall = (v: boolean) => {
-    setHideSmall(v);
-    try {
-      localStorage.setItem("hideSmallPositions", String(v));
-    } catch {}
-  };
 
   const { rows, smallHidden } = useMemo(() => {
     const all = portfolio.data?.holdings ?? [];
@@ -97,7 +86,7 @@ export function HoldingsPage() {
         </label>
         <label className="flex items-center gap-1.5 text-sm text-ink-2">
           <input type="checkbox" checked={hideSmall} onChange={(e) => toggleHideSmall(e.target.checked)} />{" "}
-          {t("Hide positions under {amount}", { amount: eur(1, { decimals: 0 }) })}
+          {t("Hide positions under {amount}", { amount: eur(SMALL_EUR, { decimals: 0 }) })}
           {hideSmall && smallHidden > 0 && (
             <span className="text-muted">({tn(smallHidden, "{n} hidden", "{n} hidden")})</span>
           )}

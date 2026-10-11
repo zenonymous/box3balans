@@ -151,7 +151,7 @@ export function AssetsPage() {
           }}
         />
       )}
-      {buying && <TxModal tx={null} purchase={buying.asset} added={buying.added} onClose={() => setBuying(null)} />}
+      {buying && <TxModal tx={null} purchase={buying} onClose={() => setBuying(null)} />}
       {editing && <EditAssetModal asset={editing} onClose={() => setEditing(null)} />}
     </>
   );

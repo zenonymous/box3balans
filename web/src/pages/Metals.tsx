@@ -5,12 +5,13 @@ import { del, get, post, put, type Account, type MetalItem, type MetalProduct } 
 import { PhotoStrip, photoUrl } from "../components/Photos";
 import { RefreshButton } from "../components/RefreshButton";
 import {
-  DateInput,
   Alert,
   AmountInput,
   Badge,
   Button,
+  ButtonLink,
   Card,
+  DateInput,
   Delta,
   Empty,
   Field,
@@ -45,14 +46,7 @@ export function MetalsPage() {
         actions={
           <>
             <RefreshButton />
-            {m.items.some((i) => !i.soldDate) && (
-              <Link
-                to="/metals/inventory"
-                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
-              >
-                {t("Inventory")}
-              </Link>
-            )}
+            {m.items.some((i) => !i.soldDate) && <ButtonLink to="/metals/inventory">{t("Inventory")}</ButtonLink>}
             <Button variant="primary" onClick={() => setEditing("new")}>
               {t("+ Add coin / bar")}
             </Button>
@@ -266,8 +260,9 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
   // Places for physical items (accounts of kind "physical"), plus the item's own if it's elsewhere.
   const places =
     accounts.data?.filter((a) => String(a.id) === f.accountId || (a.kind === "physical" && !a.archived)) ?? [];
-  // What was picked; else the only place there is; with none yet, a new one.
-  const accountId =
+  // The chosen place (an account id, or NEW_PLACE): what was picked; else the only place there is;
+  // with none yet, a new one.
+  const place =
     f.accountId ||
     (places.length === 1 ? String(places[0]!.id) : accounts.data && places.length === 0 ? NEW_PLACE : "");
   const [newPlace, setNewPlace] = useState(t("At home"));
@@ -292,8 +287,8 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
     setBusy(true);
     setError(undefined);
     try {
-      let placeId = Number(accountId);
-      if (accountId === NEW_PLACE) {
+      let placeId = Number(place);
+      if (place === NEW_PLACE) {
         const created = await post<Account>("/api/accounts", { name: newPlace.trim(), kind: "physical" });
         placeId = created.id;
         // A retry after a failed save uses this place instead of creating another.
@@ -433,8 +428,8 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
         </Field>
         <Field label={t("Storage location")}>
           {(id) => (
-            <Select id={id} value={accountId} onChange={(e) => set("accountId")(e.target.value)} required>
-              {places.length > 1 && !accountId && <option value="">{t("Choose…")}</option>}
+            <Select id={id} value={place} onChange={(e) => set("accountId")(e.target.value)} required>
+              {places.length > 1 && !place && <option value="">{t("Choose…")}</option>}
               {places.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
@@ -444,7 +439,7 @@ function ItemModal({ item, onClose }: { item: MetalItem | null; onClose: () => v
             </Select>
           )}
         </Field>
-        {accountId === NEW_PLACE && (
+        {place === NEW_PLACE && (
           <Field
             label={t("Name of the new place")}
             hint={t("Such as a safe at home or a safe-deposit box. You'll find it under Accounts.")}

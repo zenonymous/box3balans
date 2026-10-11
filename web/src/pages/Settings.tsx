@@ -3,10 +3,11 @@ import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, put, post } from "../api";
 import { RefreshButton } from "../components/RefreshButton";
-import { Alert, Button, Card, Field, Input, PageHeader, Select, Tabs } from "../components/ui";
+import { Alert, Button, ButtonLink, Card, Field, Input, PageHeader, Select, Tabs, cx } from "../components/ui";
 import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../format";
 import { switchSession, usePriceStatus } from "../queries";
 import { followLanguage, getLang, t, tj, tn, type Lang } from "../i18n";
+import { MORE_PAGES } from "../nav";
 
 type Theme = "system" | "light" | "dark";
 
@@ -51,12 +52,16 @@ export function SettingsPage() {
     <>
       <PageHeader title={t("Settings")} />
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {/* On phones this page is "More": the pages the bottom bar doesn't show. The sidebar has them on larger screens. */}
-        <Card title={t("More pages")} className="md:hidden">
+        {/* On phones this page is "More": the pages the bottom bar doesn't show. On larger screens only those the sidebar doesn't. */}
+        <Card title={t("More pages")}>
           <div className="flex flex-col gap-2 text-sm">
-            {MANAGE.map(([to, text]) => (
-              <Link key={to} to={to} className="rounded-lg border border-line px-3 py-2 hover:bg-surface-2">
-                {text}
+            {MORE_PAGES.map((p) => (
+              <Link
+                key={p.to}
+                to={p.to}
+                className={cx("rounded-lg border border-line px-3 py-2 hover:bg-surface-2", p.inSidebar && "md:hidden")}
+              >
+                {p.more}
               </Link>
             ))}
           </div>
@@ -625,19 +630,6 @@ interface BackupList {
 
 const FALLBACK_LABEL: Record<string, string> = { bitvavo: "Bitvavo", yahoo: "Yahoo", tradegate: "Tradegate" };
 
-const MANAGE: [string, string][] = [
-  ["/performance", t("↗ Performance — results per year, realized gains")],
-  ["/income", t("❖ Income — dividends, staking rewards, interest")],
-  ["/accounts", t("▣ Accounts — brokers, exchanges, wallets, vaults, storage")],
-  ["/connections", t("⇅ Connections — sync Bitvavo, Kraken, Coinbase and IBKR")],
-  ["/wallets", t("◈ Wallets — track Bitcoin, Ethereum & L2s, Solana and more by address")],
-  ["/metals", t("◆ Metals — coins and bars at home and in vaults")],
-  ["/assets", t("◇ Assets — instruments and price sources")],
-  ["/household", t("⌂ Household — you, your partner and children, for box 3")],
-  ["/activity", t("↺ History — every change, and restoring deleted transactions")],
-  ["/start", t("✦ Start wizard — set up your household, accounts and values step by step")],
-];
-
 /** The app's language; stored on the server, so server messages follow it too. */
 function LanguageField() {
   const settings = useSettings();
@@ -754,18 +746,8 @@ function BackupsCard() {
           <Button variant="primary" onClick={backupNow} disabled={busy}>
             {busy && !restoring ? t("Backing up…") : t("Back up now")}
           </Button>
-          <a
-            className="inline-flex items-center rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:bg-surface-2"
-            href="/api/export/transactions.csv"
-          >
-            ⤓ {t("Transactions (CSV)")}
-          </a>
-          <a
-            className="inline-flex items-center rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium hover:bg-surface-2"
-            href="/api/export/holdings.csv"
-          >
-            ⤓ {t("Holdings (CSV)")}
-          </a>
+          <ButtonLink href="/api/export/transactions.csv">⤓ {t("Transactions (CSV)")}</ButtonLink>
+          <ButtonLink href="/api/export/holdings.csv">⤓ {t("Holdings (CSV)")}</ButtonLink>
         </div>
         {msg && (msg.ok ? <p className="text-sm text-gain">✓ {msg.text}</p> : <Alert tone="danger">{msg.text}</Alert>)}
 

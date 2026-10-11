@@ -5,25 +5,10 @@ import { get, type Box3Year, type Dossier } from "../api";
 import { Alert, Badge, Button, Card, Spinner, Stat } from "../components/ui";
 import { date, eur, eurPrice, num } from "../format";
 import { t, tn } from "../i18n";
-import { categoryLabel, kindLabel, ownerLabel } from "../labels";
+import { categoryLabel, kindLabel, ownerLabel, providerName } from "../labels";
 import { useHousehold } from "../queries";
 import { ActualReturnCard } from "./Box3Actual";
 import { CalculationCard } from "./Box3";
-
-const PROVIDER: Record<string, string> = {
-  bitvavo: "Bitvavo",
-  binance: "Binance",
-  coingecko: "CoinGecko",
-  yahoo: "Yahoo Finance",
-  tradegate: "Tradegate",
-  "gold-api": "gold-api.com",
-  metal: "gold-api.com",
-  ecb: "ECB",
-  fx: "ECB",
-  kraken: "Kraken",
-  coinbase: "Coinbase",
-  ibkr: "Interactive Brokers",
-};
 
 /**
  * A recorded price source in words: "bitvavo:BTC-EUR" → "Bitvavo BTC-EUR", a coin valued through its
@@ -34,7 +19,7 @@ function sourceLabel(source: string): string {
   const [provider = "", ...rest] = source.split(":");
   const [ref, ratio] = rest.join(":").split("×");
   if (provider === "migration") return t("{ratio} × {symbol}", { ratio: num(ratio ?? "1", 8), symbol: ref ?? "" });
-  const name = PROVIDER[provider] ?? provider;
+  const name = providerName(provider);
   const what = ref ? `${name} ${ref}` : name;
   return ratio ? `${what} × ${num(ratio, 8)}` : what;
 }
@@ -161,7 +146,7 @@ export function DossierPage() {
               {origin?.sync && (
                 <li>
                   {t("Synced with {provider} ({n} transactions up to the peildatum), last on {date}", {
-                    provider: PROVIDER[origin.sync.provider] ?? origin.sync.provider,
+                    provider: providerName(origin.sync.provider),
                     n: origin.entries.api,
                     date: origin.sync.lastSyncAt ? date(origin.sync.lastSyncAt.slice(0, 10)) : "—",
                   })}

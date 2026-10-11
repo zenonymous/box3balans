@@ -3,12 +3,13 @@ import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { del, get, post, put, type Asset, type Transaction, type TxType } from "../api";
 import {
-  DateInput,
   Alert,
   AmountInput,
   Badge,
   Button,
+  ButtonLink,
   Card,
+  DateInput,
   Empty,
   Field,
   Input,
@@ -74,12 +75,7 @@ export function TransactionsPage() {
         subtitle={list.data ? tn(list.data.total, "{n} transaction", "{n} transactions") : undefined}
         actions={
           <>
-            <Link
-              to="/transactions/import"
-              className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
-            >
-              ↑ {t("Import CSV")}
-            </Link>
+            <ButtonLink to="/transactions/import">↑ {t("Import CSV")}</ButtonLink>
             <Button onClick={() => setTransferOpen(true)} disabled={noSetup}>
               ⇄ {t("Transfer")}
             </Button>
@@ -285,18 +281,16 @@ const toLocalInput = (iso: string) => {
 };
 
 /**
- * Add or edit a transaction. `purchase` opens it as a purchase of that asset (from Assets), `added`
- * right after that asset was added.
+ * Add or edit a transaction. With `purchase` it records a purchase of that asset (from Assets; type
+ * and asset are fixed), `added` when the asset was added just before.
  */
 export function TxModal({
   tx,
   purchase,
-  added,
   onClose,
 }: {
   tx: Transaction | null;
-  purchase?: Asset;
-  added?: boolean;
+  purchase?: { asset: Asset; added: boolean };
   onClose: () => void;
 }) {
   const accounts = useAccounts();
@@ -306,11 +300,11 @@ export function TxModal({
   const [f, setF] = useState({
     type: tx?.type ?? "buy",
     accountId: tx ? String(tx.accountId) : "",
-    assetId: tx ? String(tx.assetId) : purchase ? String(purchase.id) : "",
+    assetId: tx ? String(tx.assetId) : purchase ? String(purchase.asset.id) : "",
     day: tx ? toLocalInput(tx.occurredAt) : todayIso(),
     quantity: tx ? strip(tx.quantity) : "",
     price: tx ? strip(tx.price) : "",
-    currency: tx?.currency ?? purchase?.currency ?? "EUR",
+    currency: tx?.currency ?? purchase?.asset.currency ?? "EUR",
     fxRate: tx && tx.currency !== "EUR" ? strip(tx.fxRate) : "",
     feeEur: tx && Number(tx.feeEur) ? strip(tx.feeEur) : "",
     amount: tx && Number(tx.amount) ? strip(tx.amount) : "",
@@ -442,7 +436,7 @@ export function TxModal({
             ? t("Edit {name}", { name: TX_LABEL[tx.type]?.toLowerCase() ?? tx.type })
             : t("Edit transaction")
           : purchase
-            ? t("Purchase of {name}", { name: purchase.name })
+            ? t("Purchase of {name}", { name: purchase.asset.name })
             : t("Add transaction")
       }
       wide
@@ -454,7 +448,7 @@ export function TxModal({
             </Button>
           )}
           {isTransfer && <Button onClick={unlink}>{t("Unlink")}</Button>}
-          <Button onClick={onClose}>{purchase ? t("Skip") : t("Cancel")}</Button>
+          <Button onClick={onClose}>{purchase?.added ? t("Skip") : t("Cancel")}</Button>
           <Button variant="primary" type="submit" form="tx-form" disabled={busy}>
             {busy ? t("Saving…") : t("Save")}
           </Button>
@@ -462,10 +456,10 @@ export function TxModal({
       }
     >
       <form id="tx-form" onSubmit={submit} className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {purchase && added && (
+        {purchase?.added && (
           <p className="text-sm text-ink-2 sm:col-span-2">
             {t("{name} has been added. Record your purchase now, or skip this and do it later from Assets.", {
-              name: purchase.name,
+              name: purchase.asset.name,
             })}
           </p>
         )}
@@ -479,17 +473,19 @@ export function TxModal({
           </p>
         ) : (
           <>
-            <Field label={t("Type")}>
-              {(id) => (
-                <Select id={id} value={f.type} onChange={(e) => set("type")(e.target.value)}>
-                  {ENTRY_TYPES.map((k) => (
-                    <option key={k} value={k}>
-                      {TX_LABEL[k]}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
+            {!purchase && (
+              <Field label={t("Type")}>
+                {(id) => (
+                  <Select id={id} value={f.type} onChange={(e) => set("type")(e.target.value)}>
+                    {ENTRY_TYPES.map((k) => (
+                      <option key={k} value={k}>
+                        {TX_LABEL[k]}
+                      </option>
+                    ))}
+                  </Select>
+                )}
+              </Field>
+            )}
             <Field label={t("Date")}>
               {(id) => <DateInput id={id} value={f.day} max={todayIso()} onChange={set("day")} required />}
             </Field>
@@ -507,14 +503,16 @@ export function TxModal({
                 </Select>
               )}
             </Field>
-            <Field
-              label={t("Asset")}
-              hint={tj("Missing? <0>Add an asset</0>", [
-                <Link key="a" to="/assets" className="text-accent underline" onClick={onClose} />,
-              ])}
-            >
-              {(id) => <AssetSelect id={id} assets={assets.data ?? []} value={f.assetId} onChange={pickAsset} />}
-            </Field>
+            {!purchase && (
+              <Field
+                label={t("Asset")}
+                hint={tj("Missing? <0>Add an asset</0>", [
+                  <Link key="a" to="/assets" className="text-accent underline" onClick={onClose} />,
+                ])}
+              >
+                {(id) => <AssetSelect id={id} assets={assets.data ?? []} value={f.assetId} onChange={pickAsset} />}
+              </Field>
+            )}
           </>
         )}
 

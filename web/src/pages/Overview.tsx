@@ -10,32 +10,19 @@ import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, pct } from "../format";
 import { useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
 import { t, tj, tn } from "../i18n";
 import { kindLabel } from "../labels";
+import { useStoredFlag } from "../storage";
 
 const RANGES: HistoryRange[] = ["1M", "3M", "1Y", "5Y", "ALL"];
 // "1M" → "1M" / "1 mnd"; ALL → "All" / "Alles".
 const rangeLabel = (r: HistoryRange) =>
   ({ "1M": t("1M"), "3M": t("3M"), "1Y": t("1Y"), "5Y": t("5Y"), ALL: t("All") })[r];
 
-function loadInvested(): boolean {
-  try {
-    return localStorage.getItem("showInvested") !== "false";
-  } catch {
-    return true;
-  }
-}
-
 export function OverviewPage() {
   const portfolio = usePortfolio();
   const status = usePriceStatus();
   const [range, setRange] = useState<HistoryRange>("1Y");
-  const [showInvested, setShowInvested] = useState(loadInvested);
+  const [showInvested, toggleInvested] = useStoredFlag("showInvested", true);
   const history = useHistory(range);
-  const toggleInvested = (v: boolean) => {
-    setShowInvested(v);
-    try {
-      localStorage.setItem("showInvested", String(v));
-    } catch {}
-  };
 
   if (portfolio.isLoading) return <Spinner />;
   if (portfolio.error) return <Alert tone="danger">{portfolio.error.message}</Alert>;

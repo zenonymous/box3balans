@@ -4,40 +4,48 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
   type SelectHTMLAttributes,
   type TextareaHTMLAttributes,
 } from "react";
+import { Link } from "react-router";
 import { date, dateInputText, eur, getLocale, parseDateInput, parseNumberInput, pct, unambiguous } from "../format";
 import { t } from "../i18n";
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
-export function Button({
-  variant = "secondary",
-  size = "md",
-  className,
-  ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & {
+interface ButtonLook {
   variant?: "primary" | "secondary" | "ghost" | "danger";
   size?: "sm" | "md";
-}) {
-  return (
-    <button
-      type="button"
-      {...props}
-      className={cx(
-        "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
-        variant === "primary" && "bg-accent text-accent-ink hover:opacity-90",
-        variant === "secondary" && "border border-line bg-surface text-ink hover:bg-surface-2",
-        variant === "ghost" && "text-ink-2 hover:bg-surface-2 hover:text-ink",
-        variant === "danger" && "border border-line bg-surface text-loss hover:bg-danger-bg",
-        className,
-      )}
-    />
+}
+
+const buttonCls = ({ variant = "secondary", size = "md" }: ButtonLook, className?: string) =>
+  cx(
+    "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+    size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
+    variant === "primary" && "bg-accent text-accent-ink hover:opacity-90",
+    variant === "secondary" && "border border-line bg-surface text-ink hover:bg-surface-2",
+    variant === "ghost" && "text-ink-2 hover:bg-surface-2 hover:text-ink",
+    variant === "danger" && "border border-line bg-surface text-loss hover:bg-danger-bg",
+    className,
   );
+
+export function Button({ variant, size, className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & ButtonLook) {
+  return <button type="button" {...props} className={buttonCls({ variant, size }, className)} />;
+}
+
+/** A link that looks like a Button: `to` for a page in the app, `href` for a file to download. */
+export function ButtonLink({
+  to,
+  variant,
+  size,
+  className,
+  ...props
+}: AnchorHTMLAttributes<HTMLAnchorElement> & ButtonLook & { to?: string }) {
+  const cls = buttonCls({ variant, size }, className);
+  return to ? <Link to={to} {...props} className={cls} /> : <a {...props} className={cls} />;
 }
 
 export function Card({
@@ -175,7 +183,7 @@ export function DateInput({
         ? t("Can't be after {date}", { date: date(max) })
         : "";
   useEffect(() => input.current?.setCustomValidity(problem), [problem]);
-  const type = (s: string) => {
+  const applyTyped = (s: string) => {
     setText(s);
     const iso = parseDateInput(s);
     if (iso !== null) onChange(iso);
@@ -187,7 +195,7 @@ export function DateInput({
           ref={input}
           id={id}
           value={text}
-          onChange={(e) => type(e.target.value)}
+          onChange={(e) => applyTyped(e.target.value)}
           onBlur={() => parsed && setText(dateInputText(parsed))}
           placeholder={t("dd-mm-yyyy")}
           inputMode="numeric"
@@ -222,7 +230,7 @@ export function DateInput({
           aria-hidden
           value={parsed || ""}
           max={max}
-          onChange={(e) => e.target.value && type(dateInputText(e.target.value))}
+          onChange={(e) => e.target.value && applyTyped(dateInputText(e.target.value))}
           className="pointer-events-none absolute bottom-0 left-0 h-0 w-full opacity-0"
         />
       </div>
@@ -392,40 +400,52 @@ export function Spinner() {
  * Placed with fixed coordinates kept inside the window, so a tile at the edge doesn't push it off.
  */
 export function InfoTip({ text, label }: { text: string; label: string }) {
-  const [pos, setPos] = useState<{ left: number; top: number; width: number } | null>(null);
+  // Hover and keyboard focus show it while they last; a click or tap pins it until the next one,
+  // a tap elsewhere, Escape, scrolling or leaving the button.
+  const [open, setOpen] = useState<{ left: number; top: number; width: number; pinned: boolean } | null>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const tip = useRef<HTMLSpanElement>(null);
   const id = useId();
-  const show = () => {
+  const show = (pinned: boolean) => {
     const r = button.current?.getBoundingClientRect();
     if (!r) return;
     const width = Math.min(272, window.innerWidth - 32);
     const left = Math.min(Math.max(r.left + r.width / 2 - width / 2, 16), window.innerWidth - 16 - width);
-    setPos({ left, top: r.bottom + 6, width });
+    setOpen({ left, top: r.bottom + 6, width, pinned });
   };
-  const hide = () => setPos(null);
+  const hide = () => setOpen(null);
+  const isOpen = open != null;
   useEffect(() => {
-    if (!pos) return;
+    if (!isOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && hide();
+    // Phones don't move focus to a tapped button, so blur alone wouldn't close it.
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Node;
+      if (!button.current?.contains(target) && !tip.current?.contains(target)) hide();
+    };
     window.addEventListener("scroll", hide, true);
     window.addEventListener("resize", hide);
     window.addEventListener("keydown", onKey);
+    document.addEventListener("pointerdown", onDown, true);
     return () => {
       window.removeEventListener("scroll", hide, true);
       window.removeEventListener("resize", hide);
       window.removeEventListener("keydown", onKey);
+      document.removeEventListener("pointerdown", onDown, true);
     };
-  }, [pos]);
+  }, [isOpen]);
   return (
     <>
       <button
         ref={button}
         type="button"
         aria-label={t("Explanation of {term}", { term: label.toLowerCase() })}
-        aria-describedby={pos ? id : undefined}
-        onClick={() => (pos ? hide() : show())}
-        onPointerEnter={(e) => e.pointerType === "mouse" && show()}
-        onPointerLeave={(e) => e.pointerType === "mouse" && hide()}
-        onFocus={(e) => e.currentTarget.matches(":focus-visible") && show()}
+        aria-describedby={open ? id : undefined}
+        aria-expanded={isOpen}
+        onClick={() => (open?.pinned ? hide() : show(true))}
+        onPointerEnter={(e) => e.pointerType === "mouse" && !open && show(false)}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setOpen((o) => (o?.pinned ? o : null))}
+        onFocus={(e) => e.currentTarget.matches(":focus-visible") && !open && show(false)}
         onBlur={hide}
         className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
       >
@@ -434,11 +454,12 @@ export function InfoTip({ text, label }: { text: string; label: string }) {
           <path d="M8 7.2v4M8 4.6v.1" strokeLinecap="round" />
         </svg>
       </button>
-      {pos && (
+      {open && (
         <span
+          ref={tip}
           role="tooltip"
           id={id}
-          style={{ left: pos.left, top: pos.top, width: pos.width }}
+          style={{ left: open.left, top: open.top, width: open.width }}
           className="fixed z-30 rounded-lg border border-line bg-surface px-3 py-2 text-xs font-normal leading-relaxed text-ink-2 shadow-lg"
         >
           {text}

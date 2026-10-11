@@ -2,7 +2,21 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, del, get, post, type TxType } from "../api";
-import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Select, Tabs, cx } from "../components/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  ButtonLink,
+  Card,
+  Empty,
+  Field,
+  Input,
+  Modal,
+  PageHeader,
+  Select,
+  Tabs,
+  cx,
+} from "../components/ui";
 import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
 import { readText } from "../files";
@@ -252,14 +266,7 @@ export function ImportPage() {
       <PageHeader
         title={t("Import CSV")}
         subtitle={t("Transactions from a broker or exchange export, or from the Box3balans template")}
-        actions={
-          <a
-            href="/api/import/template.csv"
-            className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
-          >
-            ↓ {t("Template")}
-          </a>
-        }
+        actions={<ButtonLink href="/api/import/template.csv">↓ {t("Template")}</ButtonLink>}
       />
 
       <div className="flex flex-col gap-4">

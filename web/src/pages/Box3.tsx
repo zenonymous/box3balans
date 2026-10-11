@@ -9,6 +9,7 @@ import {
   AmountInput,
   Badge,
   Button,
+  ButtonLink,
   Card,
   Empty,
   Field,
@@ -89,7 +90,7 @@ export function Box3Page() {
               value={year ?? ""}
               onChange={(e) => setSelected(Number(e.target.value))}
               aria-label={t("Tax year")}
-              className="w-auto print:hidden"
+              className="w-auto! print:hidden"
             >
               {o.years.map((y) => (
                 <option key={y} value={y}>
@@ -98,21 +99,18 @@ export function Box3Page() {
               ))}
             </Select>
             {year != null && (
-              <Link
-                to={`/box3/aangifte?year=${year}`}
-                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2 print:hidden"
-              >
+              <ButtonLink to={`/box3/aangifte?year=${year}`} className="print:hidden">
                 {t("For the tax return")}
-              </Link>
+              </ButtonLink>
             )}
             {year != null && (
-              <Link
+              <ButtonLink
                 to={`/box3/${year}/dossier`}
                 title={t("One document with the figures and where every amount comes from, to print or keep")}
-                className="rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2 print:hidden"
+                className="print:hidden"
               >
                 {t("Dossier")}
-              </Link>
+              </ButtonLink>
             )}
             {detail.data && <ExportButtons y={detail.data} />}
           </>

@@ -31,20 +31,10 @@ import {
 import { readText } from "../files";
 import { eur, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
-import { KIND_ORDER, kindHint, kindLabel, ownerLabel } from "../labels";
+import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
 
 const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "goldrepublic"];
-// How a provider is written, for the ones we know; anything else as entered.
-const PROVIDER_NAME: Record<string, string> = {
-  degiro: "DEGIRO",
-  "trade-republic": "Trade Republic",
-  ibkr: "Interactive Brokers",
-  bitvavo: "Bitvavo",
-  kraken: "Kraken",
-  coinbase: "Coinbase",
-  goldrepublic: "Gold Republic",
-};
 // Kinds that are always kept as values per year.
 const YEARLY_ONLY = new Set<AccountKind>(["property", "receivable", "debt", "insurance"]);
 
@@ -96,7 +86,7 @@ export function AccountsPage() {
                     </div>
                     <div className="text-xs text-muted">
                       {kindLabel(a.kind)}
-                      {a.provider && ` · ${PROVIDER_NAME[a.provider.toLowerCase()] ?? a.provider}`}
+                      {a.provider && ` · ${providerName(a.provider)}`}
                       {(a.owner !== "self" || persons.length > 0) && ` · ${ownerLabel(a, persons)}`}
                     </div>
                   </div>

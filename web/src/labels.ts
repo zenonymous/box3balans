@@ -1,6 +1,27 @@
 import type { AccountKind, AccountOwner, AttributionNote, Box3Category, Custody, Person } from "./api";
 import { t } from "./i18n";
 
+const PROVIDER_NAME: Record<string, string> = {
+  degiro: "DEGIRO",
+  "trade-republic": "Trade Republic",
+  ibkr: "Interactive Brokers",
+  bitvavo: "Bitvavo",
+  kraken: "Kraken",
+  coinbase: "Coinbase",
+  goldrepublic: "Goldrepublic",
+  binance: "Binance",
+  coingecko: "CoinGecko",
+  yahoo: "Yahoo Finance",
+  tradegate: "Tradegate",
+  "gold-api": "gold-api.com",
+  metal: "gold-api.com",
+  ecb: "ECB",
+  fx: "ECB",
+};
+
+/** How a broker, exchange or price source is written ("ibkr" → "Interactive Brokers"); anything else as stored. */
+export const providerName = (key: string): string => PROVIDER_NAME[key.toLowerCase()] ?? key;
+
 /** Names for account kinds, with an example, in the current language. */
 export const kindLabel = (k: string): string =>
   ({

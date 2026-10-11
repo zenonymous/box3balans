@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { get, type AttributionNote, type Box3Overview, type Box3Year } from "../api";
-import { Alert, Badge, Button, Card, PageHeader, Select, Spinner } from "../components/ui";
+import { Alert, Badge, Button, ButtonLink, Card, PageHeader, Select, Spinner } from "../components/ui";
 import { eur } from "../format";
 import { t, tj } from "../i18n";
 import { kindLabel, noteLabel, ownerLabel } from "../labels";
@@ -112,7 +112,7 @@ export function TaxReturnPage() {
               value={year ?? ""}
               onChange={(e) => setSearch({ year: e.target.value }, { replace: true })}
               aria-label={t("Tax year")}
-              className="w-auto"
+              className="w-auto!"
             >
               {overview.data?.years.map((y) => (
                 <option key={y} value={y}>
@@ -121,13 +121,12 @@ export function TaxReturnPage() {
               ))}
             </Select>
             {year != null && (
-              <Link
+              <ButtonLink
                 to={`/box3/${year}/dossier`}
                 title={t("One document with the figures and where every amount comes from, to print or keep")}
-                className="whitespace-nowrap rounded-lg border border-line bg-surface px-3.5 py-2 text-sm font-medium text-ink hover:bg-surface-2"
               >
                 {t("Dossier")}
-              </Link>
+              </ButtonLink>
             )}
             <Button onClick={() => window.print()} title={t("Use “Save as PDF” in the print dialog")}>
               {t("Print / PDF")}
