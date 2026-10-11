@@ -38,57 +38,62 @@ export function AllocationDonut({ slices }: { slices: Slice[] }) {
   });
 
   return (
-    <div className="flex flex-col items-center gap-5 sm:flex-row">
-      <div className="relative size-40 shrink-0">
-        <svg viewBox="0 0 120 120" className="size-full" role="img" aria-label={t("Allocation")}>
-          {segments.length === 1 ? (
-            <circle
-              cx="60"
-              cy="60"
-              r={(R + INNER) / 2}
-              fill="none"
-              stroke={segments[0]!.color}
-              strokeWidth={R - INNER}
-            />
-          ) : (
-            segments.map((s) => (
-              <path
-                key={s.key}
-                d={arc(s.a0, s.a1)}
-                fill={s.color}
-                stroke="var(--surface)"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-                onMouseEnter={() => setHover(s.key)}
-                onMouseLeave={() => setHover(null)}
-                className="transition-opacity"
-                style={{ opacity: hover && hover !== s.key ? 0.45 : 1 }}
+    // Side by side only when the card itself is wide enough (it's narrow next to the top holdings).
+    <div className="@container">
+      <div className="flex flex-col items-center gap-5 @lg:flex-row">
+        <div className="relative size-40 shrink-0">
+          <svg viewBox="0 0 120 120" className="size-full" role="img" aria-label={t("Allocation")}>
+            {segments.length === 1 ? (
+              <circle
+                cx="60"
+                cy="60"
+                r={(R + INNER) / 2}
+                fill="none"
+                stroke={segments[0]!.color}
+                strokeWidth={R - INNER}
               />
-            ))
-          )}
-        </svg>
-        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div className="max-w-24 truncate text-xs text-ink-2">{active ? active.label : t("Total")}</div>
-          <div className="tabular text-sm font-semibold text-ink">
-            {active ? pct((active.value / total) * 100, { sign: false }) : eur(total, { decimals: 0 })}
+            ) : (
+              segments.map((s) => (
+                <path
+                  key={s.key}
+                  d={arc(s.a0, s.a1)}
+                  fill={s.color}
+                  stroke="var(--surface)"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                  onMouseEnter={() => setHover(s.key)}
+                  onMouseLeave={() => setHover(null)}
+                  className="transition-opacity"
+                  style={{ opacity: hover && hover !== s.key ? 0.45 : 1 }}
+                />
+              ))
+            )}
+          </svg>
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div className="max-w-24 truncate text-xs text-ink-2">{active ? active.label : t("Total")}</div>
+            <div className="tabular text-sm font-semibold text-ink">
+              {active ? pct((active.value / total) * 100, { sign: false }) : eur(total, { decimals: 0 })}
+            </div>
           </div>
         </div>
+        <ul className="flex w-full flex-col gap-2">
+          {shown.map((s) => (
+            <li
+              key={s.key}
+              className="flex items-center gap-2 text-sm"
+              onMouseEnter={() => setHover(s.key)}
+              onMouseLeave={() => setHover(null)}
+            >
+              <Swatch color={s.color} />
+              <span className="text-ink">{s.label}</span>
+              <span className="tabular ml-auto text-ink-2">{eur(s.value, { decimals: 0 })}</span>
+              <span className="tabular w-14 text-right text-muted">
+                {pct((s.value / total) * 100, { sign: false })}
+              </span>
+            </li>
+          ))}
+        </ul>
       </div>
-      <ul className="flex w-full flex-col gap-2">
-        {shown.map((s) => (
-          <li
-            key={s.key}
-            className="flex items-center gap-2 text-sm"
-            onMouseEnter={() => setHover(s.key)}
-            onMouseLeave={() => setHover(null)}
-          >
-            <Swatch color={s.color} />
-            <span className="text-ink">{s.label}</span>
-            <span className="tabular ml-auto text-ink-2">{eur(s.value, { decimals: 0 })}</span>
-            <span className="tabular w-14 text-right text-muted">{pct((s.value / total) * 100, { sign: false })}</span>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
