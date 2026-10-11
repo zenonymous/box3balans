@@ -76,6 +76,53 @@ describe("broker exports", () => {
     });
   });
 
+  // Review fix: patterns from a real statement that used to be skipped as "other lines".
+  it("DEGIRO account statement: transaction tax, corporate actions and interest", () => {
+    const { rows, skipped, notes } = read(
+      lines(
+        "Datum,Tijd,Valutadatum,Product,ISIN,Omschrijving,FX,Mutatie,,Saldo,,Order Id",
+        '31-12-2024,23:00,31-12-2024,,,Flatex Interest Income,,EUR,"0,00",EUR,"10,23",',
+        '12-12-2024,07:00,12-12-2024,ACME DS,FR0000000002,"DELISTING: Verkoop 30 @ 0 EUR",,EUR,"0,00",EUR,"10,23",',
+        '30-11-2024,08:00,30-11-2024,,,Rente,,EUR,"-0,12",EUR,"10,23",',
+        '20-11-2024,07:00,20-11-2024,ACME DS,FR0000000002,"CLAIMEMISSIE: Koop 30 @ 0 EUR",,EUR,"0,00",EUR,"10,35",',
+        '15-11-2024,09:00,15-11-2024,,,Flatex Interest Income,,EUR,"0,35",EUR,"10,35",',
+        '25-04-2024,10:00,25-04-2024,ACME SA,FR0000000001,Transactiebelasting Frankrijk,,EUR,"-1,20",EUR,"10,00",',
+        '25-04-2024,10:00,25-04-2024,ACME SA,FR0000000001,Transactiebelasting Frankrijk,,EUR,"1,00",EUR,"11,20",',
+        '04-04-2024,09:00,04-04-2024,ACME SA,FR0000000001,Transactiebelasting Frankrijk,,EUR,"-1,00",EUR,"10,20",bbbb-2222',
+        '04-04-2024,09:00,04-04-2024,ACME SA,FR0000000001,DEGIRO Transactiekosten en/of kosten van derden,,EUR,"-2,00",EUR,"11,20",bbbb-2222',
+        '04-04-2024,09:00,04-04-2024,ACME SA,FR0000000001,"Koop 50 @ 5 EUR",,EUR,"-250,00",EUR,"13,20",bbbb-2222',
+      ),
+    );
+    expect(rows).toEqual([
+      // Costs 2.00 + tax 1.00 on the order, then the correction three weeks later: −1.00 + 1.20.
+      expect.objectContaining({ date: "2024-04-04", type: "buy", isin: "FR0000000001", quantity: "50", fee: "3.20" }),
+      expect.objectContaining({
+        date: "2024-11-15",
+        type: "reward",
+        symbol: "EUR",
+        assetType: "cash",
+        quantity: "0.35",
+      }),
+      expect.objectContaining({
+        date: "2024-11-20",
+        type: "buy",
+        isin: "FR0000000002",
+        quantity: "30",
+        price: "0",
+        notes: "CLAIMEMISSIE: Koop 30 @ 0 EUR",
+      }),
+      expect.objectContaining({ date: "2024-11-30", type: "fee", symbol: "EUR", assetType: "cash", quantity: "0.12" }),
+      expect.objectContaining({
+        date: "2024-12-12",
+        type: "sell",
+        isin: "FR0000000002",
+        notes: "DELISTING: Verkoop 30 @ 0 EUR",
+      }),
+    ]);
+    expect(skipped).toEqual({ "Interest lines without an amount": 1 });
+    expect(notes.filter((n) => n.startsWith("Corporate action read as a purchase or sale"))).toHaveLength(2);
+  });
+
   it("DEGIRO transactions: sign gives buy or sell, AutoFX counts as cost", () => {
     const { id, rows } = read(
       lines(

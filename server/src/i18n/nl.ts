@@ -416,6 +416,10 @@ export const NL: Record<string, string> = {
   "A DEGIRO cost in {currency} was counted as EUR.": "Een DEGIRO-kostenpost in {currency} is als EUR geteld.",
   "Platform costs (connection fees)": "Platformkosten (aansluitingskosten)",
   "Interest on cash": "Rente op geld",
+  "Interest lines without an amount": "Renteregels zonder bedrag",
+  "Corporate action read as a purchase or sale: {line}": "Corporate action gelezen als aan- of verkoop: {line}",
+  "Transaction tax on {date} without a purchase was left out.":
+    "Transactiebelasting op {date} zonder aankoop is weggelaten.",
   "Dividend tax on {date} without a dividend was left out.":
     "Dividendbelasting op {date} zonder dividend is weggelaten.",
   "DEGIRO transactions": "DEGIRO transacties",

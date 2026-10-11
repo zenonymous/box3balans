@@ -15,11 +15,15 @@ import {
   skip,
 } from "./types.js";
 
-// "Koop 10 @ 71,2 EUR", "Sell 3 @ 139.74 USD", "Kauf 5 zu je 12,3 EUR".
+// "Koop 10 @ 71,2 EUR", "Sell 3 @ 139.74 USD", "Kauf 5 zu je 12,3 EUR"; a corporate action puts its
+// kind in front: "DELISTING: Verkoop 30 @ 0 EUR", "CLAIMEMISSIE: Koop 30 @ 0 EUR".
 const TRADE_RE =
-  /^(koop|verkoop|buy|sell|kauf|verkauf|achat|vente|compra|venta|acquisto|vendita)\s+([\d.,]+)\s*(?:@|zu je|à|a)\s*([\d.,]+)\s*([A-Za-z]{3})\b/i;
+  /^(?:([a-z][a-z .&-]*[a-z]):\s*)?(koop|verkoop|buy|sell|kauf|verkauf|achat|vente|compra|venta|acquisto|vendita)\s+([\d.,]+)\s*(?:@|zu je|à|a)\s*([\d.,]+)\s*([A-Za-z]{3})\b/i;
 const SELL_WORDS = new Set(["verkoop", "sell", "verkauf", "vente", "venta", "vendita"]);
 const FEE_RE = /kosten|costs|fee|gebuhr|gebühr|frais|commission|comision|en\/of|and\/or|und\/oder/i;
+// A tax on buying shares (French and Italian FTT, UK stamp duty): part of the purchase's cost.
+const TRANSACTION_TAX_RE =
+  /transactiebelasting|transaction tax|finanztransaktionssteuer|taxe sur les transactions|stamp duty|zegelrecht/i;
 const TAX_RE =
   /dividendbelasting|dividend tax|dividendensteuer|quellensteuer|withholding|retenue|ritenuta|retencion|retención/i;
 const DIVIDEND_RE = /^(dividend|dividende|dividendo|kapitaalsuitkering|capital return)\b/i;
@@ -33,8 +37,9 @@ const inFile = (raw: string, decimal: DecimalMark) => num(raw, decimal);
 
 /**
  * DEGIRO's account statement (Inbox → Account overview, "Account.csv"): every cash movement, from
- * which trades (with their costs) and dividends (with dividend tax) are read. Deposits, currency
- * exchanges and the cash sweep are left out: Box3balans follows the securities, not DEGIRO's cash.
+ * which trades (with their costs and transaction taxes), corporate actions, dividends (with
+ * dividend tax) and interest are read. Deposits, currency exchanges and the cash sweep are left
+ * out: the cash balance comes from the portfolio export instead (see import/statement.ts).
  */
 export const degiroAccount: BrokerFormat = {
   id: "degiro-account",
@@ -72,6 +77,9 @@ export const degiroAccount: BrokerFormat = {
     const fees = new Map<string, number>();
     const dividends = new Map<string, { row: TemplateRow; gross: number; tax: number }>();
     const taxes: { key: string; isin: string; date: string; currency: string; tax: number }[] = [];
+    // Transaction tax corrected later without an order id, and interest on the cash.
+    const taxCorrections: { isin: string; date: string; cost: number }[] = [];
+    const cash: TemplateRow[] = [];
 
     for (const r of rows) {
       const [dateRaw, time, , product, isin, desc = "", , currency = "", amountRaw = "", , , order = ""] = r.map((c) =>
@@ -85,9 +93,14 @@ export const degiroAccount: BrokerFormat = {
       const amount = inFile(amountRaw, decimal);
       const trade = TRADE_RE.exec(desc);
       if (trade) {
-        const side = SELL_WORDS.has(trade[1]!.toLowerCase()) ? "sell" : "buy";
-        const quantity = inFile(trade[2]!, decimal);
-        const p = pounds(inFile(trade[3]!, decimal), trade[4]!.toUpperCase());
+        const action = trade[1];
+        const side = SELL_WORDS.has(trade[2]!.toLowerCase()) ? "sell" : "buy";
+        const quantity = inFile(trade[3]!, decimal);
+        const p = pounds(inFile(trade[4]!, decimal), trade[5]!.toUpperCase());
+        if (action)
+          out.warnings.push(
+            tr("Corporate action read as a purchase or sale: {line}", { line: `${date} ${product}: ${desc}` }),
+          );
         trades.push({
           order,
           row: {
@@ -99,9 +112,18 @@ export const degiroAccount: BrokerFormat = {
             quantity: quantity ?? undefined,
             price: p.price ?? undefined,
             currency: p.currency,
+            notes: action ? desc : undefined,
             id: order ? `degiro:${order}` : undefined,
           },
         });
+        continue;
+      }
+      if (isin && amount && TRANSACTION_TAX_RE.test(desc)) {
+        if (currency !== "EUR") out.warnings.push(tr("A DEGIRO cost in {currency} was counted as EUR.", { currency }));
+        // A charge is negative in the statement, a refund positive.
+        const cost = -Number(amount);
+        if (order) fees.set(order, (fees.get(order) ?? 0) + cost);
+        else taxCorrections.push({ isin, date, cost });
         continue;
       }
       if (order && FEE_RE.test(desc) && isNegative(amount)) {
@@ -133,8 +155,21 @@ export const degiroAccount: BrokerFormat = {
         continue;
       }
       if (PLATFORM_RE.test(desc)) skip(out.skipped, tr("Platform costs (connection fees)"));
-      else if (INTEREST_RE.test(desc)) skip(out.skipped, tr("Interest on cash"));
-      else if (CASH_RE.test(desc) || !isin)
+      else if (INTEREST_RE.test(desc)) {
+        // Interest on the cash: income in that currency, or a cost when it was charged.
+        if (!amount || Number(amount) === 0) skip(out.skipped, tr("Interest lines without an amount"));
+        else
+          cash.push({
+            date,
+            time,
+            type: Number(amount) > 0 ? "reward" : "fee",
+            symbol: currency,
+            assetType: "cash",
+            quantity: abs(amount)!,
+            currency,
+            notes: desc,
+          });
+      } else if (CASH_RE.test(desc) || !isin)
         skip(out.skipped, tr("Cash movements (deposits, withdrawals, currency exchange)"));
       else skip(out.skipped, tr("Other lines (corporate actions, product changes)"));
     }
@@ -162,6 +197,13 @@ export const degiroAccount: BrokerFormat = {
       }
       out.rows.push(t.row);
     }
+    // A transaction tax corrected later goes to the last purchase of that security before it.
+    for (const c of taxCorrections) {
+      const t = trades.filter((x) => x.row.isin === c.isin && x.row.type === "buy" && x.row.date <= c.date).at(-1);
+      if (t) t.row.fee = (Number(t.row.fee ?? 0) + c.cost).toFixed(2);
+      else out.warnings.push(tr("Transaction tax on {date} without a purchase was left out.", { date: c.date }));
+    }
+    out.rows.push(...cash);
     for (const d of dividends.values()) {
       if (d.gross <= 0) continue;
       out.rows.push({ ...d.row, amount: d.gross.toFixed(4), tax: d.tax ? d.tax.toFixed(4) : undefined });
