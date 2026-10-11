@@ -36,12 +36,29 @@ jobs:
       - run: npm run typecheck
       - run: npx prettier --check .
       - run: npm test
-      - name: Tests on tricky dates
-        # New Year in Dutch time (still 31 December in UTC), early January and a leap day.
-        run: >-
-          TZS=UTC scripts/test-dates.sh
-          2027-01-01T00:30:00+01:00 2027-01-02T09:00:00+01:00 2028-02-29T12:00:00+01:00
       - run: npm run build
+
+  dates:
+    # Beside the image build rather than before it: each moment is a full test run.
+    name: Tests on ${{ matrix.moment }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # New Year in Dutch time (still 31 December in UTC), early January and a leap day.
+        moment: [2027-01-01T00:30:00+01:00, 2027-01-02T09:00:00+01:00, 2028-02-29T12:00:00+01:00]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 26
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: TZS=UTC scripts/test-dates.sh "$MOMENT"
+        env:
+          MOMENT: ${{ matrix.moment }}
 
   scripts:
     name: Shell scripts and workflows
