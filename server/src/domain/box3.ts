@@ -4,7 +4,7 @@ import type { DB } from "../db/client.js";
 import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { holdingsOn } from "./valuation.js";
-import { localDay } from "../lib/time.js";
+import { localDay, localToday } from "../lib/time.js";
 import { type AttributionNote, attribute, loadHousehold } from "./household.js";
 import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
 import { tr } from "../i18n/index.js";
@@ -342,7 +342,8 @@ export async function availableYears(db: DB): Promise<number[]> {
   ].filter((x): x is number => x != null);
   if (froms.length === 0) return [];
   const from = Math.min(...froms);
-  const to = new Date().getUTCFullYear();
+  // In the user's time zone: the new year starts at midnight Dutch time, not UTC.
+  const to = Number(localToday().slice(0, 4));
   const out: number[] = [];
   for (let y = to; y >= from; y--) out.push(y);
   return out;

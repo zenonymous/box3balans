@@ -47,7 +47,7 @@ export async function box3Routes(app: FastifyInstance) {
 
   app.get("/:year", async (req) => {
     const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
-    if (year > new Date().getUTCFullYear())
+    if (year > Number(localToday().slice(0, 4)))
       throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
     const config = await loadConfig(db);
     const [result, actual] = await Promise.all([computeBox3Year(db, year, config), actualReturn(db, year, config)]);
@@ -75,7 +75,7 @@ export async function box3Routes(app: FastifyInstance) {
   // Where the year's amounts come from, for the dossier (alongside GET /:year).
   app.get("/:year/dossier", async (req) => {
     const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
-    if (year > new Date().getUTCFullYear())
+    if (year > Number(localToday().slice(0, 4)))
       throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
     return buildDossier(db, await computeBox3Year(db, year, await loadConfig(db)));
   });
@@ -83,7 +83,7 @@ export async function box3Routes(app: FastifyInstance) {
   // Box 3 of a year arranged as the income tax return asks for it.
   app.get("/:year/return", async (req) => {
     const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
-    if (year > new Date().getUTCFullYear())
+    if (year > Number(localToday().slice(0, 4)))
       throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
     return taxReturnOverview(db, year, await loadConfig(db));
   });

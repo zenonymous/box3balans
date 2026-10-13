@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { accountYears, imports, integrations, settings, walletAddresses } from "../src/db/schema.js";
 import { currentPeildatumYear, peildatumChecklist } from "../src/domain/peildatum.js";
 import { saveStatement, storedChecks } from "../src/import/statement.js";
+import { localToday } from "../src/lib/time.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
@@ -164,7 +165,8 @@ describe("peildatum checklist", () => {
 
   it("is served for this year and the next, not later", async () => {
     await household();
-    const year = new Date().getFullYear();
+    // The year in the app's time zone: at 00:30 on 1 January Dutch time, UTC is still in the old one.
+    const year = Number(localToday().slice(0, 4));
     const res = await t!.api("GET", `/api/box3/${year + 1}/checklist`);
     expect(res.statusCode).toBe(200);
     expect(res.json()).toMatchObject({ year: year + 1, day: `${year}-12-31` });

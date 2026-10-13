@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { localToday } from "../src/lib/time.js";
 import { priceHistory } from "../src/db/schema.js";
 import { DEFAULT_RATES, calculateBox3 } from "../src/domain/box3.js";
 import { D } from "../src/lib/decimal.js";
@@ -281,7 +282,7 @@ describe("box 3 overview", () => {
   it("values holdings on 1 January, maps categories and estimates the tax", async () => {
     const { pension } = await scenario();
     const overview = json(await t.api("GET", "/api/box3"));
-    expect(overview.years[0]).toBe(new Date().getUTCFullYear());
+    expect(overview.years[0]).toBe(Number(localToday().slice(0, 4)));
     expect(overview.years.at(-1)).toBe(2025);
 
     // Pension account is box 1: exclude it; add €5,000 of debts the app doesn't track.
@@ -336,6 +337,6 @@ describe("box 3 overview", () => {
 
     config.mapping.classCategory.crypto = "nonsense";
     expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(400);
-    expect((await t.api("GET", `/api/box3/${new Date().getUTCFullYear() + 1}`)).statusCode).toBe(400);
+    expect((await t.api("GET", `/api/box3/${Number(localToday().slice(0, 4)) + 1}`)).statusCode).toBe(400);
   });
 });
