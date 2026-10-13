@@ -224,9 +224,11 @@ export async function importRoutes(app: FastifyInstance) {
     return checkStatement(db, b.accountId, b.day, u.statement);
   });
 
+  // The latest statement of an account, or the one of `day`.
   app.get("/import/statement/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    return (await storedChecks(db, id))[0] ?? null;
+    const { day } = z.object({ day: isoDay.optional() }).parse(req.query);
+    return (await storedChecks(db, id, day))[0] ?? null;
   });
 
   app.get("/import/presets", async () => (await getPresets(db)).map(({ name, signature }) => ({ name, signature })));

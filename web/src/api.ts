@@ -333,6 +333,24 @@ export interface Mismatch {
   difference: string;
 }
 
+/** What a year's peildatum (1 January) still needs, per account. */
+export interface ChecklistItem {
+  key: string;
+  // todo: now; later: after 31 December; info: worth a look.
+  status: "ok" | "todo" | "later" | "info";
+  account: string | null;
+  text: string;
+  link?: { to: string; label: string };
+}
+
+export interface PeildatumChecklist {
+  year: number;
+  day: string;
+  passed: boolean;
+  open: number;
+  items: ChecklistItem[];
+}
+
 /** One position (or currency) of a broker's statement next to what the transactions add up to. */
 export interface StatementRow {
   // Null when no asset has this ISIN yet.

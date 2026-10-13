@@ -84,7 +84,9 @@ describe("importing a portfolio statement", () => {
     expect(check.differences).toBe(3);
 
     const issue = async () =>
-      (await api("GET", "/api/attention")).find((i: { key: string }) => i.key === `statement-mismatch:${acc.id}`);
+      (await api("GET", "/api/attention")).find(
+        (i: { key: string }) => i.key === `statement-mismatch:${acc.id}:2024-12-31`,
+      );
     expect((await issue())?.title).toBe("DEGIRO: 3 differences with the statement of 2024-12-31");
 
     // Adjust the cash on that day, as the page does: the difference is gone.

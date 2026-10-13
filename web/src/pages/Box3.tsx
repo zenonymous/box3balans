@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { get, put, type Box3Category, type Box3Config, type Box3Overview, type Box3Rates, type Box3Year } from "../api";
 import { downloadCsv } from "../csv";
 import { ActualReturnCard, FuturePreviewCard } from "./Box3Actual";
+import { PeildatumCard } from "../components/PeildatumCheck";
 import {
   Alert,
   AmountInput,
@@ -52,6 +53,8 @@ export function Box3Page() {
   const [search] = useSearchParams();
   const [selected, setSelected] = useState<number | null>(() => Number(search.get("year")) || null);
   const year = selected ?? overview.data?.years[0] ?? null;
+  // From "Needs attention": the peildatum to prepare for, which in December is next year's.
+  const checklist = Number(search.get("checklist")) || null;
   const detail = useQuery({
     queryKey: ["box3", year],
     queryFn: () => get<Box3Year>(`/api/box3/${year}`),
@@ -116,6 +119,16 @@ export function Box3Page() {
           </>
         }
       />
+      {checklist && checklist !== year && (
+        <div className="mb-4 print:hidden">
+          <PeildatumCard year={checklist} expanded />
+        </div>
+      )}
+      {year != null && (
+        <div className="mb-4 print:hidden">
+          <PeildatumCard key={year} year={year} expanded={checklist === year} />
+        </div>
+      )}
       {detail.isLoading || !year ? (
         <Spinner />
       ) : detail.error ? (

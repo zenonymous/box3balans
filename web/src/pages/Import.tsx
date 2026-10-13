@@ -254,7 +254,9 @@ export function ImportPage() {
   const accounts = useAccounts();
   // Opened from "Needs attention": the stored statement of that account.
   const [search] = useSearchParams();
-  const reviewing = search.get("statement") ? { id: Number(search.get("statement")) } : null;
+  const reviewing = search.get("statement")
+    ? { id: Number(search.get("statement")), day: search.get("day") ?? undefined }
+    : null;
   const [accountId, setAccountId] = useState("");
   const [upload, setUpload] = useState<Upload | null>(null);
   const [mapping, setMapping] = useState<Mapping | null>(null);
@@ -400,6 +402,7 @@ export function ImportPage() {
         ) : !upload && reviewing ? (
           <StatementCheckCard
             accountId={reviewing.id}
+            day={reviewing.day}
             accountName={accounts.data?.find((a) => a.id === reviewing.id)?.name ?? ""}
           />
         ) : result ? (

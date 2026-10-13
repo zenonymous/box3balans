@@ -170,7 +170,8 @@ export async function checkStatement(db: DB, accountId: number, day: string, st:
   };
 }
 
-// The latest statement per account, kept so the check can be redone as transactions change.
+// Statements per account and day ("statement:<account>:<day>"), kept so the check can be redone as
+// transactions change. A key without a day is from 0.1.16, which kept one per account.
 const KEY = "statement:";
 interface Stored {
   day: string;
@@ -180,26 +181,34 @@ interface Stored {
 
 export async function saveStatement(db: DB, accountId: number, day: string, statement: Statement) {
   const value: Stored = { day, statement, at: new Date().toISOString() };
+  // A statement of the same day replaces the one before it, also when kept the old way.
+  const old = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, `${KEY}${accountId}`));
+  if (old[0] && (old[0].value as Stored).day === day) await db.delete(settings).where(eq(settings.key, old[0].key));
   await db
     .insert(settings)
-    .values({ key: `${KEY}${accountId}`, value })
+    .values({ key: `${KEY}${accountId}:${day}`, value })
     .onConflictDoUpdate({ target: settings.key, set: { value } });
 }
 
-export async function storedChecks(db: DB, accountId?: number): Promise<StatementCheck[]> {
+/** The stored statements' checks, newest day first; for one account and/or one day if given. */
+export async function storedChecks(db: DB, accountId?: number, day?: string): Promise<StatementCheck[]> {
   const stored = await db
     .select()
     .from(settings)
-    .where(accountId ? eq(settings.key, `${KEY}${accountId}`) : like(settings.key, `${KEY}%`));
+    .where(like(settings.key, accountId ? `${KEY}${accountId}%` : `${KEY}%`));
   const live = new Set(
     (await db.select({ id: accounts.id }).from(accounts).where(eq(accounts.archived, false))).map((a) => a.id),
   );
   const out: StatementCheck[] = [];
   for (const s of stored) {
-    const id = Number(s.key.slice(KEY.length));
-    if (!live.has(id)) continue;
+    const id = Number(s.key.slice(KEY.length).split(":")[0]);
     const v = s.value as Stored;
+    // "statement:1" must not pick up "statement:12…".
+    if (!live.has(id) || (accountId && id !== accountId) || (day && v.day !== day)) continue;
     out.push(await checkStatement(db, id, v.day, v.statement));
   }
-  return out;
+  return out.sort((a, b) => b.day.localeCompare(a.day));
 }

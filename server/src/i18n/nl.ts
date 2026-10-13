@@ -418,6 +418,31 @@ export const NL: Record<string, string> = {
   "Interest on cash": "Rente op geld",
   "Interest lines without an amount": "Renteregels zonder bedrag",
   "DEGIRO portfolio": "DEGIRO-portefeuille",
+  "1 January {year}: {n} thing left for box 3": "1 januari {year}: nog {n} ding te doen voor box 3",
+  "1 January {year}: {n} things left for box 3": "1 januari {year}: nog {n} dingen te doen voor box 3",
+  "No bank accounts yet: savings and current accounts count for box 3 with their balance on 1 January.":
+    "Nog geen bankrekeningen: spaar- en betaalrekeningen tellen voor box 3 mee met hun saldo op 1 januari.",
+  "Value on 1 January {year} entered": "Waarde op 1 januari {year} ingevuld",
+  "Enter the value on 1 January {year}": "Vul de waarde op 1 januari {year} in",
+  "Synced after 31 December": "Gesynchroniseerd na 31 december",
+  "Sync after 31 December {year}": "Synchroniseer na 31 december {year}",
+  "Import the account statement up to 31 December {year}, then the portfolio (Portefeuille) of that day":
+    "Importeer het rekeningoverzicht tot en met 31 december {year}, en daarna de portefeuille van die dag",
+  "Checked against the portfolio of 31 December": "Gecontroleerd met de portefeuille van 31 december",
+  "Imported after 31 December": "Geïmporteerd na 31 december",
+  "Import the transactions up to 31 December {year}": "Importeer de transacties tot en met 31 december {year}",
+  "Kept by hand: check that its transactions up to 31 December are complete":
+    "Met de hand bijgehouden: kijk of de transacties tot en met 31 december compleet zijn",
+  "No price on 31 December for {list}; counted as €0.": "Geen koers op 31 december voor {list}; telt als € 0.",
+  "No box 3 rules for {year} yet; a newer version of Box3balans brings them.":
+    "Nog geen box 3-regels voor {year}; een nieuwere versie van Box3balans brengt ze mee.",
+  "The box 3 rules for {year} are still provisional.": "De box 3-regels voor {year} zijn nog voorlopig.",
+  "{n} difference with the portfolio of 31 December": "{n} verschil met de portefeuille van 31 december",
+  "{n} differences with the portfolio of 31 December": "{n} verschillen met de portefeuille van 31 december",
+  "{n} crypto withdrawal from an exchange in {year} didn't arrive in an account here. Is each of your wallets in the app?":
+    "{n} crypto-opname van een exchange in {year} is niet aangekomen op een rekening hier. Staan al je wallets in de app?",
+  "{n} crypto withdrawals from exchanges in {year} didn't arrive in an account here. Is each of your wallets in the app?":
+    "{n} crypto-opnames van exchanges in {year} zijn niet aangekomen op een rekening hier. Staan al je wallets in de app?",
   "This file isn't a portfolio statement": "Dit bestand is geen portefeuille-overzicht",
   "A portfolio statement is for an account kept with transactions":
     "Een portefeuille-overzicht hoort bij een rekening die je met transacties bijhoudt",

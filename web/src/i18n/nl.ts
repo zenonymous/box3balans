@@ -1114,6 +1114,15 @@ export const NL: Record<string, string> = {
   "dd-mm-yyyy": "dd-mm-jjjj",
   "Choose from calendar": "Kies in de kalender",
   "Start wizard": "Startwizard",
+  "To do": "Te doen",
+  "After 31 December": "Na 31 december",
+  "For your information": "Ter informatie",
+  "Ready for 1 January {year}?": "Klaar voor 1 januari {year}?",
+  "Getting ready for 1 January {year}": "Op weg naar 1 januari {year}",
+  Ready: "Klaar",
+  "{n} to do": "{n} te doen",
+  "{n} after 31 December": "{n} na 31 december",
+  "{n} done": "{n} klaar",
   "Record a deposit of {amount} {name} in {account} on {date}, so it matches the statement?":
     "Een storting van {amount} {name} vastleggen in {account} op {date}, zodat het klopt met het overzicht?",
   "Record a withdrawal of {amount} {name} in {account} on {date}, so it matches the statement?":

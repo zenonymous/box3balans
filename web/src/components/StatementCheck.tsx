@@ -6,7 +6,7 @@ import { useInvalidateAll } from "../queries";
 import { Alert, Button, Card, Spinner } from "./ui";
 import { t, tn } from "../i18n";
 
-export const statementKey = (accountId: number) => ["statement", accountId];
+export const statementKey = (accountId: number, day?: string) => ["statement", accountId, day ?? "latest"];
 
 // Positions in units, cash as money.
 const shown = (r: StatementRow, v: string) => (r.isin ? num(v) : eurPrice(v, r.currency));
@@ -15,13 +15,22 @@ const shown = (r: StatementRow, v: string) => (r.isin ? num(v) : eurPrice(v, r.c
  * A broker's statement of positions on a day (DEGIRO's portfolio export) next to what the account's
  * transactions add up to, with a one-click adjustment on that day for each difference.
  */
-export function StatementCheckCard({ accountId, accountName }: { accountId: number; accountName: string }) {
+export function StatementCheckCard({
+  accountId,
+  accountName,
+  day,
+}: {
+  accountId: number;
+  accountName: string;
+  // The statement of this day; the latest one without.
+  day?: string;
+}) {
   const qc = useQueryClient();
   const invalidate = useInvalidateAll();
   const [error, setError] = useState<string>();
   const check = useQuery({
-    queryKey: statementKey(accountId),
-    queryFn: () => get<Check | null>(`/api/import/statement/${accountId}`),
+    queryKey: statementKey(accountId, day),
+    queryFn: () => get<Check | null>(`/api/import/statement/${accountId}${day ? `?day=${day}` : ""}`),
   });
 
   const adjust = async (c: Check, r: StatementRow) => {
@@ -54,7 +63,8 @@ export function StatementCheckCard({ accountId, accountName }: { accountId: numb
         notes: t("Balance adjustment to match the statement of {date}", { date: date(c.day) }),
       });
       await invalidate();
-      await qc.invalidateQueries({ queryKey: statementKey(accountId) });
+      await qc.invalidateQueries({ queryKey: ["statement", accountId] });
+      await qc.invalidateQueries({ queryKey: ["peildatum"] });
     } catch (err) {
       setError((err as Error).message);
     }

@@ -23,6 +23,7 @@ import { tr, trn } from "../i18n/index.js";
 import { RULES } from "../rules/index.js";
 import { getUpdateStatus } from "./updates.js";
 import { storedChecks } from "../import/statement.js";
+import { currentPeildatumYear, peildatumChecklist } from "./peildatum.js";
 
 export type Severity = "problem" | "warning" | "info";
 
@@ -168,13 +169,38 @@ export async function collectIssues(
     seenWallets.add(id);
     checkSync("wallet", id, `${accountName.get(a.accountId) ?? tr("Wallet")} (${a.chain})`, a, "/wallets");
   }
+  // From mid-December to the end of May: what the peildatum still needs.
+  const peilYear = currentPeildatumYear(localToday());
+  if (peilYear) {
+    const c = await peildatumChecklist(db, peilYear);
+    const open = c.items.filter((i) => i.status === "todo");
+    if (open.length)
+      add({
+        key: `peildatum:${peilYear}`,
+        severity: "info",
+        title: trn(
+          open.length,
+          "1 January {year}: {n} thing left for box 3",
+          "1 January {year}: {n} things left for box 3",
+          {
+            year: peilYear,
+          },
+        ),
+        detail: list(
+          open.map((i) => (i.account ? `${i.account}: ${i.text}` : i.text)),
+          3,
+        ),
+        link: { to: `/box3?checklist=${peilYear}`, label: tr("Review") },
+        fingerprint: open.map((i) => i.key).join(","),
+      });
+  }
   // A broker's statement of positions (DEGIRO's portfolio export) that the transactions don't match.
   for (const c of await storedChecks(db)) {
     if (!c.differences) continue;
     const name = accountName.get(c.accountId) ?? tr("account #{id}", { id: c.accountId });
     const off = c.rows.filter((r) => !D(r.difference).isZero());
     add({
-      key: `statement-mismatch:${c.accountId}`,
+      key: `statement-mismatch:${c.accountId}:${c.day}`,
       severity: "warning",
       title: trn(
         c.differences,
@@ -185,7 +211,7 @@ export async function collectIssues(
       detail: tr("{list} don't add up to what the broker reported. Usually missing history; fix it or adjust.", {
         list: list(off.map((r) => r.name)),
       }),
-      link: { to: `/transactions/import?statement=${c.accountId}`, label: tr("Review") },
+      link: { to: `/transactions/import?statement=${c.accountId}&day=${c.day}`, label: tr("Review") },
       fingerprint: off.map((r) => `${r.assetId ?? r.isin}:${r.difference}`).join(","),
     });
   }

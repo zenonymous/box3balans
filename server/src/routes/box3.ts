@@ -12,6 +12,7 @@ import {
 } from "../domain/box3.js";
 import { actualReturn } from "../domain/box3Actual.js";
 import { buildDossier } from "../domain/dossier.js";
+import { peildatumChecklist } from "../domain/peildatum.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
 import { RULES } from "../rules/index.js";
 import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
@@ -61,6 +62,14 @@ export async function box3Routes(app: FastifyInstance) {
         comparison: compareWithDeemed(actual, deemed, result.rates ? Number(result.rates.taxRatePct) : null),
       },
     };
+  });
+
+  // What the year's peildatum needs; also for next year's, to prepare in December.
+  app.get("/:year/checklist", async (req) => {
+    const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
+    if (year > Number(localToday().slice(0, 4)) + 1)
+      throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
+    return peildatumChecklist(db, year);
   });
 
   // Where the year's amounts come from, for the dossier (alongside GET /:year).

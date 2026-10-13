@@ -353,7 +353,7 @@ export function Badge({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
+        "inline-flex items-center gap-1 whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-medium",
         tone === "neutral" && "bg-surface-2 text-ink-2",
         tone === "warn" && "bg-warn-bg text-warn",
         tone === "danger" && "bg-danger-bg text-loss",
