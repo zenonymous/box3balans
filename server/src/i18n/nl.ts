@@ -387,6 +387,11 @@ export const NL: Record<string, string> = {
   "Other lines (corporate actions, product changes)": "Overige regels (corporate actions, productwijzigingen)",
   "Trade Republic transactions": "Trade Republic transacties",
   "Trading 212 history": "Trading 212 geschiedenis",
+  "Lightyear transactions": "Lightyear transacties",
+  "Scalable Capital transactions": "Scalable Capital transacties",
+  "Orders that weren't executed": "Orders die niet zijn uitgevoerd",
+  "Tax withheld on a sale was left out (line {line}).":
+    "Ingehouden belasting op een verkoop is weggelaten (regel {line}).",
   "Dividend tax in another currency was left out (line {line}).":
     "Dividendbelasting in een andere valuta is weggelaten (regel {line}).",
   "Cash movements (deposits, withdrawals, currency exchange)": "Geldbewegingen (stortingen, opnames, valutawissel)",

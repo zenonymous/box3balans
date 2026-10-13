@@ -123,6 +123,100 @@ describe("broker exports", () => {
     expect(notes.filter((n) => n.startsWith("Corporate action read as a purchase or sale"))).toHaveLength(2);
   });
 
+  it("Lightyear: trades with costs, dividends net of fund fees, cash left out", () => {
+    const { id, rows, skipped } = read(
+      lines(
+        "Date,Reference,Ticker,ISIN,Type,Quantity,CCY,Price/share,Gross Amount,FX Rate,Fee,Net Amt.,Tax Amt.",
+        "14/01/2026 15:31:07,OR-AB12CD34EF,VBWLD,IE0000000001,Buy,10.000000000,EUR,120.500000000,1206.50,,1.50,1205.00,",
+        "20/03/2026 16:02:44,OR-GH56IJ78KL,VBWLD,IE0000000001,Sell,4.000000000,EUR,130.000000000,520.00,,1.00,519.00,",
+        "02/04/2026 06:10:12,DD-MN90OP12QR,VBUS,US0000000002,Dividend,,USD,,10.00,,,8.50,1.50",
+        "01/05/2026 13:20:00,IN-ST34UV56WX,VBGELD,IE0000000003,Distribution,,EUR,,3.20,,0.10,3.10,0.00",
+        "01/05/2026 03:15:00,IN-YZ78AB90CD,,,Interest,,EUR,,0.42,,,0.42,0.00",
+        "05/01/2026 09:00:00,DT-EF12GH34IJ,,,Deposit,,EUR,,500.00,,0.00,500.00,",
+        "10/02/2026 11:45:30,CN-KL56MN78OP,USD,,Conversion,,USD,,108.00,0.92593,,108.00,",
+        "10/02/2026 11:45:30,CN-KL56MN78OP,EUR,,Conversion,,EUR,,-100.35,1.08000,0.35,-100.00,",
+      ),
+    );
+    expect(id).toBe("lightyear");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2026-01-14",
+        time: "15:31:07",
+        type: "buy",
+        isin: "IE0000000001",
+        symbol: "VBWLD",
+        price: "120.500000000",
+        currency: "EUR",
+        fee: "1.5",
+        id: "lightyear:OR-AB12CD34EF",
+      }),
+      expect.objectContaining({ date: "2026-03-20", type: "sell", isin: "IE0000000001", fee: "1" }),
+      // Gross 10.00 = net 8.50 + tax 1.50, in the security's currency.
+      expect.objectContaining({
+        date: "2026-04-02",
+        type: "dividend",
+        currency: "USD",
+        amount: "10",
+        tax: "1.5",
+      }),
+      // A money market fund's 3.20 less its 0.10 fee.
+      expect.objectContaining({ date: "2026-05-01", type: "dividend", isin: "IE0000000003", amount: "3.1" }),
+    ]);
+    expect(rows.map((r) => Number(r.quantity ?? 0))).toEqual([10, 4, 0, 0]);
+    // Interest, the deposit and the two sides of the currency exchange.
+    expect(skipped).toEqual({ "Cash movements (deposits, withdrawals, currency exchange)": 4 });
+  });
+
+  it("Scalable Capital: German notation, savings plans, gross distributions and the cash", () => {
+    const { id, rows, skipped, r } = read(
+      lines(
+        "date;time;status;reference;description;assetType;type;isin;shares;price;amount;fee;tax;currency",
+        '2026-01-05;01:00:00;Executed;"AB12CD34EF56GH78IJ90KL";"Voorbeeldstorting";Cash;Deposit;;;;1.500,00;0,00;;EUR',
+        '2026-01-06;10:15:30;Executed;"SCALaB3cD4eF5gH";"Voorbeeld Wereld ETF (Acc)";Security;Buy;IE0000000001;12;85,40;-1.024,80;0,00;0,00;EUR',
+        '2026-02-02;14:02:11;Executed;"SCALiJ6kL7mN8oP";"Voorbeeld Wereld ETF (Acc)";Security;Savings plan;IE0000000001;1,171;85,39;-99,99169;0,00;0,00;EUR',
+        '2026-03-01;09:00:00;Canceled;"SCALzZ1yY2xX3wW";"Voorbeeld Wereld ETF (Acc)";Security;Buy;IE0000000001;5;80,00;-400,00;0,00;0,00;EUR',
+        '2026-05-20;16:40:05;Executed;"SCALqR9sT0uV1wX";"Voorbeeld Aandeel";Security;Sell;NL0000000002;30;41,10;1.233,00;0,00;0,00;EUR',
+        '2026-05-21;02:00:00;Executed;"WWEK 10000002";"Voorbeeld Aandeel";Cash;Taxes;NL0000000002;;;-3,10;0,00;;EUR',
+        '2026-06-15;02:00:00;Executed;"WWEK 10000001";"Voorbeeld Dividend ETF (Dist)";Cash;Distribution;IE0000000003;;;12,75;0,00;2,25;EUR',
+        '2026-07-01;02:00:00;Executed;"CD34EF56GH78IJ90KL12MN";"Voorbeeldopname";Cash;Withdrawal;;;;-200,00;0,00;;EUR',
+      ),
+    );
+    expect(id).toBe("scalable-capital");
+    expect(r.result.mapping).toEqual({ settleCash: true, feeCurrency: "EUR" });
+    expect(rows).toEqual([
+      // "1.500,00" is fifteen hundred, not one and a half.
+      expect.objectContaining({
+        date: "2026-01-05",
+        type: "deposit",
+        symbol: "EUR",
+        assetType: "cash",
+        quantity: "1500",
+      }),
+      expect.objectContaining({
+        date: "2026-01-06",
+        type: "buy",
+        isin: "IE0000000001",
+        name: "Voorbeeld Wereld ETF (Acc)",
+        quantity: "12",
+        price: "85.40",
+        id: "scalable:SCALaB3cD4eF5gH",
+      }),
+      expect.objectContaining({ date: "2026-02-02", type: "buy", quantity: "1.171", price: "85.39" }),
+      expect.objectContaining({
+        date: "2026-05-20",
+        type: "sell",
+        isin: "NL0000000002",
+        quantity: "30",
+        price: "41.10",
+      }),
+      expect.objectContaining({ date: "2026-05-21", type: "fee", symbol: "EUR", quantity: "3.1" }),
+      // Paid out 12.75 after 2.25 tax: 15.00 gross.
+      expect.objectContaining({ date: "2026-06-15", type: "dividend", amount: "15", tax: "2.25" }),
+      expect.objectContaining({ date: "2026-07-01", type: "withdrawal", symbol: "EUR", quantity: "200" }),
+    ]);
+    expect(skipped).toEqual({ "Orders that weren't executed": 1 });
+  });
+
   it("DEGIRO transactions: sign gives buy or sell, AutoFX counts as cost", () => {
     const { id, rows } = read(
       lines(
