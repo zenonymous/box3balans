@@ -722,7 +722,7 @@ function BackupsCard() {
             : t("Automatic backups are off (BACKUP_INTERVAL_HOURS=0).")}{" "}
           {tj(
             "Backups contain all data (exchange keys stay encrypted, so restoring them needs the same APP_SECRET) and are stored on the server in <0>{dir}</0>.",
-            [<code key="d" className="rounded bg-surface-2 px-1 text-xs" />],
+            [<code key="d" className="break-all rounded bg-surface-2 px-1 text-xs" />],
             { dir: d?.dir ?? "…" },
           )}
           {d?.encrypted && ` ${t("New backups are encrypted with your BACKUP_PASSPHRASE.")}`}

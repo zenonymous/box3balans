@@ -18,6 +18,7 @@
     "lint:scripts": "shellcheck docker-entrypoint.sh scripts/*.sh && actionlint",
     "format": "prettier --write .",
     "screenshots": "node scripts/screenshots.js",
+    "check:pages": "node scripts/check-pages.js",
     "prepare": "husky"
   },
   "devDependencies": {
