@@ -423,6 +423,10 @@ export const NL: Record<string, string> = {
   "Conversions to the same coin (e.g. ETH to ETH2)": "Omzettingen naar dezelfde munt (bijv. ETH naar ETH2)",
   "Euro deposits and withdrawals": "Stortingen en opnames in euro's",
   "Moves within Coinbase (staking, Coinbase Pro)": "Verplaatsingen binnen Coinbase (staking, Coinbase Pro)",
+  "Crypto.com App transactions": "Crypto.com App transacties",
+  "Moves within Crypto.com (Earn, staking, lockups)": "Verplaatsingen binnen Crypto.com (Earn, staking, lockups)",
+  "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
+  "Other kinds: {kind}": "Andere soorten: {kind}",
   "Kraken ledgers": "Kraken ledgers",
   "{n} trade between two coins (not against euros) was left out: connect Kraken with an API key to include it.":
     "{n} transactie tussen twee munten (niet tegen euro's) is weggelaten: koppel Kraken met een API-sleutel om die mee te nemen.",

@@ -442,6 +442,8 @@ Algemeen: de Belastingdienst laat je de koers op 1 januari van het platform dat 
 
 **Nodig:** een geanonimiseerde CSV met earn, kaartcashback en een swap.
 
+**Stand (oktober 2026):** de herkenner is gebouwd ([#21](https://github.com/zenonymous/box3balans/issues/21)), op de kop en de soortcodes uit het openbare voorbeeld en de parsers hierboven, nog niet getest met een echte export. Onbekende soorten worden overgeslagen en bij het controleren met hun code genoemd.
+
 #### Bybit
 
 **Wat:** beurs; sinds 2025 Bybit EU met een MiCA-vergunning uit Oostenrijk, die MEXC aan vertrekkende Nederlandse klanten aanraadt ([Finance Magnates](https://financemagnates.com/cryptocurrency/exchange/mexc-to-offboard-dutch-users-recommends-bybit-as-micar-compliant-alternative/), tweedehands).

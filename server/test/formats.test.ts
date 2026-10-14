@@ -315,6 +315,66 @@ describe("broker exports", () => {
     expect(skipped).toEqual({ "Euro deposits and withdrawals": 1 });
   });
 
+  it("Crypto.com App: trades, card buys, rewards, paired balance conversions; Earn moves and euros left out", () => {
+    const { id, rows, skipped } = read(
+      lines(
+        "Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind,Transaction Hash",
+        // Newest first, as the app exports it.
+        "2025-06-01 09:00:00,Transfer: App wallet -> Exchange,CRO,-100.0,,,EUR,9.00,10.50,crypto_to_exchange_transfer,",
+        "2025-03-31 12:00:00,Balance Conversion,USDC,50.0,,,EUR,46.00,53.00,crypto_wallet_swap_credited,",
+        "2025-03-31 12:00:00,Balance Conversion,USDT,-50.0,,,EUR,45.90,52.90,crypto_wallet_swap_debited,",
+        "2025-02-10 08:00:00,CRO Stake Reward,CRO,2.5,,,EUR,0.25,0.29,finance.lockup.dpos_compound_interest.crypto_wallet,",
+        "2025-02-03 08:00:00,Card Cashback,CRO,4.0,,,EUR,0.40,0.46,referral_card_cashback,",
+        "2025-02-02 08:00:00,USDT -> EUR,USDT,-30.0,,,EUR,-27.50,-32.00,card_top_up,",
+        "2025-01-20 07:00:00,Cardholder CRO Stake,CRO,-1000.0,,,EUR,90.00,105.00,finance.lockup.dpos_lock.crypto_wallet,",
+        "2025-01-15 10:00:00,XRP -> BTC,XRP,-100.0,BTC,0.002,EUR,190.00,221.00,crypto_exchange,",
+        "2025-01-10 10:00:00,Buy BTC,EUR,-200.0,BTC,0.0021,EUR,200.00,233.00,viban_purchase,",
+        "2025-01-05 10:00:00,Buy CRO,CRO,1100.0,,,EUR,99.00,115.00,crypto_purchase,",
+        "2025-01-04 10:00:00,XRP Deposit,XRP,100.0,,,EUR,180.00,210.00,crypto_deposit,0xabc",
+        "2025-01-03 10:00:00,EUR Deposit,EUR,500.0,,,EUR,500.00,582.00,viban_deposit,",
+      ),
+    );
+    expect(id).toBe("crypto-com");
+    expect(rows).toEqual([
+      expect.objectContaining({ date: "2025-01-04T10:00:00Z", type: "deposit", symbol: "XRP", total: "180.00" }),
+      // Bought by card: the value in euros is what it cost.
+      expect.objectContaining({ type: "buy", symbol: "CRO", quantity: "1100.0", total: "99.00", currency: "EUR" }),
+      // From the euro wallet.
+      expect.objectContaining({ type: "buy", symbol: "BTC", quantity: "0.0021", total: "200.0", currency: "EUR" }),
+      // One coin for another: a sale and a purchase at the same value.
+      expect.objectContaining({ type: "sell", symbol: "XRP", quantity: "100.0", total: "190.00" }),
+      expect.objectContaining({ type: "buy", symbol: "BTC", quantity: "0.002", total: "190.00" }),
+      // Sold to top up the card; the value's minus sign doesn't matter.
+      expect.objectContaining({ type: "sell", symbol: "USDT", quantity: "30.0", total: "27.50" }),
+      expect.objectContaining({ type: "reward", symbol: "CRO", quantity: "4.0", total: "0.40" }),
+      expect.objectContaining({ type: "reward", symbol: "CRO", quantity: "2.5", total: "0.25" }),
+      expect.objectContaining({ type: "withdrawal", symbol: "CRO", quantity: "100.0" }),
+      // The two halves of the conversion, after the rest.
+      expect.objectContaining({ type: "sell", symbol: "USDT", quantity: "50.0", total: "45.90" }),
+      expect.objectContaining({ type: "buy", symbol: "USDC", quantity: "50.0", total: "46.00" }),
+    ]);
+    expect(rows).toHaveLength(11);
+    expect(skipped).toEqual({
+      "Euro deposits and withdrawals": 1,
+      "Moves within Crypto.com (Earn, staking, lockups)": 1,
+    });
+  });
+
+  it("Crypto.com App: unknown kinds and a conversion without its other half are named", () => {
+    const { rows, skipped } = read(
+      lines(
+        "Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind,Transaction Hash",
+        "2025-03-31 12:00:00,Balance Conversion,USDT,-50.0,,,EUR,45.90,52.90,crypto_wallet_swap_debited,",
+        "2025-03-01 12:00:00,Something new,CRO,5.0,,,EUR,0.50,0.58,brand_new_kind,",
+      ),
+    );
+    expect(rows).toEqual([]);
+    expect(skipped).toEqual({
+      "Other kinds: brand_new_kind": 1,
+      "Balance conversions without their other half": 1,
+    });
+  });
+
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
     const { id, rows, r } = read(
       lines(
@@ -534,5 +594,33 @@ describe("importing a recognised export", () => {
     const plain = await upload(true);
     expect(plain.format).toBeNull();
     expect(plain.preset).toBeNull();
+  });
+
+  it("previews a Crypto.com App export without errors, and finds it again", async () => {
+    t = await createTestApp();
+    const acc = (await t.api("POST", "/api/accounts", { name: "Crypto.com", kind: "exchange" })).json();
+    const content = lines(
+      "Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind,Transaction Hash",
+      "2025-02-03 08:00:00,Card Cashback,BTC,0.00001,,,EUR,0.90,1.05,referral_card_cashback,",
+      "2025-01-15 10:00:00,BTC -> EUR,BTC,-0.001,EUR,90.00,EUR,90.00,105.00,crypto_viban_exchange,",
+      "2025-01-10 10:00:00,Buy BTC,EUR,-200.0,BTC,0.0021,EUR,200.00,233.00,viban_purchase,",
+    );
+    const upload = async () =>
+      (await t!.api("POST", "/api/import/upload", { fileName: "crypto_transactions_record.csv", content })).json();
+    const up = await upload();
+    expect(up.format).toMatchObject({ id: "crypto-com", rows: 3 });
+    const preview = async (u: any) =>
+      (
+        await t!.api("POST", "/api/import/preview", { uploadId: u.uploadId, accountId: acc.id, mapping: u.mapping })
+      ).json();
+    const plan = await preview(up);
+    expect(plan.summary).toMatchObject({ new: 3 });
+    expect(plan.rows.map((r: any) => [r.type, r.quantity, r.price])).toEqual([
+      ["buy", "0.0021", expect.stringMatching(/^95238\.09/)],
+      ["sell", "0.001", "90000"],
+      ["reward", "0.00001", "90000"],
+    ]);
+    await t.api("POST", "/api/import/commit", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping });
+    expect((await preview(await upload())).summary).toMatchObject({ new: 0, duplicate: 3 });
   });
 });

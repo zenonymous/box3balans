@@ -1,7 +1,7 @@
 import { tr } from "../../i18n/index.js";
 import { detectDelimiter, parseCsv } from "../parse.js";
 import { bux, lightyear, rabobank, revolut, saxo, scalableCapital, trading212, tradeRepublic } from "./brokers.js";
-import { bitvavo, coinbase, krakenLedgers } from "./crypto.js";
+import { bitvavo, coinbase, cryptoCom, krakenLedgers } from "./crypto.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
@@ -12,6 +12,7 @@ export const FORMATS: BrokerFormat[] = [
   bitvavo,
   coinbase,
   krakenLedgers,
+  cryptoCom,
   rabobank,
   tradeRepublic,
   trading212,
