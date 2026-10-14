@@ -185,6 +185,24 @@ export const NL: Record<string, string> = {
   "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Revolut and Wise work too, with their CSV statement; other currencies are converted at the ECB rate. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
     "Download je mutaties van de website van je bank, als CSV, CAMT.053 of MT940, over de jaren die je wilt, en kies het bestand hier. Revolut en Wise kan ook, met hun CSV-afschrift; andere valuta's worden omgerekend tegen de ECB-koers. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Reading…": "Inlezen…",
+  "Read a year statement (PDF)": "Jaaroverzicht (pdf) inlezen",
+  "Choose the year statement (jaaroverzicht) of this account as a PDF. It's read here in your browser and not kept. Box3balans looks for the value on 1 January and, where the statement has them, the money in and out, income and costs. Nothing is saved until you press Save.":
+    "Kies het jaaroverzicht van deze rekening als pdf. Het wordt hier in je browser gelezen en niet bewaard. Box3balans zoekt de waarde op 1 januari en, als het overzicht ze noemt, het geld erin en eruit, de inkomsten en de kosten. Er wordt niets opgeslagen tot je op Opslaan drukt.",
+  "Recognised: {name}.": "Herkend: {name}.",
+  "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. <0>Share its text</0> and it can be recognised next time.":
+    "Box3balans kent dit overzicht nog niet. Hieronder staan de bedragen die op waarden lijken: vink de juiste aan. <0>Deel de tekst</0>, dan kan het de volgende keer herkend worden.",
+  "No amounts found next to a date or a word such as beginwaarde. Fill in the values by hand.":
+    "Geen bedragen gevonden bij een datum of een woord als beginwaarde. Vul de waarden met de hand in.",
+  Column: "Kolom",
+  "In the statement": "In het overzicht",
+  "Use {amount} for {year}": "{amount} gebruiken voor {year}",
+  "Column for {amount}": "Kolom voor {amount}",
+  "p. {page}": "p. {page}",
+  "This PDF is protected with a password. Save a copy without one and choose that.":
+    "Deze pdf is beveiligd met een wachtwoord. Sla een kopie zonder wachtwoord op en kies die.",
+  "This file can't be read as a PDF.": "Dit bestand is niet als pdf te lezen.",
+  "This PDF has no text, only images (a scan?). Fill in the values by hand.":
+    "Deze pdf heeft geen tekst, alleen afbeeldingen (een scan?). Vul de waarden met de hand in.",
   "This export has no balances; with one known balance the rest follows.":
     "Deze export heeft geen saldi; met één bekend saldo volgt de rest.",
   "Work out the balances": "Saldi uitrekenen",

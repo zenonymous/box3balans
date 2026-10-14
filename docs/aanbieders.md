@@ -27,7 +27,7 @@ Dit is een backlog: per aanbieder wat er te halen is, langs welke route, hoeveel
 9. **Crowdfunding (Geldvoorelkaar, Collin, Lendahand, Mogelijk):** _waarden per jaar_ met een uitleg per platform en de splitsing wallet/uitgeleend geld.
 10. **eToro:** een herkenner voor het _Account Statement_ (tabblad _Account Activity_).
 
-Daarnaast, als fundament: **een lezer voor pdf-jaaroverzichten** (L). Die maakt nummer 1, 9 en een tiental kaarten met prioriteit 2 daarna klein werk.
+Daarnaast, als fundament: **een lezer voor pdf-jaaroverzichten** (L). Die maakt nummer 1, 9 en een tiental kaarten met prioriteit 2 daarna klein werk. _De basis is gebouwd (oktober 2026); per aanbieder is nu een sjabloon nodig, zie [Route: het pdf-jaaroverzicht](#route-het-pdf-jaaroverzicht)._
 
 ## Routes
 
@@ -38,7 +38,7 @@ Daarnaast, als fundament: **een lezer voor pdf-jaaroverzichten** (L). Die maakt 
 | (c) portefeuille-overzicht | posities op één dag, als controle en beginstand                                                                       | `server/src/import/statement.ts`                  |
 | (d) waarden per jaar       | waarde op 1 januari, geld erin en eruit, inkomsten, kosten; met de hand of uit een bankexport                         | _Rekeningen → Waarden per jaar_, `import/bank.ts` |
 | (e) wallet                 | publiek adres op een blockchain                                                                                       | `server/src/wallets/`                             |
-| pdf-jaaroverzicht (nieuw)  | de waarde op 1 januari (en soms inkomsten en geld erin en eruit) uit een pdf; vult _waarden per jaar_, na bevestiging | bestaat nog niet                                  |
+| pdf-jaaroverzicht          | de waarde op 1 januari (en soms inkomsten en geld erin en eruit) uit een pdf; vult _waarden per jaar_, na bevestiging | `server/src/import/yearStatement.ts`              |
 
 **Werk:** S = een dag of minder (uitleg, testen, een paar kopjes erbij); M = een herkenner of koppeling met tests, een paar dagen; L = een nieuw onderdeel.
 
@@ -667,6 +667,8 @@ Een spaarrekening, beleggingsrecht of kapitaalverzekering eigen woning hoort in 
 
 ## Route: het pdf-jaaroverzicht
 
+**Stand (oktober 2026):** de basis is gebouwd ([#14](https://github.com/zenonymous/box3balans/issues/14)). De browser leest de pdf met pdf.js en stuurt alleen de tekst ([ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)); de server zoekt de waarden met een sjabloon (`TEMPLATES` in `server/src/import/yearStatement.ts`) of, zonder sjabloon, de bedragen naast een peildatum of een woord als _beginwaarde_; de gebruiker vinkt aan wat in de tabel komt. Er zijn nog geen sjablonen: elk wacht op een tekstvoorbeeld van een gebruiker (zie [README](../README.md#jaaroverzicht-als-pdf)). Een sjabloon toevoegen is daarna werk S.
+
 ### Wat het oplevert
 
 | Aanbieder                  | Document                           | Wat erin staat                                                               | Bron                                                                                                                                                                                                                                         |
@@ -692,7 +694,7 @@ Collin, Mogelijk, Finst, DuurzaamInvesteren, ING, ABN AMRO, Meesman en DEGIRO he
 
 ### Wat een lezer nodig heeft
 
-- **Tekst uit de pdf, op de server, zonder netwerk.** pdf.js (`pdfjs-dist`, Apache-2.0) geeft tekst met posities. Alleen pdf's met een tekstlaag; scans (OCR) niet.
+- **Tekst uit de pdf, zonder netwerk.** pdf.js (`pdfjs-dist`, Apache-2.0) geeft tekst met posities. Alleen pdf's met een tekstlaag; scans (OCR) niet. _Gebouwd in de browser in plaats van op de server; zie [ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)._
 - **Een sjabloon per aanbieder en document**, als gegevens: hoe je het herkent (een vaste tekst zoals "Financieel jaaroverzicht" plus de naam van de aanbieder) en per veld een label met een getalpatroon (bijvoorbeeld "Beginwaarde" → bedrag rechts ervan). Nederlandse getallen (`1.234,56`) lezen met de bestaande `num(raw, ",")`.
 - **Een terugval zonder sjabloon:** zoek "1 januari" en bedragen in de buurt, en laat de gebruiker kiezen. Nooit stil opslaan.
 - **Altijd een voorbeeldscherm**, zoals bij de CSV-import: gevonden waarde, de regel uit de pdf waar die vandaan komt, en _Opslaan_ pas na bevestiging. Het dossier noemt de pdf en de pagina als bron.

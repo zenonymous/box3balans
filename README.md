@@ -288,6 +288,20 @@ Geld in een geldmarktfonds, zoals _Flexible Cash Funds_ bij Revolut of _Interest
 
 Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je ziet eerst per jaar wat er gevonden is: een geschat saldo (omdat het bestand halverwege een jaar begint of eindigt) en de totalen van jaren die het bestand maar deels beslaat, staan uit tot je ze aanvinkt. Er wordt pas iets opgeslagen als je in de tabel op _Opslaan_ drukt.
 
+#### Jaaroverzicht als pdf
+
+Bij elke rekening met waarden per jaar, behalve een woning, leest _Jaaroverzicht (pdf) inlezen_ het jaaroverzicht of de jaaropgaaf van je bank, broker of platform. De pdf wordt in je browser gelezen en niet bewaard: alleen de tekst gaat naar je eigen Box3balans ([ADR 0009](docs/adr/0009-pdf-lezen-in-de-browser.md)). Wat je aanvinkt, komt in de tabel, met de bestandsnaam en de pagina als bron; die staat ook in het dossier.
+
+Box3balans zoekt bedragen naast een peildatum ("1 januari 2025", "31-12-2024") en naast woorden als _beginwaarde_, _eindwaarde_, _dividend_, _rente_, _inleg_, _onttrekkingen_ en _kosten_. Een bedrag op 31 december is de waarde op 1 januari van het jaar erna. Per bedrag kies je of het klopt en in welke kolom het hoort. Een pdf zonder tekst (een scan) of met een wachtwoord kan niet gelezen worden.
+
+**Help een overzicht herkennen.** Kent Box3balans een overzicht, dan staan de juiste bedragen meteen aangevinkt. Daarvoor is per aanbieder een voorbeeld van de tekst nodig. Stuur geen pdf, want zwart gemaakte tekst is in een pdf vaak nog te lezen. Stuur de uitvoer van dit commando (uit [Poppler](https://poppler.freedesktop.org/), op een Mac met `brew install poppler`), met namen, adressen, rekeningnummers en bedragen veranderd:
+
+```bash
+pdftotext -layout jaaroverzicht.pdf -
+```
+
+Plak die in [#14](https://github.com/zenonymous/box3balans/issues/14) of in een nieuw issue met de naam van de aanbieder. Welke aanbieders het meest opleveren, staat in [docs/aanbieders.md](docs/aanbieders.md#route-het-pdf-jaaroverzicht).
+
 In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
 
 ### CSV-import
@@ -473,6 +487,7 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 - **Fastify + TypeScript** (server): snel, past goed bij schema's, weinig overhead. Eén taal voor server en web-app.
 - **PostgreSQL + Drizzle ORM**: `NUMERIC`-kolommen voor exacte bedragen en hoeveelheden (decimal.js in de code, nooit gewone getallen), getypte queries en gegenereerde SQL-migraties. PGlite draait dezelfde migraties in tests, bij het ontwikkelen en in de variant met één container.
 - **React + Vite + Tailwind + TanStack Query + Recharts** (web): een responsieve app met een lichte en donkere weergave, geserveerd door dezelfde container.
+- **pdf.js** (web): leest een jaaroverzicht als pdf in de browser; laadt pas als je een pdf kiest.
 - **Eén app-container** met een ingebouwde planner. Voor één gebruiker thuis zouden een aparte worker of wachtrij alleen maar onderdelen toevoegen.
 
 ### Beveiliging

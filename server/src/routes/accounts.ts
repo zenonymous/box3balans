@@ -4,6 +4,7 @@ import { z } from "zod";
 import { accounts, accountYears, metalItems, persons, transactions } from "../db/schema.js";
 import { YEARLY_ONLY_KINDS } from "../domain/yearly.js";
 import { foreignDays, parseBankExport, summarizeExport } from "../import/bank.js";
+import { readYearStatement } from "../import/yearStatement.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import type { Decimal } from "../lib/decimal.js";
@@ -225,6 +226,23 @@ export async function accountRoutes(app: FastifyInstance) {
     } catch (err) {
       throw new HttpError(400, (err as Error).message);
     }
+  });
+
+  /**
+   * Finds values per year in the text of a year statement (a PDF read in the browser), for the user to
+   * pick from. Nothing is kept.
+   */
+  app.post("/:id/year-statement", { bodyLimit: 5 * 1024 * 1024 }, async (req) => {
+    idParam.parse(req.params);
+    const { pages } = z
+      .object({
+        pages: z
+          .array(z.object({ page: z.number().int().positive(), text: z.string().max(200_000) }))
+          .min(1)
+          .max(100),
+      })
+      .parse(req.body);
+    return readYearStatement(pages);
   });
 
   app.delete("/:id", async (req) => {

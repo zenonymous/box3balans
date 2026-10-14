@@ -145,6 +145,15 @@ export interface BankImport {
   warnings: string[];
 }
 
+export type YearField = "valueEur" | "inEur" | "outEur" | "incomeEur" | "costsEur";
+
+/** What the server found in the text of a year statement (PDF), for the user to pick from. */
+export interface YearStatement {
+  template: string | null;
+  year: number | null;
+  found: { year: number; field: YearField; amount: string; page: number; line: string; sure: boolean }[];
+}
+
 export interface LatestPrice {
   price: string;
   currency: string;

@@ -201,6 +201,10 @@ Een export van een bepaalde broker of beurs waarvan de import de kolommen vanzel
 Wat een broker zegt dat een rekening op één dag had, zoals de export _Portefeuille_ van DEGIRO. Wordt vergeleken met wat de transacties tot en met die dag optellen; het geld erop telt mee.
 _Vermijd_: snapshot, positierapport
 
+**Jaaroverzicht** (year statement):
+Het overzicht dat een bank, broker of platform na afloop van een jaar stuurt, meestal als pdf, met de waarde op 1 januari en soms de inkomsten, inleg en onttrekkingen. Kan worden ingelezen in de waarden per jaar; een **sjabloon** per aanbieder zegt waar elke waarde staat.
+_Vermijd_: jaarrapport, tax report
+
 **Afwijkend saldo** (mismatch):
 Een saldo dat een beurs of broker meldt en dat niet klopt met wat de transacties optellen. Meestal ontbreekt er geschiedenis.
 _Vermijd_: mismatch

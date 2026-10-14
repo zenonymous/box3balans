@@ -12,6 +12,8 @@ import {
   type AccountYear,
   type BankImport,
   type Person,
+  type YearField,
+  type YearStatement,
 } from "../api";
 import {
   Alert,
@@ -29,6 +31,7 @@ import {
   Textarea,
 } from "../components/ui";
 import { readText } from "../files";
+import { readPdf } from "../pdfText";
 import { eur, eurPrice, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
@@ -394,6 +397,9 @@ const toDraft = (r: AccountYear): Draft => ({
 });
 const zeroBlank = (v: string) => (Number(v) === 0 ? "" : toInputNumber(String(Number(v))));
 
+/** A year's values from a bank export or year statement; what's left out stays as it is. */
+type Picked = { year: number } & Partial<Record<YearField, string | null>>;
+
 /** The leegwaarderatio (2023–2026): a let home counts at this share of its WOZ value. Same table as the server. */
 function leegwaarde(rent: number, woz: number): number {
   if (woz <= 0) return 1;
@@ -454,7 +460,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
   const [rows, setRows] = useState<Draft[] | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const [importing, setImporting] = useState(false);
+  const [importing, setImporting] = useState<"bank" | "pdf" | null>(null);
   const cols = columns(account.kind);
   const thisYear = new Date().getFullYear();
 
@@ -510,11 +516,8 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
     }
   };
 
-  /** Puts the bank export's years into the table, for the user to check and save. */
-  const applyImport = (
-    picked: { year: number; valueEur: string | null; inEur?: string; outEur?: string; interestEur?: string }[],
-    source: string,
-  ) => {
+  /** Puts what a bank export or year statement gave into the table, for the user to check and save. */
+  const applyImport = (picked: Picked[], source: string) => {
     const byYear = new Map(draft.map((r) => [r.year, r]));
     for (const p of picked) {
       const existing = byYear.get(p.year);
@@ -531,16 +534,15 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
             rentEur: "",
           };
       if (p.valueEur != null) r.valueEur = toInputNumber(String(Number(p.valueEur)));
-      if (p.inEur != null) {
-        r.inEur = zeroBlank(p.inEur);
-        r.outEur = zeroBlank(p.outEur ?? "0");
-        r.incomeEur = zeroBlank(p.interestEur ?? "0");
-      }
+      if (p.inEur != null) r.inEur = zeroBlank(p.inEur);
+      if (p.outEur != null) r.outEur = zeroBlank(p.outEur);
+      if (p.incomeEur != null) r.incomeEur = zeroBlank(p.incomeEur);
+      if (p.costsEur != null) r.costsEur = zeroBlank(p.costsEur);
       r.source = source;
       byYear.set(p.year, r);
     }
     setRows([...byYear.values()].sort((a, b) => b.year - a.year));
-    setImporting(false);
+    setImporting(null);
   };
 
   return (
@@ -560,8 +562,10 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
     >
       {years.isLoading ? (
         <Spinner />
-      ) : importing ? (
-        <BankImportPanel account={account} onApply={applyImport} onCancel={() => setImporting(false)} />
+      ) : importing === "bank" ? (
+        <BankImportPanel account={account} onApply={applyImport} onCancel={() => setImporting(null)} />
+      ) : importing === "pdf" ? (
+        <YearStatementPanel account={account} onApply={applyImport} onCancel={() => setImporting(null)} />
       ) : (
         <div className="flex flex-col gap-3">
           <p className="text-sm text-ink-2">
@@ -682,8 +686,13 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
               + {t("Add a year")}
             </Button>
             {account.kind === "bank" && (
-              <Button size="sm" onClick={() => setImporting(true)}>
+              <Button size="sm" onClick={() => setImporting("bank")}>
                 ⤒ {t("Read a bank export")}
+              </Button>
+            )}
+            {account.kind !== "property" && (
+              <Button size="sm" onClick={() => setImporting("pdf")}>
+                ⤒ {t("Read a year statement (PDF)")}
               </Button>
             )}
           </div>
@@ -705,6 +714,181 @@ function surePicks(acc: BankImport["accounts"][number] | undefined) {
   return pick;
 }
 
+type FoundRow = YearStatement["found"][number] & { on: boolean };
+
+/**
+ * Reads a year statement (PDF) into values per year. The PDF is read here in the browser; the server
+ * only gets its text, finds the values and keeps nothing. The user ticks what goes into the table.
+ */
+function YearStatementPanel({
+  account,
+  onApply,
+  onCancel,
+}: {
+  account: Account;
+  onApply: (rows: Picked[], source: string) => void;
+  onCancel: () => void;
+}) {
+  const cols = columns(account.kind);
+  const [fileName, setFileName] = useState("");
+  const [result, setResult] = useState<YearStatement | null>(null);
+  const [rows, setRows] = useState<FoundRow[]>([]);
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const version = useQuery({
+    queryKey: ["version"],
+    queryFn: () => get<{ version: string; source: string }>("/api/version"),
+    staleTime: Infinity,
+  });
+
+  // The columns this kind of account has.
+  const label: Record<YearField, string | null> = {
+    valueEur: cols.value,
+    inEur: cols.in,
+    outEur: cols.out,
+    incomeEur: cols.income,
+    costsEur: cols.costs,
+  };
+  const fields = (Object.keys(label) as YearField[]).filter((f) => label[f]);
+
+  const read = async (file: File) => {
+    setBusy(true);
+    setError(undefined);
+    setResult(null);
+    setRows([]);
+    try {
+      const pages = await readPdf(file);
+      const r = await post<YearStatement>(`/api/accounts/${account.id}/year-statement`, { pages });
+      setFileName(file.name);
+      setResult(r);
+      setRows(r.found.filter((f) => label[f.field]).map((f) => ({ ...f, on: f.sure })));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // One amount per year and column: ticking one unticks the others.
+  const update = (i: number, patch: Partial<FoundRow>) =>
+    setRows((all) => {
+      const next = all.map((r, j) => (j === i ? { ...r, ...patch } : r));
+      const me = next[i]!;
+      if (!me.on) return next;
+      return next.map((r, j) =>
+        j !== i && r.on && r.year === me.year && r.field === me.field ? { ...r, on: false } : r,
+      );
+    });
+
+  const apply = () => {
+    const picked = rows.filter((r) => r.on);
+    const byYear = new Map<number, Picked>();
+    for (const r of picked) byYear.set(r.year, { ...byYear.get(r.year), year: r.year, [r.field]: r.amount });
+    const pages = [...new Set(picked.map((r) => r.page))].sort((a, b) => a - b).join(", ");
+    onApply([...byYear.values()], `${fileName.slice(0, 120)}, ${t("p. {page}", { page: pages })}`);
+  };
+
+  return (
+    <div className="flex flex-col gap-3 text-sm">
+      <p className="text-ink-2">
+        {t(
+          "Choose the year statement (jaaroverzicht) of this account as a PDF. It's read here in your browser and not kept. Box3balans looks for the value on 1 January and, where the statement has them, the money in and out, income and costs. Nothing is saved until you press Save.",
+        )}
+      </p>
+      <input
+        type="file"
+        accept=".pdf,application/pdf"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) void read(f);
+        }}
+      />
+      {busy && <p className="text-muted">{t("Reading…")}</p>}
+      {error && <Alert tone="danger">{error}</Alert>}
+      {result &&
+        (result.template ? (
+          <p className="text-ink-2">{t("Recognised: {name}.", { name: result.template })}</p>
+        ) : (
+          <Alert>
+            {tj(
+              "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. <0>Share its text</0> and it can be recognised next time.",
+              [
+                <a
+                  key="s"
+                  className="underline"
+                  href={`${version.data?.source ?? "https://github.com/zenonymous/box3balans"}#jaaroverzicht-als-pdf`}
+                  target="_blank"
+                  rel="noreferrer"
+                />,
+              ],
+            )}
+          </Alert>
+        ))}
+      {result && rows.length === 0 && (
+        <p className="text-muted">
+          {t("No amounts found next to a date or a word such as beginwaarde. Fill in the values by hand.")}
+        </p>
+      )}
+      {rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="tabular w-full min-w-[600px] text-sm">
+            <thead>
+              <tr className="text-xs text-ink-2">
+                <th className="w-8" />
+                <th className="py-1 pr-2 text-left font-medium">{t("Year")}</th>
+                <th className="py-1 pr-3 text-right font-medium">{t("Amount")}</th>
+                <th className="py-1 pr-2 text-left font-medium">{t("Column")}</th>
+                <th className="py-1 pl-2 text-left font-medium">{t("In the statement")}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={i} className="border-t border-line/60">
+                  <td className="py-1 pr-2">
+                    <input
+                      type="checkbox"
+                      aria-label={t("Use {amount} for {year}", { amount: eur(r.amount), year: r.year })}
+                      checked={r.on}
+                      onChange={(e) => update(i, { on: e.target.checked })}
+                    />
+                  </td>
+                  <td className="py-1 pr-2">{r.year}</td>
+                  <td className="whitespace-nowrap py-1 pr-3 text-right">{eur(r.amount)}</td>
+                  <td className="py-1 pr-2">
+                    <Select
+                      aria-label={t("Column for {amount}", { amount: eur(r.amount) })}
+                      className="w-auto! py-0.5 text-xs"
+                      value={r.field}
+                      onChange={(e) => update(i, { field: e.target.value as YearField })}
+                    >
+                      {fields.map((f) => (
+                        <option key={f} value={f}>
+                          {label[f]}
+                        </option>
+                      ))}
+                    </Select>
+                  </td>
+                  <td className="max-w-[20rem] truncate py-1 pl-2 text-xs text-muted" title={r.line}>
+                    {t("p. {page}", { page: r.page })}: {r.line}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div className="flex gap-2">
+        <Button onClick={onCancel}>{t("Back")}</Button>
+        {rows.some((r) => r.on) && (
+          <Button variant="primary" onClick={apply}>
+            {t("Put in the table")}
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /** Reads a bank export (CSV, TAB, CAMT.053 or MT940) into values per year, for the user to check. */
 function BankImportPanel({
   account,
@@ -712,10 +896,7 @@ function BankImportPanel({
   onCancel,
 }: {
   account: Account;
-  onApply: (
-    rows: { year: number; valueEur: string | null; inEur?: string; outEur?: string; interestEur?: string }[],
-    source: string,
-  ) => void;
+  onApply: (rows: Picked[], source: string) => void;
   onCancel: () => void;
 }) {
   const [file, setFile] = useState<{ name: string; content: string } | null>(null);
@@ -890,7 +1071,7 @@ function BankImportPanel({
                   .map((y) => ({
                     year: y.year,
                     valueEur: picked[y.year]?.value ? y.valueEur : null,
-                    ...(picked[y.year]?.flows ? { inEur: y.inEur, outEur: y.outEur, interestEur: y.interestEur } : {}),
+                    ...(picked[y.year]?.flows ? { inEur: y.inEur, outEur: y.outEur, incomeEur: y.interestEur } : {}),
                   })),
                 file?.name ?? t("bank export"),
               )
