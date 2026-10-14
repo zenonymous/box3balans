@@ -66,7 +66,8 @@ const HEADERS = {
   date: /^(datum|date|transactiedatum|boekdatum|boekingsdatum|transaction ?date|booking ?date)$/i,
   amount: /^(bedrag( \(eur\))?|bedrag eur|amount|transactiebedrag|amount \(eur\))$/i,
   sign: /^(af ?\/? ?bij|debet ?\/? ?credit|credit ?\/? ?debet|d\/c)$/i,
-  balance: /^(saldo na (mutatie|trn|boeking|transactie)|saldo|balance( after)?|saldo na mutatie \(eur\))$/i,
+  balance:
+    /^(saldo na (mutatie|trn|boeking|transactie)|saldo|balance( after)?|running balance|saldo na mutatie \(eur\))$/i,
   account: /^(rekening|iban\/bban|rekeningnummer|account|iban)$/i,
   description:
     /^(naam ?\/ ?omschrijving|omschrijving(-\d)?|mededelingen|description|naam tegenpartij|naam|name|counterparty|mutatiesoort)$/i,

@@ -46,6 +46,20 @@ describe("bank exports → values per year", () => {
     expect(acc!.years[0]).toMatchObject({ interestEur: "18.75", inEur: "2500.00", fullYear: false });
   });
 
+  it("reads Wise CSV running balances", () => {
+    const csv = [
+      '"TransferWise ID","Date","Amount","Currency","Description","Running Balance"',
+      '"1","2024-12-31","10.00","EUR","Interest","110.00"',
+      '"2","2024-06-01","100.00","EUR","Deposit","100.00"',
+    ].join("\n");
+    const r = readBankExport(csv, { today });
+    expect(r.needsClosingBalance).toBe(false);
+    expect(pick(r.accounts[0]!.years)).toEqual([
+      [2024, "0.00", true],
+      [2025, "110.00", false],
+    ]);
+  });
+
   it("reads ABN AMRO's TAB file (no header)", () => {
     const tab = [
       "123456789\tEUR\t20240101\t1000,00\t1005,00\t20240101\t5,00\tRENTE",
