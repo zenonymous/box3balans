@@ -3,9 +3,10 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
 import { accounts, accountYears, metalItems, persons, transactions } from "../db/schema.js";
 import { YEARLY_ONLY_KINDS } from "../domain/yearly.js";
-import { readBankExport } from "../import/bank.js";
+import { foreignDays, parseBankExport, summarizeExport } from "../import/bank.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
+import type { Decimal } from "../lib/decimal.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
 
@@ -60,7 +61,7 @@ const yearRow = z.object({
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 
 export async function accountRoutes(app: FastifyInstance) {
-  const { db } = app.deps;
+  const { db, prices } = app.deps;
 
   app.get("/", async () => {
     const rows = await db
@@ -200,8 +201,27 @@ export async function accountRoutes(app: FastifyInstance) {
         closingBalance: z.string().max(40).optional(),
       })
       .parse(req.body);
+    const today = localToday();
+    let parsed;
     try {
-      return readBankExport(content, { closingBalance, today: localToday() });
+      parsed = parseBankExport(content);
+    } catch (err) {
+      throw new HttpError(400, (err as Error).message);
+    }
+    // Accounts in another currency (Revolut, Wise): look up the ECB rates for the days needed.
+    // A currency without rates (offline, or one the ECB doesn't publish) stays unconverted, with a warning.
+    const rates = new Map<string, Decimal>();
+    for (const [currency, days] of foreignDays(parsed, today)) {
+      const sorted = [...days].sort();
+      try {
+        await prices.fx.ensureRange([currency], sorted[0]!, sorted.at(-1)!);
+        for (const day of sorted) rates.set(`${currency}|${day}`, await prices.fx.eurPerUnit(currency, day));
+      } catch {
+        // Left out of `rates`.
+      }
+    }
+    try {
+      return summarizeExport(parsed, { closingBalance, today }, (currency, day) => rates.get(`${currency}|${day}`));
     } catch (err) {
       throw new HttpError(400, (err as Error).message);
     }

@@ -1,7 +1,7 @@
 import { XMLParser } from "fast-xml-parser";
 import { D, type Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { type DecimalMark, detectDateOrder, detectDecimal, detectDelimiter, parseCsv, parseNumber } from "./parse.js";
-import { tr } from "../i18n/index.js";
+import { tr, trn } from "../i18n/index.js";
 
 /**
  * Reads a bank's transaction export (CSV, ABN AMRO's TAB file, CAMT.053 or MT940) and turns it into what
@@ -14,6 +14,8 @@ export interface BankLine {
   balanceAfter: Decimal | null;
   description: string;
   account: string; // the own account the line belongs to ("" when the file doesn't say)
+  // ISO code when the file names one (Revolut, Wise); otherwise euros.
+  currency?: string;
 }
 
 export interface BankYear {
@@ -32,6 +34,10 @@ export interface BankYear {
 
 export interface BankAccountSummary {
   account: string;
+  // The account's currency when the file names one.
+  currency: string | null;
+  // False when the amounts are in another currency and couldn't be converted.
+  inEuros: boolean;
   from: string;
   to: string;
   lines: number;
@@ -46,6 +52,8 @@ export interface BankImport {
   warnings: string[];
 }
 
+// Revolut's Flexible Cash Funds and similar: a fund, so overige bezittingen.
+const FUND = /\b(flexible cash funds?|money market funds?|geldmarktfonds)\b/i;
 // Interest, also on savings accounts ("Rente", "Creditrente", "Rentebijschrijving", "Interest").
 const INTEREST = /\b(rente|creditrente|rentebijschrijving|spaarrente|interest)\b/i;
 
@@ -63,13 +71,20 @@ function toDay(raw: string, dmy: boolean): string | null {
 // ---- Formats ----
 
 const HEADERS = {
-  date: /^(datum|date|transactiedatum|boekdatum|boekingsdatum|transaction ?date|booking ?date)$/i,
+  // Revolut has a "Started Date" and a "Completed Date"; the latter is when it hit the balance.
+  date: /^(datum|date|transactiedatum|boekdatum|boekingsdatum|transaction ?date|booking ?date|completed ?date)$/i,
   amount: /^(bedrag( \(eur\))?|bedrag eur|amount|transactiebedrag|amount \(eur\))$/i,
   sign: /^(af ?\/? ?bij|debet ?\/? ?credit|credit ?\/? ?debet|d\/c)$/i,
-  balance: /^(saldo na (mutatie|trn|boeking|transactie)|saldo|balance( after)?|saldo na mutatie \(eur\))$/i,
+  balance:
+    /^(saldo na (mutatie|trn|boeking|transactie)|saldo|balance( after)?|running ?balance|saldo na mutatie \(eur\))$/i,
   account: /^(rekening|iban\/bban|rekeningnummer|account|iban)$/i,
+  // Revolut: "Product" (Current, Savings …) and "State"; Revolut and Wise: "Currency".
+  product: /^product$/i,
+  currency: /^(currency|valuta|munt)$/i,
+  state: /^(state|status)$/i,
+  fee: /^fee$/i,
   description:
-    /^(naam ?\/ ?omschrijving|omschrijving(-\d)?|mededelingen|description|naam tegenpartij|naam|name|counterparty|mutatiesoort)$/i,
+    /^(naam ?\/ ?omschrijving|omschrijving(-\d)?|mededelingen|description|naam tegenpartij|naam|name|counterparty|mutatiesoort|type)$/i,
 };
 
 function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
@@ -88,6 +103,12 @@ function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
   const iSign = col(HEADERS.sign);
   const iBalance = col(HEADERS.balance);
   const iAccount = col(HEADERS.account);
+  const iProduct = col(HEADERS.product);
+  const iCurrency = col(HEADERS.currency);
+  const iState = col(HEADERS.state);
+  const iFee = col(HEADERS.fee);
+  let unfinished = 0;
+  let fund = false;
   const iDesc = header.map((h, i) => (HEADERS.description.test(h) ? i : -1)).filter((i) => i >= 0);
   const data = rows.slice(headerIdx + 1);
   const decimal: DecimalMark = detectDecimal([
@@ -98,6 +119,11 @@ function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
   const warnings: string[] = [];
   const lines: BankLine[] = [];
   for (const r of data) {
+    // Pending, reverted or declined lines never touched the balance.
+    if (iState >= 0 && /^(pending|reverted|declined|failed|cancell?ed)$/i.test((r[iState] ?? "").trim())) {
+      unfinished++;
+      continue;
+    }
     const day = toDay(r[iDate] ?? "", dmy);
     const raw = parseNumber(r[iAmount] ?? "", decimal);
     if (!day || raw == null) {
@@ -107,15 +133,40 @@ function fromCsv(text: string): { lines: BankLine[]; warnings: string[] } {
     let amount = D(raw);
     // "Af"/"Debet"/"D": money out, when the amount column has no sign of its own.
     if (iSign >= 0 && /^(af|d|debet|debit)$/i.test((r[iSign] ?? "").trim())) amount = amount.abs().neg();
+    // Revolut charges its fee next to the amount; the balance already has it off.
+    const fee = iFee >= 0 ? parseNumber(r[iFee] ?? "", decimal) : null;
+    if (fee) amount = amount.minus(D(fee).abs());
     const bal = iBalance >= 0 ? parseNumber(r[iBalance] ?? "", decimal) : null;
+    const currency = iCurrency >= 0 ? (r[iCurrency] ?? "").trim().toUpperCase() : "";
+    if (FUND.test(r.join(" "))) fund = true;
+    // Without an account column, Revolut's product and the currency tell the accounts apart.
+    const account =
+      iAccount >= 0
+        ? (r[iAccount] ?? "").trim()
+        : [iProduct >= 0 ? (r[iProduct] ?? "").trim() : "", currency].filter(Boolean).join(" ");
     lines.push({
       day,
       amount,
       balanceAfter: bal == null ? null : D(bal),
       description: iDesc.map((i) => r[i] ?? "").join(" "),
-      account: iAccount >= 0 ? (r[iAccount] ?? "").trim() : "",
+      account,
+      currency: /^[A-Z]{3}$/.test(currency) ? currency : undefined,
     });
   }
+  if (fund)
+    warnings.push(
+      tr(
+        "This file mentions a money market fund (such as Revolut's Flexible Cash Funds). In box 3 that's not a bank balance but other assets: keep it in an account of its own.",
+      ),
+    );
+  if (unfinished)
+    warnings.push(
+      trn(
+        unfinished,
+        "Skipped {n} line that was pending, reverted or declined.",
+        "Skipped {n} lines that were pending, reverted or declined.",
+      ),
+    );
   return { lines, warnings };
 }
 
@@ -350,7 +401,11 @@ function chronological(lines: BankLine[]): BankLine[] {
     .map((x) => x.l);
 }
 
-function summarize(lines: BankLine[], today: string): BankYear[] {
+// Euros per unit of the account's currency on a day; 1 for euros.
+type Rate = (day: string) => Decimal;
+const ONE: Rate = () => D(1);
+
+function summarize(lines: BankLine[], today: string, rate: Rate = ONE): BankYear[] {
   if (!lines.length) return [];
   const first = lines[0]!;
   const last = lines.at(-1)!;
@@ -362,12 +417,14 @@ function summarize(lines: BankLine[], today: string): BankYear[] {
     let valueEur: string | null = null;
     let estimated = false;
     const before = lines.filter((l) => l.day <= `${y - 1}-12-31`).at(-1);
+    // The balance on 1 January at the rate of 31 December (or the last business day before it).
+    const peil = rate(`${y - 1}-12-31`);
     if (before?.balanceAfter) {
-      valueEur = money2(before.balanceAfter);
+      valueEur = money2(before.balanceAfter.mul(peil));
       // The year after the file: only as good as the file reaching the end of December.
       estimated = y === lastYear + 1 && last.day < `${lastYear}-12-01`;
     } else if (y === firstYear && first.balanceAfter) {
-      valueEur = money2(first.balanceAfter.minus(first.amount));
+      valueEur = money2(first.balanceAfter.minus(first.amount).mul(peil));
       estimated = first.day > `${y}-01-31`;
     }
     const inYear = lines.filter((l) => l.day.startsWith(`${y}-`));
@@ -375,9 +432,10 @@ function summarize(lines: BankLine[], today: string): BankYear[] {
     let inEur = ZERO;
     let outEur = ZERO;
     for (const l of inYear) {
-      if (INTEREST.test(l.description)) interest = interest.plus(l.amount);
-      else if (l.amount.gt(0)) inEur = inEur.plus(l.amount);
-      else outEur = outEur.plus(l.amount.neg());
+      const eur = l.amount.mul(rate(l.day));
+      if (INTEREST.test(l.description)) interest = interest.plus(eur);
+      else if (eur.gt(0)) inEur = inEur.plus(eur);
+      else outEur = outEur.plus(eur.neg());
     }
     const fullYear =
       (lines.some((l) => l.day < `${y}-01-01`) || first.day <= `${y}-01-31`) &&
@@ -397,8 +455,14 @@ function summarize(lines: BankLine[], today: string): BankYear[] {
   return out;
 }
 
-/** Reads a bank export. `closingBalance`: the balance after the file's last line, for files without balances. */
-export function readBankExport(content: string, opts: { closingBalance?: string; today: string }): BankImport {
+export interface ParsedBankExport {
+  format: BankImport["format"];
+  lines: BankLine[];
+  warnings: string[];
+}
+
+/** Reads the file's lines; `summarizeExport` turns them into values per year. */
+export function parseBankExport(content: string): ParsedBankExport {
   const trimmed = content.replace(/^\uFEFF/, "").trimStart();
   let format: BankImport["format"];
   let parsed: { lines: BankLine[]; warnings: string[] };
@@ -416,11 +480,41 @@ export function readBankExport(content: string, opts: { closingBalance?: string;
     parsed = fromCsv(trimmed);
   }
   if (!parsed.lines.length) throw new Error(tr("No transactions found in this file"));
+  return { format, ...parsed };
+}
 
+/** The other currencies in a parsed export, with the days a rate is needed for each. */
+export function foreignDays(parsed: ParsedBankExport, today: string): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const l of parsed.lines) {
+    if (!l.currency || l.currency === "EUR") continue;
+    const days = out.get(l.currency) ?? new Set<string>();
+    days.add(l.day);
+    out.set(l.currency, days);
+  }
+  // Every peildatum from the one before the first line up to the last one that has passed.
+  const thisYear = Number(today.slice(0, 4));
+  for (const days of out.values()) {
+    const first = Math.min(...[...days].map((d) => Number(d.slice(0, 4))));
+    for (let y = first - 1; y < thisYear; y++) days.add(`${y}-12-31`);
+  }
+  return out;
+}
+
+/**
+ * Values per year per account. An account in another currency needs `eurRate` (euros per unit on a
+ * day); without it its amounts stay in that currency, with a warning.
+ */
+export function summarizeExport(
+  parsed: ParsedBankExport,
+  opts: { closingBalance?: string; today: string },
+  eurRate?: (currency: string, day: string) => Decimal | undefined,
+): BankImport {
   const byAccount = new Map<string, BankLine[]>();
   for (const l of parsed.lines) byAccount.set(l.account, [...(byAccount.get(l.account) ?? []), l]);
   const hasBalances = parsed.lines.some((l) => l.balanceAfter);
   const closing = opts.closingBalance?.trim() ? D(opts.closingBalance.replace(",", ".")) : null;
+  const warnings = [...parsed.warnings];
 
   const accounts: BankAccountSummary[] = [];
   for (const [account, ls] of byAccount) {
@@ -435,18 +529,56 @@ export function readBankExport(content: string, opts: { closingBalance?: string;
       }
       lines = withBal;
     }
+    const currency = lines[0]!.currency ?? null;
+    let years = summarize(lines, opts.today);
+    let inEuros = true;
+    if (currency && currency !== "EUR") {
+      const name = account || currency;
+      try {
+        if (!eurRate) throw new Error("no rates");
+        years = summarize(lines, opts.today, (day) => {
+          const r = eurRate(currency, day);
+          if (!r) throw new Error(`no rate for ${day}`);
+          return r;
+        });
+        warnings.push(
+          tr("{account}: converted from {currency} at the ECB rate (of 31 December for the balance).", {
+            account: name,
+            currency,
+          }),
+        );
+      } catch {
+        inEuros = false;
+        warnings.push(
+          tr("{account}: the amounts are in {currency}; no exchange rates were found to convert them.", {
+            account: name,
+            currency,
+          }),
+        );
+      }
+    }
     accounts.push({
       account,
+      currency,
+      inEuros,
       from: lines[0]!.day,
       to: lines.at(-1)!.day,
       lines: lines.length,
-      years: summarize(lines, opts.today),
+      years,
     });
   }
   return {
-    format,
+    format: parsed.format,
     accounts: accounts.sort((a, b) => b.lines - a.lines),
     needsClosingBalance: !hasBalances && !closing,
-    warnings: [...new Set(parsed.warnings)].slice(0, 20),
+    warnings: [...new Set(warnings)].slice(0, 20),
   };
+}
+
+/**
+ * Reads a bank export, leaving other currencies unconverted. `closingBalance`: the balance after the
+ * file's last line, for files without balances.
+ */
+export function readBankExport(content: string, opts: { closingBalance?: string; today: string }): BankImport {
+  return summarizeExport(parseBankExport(content), opts);
 }

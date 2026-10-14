@@ -131,7 +131,16 @@ export interface BankYear {
 
 export interface BankImport {
   format: "camt053" | "mt940" | "abn-tab" | "csv";
-  accounts: { account: string; from: string; to: string; lines: number; years: BankYear[] }[];
+  accounts: {
+    account: string;
+    // Revolut and Wise name it; amounts are converted to euros unless `inEuros` is false.
+    currency: string | null;
+    inEuros: boolean;
+    from: string;
+    to: string;
+    lines: number;
+    years: BankYear[];
+  }[];
   needsClosingBalance: boolean;
   warnings: string[];
 }

@@ -29,7 +29,7 @@ import {
   Textarea,
 } from "../components/ui";
 import { readText } from "../files";
-import { eur, toApiNumber, toInputNumber } from "../format";
+import { eur, eurPrice, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
@@ -694,6 +694,17 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
   );
 }
 
+// Ticks what the file shows for sure: 1 January balances, and totals of years it covers fully.
+function surePicks(acc: BankImport["accounts"][number] | undefined) {
+  const pick: Record<number, { value: boolean; flows: boolean }> = {};
+  for (const y of acc?.years ?? [])
+    pick[y.year] = {
+      value: !!acc?.inEuros && y.valueEur != null && !y.valueEstimated,
+      flows: !!acc?.inEuros && y.fullYear,
+    };
+  return pick;
+}
+
 /** Reads a bank export (CSV, TAB, CAMT.053 or MT940) into values per year, for the user to check. */
 function BankImportPanel({
   account,
@@ -726,11 +737,7 @@ function BankImportPanel({
       });
       setResult(r);
       setWhich(0);
-      // Take what the file shows for sure: 1 January balances, and totals of years it covers fully.
-      const pick: Record<number, { value: boolean; flows: boolean }> = {};
-      for (const y of r.accounts[0]?.years ?? [])
-        pick[y.year] = { value: y.valueEur != null && !y.valueEstimated, flows: y.fullYear };
-      setPicked(pick);
+      setPicked(surePicks(r.accounts[0]));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -739,11 +746,14 @@ function BankImportPanel({
   };
 
   const acc = result?.accounts[which];
+  // Amounts that couldn't be converted show in their own currency and can't be put in the table.
+  const usable = acc?.inEuros ?? false;
+  const money = (v: string) => (usable || !acc?.currency ? eur(v) : eurPrice(v, acc.currency));
   return (
     <div className="flex flex-col gap-3 text-sm">
       <p className="text-ink-2">
         {t(
-          "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
+          "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Revolut and Wise work too, with their CSV statement; other currencies are converted at the ECB rate. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.",
         )}
       </p>
       <input
@@ -783,10 +793,7 @@ function BankImportPanel({
               onChange={(e) => {
                 const i = Number(e.target.value);
                 setWhich(i);
-                const pick: Record<number, { value: boolean; flows: boolean }> = {};
-                for (const y of result.accounts[i]!.years)
-                  pick[y.year] = { value: y.valueEur != null && !y.valueEstimated, flows: y.fullYear };
-                setPicked(pick);
+                setPicked(surePicks(result.accounts[i]));
               }}
             >
               {result.accounts.map((a, i) => (
@@ -831,10 +838,11 @@ function BankImportPanel({
                         "—"
                       ) : (
                         <label className="inline-flex items-center gap-1.5">
-                          {eur(y.valueEur)}
+                          {money(y.valueEur)}
                           {y.valueEstimated && <Badge tone="warn">{t("estimate")}</Badge>}
                           <input
                             type="checkbox"
+                            disabled={!usable}
                             aria-label={t("Use the balance of {year}", { year: y.year })}
                             checked={picked[y.year]?.value ?? false}
                             onChange={(e) =>
@@ -844,15 +852,16 @@ function BankImportPanel({
                         </label>
                       )}
                     </td>
-                    <td className="px-2 py-1 text-right">{eur(y.interestEur)}</td>
-                    <td className="px-2 py-1 text-right">{eur(y.inEur)}</td>
+                    <td className="px-2 py-1 text-right">{money(y.interestEur)}</td>
+                    <td className="px-2 py-1 text-right">{money(y.inEur)}</td>
                     <td className="px-2 py-1 text-right">
                       <label className="inline-flex items-center gap-1.5">
-                        {eur(y.outEur)}
+                        {money(y.outEur)}
                         {!y.fullYear && y.lines > 0 && <Badge tone="warn">{t("part of the year")}</Badge>}
                         {y.lines > 0 && (
                           <input
                             type="checkbox"
+                            disabled={!usable}
                             aria-label={t("Use the totals of {year}", { year: y.year })}
                             checked={picked[y.year]?.flows ?? false}
                             onChange={(e) =>
@@ -871,7 +880,7 @@ function BankImportPanel({
       )}
       <div className="flex gap-2">
         <Button onClick={onCancel}>{t("Back")}</Button>
-        {acc && (
+        {acc && usable && (
           <Button
             variant="primary"
             onClick={() =>

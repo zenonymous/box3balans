@@ -106,6 +106,16 @@ export const NL: Record<string, string> = {
   "Statement for the account up to {day} doesn't add up to its closing balance.":
     "Het afschrift van de rekening tot {day} komt niet uit op het eindsaldo.",
   "No transactions found in this file": "Geen mutaties gevonden in dit bestand",
+  "Skipped {n} line that was pending, reverted or declined.":
+    "{n} regel overgeslagen die nog in behandeling was, is teruggedraaid of geweigerd.",
+  "Skipped {n} lines that were pending, reverted or declined.":
+    "{n} regels overgeslagen die nog in behandeling waren, zijn teruggedraaid of geweigerd.",
+  "{account}: converted from {currency} at the ECB rate (of 31 December for the balance).":
+    "{account}: omgerekend van {currency} tegen de ECB-koers (voor het saldo die van 31 december).",
+  "{account}: the amounts are in {currency}; no exchange rates were found to convert them.":
+    "{account}: de bedragen zijn in {currency}; er zijn geen wisselkoersen gevonden om ze om te rekenen.",
+  "This file mentions a money market fund (such as Revolut's Flexible Cash Funds). In box 3 that's not a bank balance but other assets: keep it in an account of its own.":
+    "Dit bestand noemt een geldmarktfonds (zoals Flexible Cash Funds van Revolut). Dat is in box 3 geen banktegoed maar een overige bezitting: houd het bij in een eigen rekening.",
   // import/plan.ts
   Quantity: "Aantal",
   Price: "Koers",

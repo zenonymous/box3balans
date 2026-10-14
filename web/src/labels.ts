@@ -48,7 +48,7 @@ export const kindHint = (k: AccountKind): string =>
     bank: t("Savings or current account"),
     other: "",
     property: t("A second home, a home you let, land: not the home you live in (that's box 1)"),
-    receivable: t("A loan to family or friends"),
+    receivable: t("A loan to family or friends, or crowdfunding (Geldvoorelkaar, Lendahand …)"),
     debt: t("A consumer loan, study debt or a loan for a second home: not your main mortgage"),
     insurance: t("A kapitaalverzekering or other policy with a surrender value"),
   })[k];

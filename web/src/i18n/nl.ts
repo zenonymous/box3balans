@@ -87,7 +87,8 @@ export const NL: Record<string, string> = {
   "Savings or current account": "Spaar- of betaalrekening",
   "A second home, a home you let, land: not the home you live in (that's box 1)":
     "Een tweede woning, een verhuurde woning, grond: niet de woning waarin je woont (dat is box 1)",
-  "A loan to family or friends": "Een lening aan familie of vrienden",
+  "A loan to family or friends, or crowdfunding (Geldvoorelkaar, Lendahand …)":
+    "Een lening aan familie of vrienden, of crowdfunding (Geldvoorelkaar, Lendahand …)",
   "A consumer loan, study debt or a loan for a second home: not your main mortgage":
     "Een consumptieve lening, studieschuld of lening voor een tweede woning: niet je hypotheek voor je eigen woning",
   "A kapitaalverzekering or other policy with a surrender value":
@@ -181,8 +182,8 @@ export const NL: Record<string, string> = {
   "Add a year": "Jaar toevoegen",
   "Read a bank export": "Bankexport inlezen",
   "Balance after the last line": "Saldo na de laatste regel",
-  "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
-    "Download je mutaties van de website van je bank, als CSV, CAMT.053 of MT940, over de jaren die je wilt, en kies het bestand hier. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
+  "Download your transactions from your bank's website, as CSV, CAMT.053 or MT940, over the years you want, and choose the file here. Revolut and Wise work too, with their CSV statement; other currencies are converted at the ECB rate. Box3balans takes the balance on each 1 January, the interest, and the money in and out per year. Nothing is saved until you press Save.":
+    "Download je mutaties van de website van je bank, als CSV, CAMT.053 of MT940, over de jaren die je wilt, en kies het bestand hier. Revolut en Wise kan ook, met hun CSV-afschrift; andere valuta's worden omgerekend tegen de ECB-koers. Box3balans haalt er het saldo op elke 1 januari, de rente en het geld in en uit per jaar uit. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Reading…": "Inlezen…",
   "This export has no balances; with one known balance the rest follows.":
     "Deze export heeft geen saldi; met één bekend saldo volgt de rest.",

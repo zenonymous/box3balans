@@ -252,13 +252,21 @@ Voor een rekening met **waarden per jaar** (_Rekeningen → Waarden per jaar_) v
 
 Bij een **woning** vul je de WOZ-waarde in die voor dat jaar geldt (die met waardepeildatum 1 januari van het jaar ervoor). Verhuur je hem met huurbescherming, vink dan _Verhuurd_ aan en vul de jaarhuur in: hij telt dan voor een deel van de WOZ-waarde (de leegwaarderatio, 73% tot 100%, afhankelijk van de huur als percentage van de WOZ-waarde). Je eigen woning hoort niet in box 3 (dat is box 1).
 
+**Aanbieders zonder bruikbare export** houd je zo bij:
+
+- **Brand New Day:** per beleggingsrekening een rekening _Broker_ met waarden per jaar (overige bezittingen), en per spaarrekening een _Bankrekening_. De waarde op 1 januari is de beginwaarde uit het _financieel jaaroverzicht_ (in februari, onder _Mijn documenten → Overzichten → Jaaroverzichten_); de inkomsten zijn het uitgekeerde dividend uit datzelfde overzicht; geld erin en eruit is de inleg en de onttrekkingen uit de vier kwartaaloverzichten. Pensioen- en lijfrenterekeningen horen niet in box 3; voor de hypotheekrekening en de gouden-handdrukrekening gelden eigen regels.
+- **Crowdfunding** (Geldvoorelkaar, Collin Crowdfund, Lendahand, Mogelijk …): twee rekeningen. Het uitgeleende geld wordt een rekening _Geld uitgeleend aan anderen_ (overige bezittingen), met het uitstaande bedrag op 1 januari uit de jaaropgaaf en de ontvangen rente als inkomsten. Geld in de wallet dat nog niet is uitgeleend wordt een _Bankrekening_ met waarden per jaar (banktegoed).
+
+Wat we per aanbieder weten en wat er nog nodig is om ze beter te ondersteunen, staat in [docs/aanbieders.md](docs/aanbieders.md).
+
 **Bankexport inlezen.** Bij een bankrekening haalt _Bankexport inlezen_ de saldi op 1 januari, de rente en het geld erin en eruit per jaar uit de transacties die je bij je bank downloadt. Box3balans leest:
 
 - **CAMT.053**, het standaard afschriftformaat met saldo's: de beste keus als je bank het aanbiedt;
 - **MT940**, het oudere standaardformaat, ook met saldo's;
 - **CSV met een kopregel en een saldokolom**, zoals van ING (_Saldo na mutatie_) en Rabobank (_Saldo na trn_); meerdere rekeningen in één bestand worden uit elkaar gehouden;
 - **het TAB-bestand van ABN AMRO**;
-- **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Box3balans de rest terug.
+- **CSV zonder saldo's** (zoals van bunq): dan vul je het saldo na de laatste regel in, en rekent Box3balans de rest terug;
+- **het CSV-afschrift van Revolut en Wise**: elk product en elke valuta wordt een eigen rekening, regels die nog in behandeling zijn of zijn teruggedraaid tellen niet mee, en bedragen in een andere valuta worden omgerekend tegen de ECB-koers (het saldo op 1 januari tegen die van de laatste werkdag ervoor, de rest tegen die van de dag zelf).
 
 Welk bestand je per bank kiest:
 
@@ -271,8 +279,12 @@ Welk bestand je per bank kiest:
 | Triodos                              | CAMT.053 of MT940 (de CSV is niet getest)                                                |
 | Knab                                 | MT940 (de standaard onder _Bij- en afschrijvingen → Boekhoudexport_)                     |
 | bunq                                 | CAMT.053 of MT940 als de app het aanbiedt; anders CSV, met het saldo na de laatste regel |
+| Revolut                              | Afschrift als CSV (Excel), voor alle producten of per rekening                           |
+| Wise                                 | Afschrift als CSV, per valuta                                                            |
 
-CAMT.053 en MT940 zijn gebouwd op de openbare standaarden. De exports van ASN Bank, Triodos, Knab en bunq zijn nog niet getest met echte bestanden; lukt het inlezen niet, meld dat dan (zonder bedragen) in [#6](https://github.com/zenonymous/box3balans/issues/6).
+CAMT.053 en MT940 zijn gebouwd op de openbare standaarden. De exports van ASN Bank, Triodos, Knab, bunq, Revolut en Wise zijn nog niet getest met echte bestanden; lukt het inlezen niet, meld dat dan (zonder bedragen) in [#6](https://github.com/zenonymous/box3balans/issues/6).
+
+Geld in een geldmarktfonds, zoals _Flexible Cash Funds_ bij Revolut of _Interest_ bij Wise, is geen banktegoed maar een overige bezitting: houd dat bij in een eigen rekening (bijvoorbeeld een broker met waarden per jaar). Box3balans waarschuwt als een afschrift zo'n fonds noemt.
 
 Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je ziet eerst per jaar wat er gevonden is: een geschat saldo (omdat het bestand halverwege een jaar begint of eindigt) en de totalen van jaren die het bestand maar deels beslaat, staan uit tot je ze aanvinkt. Er wordt pas iets opgeslagen als je in de tabel op _Opslaan_ drukt.
 
@@ -324,7 +336,7 @@ Wil je dat Box3balans het bestand van jouw broker of bank vanzelf herkent? Stuur
 
 ### Koppelingen met beurzen en brokers
 
-**Koppelingen** importeert de geschiedenis via API's met alleen leesrechten: **Bitvavo**, **Kraken**, **Coinbase** (een CDP-sleutel met ECDSA) en **Interactive Brokers** (Flex Web Service). De verbindingsdialoog noemt per aanbieder precies welke rechten je geeft. Sleutels worden gecontroleerd met een echte leesopdracht, versleuteld opgeslagen (AES-256-GCM, met een sleutel afgeleid van de app-sleutel) en nooit teruggestuurd of gelogd.
+**Koppelingen** importeert de geschiedenis via API's met alleen leesrechten: **Bitvavo**, **Kraken**, **Coinbase** (een CDP-sleutel met ECDSA) en **Interactive Brokers** (Flex Web Service). Een rekening via **LYNX** is een rekening bij Interactive Brokers en zou op dezelfde manier moeten werken (nog niet getest; heb je LYNX, laat dan in [#17](https://github.com/zenonymous/box3balans/issues/17) weten of het lukt). De verbindingsdialoog noemt per aanbieder precies welke rechten je geeft. Sleutels worden gecontroleerd met een echte leesopdracht, versleuteld opgeslagen (AES-256-GCM, met een sleutel afgeleid van de app-sleutel) en nooit teruggestuurd of gelogd.
 
 Elke synchronisatie:
 
