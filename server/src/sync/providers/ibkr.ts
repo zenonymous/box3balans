@@ -320,6 +320,9 @@ export const ibkr: ExchangeProvider<Creds> = {
     msg("Format XML, period “Last 365 Calendar Days”. Save and note the Query ID."),
     msg("Flex Queries page → Flex Web Service Configuration → enable it and generate a token."),
     msg("The Flex service only covers up to 365 days per query; import older history via CSV."),
+    msg(
+      "LYNX accounts are Interactive Brokers accounts: the same steps should work in LYNX's portal, where the token may be under Account Settings → Reporting. Not tested with LYNX yet.",
+    ),
   ],
   credentials: creds,
   hint: (c) => `query ${c.queryId}`,

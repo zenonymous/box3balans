@@ -315,6 +315,8 @@ export const NL: Record<string, string> = {
     "IBKR: het overzicht was na een minuut nog niet klaar; probeer het later opnieuw.",
   "Flex Web Service token": "Flex Web Service-token",
   "Flex Query ID": "Flex Query ID",
+  "LYNX accounts are Interactive Brokers accounts: the same steps should work in LYNX's portal, where the token may be under Account Settings → Reporting. Not tested with LYNX yet.":
+    "Een LYNX-rekening is een rekening bij Interactive Brokers: dezelfde stappen zouden in het portaal van LYNX moeten werken, waar het token mogelijk onder Account Settings → Reporting staat. Nog niet getest met LYNX.",
   "Client Portal → Performance & Reports → Flex Queries → create an Activity Flex Query.":
     "Client Portal → Performance & Reports → Flex Queries → maak een Activity Flex Query aan.",
   "Sections: Trades (Execution level), Cash Transactions (Detail), Open Positions (Summary) and Cash Report. Select all fields in each.":
