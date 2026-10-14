@@ -1,0 +1,66 @@
+name: Jaaroverzicht (pdf) van een aanbieder
+description: Stuur de tekst van een jaaroverzicht, zodat Box3balans het vanzelf kan herkennen.
+labels: [exportformaat]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Met de tekst van een jaaroverzicht kan Box3balans er een sjabloon voor maken: dan staan de juiste bedragen bij _Jaaroverzicht (pdf) inlezen_ meteen aangevinkt.
+
+        **Stuur geen pdf**: zwart gemaakte tekst is in een pdf vaak nog te lezen. Maak er tekst van met `pdftotext` (uit Poppler: op een Mac `brew install poppler`, op Debian of Ubuntu `sudo apt install poppler-utils`; op Windows zit het ook in de Xpdf-tools):
+
+        ```
+        pdftotext -layout jaaroverzicht.pdf -
+        ```
+
+        Verander daarna in de tekst namen, adressen, rekeningnummers, IBAN's, klantnummers en bedragen. Laat de labels, de opmaak, de datums en de notatie van getallen (`1.234,56`) precies zoals ze zijn.
+  - type: input
+    id: aanbieder
+    attributes:
+      label: Aanbieder
+      placeholder: Brand New Day, Peaks, Geldvoorelkaar, Mintos …
+    validations:
+      required: true
+  - type: input
+    id: document
+    attributes:
+      label: Welk overzicht?
+      description: Hoe het heet en waar je het vindt.
+      placeholder: "Financieel jaaroverzicht 2025, onder Mijn documenten → Overzichten → Jaaroverzichten"
+    validations:
+      required: true
+  - type: dropdown
+    id: inhoud
+    attributes:
+      label: Wat staat erin?
+      multiple: true
+      options:
+        - Waarde op 1 januari (beginwaarde)
+        - Waarde op 31 december (eindwaarde)
+        - Rente of dividend
+        - Inleg of stortingen
+        - Onttrekkingen of opnames
+        - Kosten
+        - Posities per belegging (met ISIN of aantal)
+  - type: textarea
+    id: tekst
+    attributes:
+      label: Tekst van het overzicht (geanonimiseerd)
+      description: De uitvoer van `pdftotext -layout`, met verzonnen namen, nummers en bedragen.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: toelichting
+    attributes:
+      label: Welk bedrag hoort waar?
+      description: Optioneel. Bijvoorbeeld "_Uitstaand vermogen per 1 januari_ is de waarde op 1 januari" of "de rente staat op pagina 2".
+  - type: checkboxes
+    id: anoniem
+    attributes:
+      label: Controle
+      options:
+        - label: Ik heb tekst geplakt, geen pdf.
+          required: true
+        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in.
+          required: true

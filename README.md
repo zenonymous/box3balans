@@ -300,7 +300,7 @@ Box3balans zoekt bedragen naast een peildatum ("1 januari 2025", "31-12-2024") e
 pdftotext -layout jaaroverzicht.pdf -
 ```
 
-Plak die in [#14](https://github.com/zenonymous/box3balans/issues/14) of in een nieuw issue met de naam van de aanbieder. Welke aanbieders het meest opleveren, staat in [docs/aanbieders.md](docs/aanbieders.md#route-het-pdf-jaaroverzicht).
+Plak die in een issue met het formulier [_Jaaroverzicht (pdf) van een aanbieder_](https://github.com/zenonymous/box3balans/issues/new?template=jaaroverzicht.yml). Welke aanbieders het meest opleveren, staat in [docs/aanbieders.md](docs/aanbieders.md#route-het-pdf-jaaroverzicht).
 
 In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
 

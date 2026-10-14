@@ -9,7 +9,7 @@ _In English: contributions in English are welcome too. Issues and pull requests 
 ## Waar je het meest mee helpt
 
 - **Exportbestanden van je broker, bank of beurs.** Met een geanonimiseerd voorbeeld kan Box3balans een formaat leren lezen. Gebruik het formulier _Exportbestand van een broker, bank of beurs_ bij [Issues](../../issues/new/choose).
-- **De tekst van een jaaroverzicht.** Kan Box3balans het jaaroverzicht (pdf) van je bank, broker of platform nog niet vanzelf lezen, stuur dan de uitvoer van `pdftotext -layout jaaroverzicht.pdf -` met namen, rekeningnummers en bedragen veranderd; nooit de pdf zelf. Zie [Jaaroverzicht als pdf](README.md#jaaroverzicht-als-pdf).
+- **De tekst van een jaaroverzicht.** Kan Box3balans het jaaroverzicht (pdf) van je bank, broker of platform nog niet vanzelf lezen, stuur dan de uitvoer van `pdftotext -layout jaaroverzicht.pdf -` met namen, rekeningnummers en bedragen veranderd; nooit de pdf zelf. Gebruik het formulier _Jaaroverzicht (pdf) van een aanbieder_ bij [Issues](../../issues/new/choose); zie ook [Jaaroverzicht als pdf](README.md#jaaroverzicht-als-pdf).
 - **Fouten melden**, met de versie (linksonder in de app) en hoe je het kunt nadoen. Deel nooit echte bedragen, rekeningnummers, wallet-adressen of API-sleutels.
 - **Belastingregels controleren.** Klopt een berekening niet met wat de Belastingdienst zegt? Meld het met een link naar de bron. De regels en hun bronnen staan in [`docs/box3-sources.md`](docs/box3-sources.md), de cijfers in [`server/src/rules/box3.json`](server/src/rules/box3.json).
 - **Code.** Kijk in de [roadmap](docs/ROADMAP.md) wat er gepland is. Open voor grotere wijzigingen eerst een issue, zodat we de aanpak kunnen afstemmen voordat je er veel tijd in steekt.
