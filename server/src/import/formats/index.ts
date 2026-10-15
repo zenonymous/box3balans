@@ -13,6 +13,7 @@ import {
 } from "./brokers.js";
 import { bitvavo, coinbase, cryptoCom, krakenLedgers, revolutCrypto } from "./crypto.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
+import { coinTracking, delta } from "./trackers.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
 /** Exports Box3balans recognises and converts to its own template. */
@@ -33,6 +34,8 @@ export const FORMATS: BrokerFormat[] = [
   scalableCapital,
   revolut,
   etoro,
+  coinTracking,
+  delta,
 ];
 
 export interface Recognised {

@@ -428,6 +428,15 @@ export const NL: Record<string, string> = {
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
   "Revolut crypto statement": "Revolut crypto-overzicht",
+  "CoinTracking trade table": "CoinTracking transactietabel",
+  "Delta export": "Delta-export",
+  "Currency exchanges": "Valutawissels",
+  "{n} trade between two coins was left out: the export has no value in euros for it. Correct those balances afterwards, or import that exchange's own export.":
+    "{n} ruil tussen twee munten is overgeslagen: de export heeft er geen waarde in euro's voor. Corrigeer die saldi daarna, of importeer de eigen export van die beurs.",
+  "{n} trades between two coins were left out: the export has no value in euros for them. Correct those balances afterwards, or import that exchange's own export.":
+    "{n} ruilen tussen twee munten zijn overgeslagen: de export heeft er geen waarde in euro's voor. Corrigeer die saldi daarna, of importeer de eigen export van die beurs.",
+  "This file has lines from {n} places ({names}). They all go into the account you chose; to keep them apart, export one place at a time.":
+    "Dit bestand heeft regels van {n} plekken ({names}). Ze komen allemaal in de rekening die je koos; wil je ze apart houden, exporteer dan per plek.",
   "Staking and unstaking (the coins stay yours)": "Staken en unstaken (de munten blijven van jou)",
   "eToro account activity": "eToro accountactiviteit",
   "eToro amounts are read as US dollars, the currency of an eToro account.":

@@ -666,6 +666,132 @@ describe("broker exports", () => {
     expect(old.notes.join(" ")).toMatch(/no Asset type column/);
   });
 
+  it("CoinTracking: trades against money, coin fees, income and losses; coin swaps need a value", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        '"Type","Buy","Cur.","Sell","Cur.","Fee","Cur.","Exchange","Group","Comment","Date","Tx-ID"',
+        '"Trade","0.01000000","BTC","400.00000000","EUR","2.00000000","EUR","Kraken","","","02.01.2025 10:00:00",""',
+        '"Trade","300.00000000","EUR","0.00500000","BTC","0.00001000","BTC","Bitvavo","","","2025-02-01 11:00:00",""',
+        '"Trade","2.00000000","ETH","0.05000000","BTC","","","Kraken","","","2025-02-02 12:00:00",""',
+        '"Deposit","0.10000000","BTC","","","0.00000000","","Ledger","","","2025-01-05 10:00:00",""',
+        '"Deposit","500.00000000","EUR","","","","","Kraken","","","2025-01-01 09:00:00",""',
+        '"Withdrawal","","","0.05000000","BTC","0.00010000","BTC","Kraken","","","2025-03-01 10:00:00",""',
+        '"Staking","0.00100000","ETH","","","","","Kraken","","","18.01.2025 15:18:55",""',
+        '"Lost","","","0.00200000","BTC","","","Ledger","","","2025-04-01 10:00:00",""',
+        '"Margin Profit","10.00000000","EUR","","","","","Kraken","","","2025-04-02 10:00:00",""',
+      ),
+    );
+    expect(id).toBe("cointracking");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2025-01-02",
+        time: "10:00:00",
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.01000000",
+        total: "400.00000000",
+        currency: "EUR",
+        fee: "2.00000000",
+      }),
+      // Sold for euros, the fee in the coin on its own line.
+      expect.objectContaining({
+        type: "sell",
+        symbol: "BTC",
+        quantity: "0.00500000",
+        total: "300.00000000",
+        currency: "EUR",
+      }),
+      expect.objectContaining({ type: "fee", symbol: "BTC", quantity: "0.00001000" }),
+      expect.objectContaining({ type: "deposit", symbol: "BTC", quantity: "0.10000000", notes: "Ledger" }),
+      expect.objectContaining({ type: "withdrawal", symbol: "BTC", quantity: "0.05000000" }),
+      expect.objectContaining({ type: "fee", symbol: "BTC", quantity: "0.00010000" }),
+      expect.objectContaining({
+        date: "2025-01-18",
+        type: "reward",
+        symbol: "ETH",
+        quantity: "0.00100000",
+        notes: "Staking",
+      }),
+      expect.objectContaining({ type: "fee", symbol: "BTC", quantity: "0.00200000", notes: "Lost" }),
+    ]);
+    expect(skipped).toEqual({ "Euro deposits and withdrawals": 1, "Other kinds: Margin Profit": 1 });
+    expect(notes).toContain(
+      "1 trade between two coins was left out: the export has no value in euros for it. Correct those balances afterwards, or import that exchange's own export.",
+    );
+    expect(notes).toContain(
+      "This file has lines from 3 places (Bitvavo, Kraken, Ledger). They all go into the account you chose; to keep them apart, export one place at a time.",
+    );
+
+    // With value columns, a coin swap is a sale and a purchase.
+    const valued = read(
+      lines(
+        '"Type","Buy","Cur.","Buy Value in EUR","Sell","Cur.","Sell Value in EUR","Fee","Cur.","Exchange","Group","Comment","Date"',
+        '"Trade","2.00000000","ETH","4000.00","0.05000000","BTC","4010.00","","","Kraken","","","2025-02-02 12:00:00"',
+      ),
+    );
+    expect(valued.rows).toEqual([
+      expect.objectContaining({
+        type: "sell",
+        symbol: "BTC",
+        quantity: "0.05000000",
+        total: "4010.00",
+        currency: "EUR",
+      }),
+      expect.objectContaining({
+        type: "buy",
+        symbol: "ETH",
+        quantity: "2.00000000",
+        total: "4000.00",
+        currency: "EUR",
+      }),
+    ]);
+  });
+
+  it("Delta: buys and sells against money, rewards from staking, dividends; money and coin swaps left out", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        "Date,Way,Base amount,Base currency (name),Base type,Quote amount,Quote currency,Exchange,Sent/Received from,Sent to,Fee amount,Fee currency (name),Broker,Notes",
+        "2025-06-02 16:06:47+02:00,BUY,0.5,ETH (Ethereum),CRYPTO,1000,EUR,Bitvavo,,,1.5,EUR,,",
+        "2025-06-03 10:00:00+02:00,BUY,10,SOL (Solana),CRYPTO,0.6,ETH,Binance,,,,,,",
+        "2025-06-04 10:00:00+02:00,WITHDRAW,0.1,ETH (Ethereum),CRYPTO,,,,Bitvavo,MY_WALLET,0.001,ETH (Ethereum),,",
+        "2025-06-05 10:00:00+02:00,DEPOSIT,0.001,ETH (Ethereum),CRYPTO,,,,STAKING,MY_WALLET,,,,",
+        "2025-06-06 15:00:00-04:00,BUY,5,AAPL,STOCK,1000,USD,Nasdaq,,,,,eToro,",
+        "2025-06-06 15:00:00-04:00,DEPOSIT,5000,USD,FIAT,,,,,,,,eToro,",
+        "2025-08-15 15:00:00-04:00,DIVIDEND,,AAPL,STOCK,1.25,USD,Nasdaq,,,,,eToro,",
+        "2025-09-01 10:00:00+02:00,SELL,0.2,ETH (Ethereum),CRYPTO,700,EUR,Bitvavo,,,,,,",
+      ),
+    );
+    expect(id).toBe("delta");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2025-06-02T16:06:47+02:00",
+        type: "buy",
+        symbol: "ETH",
+        name: "Ethereum",
+        quantity: "0.5",
+        total: "1000",
+        currency: "EUR",
+        fee: "1.5",
+      }),
+      expect.objectContaining({ type: "withdrawal", symbol: "ETH", quantity: "0.1" }),
+      expect.objectContaining({ type: "fee", symbol: "ETH", quantity: "0.001" }),
+      expect.objectContaining({ type: "reward", symbol: "ETH", quantity: "0.001" }),
+      expect.objectContaining({
+        type: "buy",
+        symbol: "AAPL",
+        assetType: "stock",
+        quantity: "5",
+        total: "1000",
+        currency: "USD",
+      }),
+      expect.objectContaining({ type: "dividend", symbol: "AAPL", amount: "1.25", currency: "USD" }),
+      expect.objectContaining({ type: "sell", symbol: "ETH", quantity: "0.2", total: "700", currency: "EUR" }),
+    ]);
+    expect(skipped).toEqual({ "Euro deposits and withdrawals": 1 });
+    expect(notes.join(" ")).toMatch(/1 trade between two coins was left out/);
+    expect(notes.join(" ")).toMatch(/lines from 3 places \(Binance, Bitvavo, eToro\)/);
+  });
+
   it("leaves other files alone", () => {
     expect(recognise("date,type,symbol,quantity,price\n2024-01-01,buy,BTC,1,1\n")).toBeNull();
   });
@@ -749,6 +875,31 @@ describe("importing a recognised export", () => {
     expect(plan.summary).toMatchObject({ new: 2 });
     expect(plan.rows[0]).toMatchObject({ type: "buy", quantity: "0.0003", price: "40000", fee: "0.3" });
     expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
+  });
+
+  it("previews CoinTracking and Delta exports without errors", async () => {
+    t = await createTestApp();
+    const acc = (await t.api("POST", "/api/accounts", { name: "Crypto (from a tracker)", kind: "exchange" })).json();
+    const files = {
+      cointracking: lines(
+        '"Type","Buy","Cur.","Sell","Cur.","Fee","Cur.","Exchange","Group","Comment","Date","Tx-ID"',
+        '"Trade","0.01000000","BTC","400.00000000","EUR","2.00000000","EUR","Kraken","","","02.01.2025 10:00:00",""',
+        '"Staking","0.00100000","BTC","","","","","Kraken","","","18.01.2025 15:18:55",""',
+      ),
+      delta: lines(
+        "Date,Way,Base amount,Base currency (name),Base type,Quote amount,Quote currency,Exchange,Sent/Received from,Sent to,Fee amount,Fee currency (name),Broker,Notes",
+        "2025-06-02 16:06:47+02:00,BUY,0.5,BTC (Bitcoin),CRYPTO,30000,EUR,Bitvavo,,,1.5,EUR,,",
+      ),
+    };
+    for (const [id, content] of Object.entries(files)) {
+      const up = (await t.api("POST", "/api/import/upload", { fileName: `${id}.csv`, content })).json();
+      expect(up.format).toMatchObject({ id });
+      const plan = (
+        await t.api("POST", "/api/import/preview", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping })
+      ).json();
+      expect(plan.rows.every((r: any) => !r.error)).toBe(true);
+      expect(plan.summary.new).toBe(up.format.rows);
+    }
   });
 
   it("previews a Crypto.com App export without errors, and finds it again", async () => {
