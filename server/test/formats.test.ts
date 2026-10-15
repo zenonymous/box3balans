@@ -551,6 +551,59 @@ describe("broker exports", () => {
     ]);
   });
 
+  it("eToro: positions opened and closed, dividends, stamp duty on its purchase; cash and CFDs left out", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        "Date,Type,Details,Amount,Units,Realized Equity Change,Realized Equity,Balance,Position ID,Asset type,NWA",
+        '02/01/2025 00:10:00,Interest Payment,,0.05,-,0.05,"2,000.00",10.00,-,,0.00',
+        '03/01/2025 00:10:00,Dividend,NKE/USD,0.21,-,0.21,"2,000.00",10.21,111,Stocks,0.00',
+        '06/01/2025 14:30:00,Open Position,AAPL/USD,"1,250.00",5.5,0.00,"2,000.00",0.00,222,Stocks,0.00',
+        '06/01/2025 14:31:00,Open Position,BARC.L/GBX,100.00,30.25,0.00,"2,000.00",0.00,333,Stocks,0.00',
+        '06/01/2025 14:31:00,SDRT,BARC.L/GBX,(0.50),-,(0.50),"2,000.00",0.00,333,Stocks,0.00',
+        '07/01/2025 10:00:00,Open Position,ASML.NV/EUR,200.00,0.25,0.00,"2,000.00",0.00,444,Stocks,0.00',
+        '08/01/2025 10:00:00,Open Position,BTC/USD,500.00,0.005,0.00,"2,000.00",0.00,555,Crypto,0.00',
+        '15/04/2025 14:00:00,Open Position,NKE/USD," 100,00 ",0.4,0.00," 1 757,95 "," 12,87 ",666,CFD," 0,00 "',
+        '16/04/2025 00:46:00,Overnight fee,Daily,"(0,10)",-,"(0,10)"," 1 757,85 "," 12,77 ",666,CFD," 0,00 "',
+        '20/05/2025 20:59:00,Position closed,AAPL/USD," 1 400,00 ",5.5," 150,00 "," 2 150,00 "," 1 400,00 ",222,Stocks," 0,00 "',
+        '21/05/2025 13:00:00,Withdraw Request,-,-100.00,-,-100.00,"2,150.00",0.00,-,,0.00',
+        '21/05/2025 13:00:00,Withdrawal Conversion Fee,-,-1.36,-,0.00,"2,150.00",0.00,-,,0.00',
+        '01/06/2025 09:00:00,Staking,ETH/USD,0.01,-,0.01,"2,150.00",0.00,-,Crypto,0.00',
+      ),
+    );
+    expect(id).toBe("etoro");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2025-01-03",
+        time: "00:10:00",
+        type: "dividend",
+        symbol: "NKE",
+        amount: "0.21",
+        currency: "USD",
+      }),
+      expect.objectContaining({
+        type: "buy",
+        symbol: "AAPL",
+        assetType: "stock",
+        quantity: "5.5",
+        total: "1250.00",
+        currency: "USD",
+      }),
+      // The stamp duty joins its purchase.
+      expect.objectContaining({ type: "buy", symbol: "BARC.L", quantity: "30.25", total: "100.00", fee: "0.5" }),
+      // eToro's ".NV" is Yahoo's ".AS".
+      expect.objectContaining({ type: "buy", symbol: "ASML.AS", quantity: "0.25", total: "200.00" }),
+      expect.objectContaining({ type: "buy", symbol: "BTC", assetType: "crypto", quantity: "0.005", total: "500.00" }),
+      // "1 400,00": a space between the thousands and a decimal comma.
+      expect.objectContaining({ type: "sell", symbol: "AAPL", quantity: "5.5", total: "1400.00", notes: "eToro 222" }),
+    ]);
+    expect(skipped).toEqual({
+      "Cash: deposits, withdrawals, interest and their fees": 3,
+      "CFDs (no ownership of the underlying)": 2,
+      "Other kinds: Staking": 1,
+    });
+    expect(notes).toContain("eToro amounts are read as US dollars, the currency of an eToro account.");
+  });
+
   it("leaves other files alone", () => {
     expect(recognise("date,type,symbol,quantity,price\n2024-01-01,buy,BTC,1,1\n")).toBeNull();
   });
@@ -594,6 +647,28 @@ describe("importing a recognised export", () => {
     const plain = await upload(true);
     expect(plain.format).toBeNull();
     expect(plain.preset).toBeNull();
+  });
+
+  it("previews an eToro statement without errors, prices in dollars", async () => {
+    t = await createTestApp();
+    const acc = (await t.api("POST", "/api/accounts", { name: "eToro", kind: "broker" })).json();
+    const content = lines(
+      "Date,Type,Details,Amount,Units,Realized Equity Change,Realized Equity,Balance,Position ID,Asset type,NWA",
+      "06/01/2025 14:30:00,Open Position,AAPL/USD,1250.00,5,0.00,2000.00,0.00,222,Stocks,0.00",
+      "03/02/2025 00:10:00,Dividend,AAPL/USD,1.25,-,1.25,2000.00,1.25,222,Stocks,0.00",
+      "20/05/2025 20:59:00,Position closed,AAPL/USD,1400.00,5,150.00,2150.00,1400.00,222,Stocks,0.00",
+    );
+    const up = (await t.api("POST", "/api/import/upload", { fileName: "statement.csv", content })).json();
+    expect(up.format).toMatchObject({ id: "etoro", rows: 3 });
+    const plan = (
+      await t.api("POST", "/api/import/preview", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping })
+    ).json();
+    expect(plan.summary).toMatchObject({ new: 3 });
+    expect(plan.rows.map((r: any) => [r.type, r.quantity ?? r.amount, r.price, r.currency])).toEqual([
+      ["buy", "5", "250", "USD"],
+      ["dividend", "1.25", undefined, "USD"],
+      ["sell", "5", "280", "USD"],
+    ]);
   });
 
   it("previews a Crypto.com App export without errors, and finds it again", async () => {

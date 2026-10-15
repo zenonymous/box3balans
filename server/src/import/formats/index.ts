@@ -1,6 +1,16 @@
 import { tr } from "../../i18n/index.js";
 import { detectDelimiter, parseCsv } from "../parse.js";
-import { bux, lightyear, rabobank, revolut, saxo, scalableCapital, trading212, tradeRepublic } from "./brokers.js";
+import {
+  bux,
+  etoro,
+  lightyear,
+  rabobank,
+  revolut,
+  saxo,
+  scalableCapital,
+  trading212,
+  tradeRepublic,
+} from "./brokers.js";
 import { bitvavo, coinbase, cryptoCom, krakenLedgers } from "./crypto.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
@@ -21,6 +31,7 @@ export const FORMATS: BrokerFormat[] = [
   lightyear,
   scalableCapital,
   revolut,
+  etoro,
 ];
 
 export interface Recognised {

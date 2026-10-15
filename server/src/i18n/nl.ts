@@ -427,6 +427,12 @@ export const NL: Record<string, string> = {
   "Moves within Crypto.com (Earn, staking, lockups)": "Verplaatsingen binnen Crypto.com (Earn, staking, lockups)",
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
+  "eToro account activity": "eToro accountactiviteit",
+  "eToro amounts are read as US dollars, the currency of an eToro account.":
+    "Bedragen van eToro worden gelezen als Amerikaanse dollars, de valuta van een eToro-rekening.",
+  "CFDs (no ownership of the underlying)": "CFD's (geen bezit van het onderliggende)",
+  "Stamp duty (SDRT) without its purchase": "Zegelrecht (SDRT) zonder bijbehorende aankoop",
+  "Cash: deposits, withdrawals, interest and their fees": "Geld: stortingen, opnames, rente en de kosten daarvan",
   "Kraken ledgers": "Kraken ledgers",
   "{n} trade between two coins (not against euros) was left out: connect Kraken with an API key to include it.":
     "{n} transactie tussen twee munten (niet tegen euro's) is weggelaten: koppel Kraken met een API-sleutel om die mee te nemen.",

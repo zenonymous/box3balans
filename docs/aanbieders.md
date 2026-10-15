@@ -230,6 +230,8 @@ Werk S, prio 1.
 
 **Open vragen:** de soorten in `Type`; of `Units` bij een verkoop negatief is; waar de ISIN staat (alleen in _Closed Positions_?).
 
+**Stand (oktober 2026):** de herkenner is gebouwd ([#24](https://github.com/zenonymous/box3balans/issues/24)), op het openbare voorbeeld, nog niet getest met een echte export. Bedragen worden gelezen als dollars (ze tellen op tot het saldo van de rekening, niet in de valuta van het aandeel); SDRT gaat bij de aankoop met dezelfde Position ID; CFD's, geld en onbekende soorten worden overgeslagen en genoemd. eToro's beurssuffixen `.NV` en `.ZU` worden Yahoo's `.AS` en `.SW`.
+
 #### Freedom24
 
 **Wat:** broker uit Cyprus; volgens een krant ruim 300.000 klanten in Europa ([Cyprus Mail](https://cyprus-mail.com/2024/09/26/online-broker-freedom24-reaches-300000-customers), tweedehands).
