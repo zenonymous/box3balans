@@ -385,6 +385,49 @@ describe("broker exports", () => {
     });
   });
 
+  it("Revolut crypto: prices with their currency, fee on top, staking moves left out, rewards at the day's price", () => {
+    const { id, rows, skipped } = read(
+      lines(
+        "Symbol,Type,Quantity,Price,Value,Fees,Date",
+        'BTC,Buy,0.0003,"€40,000.00",€12.00,€0.30,"Mar 8, 2022, 2:08:54 PM"',
+        'BTC,Buy,0.001,"95,000.00 SEK",95.00 SEK,0.00 SEK,"Jun 1, 2023, 12:05:00 AM"',
+        'ETH,Sell,0.01,"$2,500.00",$25.00,$0.40,"Feb 9, 2024, 9:46:02 AM"',
+        'ETH,Receive,0.2,"€2,000.00",€400.00,€0.00,"Feb 10, 2024, 10:00:00 AM"',
+        'ETH,Stake,0.2,"€2,000.00",€400.00,€0.00,"Feb 10, 2024, 10:05:00 AM"',
+        'ETH,Staking reward,0.00002,,,,"Jan 15, 2025, 12:23:31 AM"',
+        'BTC,Send,0.0002,"€90,000.00",€18.00,€0.00,"Mar 1, 2025, 6:00:00 PM"',
+        'SOL,Exchange,1.5,"€150.00",€225.00,€0.00,"Apr 1, 2025, 9:00:00 AM"',
+      ),
+    );
+    expect(id).toBe("revolut-crypto");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2022-03-08",
+        time: "14:08:54",
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.0003",
+        price: "40000.00",
+        currency: "EUR",
+        fee: "0.30",
+      }),
+      // Just after midnight, and in Swedish kronor.
+      expect.objectContaining({
+        date: "2023-06-01",
+        time: "00:05:00",
+        price: "95000.00",
+        currency: "SEK",
+        fee: undefined,
+      }),
+      expect.objectContaining({ type: "sell", symbol: "ETH", price: "2500.00", currency: "USD", fee: "0.40" }),
+      expect.objectContaining({ type: "deposit", symbol: "ETH", quantity: "0.2", price: "2000.00", currency: "EUR" }),
+      expect.objectContaining({ type: "reward", symbol: "ETH", quantity: "0.00002", notes: "Staking reward" }),
+      expect.objectContaining({ type: "withdrawal", symbol: "BTC", quantity: "0.0002" }),
+    ]);
+    expect(rows[4]!.price).toBeUndefined();
+    expect(skipped).toEqual({ "Staking and unstaking (the coins stay yours)": 1, "Other kinds: Exchange": 1 });
+  });
+
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
     const { id, rows, r } = read(
       lines(
@@ -688,6 +731,24 @@ describe("importing a recognised export", () => {
       ["dividend", "1.25", undefined, "USD"],
       ["sell", "5", "280", "USD"],
     ]);
+  });
+
+  it("previews a Revolut crypto statement without errors", async () => {
+    t = await createTestApp();
+    const acc = (await t.api("POST", "/api/accounts", { name: "Revolut crypto", kind: "exchange" })).json();
+    const content = lines(
+      "Symbol,Type,Quantity,Price,Value,Fees,Date",
+      'BTC,Buy,0.0003,"€40,000.00",€12.00,€0.30,"Mar 8, 2024, 2:08:54 PM"',
+      'BTC,Staking reward,0.00001,,,,"Jan 15, 2025, 12:23:31 AM"',
+    );
+    const up = (await t.api("POST", "/api/import/upload", { fileName: "crypto.csv", content })).json();
+    expect(up.format).toMatchObject({ id: "revolut-crypto", rows: 2 });
+    const plan = (
+      await t.api("POST", "/api/import/preview", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping })
+    ).json();
+    expect(plan.summary).toMatchObject({ new: 2 });
+    expect(plan.rows[0]).toMatchObject({ type: "buy", quantity: "0.0003", price: "40000", fee: "0.3" });
+    expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
   });
 
   it("previews a Crypto.com App export without errors, and finds it again", async () => {

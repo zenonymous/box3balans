@@ -10,6 +10,7 @@ import {
   hasColumns,
   isFiatCode,
   isNegative,
+  looseNum,
   norm,
   num,
   skip,
@@ -374,6 +375,93 @@ export const cryptoCom: BrokerFormat = {
         if (sold.symbol === bought.symbol) skip(out.skipped, tr("Moves within Crypto.com (Earn, staking, lockups)"));
         else out.rows.push(sold, bought);
       });
+    }
+    return out;
+  },
+};
+
+const MONEY_SIGNS: Record<string, string> = { "€": "EUR", $: "USD", "£": "GBP" };
+
+/** "€35,761.54", "89,162.28 SEK", "-$10.00": the amount and its currency. */
+function money(raw: string): { value: string; currency: string } | null {
+  const s = raw.trim();
+  if (!s) return null;
+  const code = /\b([A-Z]{3})\b/.exec(s)?.[1] ?? MONEY_SIGNS[/[€$£]/.exec(s)?.[0] ?? ""];
+  const value = looseNum(s.replace(/[^\d.,]/g, ""));
+  if (!value || !code) return null;
+  return { value: /^[-−(]/.test(s) || /^[€$£][-−]/.test(s) ? `-${value}` : value, currency: code };
+}
+
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/** "May 5, 2020, 10:10:57 PM" → local date and 24-hour time. */
+function usDateTime(raw: string): { date: string; time: string } | null {
+  const m = /^([A-Za-z]{3})[a-z]*\.? (\d{1,2}), (\d{4}),? (\d{1,2}):(\d{2})(?::(\d{2}))? ?([AP]M)?$/i.exec(raw.trim());
+  if (!m) return null;
+  const month = MONTHS.indexOf(m[1]!.toLowerCase());
+  if (month < 0) return null;
+  let hour = Number(m[4]);
+  if (m[7]) hour = (hour % 12) + (m[7].toUpperCase() === "PM" ? 12 : 0);
+  const pad = (n: number | string) => String(n).padStart(2, "0");
+  return { date: `${m[3]}-${pad(month + 1)}-${pad(m[2]!)}`, time: `${pad(hour)}:${m[5]}:${m[6] ?? "00"}` };
+}
+
+/**
+ * Revolut's crypto statement (Crypto → … → Statement, CSV). Prices and values carry their currency
+ * ("€35,761.54", "89,162.28 SEK"); the fee comes on top of the value. Times are local.
+ */
+export const revolutCrypto: BrokerFormat = {
+  id: "revolut-crypto",
+  label: msg("Revolut crypto statement"),
+  detect: (h) => h.length <= 8 && hasColumns(h, "symbol", "type", "quantity", "price", "value", "fees", "date"),
+  convert(table) {
+    const out = converted();
+    const h = table[0]!;
+    const c = {
+      symbol: column(h, "symbol"),
+      type: column(h, "type"),
+      quantity: column(h, "quantity"),
+      price: column(h, "price"),
+      value: column(h, "value"),
+      fees: column(h, "fees"),
+      date: column(h, "date"),
+    };
+    const get = (r: string[], i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
+    for (const r of table.slice(1)) {
+      if (!r.some((x) => x.trim())) continue;
+      const when = usDateTime(get(r, c.date));
+      const symbol = get(r, c.symbol).toUpperCase();
+      const quantity = abs(looseNum(get(r, c.quantity)));
+      if (!when || !symbol || !quantity || !Number(quantity)) {
+        skip(out.skipped, tr("Lines without an amount"));
+        continue;
+      }
+      const type = norm(get(r, c.type));
+      const price = money(get(r, c.price));
+      const value = money(get(r, c.value));
+      const fee = money(get(r, c.fees));
+      const priced = price ? { price: abs(price.value)!, currency: price.currency } : {};
+      if (type === "buy" || type === "sell") {
+        if (!price && !value) {
+          skip(out.skipped, tr("Lines without an amount"));
+          continue;
+        }
+        out.rows.push({
+          ...when,
+          type,
+          ...crypto(symbol),
+          quantity,
+          ...(price ? priced : { total: abs(value!.value)!, currency: value!.currency }),
+          fee: fee && Number(fee.value) ? abs(fee.value)! : undefined,
+        });
+      } else if (type === "send") out.rows.push({ ...when, type: "withdrawal", ...crypto(symbol), quantity });
+      // What it was worth when it came in: the cost basis of a coin from elsewhere.
+      else if (type === "receive") out.rows.push({ ...when, type: "deposit", ...crypto(symbol), quantity, ...priced });
+      else if (type === "stake" || type === "unstake")
+        skip(out.skipped, tr("Staking and unstaking (the coins stay yours)"));
+      else if (/reward|cashback|airdrop|bonus/.test(type))
+        out.rows.push({ ...when, type: "reward", ...crypto(symbol), quantity, ...priced, notes: get(r, c.type) });
+      else skip(out.skipped, tr("Other kinds: {kind}", { kind: get(r, c.type) || "—" }));
     }
     return out;
   },

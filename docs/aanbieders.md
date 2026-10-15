@@ -140,6 +140,8 @@ Werk S, prio 1.
 
 **Open vragen:** staan geldmarktfondsen in hetzelfde CSV-bestand of in een eigen overzicht? Wat staat er in `Product`?
 
+**Crypto bij Revolut:** een eigen overzicht (CSV) met de kop `Symbol,Type,Quantity,Price,Value,Fees,Date`; prijzen en waarden met hun valuta erin (`€35,761.54`, `89,162.28 SEK`) en datums als `May 5, 2020, 10:10:57 PM` ([Export-To-Ghostfolio, voorbeeld](https://github.com/dickwolff/Export-To-Ghostfolio/blob/main/samples/revolut-crypto-export.csv), Apache-2.0). Box3balans herkent het sinds oktober 2026 (aankopen, verkopen, versturen, ontvangen, stakingbeloningen; staken en unstaken overgeslagen), nog niet getest met een echte export.
+
 #### Wise
 
 **Wat:** saldi in meerdere valuta bij Wise. Hoe de Belastingdienst die indeelt (banktegoeden in het buitenland?), is niet geverifieerd. _Interest_ belegt het saldo in een geldmarktfonds van BlackRock via Wise Assets Europe AS: overige bezittingen ([Wise Interest NL](https://www.wise.com/nl/interest)).

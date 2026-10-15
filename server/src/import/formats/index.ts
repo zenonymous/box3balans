@@ -11,7 +11,7 @@ import {
   trading212,
   tradeRepublic,
 } from "./brokers.js";
-import { bitvavo, coinbase, cryptoCom, krakenLedgers } from "./crypto.js";
+import { bitvavo, coinbase, cryptoCom, krakenLedgers, revolutCrypto } from "./crypto.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
@@ -23,6 +23,7 @@ export const FORMATS: BrokerFormat[] = [
   coinbase,
   krakenLedgers,
   cryptoCom,
+  revolutCrypto,
   rabobank,
   tradeRepublic,
   trading212,

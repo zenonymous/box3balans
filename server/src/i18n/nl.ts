@@ -427,6 +427,8 @@ export const NL: Record<string, string> = {
   "Moves within Crypto.com (Earn, staking, lockups)": "Verplaatsingen binnen Crypto.com (Earn, staking, lockups)",
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
+  "Revolut crypto statement": "Revolut crypto-overzicht",
+  "Staking and unstaking (the coins stay yours)": "Staken en unstaken (de munten blijven van jou)",
   "eToro account activity": "eToro accountactiviteit",
   "eToro amounts are read as US dollars, the currency of an eToro account.":
     "Bedragen van eToro worden gelezen als Amerikaanse dollars, de valuta van een eToro-rekening.",
