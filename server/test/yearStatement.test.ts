@@ -78,6 +78,34 @@ describe("year statements", () => {
     expect(r.found.map((f) => f.page)).toEqual([2, 2, 2]);
   });
 
+  it("reads both peildata of a table: on one line, or as column headers", () => {
+    const r = readYearStatement([
+      page(
+        [
+          "Jaaroverzicht 2025",
+          "Uitstaand per 1 januari 2025   € 4.000,00      per 31 december 2025   € 4.500,00",
+          "",
+          "                         1 januari 2025      31 december 2025",
+          "Leningen                    € 3.000,00            € 3.200,00",
+          "Wallet                        € 100,00              € 50,00",
+          "Ontvangen rente                                      € 210,00",
+          // A balance that mentions interest is still a balance.
+          "Eindsaldo (incl. rente)                             € 3.250,00",
+        ].join("\n"),
+      ),
+    ]);
+    expect(short(r)).toEqual([
+      [2025, "valueEur", "4000.00", false],
+      [2026, "valueEur", "4500.00", false],
+      [2025, "valueEur", "3000.00", false],
+      [2026, "valueEur", "3200.00", false],
+      [2025, "valueEur", "100.00", false],
+      [2026, "valueEur", "50.00", false],
+      [2025, "incomeEur", "210.00", false],
+      [2026, "valueEur", "3250.00", false],
+    ]);
+  });
+
   const template: StatementTemplate = {
     id: "voorbeeldbank",
     label: "Voorbeeldbank, jaaroverzicht",

@@ -784,8 +784,10 @@ function YearStatementPanel({
     const picked = rows.filter((r) => r.on);
     const byYear = new Map<number, Picked>();
     for (const r of picked) byYear.set(r.year, { ...byYear.get(r.year), year: r.year, [r.field]: r.amount });
-    const pages = [...new Set(picked.map((r) => r.page))].sort((a, b) => a - b).join(", ");
-    onApply([...byYear.values()], `${fileName.slice(0, 120)}, ${t("p. {page}", { page: pages })}`);
+    const pages = [...new Set(picked.map((r) => r.page))].sort((a, b) => a - b);
+    const where = pages.length > 4 ? `${pages[0]}–${pages.at(-1)}` : pages.join(", ");
+    // The server keeps at most 200 characters of a source.
+    onApply([...byYear.values()], `${fileName.slice(0, 160)}, ${t("p. {page}", { page: where })}`.slice(0, 200));
   };
 
   return (

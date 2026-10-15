@@ -113,34 +113,56 @@ const COSTS = /\b(kosten|costs|fees?)\b/i;
 const MAX_PER_LINE = 3;
 const MAX_FOUND = 60;
 
+const janYear = (m: RegExpExecArray) => Number(m[1] ?? m[2]);
+const decYear = (m: RegExpExecArray) => Number(m[1] ?? m[2]) + 1;
+
 function guess(pages: StatementPage[], year: number | null): FoundValue[] {
   const found: FoundValue[] = [];
   for (const { page, text } of pages) {
+    // A table header naming both peildata ("1 januari 2025   31 december 2025"): the years of the
+    // amount columns in the lines below it.
+    let columns: number[] | null = null;
     for (const raw of text.split("\n")) {
       const line = raw.trim();
       const values = amounts(line).slice(0, MAX_PER_LINE);
-      if (!values.length) continue;
-      const add = (field: YearField, y: number | null) => {
-        if (y == null) return;
-        for (const v of values) found.push({ year: y, field, amount: v.value, page, line, sure: false });
+      const jan = FIRST_JANUARY.exec(line);
+      const dec = LAST_DECEMBER.exec(line);
+      if (!values.length) {
+        if (jan && dec) columns = jan.index < dec.index ? [janYear(jan), decYear(dec)] : [decYear(dec), janYear(jan)];
+        continue;
+      }
+      const push = (field: YearField, y: number | null, v: Amount) => {
+        if (y != null) found.push({ year: y, field, amount: v.value, page, line, sure: false });
       };
+      const add = (field: YearField, y: number | null) => values.forEach((v) => push(field, y, v));
       // The latest year a line names: "rente over 2025", "1 januari t/m 31 december 2025".
       const named = [...line.matchAll(/\b(20\d\d)\b/g)].map((m) => Number(m[1]));
       const lineYear = named.length ? Math.max(...named) : year;
+      const flow = (INCOME.test(line) && !TAX.test(line)) || IN.test(line) || OUT.test(line) || COSTS.test(line);
       const period = JAN_DAY.test(line) && DEC_DAY.test(line);
-      const jan = period ? null : FIRST_JANUARY.exec(line);
-      const dec = period ? null : LAST_DECEMBER.exec(line);
-      // A value on a peildatum the line names.
-      if (jan) add("valueEur", Number(jan[1] ?? jan[2]));
-      else if (dec) add("valueEur", Number(dec[1] ?? dec[2]) + 1);
+
+      if (jan && dec && values.length >= 2) {
+        // "1 januari 2025  € 100   31 december 2025  € 120": each date with the amount after it.
+        for (const [m, y] of [
+          [jan, janYear(jan)],
+          [dec, decYear(dec)],
+        ] as const) {
+          const v = values.find((x) => x.index > m.index);
+          if (v) push("valueEur", y, v);
+        }
+      } else if (!period && jan) add("valueEur", janYear(jan));
+      else if (!period && dec) add("valueEur", decYear(dec));
+      // A value at the start or end of the statement's year, also "eindsaldo (incl. rente)".
+      else if (BEGIN.test(line)) add("valueEur", year);
+      else if (END.test(line)) add("valueEur", year == null ? null : year + 1);
       // Money earned, in or out, by what the line says, over its year.
       else if (INCOME.test(line) && !TAX.test(line)) add("incomeEur", lineYear);
       else if (IN.test(line)) add("inEur", lineYear);
       else if (OUT.test(line)) add("outEur", lineYear);
       else if (COSTS.test(line)) add("costsEur", lineYear);
-      // A value at the start or end of the statement's year.
-      else if (BEGIN.test(line)) add("valueEur", year);
-      else if (END.test(line)) add("valueEur", year == null ? null : year + 1);
+      // A row under a header with both peildata: one amount per column.
+      else if (columns && !flow && values.length === columns.length)
+        values.forEach((v, i) => push("valueEur", columns![i]!, v));
       if (found.length >= MAX_FOUND) return found.slice(0, MAX_FOUND);
     }
   }

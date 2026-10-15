@@ -431,6 +431,8 @@ export const NL: Record<string, string> = {
   "eToro amounts are read as US dollars, the currency of an eToro account.":
     "Bedragen van eToro worden gelezen als Amerikaanse dollars, de valuta van een eToro-rekening.",
   "CFDs (no ownership of the underlying)": "CFD's (geen bezit van het onderliggende)",
+  "This statement has no Asset type column: crypto is read as shares. Check the assets before importing.":
+    "Dit overzicht heeft geen kolom Asset type: crypto wordt als aandeel gelezen. Controleer de beleggingen voordat je importeert.",
   "Stamp duty (SDRT) without its purchase": "Zegelrecht (SDRT) zonder bijbehorende aankoop",
   "Cash: deposits, withdrawals, interest and their fees": "Geld: stortingen, opnames, rente en de kosten daarvan",
   "Kraken ledgers": "Kraken ledgers",

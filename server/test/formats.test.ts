@@ -360,15 +360,25 @@ describe("broker exports", () => {
     });
   });
 
-  it("Crypto.com App: unknown kinds and a conversion without its other half are named", () => {
+  it("Crypto.com App: unknown kinds and a conversion without its other half are named; simultaneous ones paired", () => {
     const { rows, skipped } = read(
       lines(
         "Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind,Transaction Hash",
         "2025-03-31 12:00:00,Balance Conversion,USDT,-50.0,,,EUR,45.90,52.90,crypto_wallet_swap_debited,",
         "2025-03-01 12:00:00,Something new,CRO,5.0,,,EUR,0.50,0.58,brand_new_kind,",
+        // Two conversions at the same moment: paired by value.
+        "2025-02-01 12:00:00,Balance Conversion,USDC,1000.0,,,EUR,920.00,1000.00,crypto_wallet_swap_credited,",
+        "2025-02-01 12:00:00,Balance Conversion,EURC,20.0,,,EUR,19.90,21.70,crypto_wallet_swap_credited,",
+        "2025-02-01 12:00:00,Balance Conversion,EURT,-20.0,,,EUR,19.95,21.75,crypto_wallet_swap_debited,",
+        "2025-02-01 12:00:00,Balance Conversion,USDT,-1000.0,,,EUR,921.00,1001.00,crypto_wallet_swap_debited,",
       ),
     );
-    expect(rows).toEqual([]);
+    expect(rows.map((r) => [r.type, r.symbol, r.quantity])).toEqual([
+      ["sell", "EURT", "20.0"],
+      ["buy", "EURC", "20.0"],
+      ["sell", "USDT", "1000.0"],
+      ["buy", "USDC", "1000.0"],
+    ]);
     expect(skipped).toEqual({
       "Other kinds: brand_new_kind": 1,
       "Balance conversions without their other half": 1,
@@ -602,6 +612,15 @@ describe("broker exports", () => {
       "Other kinds: Staking": 1,
     });
     expect(notes).toContain("eToro amounts are read as US dollars, the currency of an eToro account.");
+    expect(notes.join(" ")).not.toMatch(/no Asset type column/);
+    // An older statement without the asset type: said so.
+    const old = read(
+      lines(
+        "Date,Type,Details,Amount,Units,Realized Equity Change,Realized Equity,Balance,Position ID",
+        "08/01/2025 10:00:00,Open Position,BTC/USD,500.00,0.005,0.00,2000.00,0.00,555",
+      ),
+    );
+    expect(old.notes.join(" ")).toMatch(/no Asset type column/);
   });
 
   it("leaves other files alone", () => {

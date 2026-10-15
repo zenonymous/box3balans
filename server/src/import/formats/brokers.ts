@@ -681,6 +681,10 @@ export const etoro: BrokerFormat = {
       }
     const used = new Set<string>();
     out.warnings.push(tr("eToro amounts are read as US dollars, the currency of an eToro account."));
+    if (c.assetType < 0)
+      out.warnings.push(
+        tr("This statement has no Asset type column: crypto is read as shares. Check the assets before importing."),
+      );
     for (const r of rows) {
       // "09/01/2024 15:37:16"
       const [day = "", time] = cell(r, c.date).split(/\s+/);

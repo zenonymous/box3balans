@@ -282,7 +282,8 @@ export const cryptoCom: BrokerFormat = {
     };
     const get = (r: string[], i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
     // A balance conversion (USDT to USDC, say) is two lines at the same moment: a sale and a purchase.
-    const halves = new Map<string, { debited?: TemplateRow; credited?: TemplateRow }>();
+    // Several can happen at once: each side is kept in a list.
+    const halves = new Map<string, { debited: TemplateRow[]; credited: TemplateRow[] }>();
     for (const r of table.slice(1).reverse()) {
       if (!r.some((x) => x.trim())) continue;
       const kind = get(r, c.kind).toLowerCase();
@@ -322,15 +323,15 @@ export const cryptoCom: BrokerFormat = {
       else if (/^(crypto_wallet_swap|dynamic_coin_swap)_(debited|credited)$/.test(kind)) {
         const side = kind.endsWith("debited") ? "debited" : "credited";
         const key = `${date}|${kind.replace(/_(debited|credited)$/, "")}`;
-        const pair = halves.get(key) ?? {};
-        pair[side] = {
+        const pair = halves.get(key) ?? { debited: [], credited: [] };
+        pair[side].push({
           ...at,
           type: side === "debited" ? "sell" : "buy",
           ...crypto(symbol),
           quantity,
           total: value,
           currency,
-        };
+        });
         halves.set(key, pair);
       } else if (CDC_REWARDS.has(kind) || /^finance\..*interest|^reward\./.test(kind)) {
         if (isNegative(amount))
@@ -360,11 +361,19 @@ export const cryptoCom: BrokerFormat = {
       } else skip(out.skipped, tr("Other kinds: {kind}", { kind: kind || "—" }));
     }
     for (const { debited, credited } of halves.values()) {
-      if (debited && credited) {
-        if (debited.symbol === credited.symbol)
-          skip(out.skipped, tr("Moves within Crypto.com (Earn, staking, lockups)"));
-        else out.rows.push(debited, credited);
-      } else skip(out.skipped, tr("Balance conversions without their other half"));
+      if (debited.length !== credited.length) {
+        for (let i = 0; i < debited.length + credited.length; i++)
+          skip(out.skipped, tr("Balance conversions without their other half"));
+        continue;
+      }
+      // At the same moment, the halves with the closest value belong together.
+      const byValue = (a: TemplateRow, b: TemplateRow) => Number(a.total ?? 0) - Number(b.total ?? 0);
+      credited.sort(byValue);
+      debited.sort(byValue).forEach((sold, i) => {
+        const bought = credited[i]!;
+        if (sold.symbol === bought.symbol) skip(out.skipped, tr("Moves within Crypto.com (Earn, staking, lockups)"));
+        else out.rows.push(sold, bought);
+      });
     }
     return out;
   },
