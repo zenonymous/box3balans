@@ -658,6 +658,84 @@ function SituationCard({ y, overview }: { y: Box3Year; overview: Box3Overview })
 
 const CATS: Box3Category[] = ["bank", "other", "exempt", "excluded"];
 
+/** Accounts that count differently from a given year: a green fund that lost its status, say. */
+function AccountChanges({
+  cfg,
+  setCfg,
+  accounts,
+}: {
+  cfg: Box3Config;
+  setCfg: (c: Box3Config) => void;
+  accounts: { id: number; name: string }[];
+}) {
+  const changes = cfg.mapping.accountChanges ?? {};
+  const save = (next: Box3Config["mapping"]["accountChanges"]) =>
+    setCfg({ ...cfg, mapping: { ...cfg.mapping, accountChanges: next } });
+  const set = (id: number, patch: Partial<{ fromYear: number; category: Box3Category }>) =>
+    save({ ...changes, [String(id)]: { ...changes[String(id)]!, ...patch } });
+  const withChange = accounts.filter((a) => changes[String(a.id)]);
+  const without = accounts.filter((a) => !changes[String(a.id)]);
+  return (
+    <>
+      <p className="mb-2 text-xs text-muted">
+        {t(
+          "A different category from a given year on: a green fund that lost its groenverklaring, or savings for your home that moved from box 1 to box 3. The years before keep the category above.",
+        )}
+      </p>
+      {withChange.length > 0 && (
+        <div className="mb-2 grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 text-sm">
+          {withChange.map((a) => {
+            const ch = changes[String(a.id)]!;
+            return (
+              <Fragment key={a.id}>
+                <span className="text-ink-2">{a.name}</span>
+                <Input
+                  type="number"
+                  aria-label={t("From which year, {name}", { name: a.name })}
+                  className="w-20! py-1 text-xs"
+                  value={ch.fromYear}
+                  onChange={(e) => set(a.id, { fromYear: Number(e.target.value) || ch.fromYear })}
+                />
+                <CategorySelect value={ch.category} onChange={(v) => set(a.id, { category: v as Box3Category })} />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  aria-label={t("Remove the change for {name}", { name: a.name })}
+                  onClick={() => {
+                    const next = { ...changes };
+                    delete next[String(a.id)];
+                    save(next);
+                  }}
+                >
+                  ✕
+                </Button>
+              </Fragment>
+            );
+          })}
+        </div>
+      )}
+      {without.length > 0 && (
+        <Select
+          aria-label={t("Add a change for an account")}
+          className="w-auto! py-1 text-xs"
+          value=""
+          onChange={(e) =>
+            e.target.value &&
+            save({ ...changes, [e.target.value]: { fromYear: new Date().getFullYear() + 1, category: "other" } })
+          }
+        >
+          <option value="">{t("+ Another category from a year on…")}</option>
+          {without.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.name}
+            </option>
+          ))}
+        </Select>
+      )}
+    </>
+  );
+}
+
 function CategorySelect({
   value,
   onChange,
@@ -861,6 +939,8 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
                   "E.g. “Green investments” for a fund with a groenverklaring (exempt up to the yearly limit), “Not in box 3” for a pension or lijfrente account.",
                 )}
               </p>
+              <h3 className="mb-2 mt-5 text-sm font-medium">{t("From a year on")}</h3>
+              <AccountChanges cfg={cfg} setCfg={setCfg} accounts={overview.accounts.filter((a) => !a.archived)} />
             </div>
           </div>
 

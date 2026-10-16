@@ -75,6 +75,11 @@ export const configSchema = z.object({
     classCategory: z.record(z.enum(NON_CASH_CLASSES), category),
     // Whole-account overrides, e.g. a green fund account (exempt) or a pension account (excluded).
     accountOverrides: z.record(z.string().regex(/^\d+$/), category),
+    // From a year on, another category: a green fund that lost its groenverklaring, or savings for
+    // your home that moved from box 1 to box 3. Added later, so older saved configs lack it.
+    accountChanges: z
+      .record(z.string().regex(/^\d+$/), z.object({ fromYear: z.number().int().min(2000).max(2100), category }))
+      .default({}),
   }),
   // User changes to the built-in rates, or rates for years not built in.
   rates: z.record(z.string().regex(/^\d{4}$/), ratesSchema),
@@ -114,6 +119,7 @@ export const DEFAULT_CONFIG: Box3Config = {
     },
     classCategory: { stock: "other", etf: "other", crypto: "other", metal: "other", other: "other" },
     accountOverrides: {},
+    accountChanges: {},
   },
   rates: {},
   years: {},
@@ -130,6 +136,7 @@ export async function loadConfig(db: DB): Promise<Box3Config> {
       cashByAccountKind: { ...DEFAULT_CONFIG.mapping.cashByAccountKind, ...(v.mapping?.cashByAccountKind ?? {}) },
       classCategory: { ...DEFAULT_CONFIG.mapping.classCategory, ...(v.mapping?.classCategory ?? {}) },
       accountOverrides: { ...(v.mapping?.accountOverrides ?? {}) },
+      accountChanges: { ...(v.mapping?.accountChanges ?? {}) },
     },
     rates: { ...(v.rates ?? {}) },
     years: { ...(v.years ?? {}) },
@@ -150,10 +157,14 @@ export function ratesFor(config: Box3Config, year: number): (Box3Rates & { sourc
   return def ? { ...def, source: "default" } : null;
 }
 
+/** The box 3 category of a holding in a year (the year of the peildatum, 1 January). */
 export function categoryOf(
   config: Box3Config,
   h: { accountId: number; accountKind: string; assetClass: string },
+  year: number,
 ): Category {
+  const change = config.mapping.accountChanges[String(h.accountId)];
+  if (change && year >= change.fromYear) return change.category;
   const override = config.mapping.accountOverrides[String(h.accountId)];
   if (override) return override;
   if (h.assetClass === "cash")
@@ -412,7 +423,7 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     const acc = accountById.get(h.accountId);
     // An account kept as values per year is counted from those values only.
     if (acc?.tracking === "yearly") continue;
-    const cat = categoryOf(config, h);
+    const cat = categoryOf(config, h, year);
     const c = count(h.accountId, cat, h.assetClass, h.valueEur);
     const missing = h.priceEur === null;
     if (missing)
@@ -481,7 +492,7 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     }
     const cls = yearlyClass(acc.kind);
     const cat: Category | "debt" =
-      cls === "debt" ? "debt" : categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls });
+      cls === "debt" ? "debt" : categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year);
     const c = count(acc.id, cat, cls, value);
     rows.push({
       accountId: acc.id,

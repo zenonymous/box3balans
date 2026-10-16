@@ -593,6 +593,8 @@ export interface Box3Config {
     cashByAccountKind: Record<string, Box3Category>;
     classCategory: Record<string, Box3Category>;
     accountOverrides: Record<string, Box3Category>;
+    // From a year on, another category for the whole account.
+    accountChanges: Record<string, { fromYear: number; category: Box3Category }>;
   };
   rates: Record<string, Box3Rates>;
   years: Record<

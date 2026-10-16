@@ -479,6 +479,13 @@ export const NL: Record<string, string> = {
     "Geld bij een broker staat meestal bij een bank (bijv. flatex voor DEGIRO). Euro's op een crypto-exchange meestal niet, dus die tellen als overige bezittingen.",
   "Everything else, by asset class": "Al het andere, naar soort belegging",
   "Whole-account overrides": "Uitzonderingen per rekening",
+  "From a year on": "Vanaf een bepaald jaar",
+  "A different category from a given year on: a green fund that lost its groenverklaring, or savings for your home that moved from box 1 to box 3. The years before keep the category above.":
+    "Een andere categorie vanaf een bepaald jaar: een groen fonds dat zijn groenverklaring kwijt is, of sparen voor je woning dat van box 1 naar box 3 ging. De jaren ervoor houden de categorie hierboven.",
+  "From which year, {name}": "Vanaf welk jaar, {name}",
+  "Remove the change for {name}": "Wijziging voor {name} verwijderen",
+  "Add a change for an account": "Wijziging voor een rekening toevoegen",
+  "+ Another category from a year on…": "+ Andere categorie vanaf een jaar…",
   "E.g. “Green investments” for a fund with a groenverklaring (exempt up to the yearly limit), “Not in box 3” for a pension or lijfrente account.":
     "Bijv. “Groene beleggingen” voor een fonds met een groenverklaring (vrijgesteld tot de jaargrens), “Niet in box 3” voor een pensioen- of lijfrenterekening.",
   "Rates per year": "Tarieven per jaar",

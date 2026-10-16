@@ -247,7 +247,7 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
     const acc = accountById.get(p.accountId);
     const a = assetById.get(p.assetId);
     if (!acc || !a || acc.tracking === "yearly") continue;
-    const cat = categoryOf(config, { accountId: p.accountId, accountKind: acc.kind, assetClass: a.assetClass });
+    const cat = categoryOf(config, { accountId: p.accountId, accountKind: acc.kind, assetClass: a.assetClass }, year);
     addTo(cat, a.assetClass, weight(p.accountId), p, costByPos.get(p) ?? ZERO, taxByPos.get(p) ?? ZERO);
   }
 
@@ -279,7 +279,7 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
       continue;
     }
     const cls = yearlyClass(acc.kind);
-    const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls });
+    const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year);
     const income = D(row.incomeEur);
     addTo(
       cat,

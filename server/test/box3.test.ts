@@ -326,6 +326,26 @@ describe("box 3 overview", () => {
     expect(y.rates).toMatchObject({ source: "default", final: true });
   });
 
+  it("changes an account's category from a year on", async () => {
+    const { pension } = await scenario();
+    const config = json(await t.api("GET", "/api/box3")).config;
+    expect(config.mapping.accountChanges).toEqual({});
+    // Not in box 3 up to 2025 (savings for the home, say); from 2026 an investment in box 3.
+    config.mapping.accountOverrides[String(pension.id)] = "excluded";
+    config.mapping.accountChanges[String(pension.id)] = { fromYear: 2026, category: "other" };
+    expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(200);
+    const y2025 = json(await t.api("GET", "/api/box3/2025"));
+    expect(y2025.totals.excluded).toBe("4500.00");
+    const y2026 = json(await t.api("GET", "/api/box3/2026"));
+    expect(y2026.totals.excluded).toBe("0.00");
+    const rows = y2026.rows.filter((r: any) => r.accountId === pension.id);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.every((r: any) => r.category === "other")).toBe(true);
+    // A year outside the range is refused.
+    config.mapping.accountChanges[String(pension.id)] = { fromYear: 1999, category: "other" };
+    expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(400);
+  });
+
   it("uses custom rates when set, and rejects invalid config", async () => {
     await scenario();
     const { config } = json(await t.api("GET", "/api/box3"));

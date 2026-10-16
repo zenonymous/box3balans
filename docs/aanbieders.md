@@ -568,7 +568,7 @@ Een groen fonds van ASN Impact Investors, binnen de vrijstelling vrij van box 3,
 
 Liet zijn groenstatus per **1 april 2026** los; de regeling wordt per 1 januari 2027 sterk versoberd en per 1 januari 2028 afgeschaft ([Triodos](https://www.triodos-im.com/articles/2026/triodos-groenfonds-becomes-even-more-impactful)). Wie op 1 januari 2026 aandeelhouder was, heeft volgens de toelichting op het prospectus nog één keer het voordeel over 2026 ([Triodos](https://www.triodos-im.com/binaries/content/assets/shared/fund-assets/tim/tgf/toelichting-wijziging-prospectus-triodos-groenfonds-nv-per-1-april-2026.pdf); inhoud uit een zoekresultaat, de pdf zelf was niet te openen).
 
-**Advies:** (d). Box3balans moet een groene rekening per jaar kunnen indelen: groen tot en met 2026, overige bezittingen vanaf 2027. Werk S, prio 2. **Open vraag:** kan de app nu een categorie per jaar aan, of alleen per rekening?
+**Advies:** (d). Box3balans moet een groene rekening per jaar kunnen indelen: groen tot en met 2026, overige bezittingen vanaf 2027. Werk S, prio 2. **Stand (oktober 2026):** een rekening kan nu vanaf een bepaald jaar een andere categorie krijgen (_Box 3 → Regels en tarieven → Vanaf een bepaald jaar_): groen tot en met 2026, overige bezittingen vanaf 2027. Uitleg in de README.
 
 ### Aandelenplannen van werkgevers
 
