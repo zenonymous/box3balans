@@ -250,6 +250,8 @@ Werk S, prio 1.
 
 **Advies:** (b) op verzoek. Werk M (het aantal en de koers zitten in een tekstveld), prio 3.
 
+**Stand (oktober 2026):** de herkenner is gebouwd ([#46](https://github.com/zenonymous/box3balans/issues/46)), op het openbare voorbeeld, nog niet getest met een echte export. Aankopen en verkopen komen uit het commentaar (`OPEN BUY 34/42.5658 @ 11.7480`), dus in elke taal; bedragen worden gelezen als euro's; bronbelasting gaat bij het dividend met het vorige ID; geld en CFD's worden overgeslagen. XTB's landcodes (`.US`, `.UK`, `.PL` …) worden de beurssuffixen van Yahoo.
+
 #### ING, ABN AMRO en de andere al onderzochte brokers
 
 Staan in [exportformaten.md](exportformaten.md):

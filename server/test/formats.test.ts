@@ -666,6 +666,53 @@ describe("broker exports", () => {
     expect(old.notes.join(" ")).toMatch(/no Asset type column/);
   });
 
+  it("XTB: trades from the comment in any language, dividends with their withholding tax; cash and CFDs left out", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        "ID;Type;Time;Symbol;Comment;Amount",
+        "1001;Stocks/ETF purchase;12.04.2025 13:01:45;SPYL.DE;OPEN BUY 30/40.5 @ 12.0000;-360.00",
+        "1002;Stocks/ETF purchase;12.04.2025 13:01:46;SPYL.DE;OPEN BUY 10.5/40.5 @ 12.0000;-126.00",
+        "1003;Deposit;12.04.2025 13:00:22;;deposit, id=123;500",
+        "1004;Free funds interests;05.05.2025 13:42:58;;Free-funds Interest 2025-04;0.25",
+        "1005;Stocks/ETF sale;02.06.2025 11:42:37;CSPX.UK;CLOSE BUY 1 @ 600.00;600.00",
+        "1006;Ações/ETF compra;25.07.2025 20:56:07;GOOGL.US;OPEN BUY 2 @ 180.00;-310.00",
+        "2000;Dividend;12.08.2025 11:00:27;XRAY.US;XRAY.US USD 0.1600/ SHR;12.80",
+        "2001;Withholding tax;12.08.2025 11:00:27;XRAY.US;XRAY.US USD WHT 15%;-1.92",
+        "2002;Dividend;03.09.2025 10:58:02;TXT.PL;TXT.PL PLN 1.6600/ SHR;1.94",
+        "3000;Profit/Loss (FX/CFD);22.09.2025 01:35:43;EURUSD;Profit of position #685669464;0.13",
+        "3001;Spin off;13.10.2025 14:50:01;T.US;T.US USD 5.8970/ SHR;21.68",
+      ),
+    );
+    expect(id).toBe("xtb");
+    expect(rows).toEqual([
+      // 30 of an order of 40.5, in euros.
+      expect.objectContaining({
+        date: "2025-04-12",
+        time: "13:01:45",
+        type: "buy",
+        symbol: "SPYL.DE",
+        quantity: "30",
+        total: "360.00",
+        currency: "EUR",
+        id: "xtb:1001",
+      }),
+      expect.objectContaining({ type: "buy", symbol: "SPYL.DE", quantity: "10.5", total: "126.00" }),
+      // London is ".L" on Yahoo.
+      expect.objectContaining({ type: "sell", symbol: "CSPX.L", quantity: "1", total: "600.00" }),
+      // A Portuguese export, a US listing without a suffix.
+      expect.objectContaining({ type: "buy", symbol: "GOOGL", quantity: "2", total: "310.00" }),
+      expect.objectContaining({ type: "dividend", symbol: "XRAY", amount: "12.80", tax: "1.92", currency: "EUR" }),
+      // Warsaw is ".WA".
+      expect.objectContaining({ type: "dividend", symbol: "TXT.WA", amount: "1.94", tax: undefined }),
+    ]);
+    expect(skipped).toEqual({
+      "Cash: deposits, withdrawals, interest and their fees": 2,
+      "CFDs (no ownership of the underlying)": 1,
+      "Other kinds: Spin off": 1,
+    });
+    expect(notes).toContain("XTB amounts are read as euros, the currency of a Dutch XTB account.");
+  });
+
   it("CoinTracking: trades against money, coin fees, income and losses; coin swaps need a value", () => {
     const { id, rows, skipped, notes } = read(
       lines(
@@ -877,7 +924,7 @@ describe("importing a recognised export", () => {
     expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
   });
 
-  it("previews CoinTracking and Delta exports without errors", async () => {
+  it("previews CoinTracking, Delta and XTB exports without errors", async () => {
     t = await createTestApp();
     const acc = (await t.api("POST", "/api/accounts", { name: "Crypto (from a tracker)", kind: "exchange" })).json();
     const files = {
@@ -889,6 +936,11 @@ describe("importing a recognised export", () => {
       delta: lines(
         "Date,Way,Base amount,Base currency (name),Base type,Quote amount,Quote currency,Exchange,Sent/Received from,Sent to,Fee amount,Fee currency (name),Broker,Notes",
         "2025-06-02 16:06:47+02:00,BUY,0.5,BTC (Bitcoin),CRYPTO,30000,EUR,Bitvavo,,,1.5,EUR,,",
+      ),
+      xtb: lines(
+        "ID;Type;Time;Symbol;Comment;Amount",
+        "1001;Stocks/ETF purchase;12.04.2025 13:01:45;SPYL.DE;OPEN BUY 30/40.5 @ 12.0000;-360.00",
+        "2000;Dividend;12.08.2025 11:00:27;SPYL.DE;SPYL.DE USD 0.0100/ SHR;0.30",
       ),
     };
     for (const [id, content] of Object.entries(files)) {

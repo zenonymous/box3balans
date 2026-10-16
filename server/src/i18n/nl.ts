@@ -439,6 +439,10 @@ export const NL: Record<string, string> = {
     "Dit bestand heeft regels van {n} plekken ({names}). Ze komen allemaal in de rekening die je koos; wil je ze apart houden, exporteer dan per plek.",
   "Staking and unstaking (the coins stay yours)": "Staken en unstaken (de munten blijven van jou)",
   "eToro account activity": "eToro accountactiviteit",
+  "XTB cash operations": "XTB kasoperaties",
+  "XTB amounts are read as euros, the currency of a Dutch XTB account.":
+    "Bedragen van XTB worden gelezen als euro's, de valuta van een Nederlandse XTB-rekening.",
+  "Withholding tax without its dividend": "Bronbelasting zonder bijbehorend dividend",
   "eToro amounts are read as US dollars, the currency of an eToro account.":
     "Bedragen van eToro worden gelezen als Amerikaanse dollars, de valuta van een eToro-rekening.",
   "CFDs (no ownership of the underlying)": "CFD's (geen bezit van het onderliggende)",

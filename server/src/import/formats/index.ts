@@ -3,6 +3,7 @@ import { detectDelimiter, parseCsv } from "../parse.js";
 import {
   bux,
   etoro,
+  xtb,
   lightyear,
   rabobank,
   revolut,
@@ -34,6 +35,7 @@ export const FORMATS: BrokerFormat[] = [
   scalableCapital,
   revolut,
   etoro,
+  xtb,
   coinTracking,
   delta,
 ];
