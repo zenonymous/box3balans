@@ -497,6 +497,69 @@ describe("broker exports", () => {
     ]);
   });
 
+  it("Binance: trades grouped per second, stablecoins at a dollar, rewards; moves, futures and euros left out", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        '"User_ID","UTC_Time","Account","Operation","Coin","Change","Remark"',
+        '"1","2022-01-05 09:00:00","Spot","Deposit","EUR","1000.00",""',
+        // BTC for euros, the fee in BNB (listed before the trade).
+        '"1","2022-01-06 10:00:00","Spot","BNB Fee Deduction","BNB","-0.00100000",""',
+        '"1","2022-01-06 10:00:00","Spot","Transaction Buy","BTC","0.02000000",""',
+        '"1","2022-01-06 10:00:00","Spot","Transaction Spend","EUR","-800.00",""',
+        // ETH for USDT: a dollar per USDT, the fee in ETH.
+        '"1","2022-02-01 12:00:00","Spot","Transaction Buy","ETH","0.10000000",""',
+        '"1","2022-02-01 12:00:00","Spot","Transaction Spend","USDT","-300.00000000",""',
+        '"1","2022-02-01 12:00:00","Spot","Transaction Fee","ETH","-0.00010000",""',
+        // ETH for BTC: no value in money.
+        '"1","2022-02-02 12:00:00","Spot","Transaction Buy","ETH","0.15000000",""',
+        '"1","2022-02-02 12:00:00","Spot","Transaction Spend","BTC","-0.01000000",""',
+        // Into Simple Earn and the interest it pays.
+        '"1","2022-03-01 00:00:00","Spot","Simple Earn Flexible Subscription","USDT","-100.00000000",""',
+        '"1","2022-03-01 00:00:00","Earn","Simple Earn Flexible Subscription","USDT","100.00000000",""',
+        '"1","2022-03-02 00:00:00","Earn","Simple Earn Flexible Interest","USDT","0.01000000",""',
+        '"1","2022-03-05 00:00:00","Spot","Staking Rewards","DOT","0.05000000",""',
+        '"1","2022-04-01 00:00:00","USD-M Futures","Realized Profit and Loss","USDT","5.00000000",""',
+        '"1","2022-05-01 00:00:00","Spot","Small Assets Exchange BNB","SHIB","-1000.00000000",""',
+        '"1","2023-07-10 08:00:00","Spot","Withdraw","ETH","-0.09990000","Withdraw fee is included"',
+        '"1","2023-07-11 08:00:00","Spot","Something New","BNB","0.00100000",""',
+      ),
+    );
+    expect(id).toBe("binance");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2022-01-06T10:00:00Z",
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.02",
+        total: "800",
+        currency: "EUR",
+      }),
+      expect.objectContaining({ type: "fee", symbol: "BNB", quantity: "0.001" }),
+      // Three hundred USDT is three hundred dollars: a sale of USDT and a purchase of ETH.
+      expect.objectContaining({
+        date: "2022-02-01T12:00:00Z",
+        type: "sell",
+        symbol: "USDT",
+        quantity: "300",
+        total: "300",
+        currency: "USD",
+      }),
+      expect.objectContaining({ type: "buy", symbol: "ETH", quantity: "0.1", total: "300", currency: "USD" }),
+      expect.objectContaining({ type: "fee", symbol: "ETH", quantity: "0.0001" }),
+      expect.objectContaining({ type: "reward", symbol: "USDT", quantity: "0.01000000" }),
+      expect.objectContaining({ type: "reward", symbol: "DOT", quantity: "0.05000000" }),
+      expect.objectContaining({ type: "withdrawal", symbol: "ETH", quantity: "0.09990000" }),
+    ]);
+    expect(skipped).toEqual({
+      "Euro deposits and withdrawals": 1,
+      "Moves within Binance (Earn, staking, savings)": 2,
+      "Futures and margin (no ownership of the coins)": 1,
+      "Small balances converted to BNB": 1,
+      "Other kinds: Something New": 1,
+    });
+    expect(notes.join(" ")).toMatch(/1 trade between two coins was left out/);
+  });
+
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
     const { id, rows, r } = read(
       lines(
@@ -1051,7 +1114,7 @@ describe("importing a recognised export", () => {
     expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
   });
 
-  it("previews CoinTracking, Delta, XTB and Schwab Equity Awards exports without errors", async () => {
+  it("previews CoinTracking, Delta, XTB, Schwab Equity Awards and Binance exports without errors", async () => {
     t = await createTestApp();
     const acc = (await t.api("POST", "/api/accounts", { name: "Crypto (from a tracker)", kind: "exchange" })).json();
     const files = {
@@ -1075,6 +1138,11 @@ describe("importing a recognised export", () => {
         ",,,,,,,,,,,,,03/15/2025,$80.00",
         "04/02/2025,Sale,ACME,Share Sale,10,$0.05,Cash,$999.95,,,,,,,",
         ",,,,,,,,RS,10,$100.00,,,03/15/2025,$80.00",
+      ),
+      binance: lines(
+        '"User_ID","UTC_Time","Account","Operation","Coin","Change","Remark"',
+        '"1","2022-02-01 12:00:00","Spot","Transaction Buy","BTC","0.01000000",""',
+        '"1","2022-02-01 12:00:00","Spot","Transaction Spend","USDT","-400.00000000",""',
       ),
     };
     for (const [id, content] of Object.entries(files)) {

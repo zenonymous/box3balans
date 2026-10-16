@@ -481,6 +481,8 @@ Algemeen: de Belastingdienst laat je de koers op 1 januari van het platform dat 
 
 **Advies:** (b) op verzoek, omdat het om oude jaren gaat. Werk M, prio 3.
 
+**Stand (oktober 2026):** de herkenner voor _Transaction History_ is gebouwd ([#52](https://github.com/zenonymous/box3balans/issues/52)), op de indeling en de lijst met `Operation`-waarden uit BittyTax, nog niet getest met een echte export. De regels van één seconde vormen één handel. Tegen geld is dat een aankoop of verkoop; tegen een dollar-stablecoin (USDT, USDC, BUSD, FDUSD, TUSD, USDP, DAI) een verkoop van de stablecoin en een aankoop van de munt tegen een dollar per stablecoin, omdat de meeste handel op Binance zo ging; tussen twee andere munten wordt hij overgeslagen en geteld. Verplaatsingen binnen Binance (Earn, staking, sparen), futures en margin, kleine saldi naar BNB en euro's worden overgeslagen.
+
 #### Bitstamp
 
 **Wat:** beurs (Luxemburg). **API:** sleutels met alleen de rechten _account balance_ en _user transactions_, bevestigd per e-mail ([rotki, Bitstamp](https://rotki.com/integrations/bitstamp)); `POST /api/v2/user_transactions/` en `/api/v2/account_balances/` met v2-ondertekening ([Bitstamp API](https://www.bitstamp.net/api/)). **CSV:** `ID, Account, Type, Subtype, Datetime, Amount, Amount currency, Value, Value currency, Rate, Rate currency, Fee, Fee currency, Order ID` ([BittyTax](https://github.com/BittyTax/BittyTax/blob/master/src/bittytax/conv/parsers/bitstamp.py)).

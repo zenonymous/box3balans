@@ -1,5 +1,6 @@
 import { tr } from "../../i18n/index.js";
 import { detectDelimiter, parseCsv } from "../parse.js";
+import { binance } from "./binance.js";
 import { bitstamp } from "./bitstamp.js";
 import { bitvavo } from "./bitvavo.js";
 import { bux } from "./bux.js";
@@ -31,6 +32,7 @@ export const FORMATS: BrokerFormat[] = [
   cryptoCom,
   revolutCrypto,
   bitstamp,
+  binance,
   rabobank,
   tradeRepublic,
   trading212,

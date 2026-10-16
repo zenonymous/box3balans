@@ -448,6 +448,14 @@ export const NL: Record<string, string> = {
   "Other kinds: {kind}": "Andere soorten: {kind}",
   "Revolut crypto statement": "Revolut crypto-overzicht",
   "Bitstamp transactions": "Bitstamp transacties",
+  "Binance transaction history": "Binance transactiegeschiedenis",
+  "Futures and margin (no ownership of the coins)": "Futures en margin (geen bezit van de munten)",
+  "Small balances converted to BNB": "Kleine saldi omgezet in BNB",
+  "Moves within Binance (Earn, staking, savings)": "Verplaatsingen binnen Binance (Earn, staking, sparen)",
+  "{n} moment with more than one trade at once was left out: it can't be split for sure.":
+    "{n} moment met meer dan één transactie tegelijk is overgeslagen: dat is niet met zekerheid te splitsen.",
+  "{n} moments with more than one trade at once were left out: they can't be split for sure.":
+    "{n} momenten met meer dan één transactie tegelijk zijn overgeslagen: die zijn niet met zekerheid te splitsen.",
   "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.":
     "{n} ruil tussen twee munten is overgeslagen: die heeft geen waarde in geld. Corrigeer dat saldo daarna.",
   "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
