@@ -34,6 +34,30 @@ describe("bank exports → values per year", () => {
     expect(acc!.years[2]).toMatchObject({ outEur: "500.00", fullYear: false });
   });
 
+  it("reads ING's savings CSV: its own layout, ISO dates, interest from the Mutatiesoort", () => {
+    // Made up, in the layout of an Oranje Spaarrekening export (checked against a real one).
+    const csv = [
+      '"Datum";"Omschrijving";"Rekening";"Rekening naam";"Tegenrekening";"Af Bij";"Bedrag";"Valuta";"Mutatiesoort";"Mededelingen";"Saldo na mutatie"',
+      '"2026-01-02";"Afronding van betaalrekening NL00INGB0000000000";"R 000-00000";"Oranje Spaarrekening";"NL00INGB0000000000";"Bij";"0,45";"EUR";"Inleg";"";"5100,45"',
+      '"2025-12-31";"Rente";"R 000-00000";"Oranje Spaarrekening";"";"Bij";"50,00";"EUR";"Rente";"Rente over 2025";"5100,00"',
+      '"2025-06-01";"Naar betaalrekening NL00INGB0000000000";"R 000-00000";"Oranje Spaarrekening";"NL00INGB0000000000";"Af";"1.000,00";"EUR";"Opname";"";"5050,00"',
+      '"2024-12-15";"Van betaalrekening NL00INGB0000000000";"R 000-00000";"Oranje Spaarrekening";"NL00INGB0000000000";"Bij";"50,00";"EUR";"Inleg";"";"6050,00"',
+      '"2024-12-01";"Van betaalrekening NL00INGB0000000000";"R 000-00000";"Oranje Spaarrekening";"NL00INGB0000000000";"Bij";"6.000,00";"EUR";"Inleg";"";"6000,00"',
+    ].join("\n");
+    const r = readBankExport(csv, { today });
+    expect(r.accounts).toHaveLength(1);
+    const [acc] = r.accounts;
+    expect(acc).toMatchObject({ account: "R 000-00000", currency: "EUR", inEuros: true, lines: 5 });
+    // 1 January 2025: the balance after 15 December; 2026: after the interest on 31 December.
+    expect(acc!.years.find((y) => y.year === 2025)).toMatchObject({
+      valueEur: "6050.00",
+      interestEur: "50.00",
+      outEur: "1000.00",
+      fullYear: true,
+    });
+    expect(acc!.years.find((y) => y.year === 2026)).toMatchObject({ valueEur: "5100.00" });
+  });
+
   it("reads Rabobank's CSV: oldest first, signed amounts, 'Saldo na trn'", () => {
     const csv = [
       '"IBAN/BBAN","Munt","BIC","Volgnr","Datum","Rentedatum","Bedrag","Saldo na trn","Tegenrekening IBAN/BBAN","Naam tegenpartij","Naam uiteindelijke partij","Naam initiërende partij","BIC tegenpartij","Code","Batch ID","Transactiereferentie","Machtigingskenmerk","Incassant ID","Betalingskenmerk","Omschrijving-1","Omschrijving-2","Omschrijving-3","Reden retour","Oorspr bedrag","Oorspr munt","Koers"',

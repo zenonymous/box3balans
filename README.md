@@ -277,7 +277,7 @@ Welk bestand je per bank kiest:
 
 | Bank                                 | Kies bij het downloaden                                                                  |
 | ------------------------------------ | ---------------------------------------------------------------------------------------- |
-| ING                                  | CSV                                                                                      |
+| ING                                  | CSV, van de betaal- en de spaarrekening (getest met echte exports)                       |
 | Rabobank                             | CSV                                                                                      |
 | ABN AMRO                             | TAB of CAMT.053                                                                          |
 | ASN Bank (ook voor SNS en RegioBank) | CAMT.053 (hun CSV is niet getest)                                                        |
