@@ -428,6 +428,75 @@ describe("broker exports", () => {
     expect(skipped).toEqual({ "Staking and unstaking (the coins stay yours)": 1, "Other kinds: Exchange": 1 });
   });
 
+  it("Bitstamp: both versions, trades against euros with cash, coin fees, staking; coin swaps counted", () => {
+    const v2 = read(
+      lines(
+        "ID,Account,Type,Subtype,Datetime,Amount,Amount currency,Value,Value currency,Rate,Rate currency,Fee,Fee currency,Order ID",
+        // Newest first.
+        "6,Main Account,Market,Buy,2025-03-01T09:00:00Z,1.00000000,ETH,0.05000000,BTC,0.05,BTC,0.00010000,BTC,9006",
+        "5,Main Account,Staking reward,,2025-02-01T00:00:00Z,0.00100000,ETH2R,,,,,,,",
+        "4,Main Account,Withdrawal,,2025-01-20T12:00:00Z,0.10000000,BTC,,,,,0.00005000,BTC,",
+        '3,Main Account,Market,Sell,2025-01-15T10:00:00Z,0.20000000,BTC,"18,000.00",EUR,90000.00,EUR,36.00,EUR,9003',
+        '2,Main Account,Market,Buy,2025-01-10T10:00:00Z,0.50000000,BTC,"40,000.00",EUR,80000.00,EUR,80.00,EUR,9002',
+        "1,Main Account,Deposit,,2025-01-05T08:00:00Z,50000.00,EUR,,,,,,,",
+        "0,Main Account,Sub Account Transfer,,2025-01-04T08:00:00Z,1.00,EUR,,,,,,,",
+      ),
+    );
+    expect(v2.id).toBe("bitstamp");
+    expect(v2.rows).toEqual([
+      expect.objectContaining({
+        type: "deposit",
+        symbol: "EUR",
+        assetType: "cash",
+        quantity: "50000.00",
+        id: "bitstamp:1",
+      }),
+      expect.objectContaining({
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.50000000",
+        total: "40000.00",
+        currency: "EUR",
+        fee: "80.00",
+      }),
+      expect.objectContaining({
+        type: "sell",
+        symbol: "BTC",
+        quantity: "0.20000000",
+        total: "18000.00",
+        fee: "36.00",
+      }),
+      expect.objectContaining({ type: "withdrawal", symbol: "BTC", quantity: "0.10000000" }),
+      expect.objectContaining({ type: "fee", symbol: "BTC", quantity: "0.00005000", id: "bitstamp:4:fee" }),
+      // ETH2R is staked ETH.
+      expect.objectContaining({ type: "reward", symbol: "ETH", quantity: "0.00100000" }),
+    ]);
+    expect(v2.skipped).toEqual({ "Other kinds: Sub Account Transfer": 1 });
+    expect(v2.notes).toContain(
+      "1 trade between two coins was left out: it has no value in money. Correct that balance afterwards.",
+    );
+    expect(v2.r.result.mapping).toMatchObject({ settleCash: true });
+
+    const v1 = read(
+      lines(
+        "Type,Datetime,Account,Amount,Value,Rate,Fee,Sub Type",
+        '"Market","Mar. 15, 2024, 10:05 AM","Main Account","0.50000000 BTC","30000.00 EUR","60000.00 EUR","60.00 EUR","Buy"',
+        '"Deposit","Mar. 14, 2024, 09:00 PM","Main Account","30060.00 EUR",,,,',
+      ),
+    );
+    expect(v1.rows).toEqual([
+      expect.objectContaining({ date: "2024-03-14T21:00:00Z", type: "deposit", symbol: "EUR", quantity: "30060.00" }),
+      expect.objectContaining({
+        date: "2024-03-15T10:05:00Z",
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.50000000",
+        total: "30000.00",
+        fee: "60.00",
+      }),
+    ]);
+  });
+
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
     const { id, rows, r } = read(
       lines(

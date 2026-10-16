@@ -479,6 +479,8 @@ Algemeen: de Belastingdienst laat je de koers op 1 januari van het platform dat 
 
 **Advies:** (a) of (b) op verzoek. Werk M, prio 3.
 
+**Stand (oktober 2026):** de herkenner voor beide CSV-indelingen is gebouwd ([#53](https://github.com/zenonymous/box3balans/issues/53)), op de indelingen in BittyTax en rotki, nog niet getest met een echte export. Alles tegen euro's of dollars wordt geboekt, geld ook, zodat het geldsaldo klopt; een ruil tussen twee munten heeft geen waarde in geld en wordt overgeslagen en geteld.
+
 ### Crowdfunding en P2P
 
 Algemeen: leningen via een platform zijn vorderingen, in de aangifte _uitgeleend geld_ (overige bezittingen); rente die minder dan jaarlijks wordt bijgeschreven, telt mee in de waarde op 1 januari ([Belastingdienst, bezittingen box 3 2026](https://www.belastingdienst.nl/wps/wcm/connect/fisin/fisin2026/bezittingen_en_schulden_box_3_)). Geen van de platforms hieronder heeft een API of CSV voor beleggers gevonden; ze sturen allemaal een jaaroverzicht.

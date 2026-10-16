@@ -428,6 +428,11 @@ export const NL: Record<string, string> = {
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
   "Revolut crypto statement": "Revolut crypto-overzicht",
+  "Bitstamp transactions": "Bitstamp transacties",
+  "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.":
+    "{n} ruil tussen twee munten is overgeslagen: die heeft geen waarde in geld. Corrigeer dat saldo daarna.",
+  "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
+    "{n} ruilen tussen twee munten zijn overgeslagen: die hebben geen waarde in geld. Corrigeer die saldi daarna.",
   "CoinTracking trade table": "CoinTracking transactietabel",
   "Delta export": "Delta-export",
   "Currency exchanges": "Valutawissels",
