@@ -1,3 +1,4 @@
+import { tr, trn } from "../../i18n/index.js";
 import type { CsvType } from "../mapping.js";
 import { TEMPLATE_HEADERS } from "../mapping.js";
 import { parseNumber, type DecimalMark } from "../parse.js";
@@ -180,3 +181,64 @@ export const converted = (mapping?: Converted["mapping"]): Converted => ({
   warnings: [],
   mapping,
 });
+
+// ---- Shared by the recognisers ----
+
+/** A cell of a row, trimmed; "" when the column isn't there (-1). */
+export const cell = (r: string[], i: number) => (i >= 0 ? (r[i] ?? "").trim() : "");
+
+/** A number with trailing zeros dropped, or undefined for 0. */
+export const fixed = (v: number, digits = 8) => (v ? v.toFixed(digits).replace(/\.?0+$/, "") : undefined);
+
+/** A coin's symbol as an asset; a currency code (EUR, USD …) is cash. */
+export const coinAsset = (symbol: string): Pick<TemplateRow, "symbol" | "assetType"> => ({
+  symbol: symbol.toUpperCase(),
+  assetType: isFiatCode(symbol) ? "cash" : "crypto",
+});
+
+const MONTHS = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
+
+/** "May 5, 2020, 10:10:57 PM" → local date and 24-hour time. */
+export function usDateTime(raw: string): { date: string; time: string } | null {
+  const m = /^([A-Za-z]{3})[a-z]*\.? (\d{1,2}), (\d{4}),? (\d{1,2}):(\d{2})(?::(\d{2}))? ?([AP]M)?$/i.exec(raw.trim());
+  if (!m) return null;
+  const month = MONTHS.indexOf(m[1]!.toLowerCase());
+  if (month < 0) return null;
+  let hour = Number(m[4]);
+  if (m[7]) hour = (hour % 12) + (m[7].toUpperCase() === "PM" ? 12 : 0);
+  const pad = (n: number | string) => String(n).padStart(2, "0");
+  return { date: `${m[3]}-${pad(month + 1)}-${pad(m[2]!)}`, time: `${pad(hour)}:${m[5]}:${m[6] ?? "00"}` };
+}
+
+/** "18.01.2025 15:18:55", "2025-01-01 10:12:27", "2023-06-02 16:06:47-04:00". */
+export function dateAndTime(raw: string): Pick<TemplateRow, "date" | "time"> | null {
+  const s = raw.trim();
+  const zoned = /^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2}(?::\d{2})?)(Z|[+-]\d{2}:?\d{2})$/.exec(s);
+  if (zoned) return { date: `${zoned[1]}T${zoned[2]}${zoned[3]}` };
+  const [day = "", time] = s.split(/\s+/);
+  const date = dmy(day);
+  return date ? { date, time } : null;
+}
+
+/**
+ * Notes for an export of another tracker (CoinTracking, Delta), which covers all of someone's
+ * exchanges at once: coin-for-coin trades without a value, and lines from several places.
+ */
+export function trackerNotes(out: Converted, swaps: number, places: Set<string>) {
+  if (swaps)
+    out.warnings.push(
+      trn(
+        swaps,
+        "{n} trade between two coins was left out: the export has no value in euros for it. Correct those balances afterwards, or import that exchange's own export.",
+        "{n} trades between two coins were left out: the export has no value in euros for them. Correct those balances afterwards, or import that exchange's own export.",
+      ),
+    );
+  if (places.size > 1)
+    out.warnings.push(
+      tr(
+        "This file has lines from {n} places ({names}). They all go into the account you chose; to keep them apart, export one place at a time.",
+        { n: places.size, names: [...places].sort().join(", ") },
+      ),
+    );
+  return out;
+}

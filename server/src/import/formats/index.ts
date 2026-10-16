@@ -1,21 +1,24 @@
 import { tr } from "../../i18n/index.js";
 import { detectDelimiter, parseCsv } from "../parse.js";
-import {
-  bux,
-  etoro,
-  xtb,
-  lightyear,
-  rabobank,
-  revolut,
-  saxo,
-  scalableCapital,
-  schwabEquityAwards,
-  trading212,
-  tradeRepublic,
-} from "./brokers.js";
-import { bitstamp, bitvavo, coinbase, cryptoCom, krakenLedgers, revolutCrypto } from "./crypto.js";
+import { bitstamp } from "./bitstamp.js";
+import { bitvavo } from "./bitvavo.js";
+import { bux } from "./bux.js";
+import { coinbase } from "./coinbase.js";
+import { coinTracking } from "./cointracking.js";
+import { cryptoCom } from "./crypto-com.js";
+import { delta } from "./delta.js";
+import { etoro } from "./etoro.js";
+import { krakenLedgers } from "./kraken.js";
+import { lightyear } from "./lightyear.js";
+import { rabobank } from "./rabobank.js";
+import { revolut, revolutCrypto } from "./revolut.js";
+import { saxo } from "./saxo.js";
+import { scalableCapital } from "./scalable-capital.js";
+import { schwabEquityAwards } from "./schwab.js";
+import { tradeRepublic } from "./trade-republic.js";
+import { trading212 } from "./trading212.js";
+import { xtb } from "./xtb.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
-import { coinTracking, delta } from "./trackers.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
 /** Exports Box3balans recognises and converts to its own template. */
