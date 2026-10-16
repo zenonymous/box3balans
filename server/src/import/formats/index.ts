@@ -9,6 +9,7 @@ import {
   revolut,
   saxo,
   scalableCapital,
+  schwabEquityAwards,
   trading212,
   tradeRepublic,
 } from "./brokers.js";
@@ -36,6 +37,7 @@ export const FORMATS: BrokerFormat[] = [
   revolut,
   etoro,
   xtb,
+  schwabEquityAwards,
   coinTracking,
   delta,
 ];

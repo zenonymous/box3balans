@@ -598,6 +598,8 @@ Liet zijn groenstatus per **1 april 2026** los; de regeling wordt per 1 januari 
 
 **Open vragen:** de aankoopwaarde bij ESPP (aankoopprijs of marktwaarde?); kan een gewone Schwab-rekening ernaast in dezelfde export staan?
 
+**Stand (oktober 2026):** de herkenner is gebouwd ([#18](https://github.com/zenonymous/box3balans/issues/18)) op de indeling die cgt-calc beschrijft en test, nog niet met een echte export. Gekozen: een vesting en een ESPP-aankoop worden een aankoop tegen de marktwaarde (bij ESPP die op de aankoopdag), omdat het verschil met wat je betaalde als loon in box 1 is belast; de betaalde ESPP-prijs staat in de notitie. _Lapse_-regels (de bruto vesting) worden overgeslagen, want de aandelen komen binnen als _Deposit_; geld (_Journal_, _Wire Transfer_) ook. De export met alleen koersen (`FairMarketValuePrice`) wordt niet herkend.
+
 #### Morgan Stanley at Work en E\*TRADE
 
 **Wat:** de aandelenplannen van Morgan Stanley at Work (vroeger _Shareworks_, _StockPlan Connect_ of _E\*TRADE stock plan_) staan op etrade.com, onder _At Work_ ([Morgan Stanley, handleiding buiten de VS](https://www.morganstanley.com/cs/pdf/et_account_management_etrade_com_non_us_english.pdf)). Access Direct-rekeningen worden E\*TRADE-rekeningen ([Morgan Stanley](https://www.morganstanley.com/atwork/employees/msad-to-etrade)).

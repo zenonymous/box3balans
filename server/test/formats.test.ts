@@ -713,6 +713,59 @@ describe("broker exports", () => {
     expect(notes).toContain("XTB amounts are read as euros, the currency of a Dutch XTB account.");
   });
 
+  it("Schwab Equity Awards: vests and ESPP at market value, sales by lot, dividends with withholding; cash left out", () => {
+    const head =
+      '"Date","Action","Symbol","Description","Quantity","FeesAndCommissions","DisbursementElection","Amount","Type","Shares","SalePrice","SubscriptionDate","SubscriptionFairMarketValue","PurchaseDate","PurchasePrice","PurchaseFairMarketValue","DispositionType","GrantId","VestDate","VestFairMarketValue","GrossProceeds","AwardDate","AwardId"';
+    // Positions in a detail row, by column.
+    const detailRow = (cols: Record<number, string>) =>
+      Array.from({ length: 23 }, (_, i) => `"${cols[i] ?? ""}"`).join(",");
+    const { id, rows, skipped } = read(
+      lines(
+        head,
+        '"04/06/2026","Journal","ACME","Journal To Account ...123","","","","-$1,995.00","","","","","","","","","","","","","","",""',
+        '"04/02/2026","Sale","ACME","Share Sale","20","$0.05","Journal","$1,995.00","","","","","","","","","","","","","","",""',
+        detailRow({ 8: "RS", 9: "15", 10: "$100.00", 18: "03/15/2025", 19: "$80.00", 20: "$1,500.00" }),
+        detailRow({ 8: "ESPP", 9: "5", 10: "$100.00", 20: "$500.00" }),
+        '"12/15/2025","Tax Withholding","ACME","Debit","","","","-$1.50","","","","","","","","","","","","","","",""',
+        '"12/15/2025","Dividend","ACME","Credit","","","","$10.00","","","","","","","","","","","","","","",""',
+        '"08/29/2025","Deposit","ACME","ESPP","10","","","","","","","","","","","","","","","","","",""',
+        detailRow({ 11: "03/01/2025", 12: "$70.00", 13: "08/29/2025", 14: "$63.75", 15: "$90.00" }),
+        '"03/17/2025","Deposit","ACME","RS","30","","","","","","","","","","","","","","","","","",""',
+        detailRow({ 18: "03/15/2025", 19: "$80.00", 21: "03/01/2024", 22: "C0000001" }),
+        '"03/15/2025","Lapse","ACME","Restricted Stock Lapse","45","","","","","","","","","","","","","","","","","",""',
+        '"01/10/2025","Wire Transfer","ACME","Cash Disbursement","","","","-$500.00","","","","","","","","","","","","","","",""',
+      ),
+    );
+    expect(id).toBe("schwab-equity-awards");
+    expect(rows).toEqual([
+      // A vest at its fair market value (taxed as wages, so the cost for box 3).
+      expect.objectContaining({
+        date: "2025-03-17",
+        type: "buy",
+        symbol: "ACME",
+        quantity: "30",
+        price: "80.00",
+        currency: "USD",
+        notes: "RS vest",
+      }),
+      // ESPP at the market value on the purchase day, not the discounted price.
+      expect.objectContaining({
+        date: "2025-08-29",
+        type: "buy",
+        quantity: "10",
+        price: "90.00",
+        notes: "ESPP, paid $63.75",
+      }),
+      expect.objectContaining({ date: "2025-12-15", type: "dividend", amount: "10.00", tax: "1.50", currency: "USD" }),
+      // 20 shares over two lots, at $100.00, the fee on top.
+      expect.objectContaining({ date: "2026-04-02", type: "sell", quantity: "20", price: "100.00", fee: "0.05" }),
+    ]);
+    expect(skipped).toEqual({
+      "Cash: deposits, withdrawals, interest and their fees": 2,
+      "Vests as lapses: the shares come in as a deposit": 1,
+    });
+  });
+
   it("CoinTracking: trades against money, coin fees, income and losses; coin swaps need a value", () => {
     const { id, rows, skipped, notes } = read(
       lines(
@@ -924,7 +977,7 @@ describe("importing a recognised export", () => {
     expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
   });
 
-  it("previews CoinTracking, Delta and XTB exports without errors", async () => {
+  it("previews CoinTracking, Delta, XTB and Schwab Equity Awards exports without errors", async () => {
     t = await createTestApp();
     const acc = (await t.api("POST", "/api/accounts", { name: "Crypto (from a tracker)", kind: "exchange" })).json();
     const files = {
@@ -941,6 +994,13 @@ describe("importing a recognised export", () => {
         "ID;Type;Time;Symbol;Comment;Amount",
         "1001;Stocks/ETF purchase;12.04.2025 13:01:45;SPYL.DE;OPEN BUY 30/40.5 @ 12.0000;-360.00",
         "2000;Dividend;12.08.2025 11:00:27;SPYL.DE;SPYL.DE USD 0.0100/ SHR;0.30",
+      ),
+      "schwab-equity-awards": lines(
+        "Date,Action,Symbol,Description,Quantity,FeesAndCommissions,DisbursementElection,Amount,Type,Shares,SalePrice,PurchasePrice,PurchaseFairMarketValue,VestDate,VestFairMarketValue",
+        "03/17/2025,Deposit,ACME,RS,30,,,,,,,,,,",
+        ",,,,,,,,,,,,,03/15/2025,$80.00",
+        "04/02/2025,Sale,ACME,Share Sale,10,$0.05,Cash,$999.95,,,,,,,",
+        ",,,,,,,,RS,10,$100.00,,,03/15/2025,$80.00",
       ),
     };
     for (const [id, content] of Object.entries(files)) {

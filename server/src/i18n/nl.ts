@@ -440,6 +440,8 @@ export const NL: Record<string, string> = {
   "Staking and unstaking (the coins stay yours)": "Staken en unstaken (de munten blijven van jou)",
   "eToro account activity": "eToro accountactiviteit",
   "XTB cash operations": "XTB kasoperaties",
+  "Schwab Equity Awards transactions": "Schwab Equity Awards transacties",
+  "Vests as lapses: the shares come in as a deposit": "Vestings als lapse: de aandelen komen binnen als storting",
   "XTB amounts are read as euros, the currency of a Dutch XTB account.":
     "Bedragen van XTB worden gelezen als euro's, de valuta van een Nederlandse XTB-rekening.",
   "Withholding tax without its dividend": "Bronbelasting zonder bijbehorend dividend",
