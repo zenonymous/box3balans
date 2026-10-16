@@ -67,7 +67,13 @@ export const txType = pgEnum("tx_type", [
 
 export const txSource = pgEnum("tx_source", ["manual", "csv", "api", "chain"]);
 
-export const integrationProvider = pgEnum("integration_provider", ["bitvavo", "kraken", "coinbase", "ibkr"]);
+export const integrationProvider = pgEnum("integration_provider", [
+  "bitvavo",
+  "kraken",
+  "coinbase",
+  "ibkr",
+  "bitpanda",
+]);
 
 export const metal = pgEnum("metal", ["gold", "silver", "platinum", "palladium"]);
 

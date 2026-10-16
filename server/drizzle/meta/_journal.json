@@ -78,6 +78,13 @@
       "when": 1791547627329,
       "tag": "0010_price_history_source",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792143906900,
+      "tag": "0011_bitpanda_provider",
+      "breakpoints": true
     }
   ]
 }

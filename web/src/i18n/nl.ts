@@ -80,7 +80,7 @@ export const NL: Record<string, string> = {
   Debt: "Schuld",
   "Capital insurance": "Kapitaalverzekering",
   "DEGIRO, Trade Republic, Interactive Brokers": "DEGIRO, Trade Republic, Interactive Brokers",
-  "Bitvavo, Kraken, Coinbase": "Bitvavo, Kraken, Coinbase",
+  "Bitvavo, Kraken, Coinbase, Bitpanda": "Bitvavo, Kraken, Coinbase, Bitpanda",
   "Hardware or software wallet": "Hardware- of softwarewallet",
   "Goldrepublic, BullionVault": "Goldrepublic, BullionVault",
   "Home safe, safe deposit box": "Kluis thuis, bankkluis",
@@ -576,8 +576,8 @@ export const NL: Record<string, string> = {
     "Alleen-lezen API-toegang tot exchanges en brokers. Transacties worden automatisch geïmporteerd; je kunt ze nog steeds bewerken of verwijderen.",
   "+ Connect": "+ Koppelen",
   "No connections yet": "Nog geen koppelingen",
-  "Connect Bitvavo, Kraken, Coinbase or Interactive Brokers with a read-only key, and their history is imported for you.":
-    "Koppel Bitvavo, Kraken, Coinbase of Interactive Brokers met een alleen-lezen sleutel, en de geschiedenis wordt voor je geïmporteerd.",
+  "Connect Bitvavo, Kraken, Coinbase, Bitpanda or Interactive Brokers with a read-only key, and their history is imported for you.":
+    "Koppel Bitvavo, Kraken, Coinbase, Bitpanda of Interactive Brokers met een alleen-lezen sleutel, en de geschiedenis wordt voor je geïmporteerd.",
   Edit: "Bewerken",
   Key: "Sleutel",
   "The first sync is still running; check back on this page shortly.":
@@ -1210,8 +1210,8 @@ export const NL: Record<string, string> = {
   "▣ Accounts — brokers, exchanges, wallets, vaults, storage":
     "▣ Rekeningen — brokers, exchanges, wallets, kluizen, opslag",
   "⌂ Household — you, your partner and children, for box 3": "⌂ Huishouden — jij, je partner en kinderen, voor box 3",
-  "⇅ Connections — sync Bitvavo, Kraken, Coinbase and IBKR":
-    "⇅ Koppelingen — synchroniseer Bitvavo, Kraken, Coinbase en IBKR",
+  "⇅ Connections — sync Bitvavo, Kraken, Coinbase, Bitpanda and IBKR":
+    "⇅ Koppelingen — synchroniseer Bitvavo, Kraken, Coinbase, Bitpanda en IBKR",
   "◈ Wallets — track Bitcoin, Ethereum & L2s, Solana and more by address":
     "◈ Wallets — volg Bitcoin, Ethereum en L2's, Solana en meer op adres",
   "↗ Performance — results per year, realized gains": "↗ Resultaat — resultaat per jaar, gerealiseerde winst",

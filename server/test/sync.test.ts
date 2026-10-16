@@ -284,6 +284,70 @@ describe("exchange connections", () => {
     expect(atKraken.quantity).toBe("0.005");
   });
 
+  it("syncs Bitpanda: operations, the portfolio for the balance check, the key only to Bitpanda", async () => {
+    const BP = "api.public.bitpanda.com/v1";
+    const sentTo: string[] = [];
+    const answer = (body: object) => (url: string, init?: RequestInit) => {
+      sentTo.push(`${new URL(url).host} ${new Headers(init?.headers).get("x-api-key") ? "with key" : "without"}`);
+      return body;
+    };
+    const leg = (id: string, flow: string, value: string, ref: object, extra = {}) => ({
+      transaction_id: id,
+      flow,
+      credited_at: "2024-01-02T10:00:00Z",
+      asset_amount: { value, ...ref },
+      ...extra,
+    });
+    t = await createTestApp({
+      ...bitvavoRoutes(),
+      [`${BP}/currencies`]: answer({ data: [{ id: "cur-eur", symbol: "EUR", name: "Euro" }] }),
+      [`${BP}/assets`]: answer({
+        data: [{ id: "a-btc", symbol: "BTC", name: "Bitcoin", type: "CRYPTO", group: "CRYPTOCOIN" }],
+        has_next_page: false,
+      }),
+      [`${BP}/portfolio`]: answer({
+        data: [
+          { currency_id: "cur-eur", balance: { value: "500.00", currency_id: "cur-eur" } },
+          { asset_id: "a-btc", balance: { value: "0.01000000", asset_id: "a-btc" } },
+        ],
+      }),
+      [`${BP}/operations`]: answer({
+        data: [
+          {
+            operation_id: "o1",
+            operation_type: "DEPOSIT",
+            transactions: [leg("t1", "INCOMING", "1000.00", { currency_id: "cur-eur" })],
+          },
+          {
+            operation_id: "o2",
+            operation_type: "TRADE",
+            transactions: [
+              leg("t2a", "OUTGOING", "500.00", { currency_id: "cur-eur" }, { trade: { trade_id: "tr2" } }),
+              leg("t2b", "INCOMING", "0.01000000", { asset_id: "a-btc" }),
+            ],
+          },
+        ],
+        has_next_page: false,
+      }),
+    });
+    const res = await t.api("POST", "/api/integrations", {
+      provider: "bitpanda",
+      credentials: { apiKey: "bp-key-0123456789abcdef" },
+    });
+    expect(res.statusCode).toBe(200);
+    const { id } = json<{ id: number }>(res);
+    const result = await connResult(id);
+    expect(result.error).toBeUndefined();
+    expect(result.inserted).toBe(2);
+    expect(result.mismatches).toEqual([]);
+    // The key goes to Bitpanda and nowhere else.
+    expect(sentTo.length).toBeGreaterThan(0);
+    expect(new Set(sentTo)).toEqual(new Set(["api.public.bitpanda.com with key"]));
+    // A second sync finds nothing new.
+    const again = await resync(id);
+    expect(again.inserted).toBe(0);
+  });
+
   it("removing a connection can also remove its transactions", async () => {
     t = await createTestApp(bitvavoRoutes());
     const { id } = await connectBitvavo();

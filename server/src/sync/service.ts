@@ -9,6 +9,7 @@ import { AssetResolver } from "./assets.js";
 import { Importer, knownIds } from "./importer.js";
 import { bitvavo } from "./providers/bitvavo.js";
 import { coinbase } from "./providers/coinbase.js";
+import { bitpanda } from "./providers/bitpanda.js";
 import { ibkr } from "./providers/ibkr.js";
 import { kraken } from "./providers/kraken.js";
 import { type Mismatch, reconcile } from "./reconcile.js";
@@ -17,7 +18,7 @@ import { bookBitvavoSwaps } from "./swaps.js";
 import { matchTransfers } from "./transfers.js";
 import type { ExchangeProvider, ProviderContext } from "./types.js";
 
-export const PROVIDERS: Record<string, ExchangeProvider<any>> = { bitvavo, kraken, coinbase, ibkr };
+export const PROVIDERS: Record<string, ExchangeProvider<any>> = { bitvavo, kraken, coinbase, ibkr, bitpanda };
 
 export interface SyncResult {
   at: string;

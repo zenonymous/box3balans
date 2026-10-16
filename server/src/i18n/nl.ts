@@ -310,6 +310,21 @@ export const NL: Record<string, string> = {
     "Coinbase toont voor deze API-sleutel geen transacties en geen saldi. Een Coinbase-sleutel hoort bij één portfolio: controleer of je hem hebt gemaakt voor het portfolio met je crypto.",
   "Your Coinbase native currency is not EUR; set it to EUR in Coinbase settings so trades can be valued exactly.":
     "Je standaardvaluta bij Coinbase is niet EUR; zet die op EUR in de instellingen van Coinbase, zodat transacties exact gewaardeerd kunnen worden.",
+  // sync/providers/bitpanda.ts
+  "Bitpanda refused the key. Check that it hasn't expired and has the scopes Balances, Transaction and Trade (Read).":
+    "Bitpanda weigert de sleutel. Controleer of hij niet verlopen is en de rechten Balances, Transaction en Trade (Read) heeft.",
+  "Bitpanda → Account settings → API Keys → New API key (or app.bitpanda.com/my-account/apikey).":
+    "Bitpanda → Account settings → API Keys → New API key (of app.bitpanda.com/my-account/apikey).",
+  "Tick only the read scopes: Balances, Transaction and Trade (Read). Not Trade (Write) or Earn (Write): with those a key can trade.":
+    "Vink alleen de leesrechten aan: Balances, Transaction en Trade (Read). Niet Trade (Write) of Earn (Write): daarmee kan een sleutel handelen.",
+  "Set an expiry date (at most a year) and paste the key here; Bitpanda shows it only once.":
+    "Kies een vervaldatum (hooguit een jaar) en plak de sleutel hier; Bitpanda toont hem maar één keer.",
+  "Built on Bitpanda's documentation and not yet tested with a real key: check the balances after the first sync.":
+    "Gebouwd op de documentatie van Bitpanda en nog niet getest met een echte sleutel: controleer de saldi na de eerste synchronisatie.",
+  "Metals and commodities at Bitpanda aren't read yet ({symbols}); add them by hand.":
+    "Metalen en grondstoffen bij Bitpanda worden nog niet ingelezen ({symbols}); voeg ze met de hand toe.",
+  "Bitpanda shows no operations and no balances for this key. Check that it has the scopes Balances and Transaction.":
+    "Bitpanda toont voor deze sleutel geen transacties en geen saldi. Controleer of hij de rechten Balances en Transaction heeft.",
   // sync/providers/ibkr.ts
   "IBKR: the statement was not ready after a minute; try again later.":
     "IBKR: het overzicht was na een minuut nog niet klaar; probeer het later opnieuw.",

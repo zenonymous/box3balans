@@ -71,7 +71,7 @@ export function ConnectionsPage() {
         <Card>
           <Empty title={t("No connections yet")}>
             {t(
-              "Connect Bitvavo, Kraken, Coinbase or Interactive Brokers with a read-only key, and their history is imported for you.",
+              "Connect Bitvavo, Kraken, Coinbase, Bitpanda or Interactive Brokers with a read-only key, and their history is imported for you.",
             )}
           </Empty>
         </Card>

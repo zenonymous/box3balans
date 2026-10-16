@@ -1,5 +1,6 @@
 import { generateKeyPairSync, verify } from "node:crypto";
 import { describe, expect, it } from "vitest";
+import { type BpOperation, type Lookup, mapBitpandaOperations } from "../src/sync/providers/bitpanda.js";
 import { bitvavoSignature, mapBitvavoHistory, mapBitvavoItem } from "../src/sync/providers/bitvavo.js";
 import { coinbase, coinbaseJwt, mapCoinbaseTx, mapCoinbaseTxs } from "../src/sync/providers/coinbase.js";
 import { parseFlexStatement, parseIbDate } from "../src/sync/providers/ibkr.js";
@@ -418,6 +419,118 @@ describe("Coinbase", () => {
       ["v1", "withdrawal", "BTC", "0.5"],
     ]);
     expect(dropped.sort()).toEqual(["m1", "m2", "s1"]);
+  });
+});
+
+describe("Bitpanda", () => {
+  // Made up, in the shape of the public API's OpenAPI description.
+  const look: Lookup = {
+    currencies: new Map([["cur-eur", "EUR"]]),
+    assets: new Map([
+      ["a-btc", { id: "a-btc", symbol: "BTC", name: "Bitcoin", type: "CRYPTO", group: "CRYPTOCOIN" }],
+      ["a-eth", { id: "a-eth", symbol: "ETH", name: "Ethereum", type: "CRYPTO", group: "CRYPTOCOIN" }],
+      ["a-xau", { id: "a-xau", symbol: "XAU", name: "Gold", type: "METAL", group: "METAL" }],
+      [
+        "a-msft",
+        { id: "a-msft", symbol: "MSFT", name: "Microsoft", isin: "US5949181045", type: "SECURITY", group: "STOCK" },
+      ],
+    ]),
+  };
+  const leg = (
+    id: string,
+    flow: "INCOMING" | "OUTGOING",
+    value: string,
+    ref: { asset_id?: string; currency_id?: string },
+    extra = {},
+  ) => ({
+    transaction_id: id,
+    flow,
+    credited_at: "2025-03-01T10:00:00Z",
+    asset_amount: { value, ...ref },
+    ...extra,
+  });
+  const EUR = { currency_id: "cur-eur" };
+  const BTC = { asset_id: "a-btc" };
+  const ETH = { asset_id: "a-eth" };
+  const ops: BpOperation[] = [
+    { operation_id: "o1", operation_type: "DEPOSIT", transactions: [leg("t1", "INCOMING", "1000.00", EUR)] },
+    {
+      operation_id: "o2",
+      operation_type: "TRADE",
+      transactions: [
+        leg("t2a", "OUTGOING", "500.00", EUR, { trade: { trade_id: "tr2", fee: { value: "1.50", ...EUR } } }),
+        leg("t2b", "INCOMING", "0.01000000", BTC),
+      ],
+    },
+    {
+      operation_id: "o3",
+      operation_type: "TRADE",
+      transactions: [
+        leg("t3a", "OUTGOING", "0.00400000", BTC, { trade: { trade_id: "tr3" } }),
+        leg("t3b", "INCOMING", "240.00", EUR),
+      ],
+    },
+    {
+      operation_id: "o4",
+      operation_type: "EARN",
+      transactions: [leg("t4", "INCOMING", "0.00100000", ETH, { transaction_type: "STAKING_REWARD" })],
+    },
+    {
+      operation_id: "o5",
+      operation_type: "WITHDRAWAL",
+      transactions: [leg("t5", "OUTGOING", "0.00500000", BTC, { fee_amount: { value: "0.00001000", ...BTC } })],
+    },
+    // Into Bitpanda's own staking wallet and out again: nothing changes.
+    {
+      operation_id: "o6",
+      operation_type: "EARN_STAKE",
+      transactions: [leg("t6a", "OUTGOING", "0.10000000", ETH), leg("t6b", "INCOMING", "0.10000000", ETH)],
+    },
+    {
+      operation_id: "o7",
+      operation_type: "TRADE",
+      transactions: [
+        leg("t7a", "OUTGOING", "0.00100000", BTC, { trade: { trade_id: "tr7" } }),
+        leg("t7b", "INCOMING", "0.02000000", ETH),
+      ],
+    },
+    {
+      operation_id: "o8",
+      operation_type: "TRADE",
+      transactions: [leg("t8", "INCOMING", "1.00", { asset_id: "a-xau" })],
+    },
+    {
+      operation_id: "o9",
+      operation_type: "TRADE",
+      transactions: [
+        leg("t9a", "OUTGOING", "100.00", EUR, { trade: { trade_id: "tr9" } }),
+        leg("t9b", "INCOMING", "0.25000000", { asset_id: "a-msft" }),
+      ],
+    },
+  ];
+
+  it("maps operations by direction and trade: purchases, sales, rewards, transfers", () => {
+    const { events, swaps, unsupported } = mapBitpandaOperations(ops, look);
+    expect(events.map((e) => [e.kind, e.id, "side" in e ? e.side : "", qty(e)])).toEqual([
+      ["deposit", "t1", "", "1000"],
+      ["trade", "tr2", "buy", "0.01"],
+      ["trade", "tr3", "sell", "0.004"],
+      ["reward", "t4", "", "0.001"],
+      ["withdrawal", "t5", "", "0.005"],
+      ["fee", "t5:fee", "", "0.00001"],
+      ["trade", "tr9", "buy", "0.25"],
+    ]);
+    expect(events[1]).toMatchObject({
+      quote: { amount: "500", currency: "EUR" },
+      feeQuote: "1.5",
+      asset: { kind: "crypto", symbol: "BTC" },
+    });
+    expect(events[2]).toMatchObject({ quote: { amount: "240", currency: "EUR" } });
+    // A share, found by its ISIN.
+    expect(events[6]).toMatchObject({ asset: { kind: "security", isin: "US5949181045", symbol: "MSFT" } });
+    // BTC for ETH has no value in money; gold isn't mapped yet.
+    expect(swaps).toBe(1);
+    expect([...unsupported]).toEqual(["XAU"]);
   });
 });
 

@@ -37,7 +37,7 @@ import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
 
-const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "goldrepublic"];
+const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "bitpanda", "goldrepublic"];
 // Kinds that are always kept as values per year.
 const YEARLY_ONLY = new Set<AccountKind>(["property", "receivable", "debt", "insurance"]);
 

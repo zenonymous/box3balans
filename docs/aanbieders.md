@@ -425,6 +425,8 @@ Algemeen: de Belastingdienst laat je de koers op 1 januari van het platform dat 
 
 **Advies:** (a), een koppeling met de nieuwe API en een `Read`-sleutel. Niet op de oude API bouwen. Werk M, prio 1.
 
+**Stand (oktober 2026):** de koppeling is gebouwd ([#22](https://github.com/zenonymous/box3balans/issues/22)) op de OpenAPI-beschrijving, nog niet getest met een echte sleutel. Rechten: _Balances_, _Transaction_ en _Trade (Read)_ (voor de namen van beleggingen), geen schrijfrechten. Omdat de documentatie de waarden van `operation_type` en `transaction_type` niet noemt, gaat de vertaling op wat vaststaat: richting (`flow`), bedragen en of er een `trade` is; de soortnaam dient alleen om beloningen te herkennen. Twee gelijke tegengestelde regels van één munt in een operatie zijn een verplaatsing binnen Bitpanda en vallen weg. Aandelen en ETF's gaan op ISIN; metalen en grondstoffen nog niet. Nog open: wat de soorten echt zijn, en of een ontstaking als losse inkomende regel verschijnt.
+
 **Open vragen:** of `/v1/operations` aandelen, ETF's en metalen met ISIN geeft; de paginering en hoe ver terug; of een `Read`-sleutel echt niets kan wijzigen. Box 3-categorie van het eurosaldo (Box3balans rekent geld op een cryptobeurs standaard als overige bezitting).
 
 #### Crypto.com
