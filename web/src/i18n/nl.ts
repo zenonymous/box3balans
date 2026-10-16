@@ -189,6 +189,7 @@ export const NL: Record<string, string> = {
   "Choose the year statement (jaaroverzicht) of this account as a PDF. It's read here in your browser and not kept. Box3balans looks for the value on 1 January and, where the statement has them, the money in and out, income and costs. Nothing is saved until you press Save.":
     "Kies het jaaroverzicht van deze rekening als pdf. Het wordt hier in je browser gelezen en niet bewaard. Box3balans zoekt de waarde op 1 januari en, als het overzicht ze noemt, het geld erin en eruit, de inkomsten en de kosten. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Recognised: {name}.": "Herkend: {name}.",
+  "Which account in the statement?": "Welke rekening in het overzicht?",
   "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. <0>Share its text</0> and it can be recognised next time.":
     "Box3balans kent dit overzicht nog niet. Hieronder staan de bedragen die op waarden lijken: vink de juiste aan. <0>Deel de tekst</0>, dan kan het de volgende keer herkend worden.",
   "No amounts found next to a date or a word such as beginwaarde. Fill in the values by hand.":

@@ -151,7 +151,16 @@ export type YearField = "valueEur" | "inEur" | "outEur" | "incomeEur" | "costsEu
 export interface YearStatement {
   template: string | null;
   year: number | null;
-  found: { year: number; field: YearField; amount: string; page: number; line: string; sure: boolean }[];
+  found: {
+    year: number;
+    field: YearField;
+    amount: string;
+    page: number;
+    line: string;
+    sure: boolean;
+    // The account it belongs to, for a statement of several: its header line.
+    group?: string;
+  }[];
 }
 
 export interface LatestPrice {

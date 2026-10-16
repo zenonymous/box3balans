@@ -150,6 +150,64 @@ describe("year statements", () => {
     expect(short(r)).toEqual([[2025, "valueEur", "900.00", false]]);
   });
 
+  // Made up, in the layout of ING's Jaaroverzicht (as pdf.js and pdftotext give it).
+  const ing = [
+    page(
+      [
+        "ING",
+        "Contact via ing.nl/klantenservice",
+        "Jaaroverzicht 2025",
+        "Beste heer Person,",
+        "Hierbij ontvangt u het Jaaroverzicht van 2025.",
+        "Betalen",
+        "ING Betaalrekening: NL00 INGB 0000 0000 00 Hr A Person",
+        "Saldo op 01-01-2025   1.234,56",
+        "Saldo op 31-12-2025   2.345,67",
+        "Creditcards",
+        "ING Creditcardrekening: 000000000000 Hr A Person*",
+        "Saldo op 01-01-2025   -12,34",
+        "Saldo op 31-12-2025   -456,78",
+        "Rente, betaald in 2025   1,23",
+        "* Uw creditcardrekening staat vermeld in de omschrijving van de maandelijkse afschrijving van uw betaalrekening",
+        "Sparen",
+        "ING Oranje Spaarrekening: R 000-00000 Hr A Person",
+        "Saldo op 01-01-2025   10.000,00",
+        "Saldo op 31-12-2025   9.500,00",
+        "Rente, ontvangen in 2025   150,25",
+        "rekeningen tot een maximum van € 100.000. Kijk voor meer informatie op ing.nl/dgs.",
+        "M-BUSAS01   ING Bank N.V., statutair gevestigd te Amsterdam, Handelsregister nr. 00000000",
+      ].join("\n"),
+    ),
+  ];
+  const byAccount = (r: ReturnType<typeof readYearStatement>) =>
+    r.found.map((f) => [f.group?.split(":")[0], f.year, f.field, f.amount, f.sure]);
+
+  it("recognises ING's jaaroverzicht: per account the balances and the interest, ticked", () => {
+    const r = readYearStatement(ing);
+    expect(r).toMatchObject({ template: "ING, jaaroverzicht", year: 2025 });
+    expect(byAccount(r)).toEqual([
+      ["ING Betaalrekening", 2025, "valueEur", "1234.56", true],
+      // The balance at the end of 2025 is the value on 1 January 2026.
+      ["ING Betaalrekening", 2026, "valueEur", "2345.67", true],
+      ["ING Creditcardrekening", 2025, "valueEur", "-12.34", true],
+      ["ING Creditcardrekening", 2026, "valueEur", "-456.78", true],
+      // On a credit card, the interest paid.
+      ["ING Creditcardrekening", 2025, "incomeEur", "1.23", true],
+      ["ING Oranje Spaarrekening", 2025, "valueEur", "10000.00", true],
+      ["ING Oranje Spaarrekening", 2026, "valueEur", "9500.00", true],
+      ["ING Oranje Spaarrekening", 2025, "incomeEur", "150.25", true],
+    ]);
+  });
+
+  it("without a template, still keeps the accounts of a statement apart", () => {
+    const r = readYearStatement(ing, []);
+    expect(r.template).toBeNull();
+    expect(byAccount(r).map(([group, year, field, amount]) => [group, year, field, amount])).toEqual(
+      byAccount(readYearStatement(ing)).map(([group, year, field, amount]) => [group, year, field, amount]),
+    );
+    expect(r.found.every((f) => !f.sure)).toBe(true);
+  });
+
   describe("route", () => {
     let t: TestApp | undefined;
     afterEach(async () => {

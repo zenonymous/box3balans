@@ -20,6 +20,8 @@ export interface FoundValue {
   page: number;
   line: string; // the line it came from
   sure: boolean; // from a template: ticked to begin with
+  // The account it belongs to, when the statement covers several: its header line.
+  group?: string;
 }
 
 export interface YearStatement {
@@ -35,6 +37,8 @@ export interface StatementTemplate {
   detect: RegExp[];
   /** The year the statement is about, in the first group. */
   year: RegExp;
+  /** For a statement of several accounts: the header line that starts each account's part. */
+  group?: RegExp;
   /**
    * A value: the first amount after `label` on its line (or the `column`-th, from 0). `nextYear`: a
    * value at the end of the year, so the value on 1 January of the next.
@@ -46,7 +50,23 @@ export interface StatementTemplate {
  * Known statements. Each needs a text sample (`pdftotext -layout`, with names and amounts changed)
  * and a test; see docs/aanbieders.md.
  */
-export const TEMPLATES: StatementTemplate[] = [];
+export const TEMPLATES: StatementTemplate[] = [
+  {
+    // ING's Jaaroverzicht: per account "ING Betaalrekening: NL.. INGB …", then "Saldo op 01-01-2025",
+    // "Saldo op 31-12-2025" and "Rente, ontvangen in 2025" (savings) or "Rente, betaald in 2025"
+    // (a credit card: interest paid). Tested with a real statement over 2025.
+    id: "ing-jaaroverzicht",
+    label: "ING, jaaroverzicht",
+    detect: [/ING Bank N\.V\./, /^Jaaroverzicht \d{4}$/m],
+    year: /^Jaaroverzicht (\d{4})$/m,
+    group: /^ING [^:\n]*(rekening|card)[^:\n]*:/i,
+    fields: [
+      { field: "valueEur", label: /^Saldo op 01-01-\d{4}/ },
+      { field: "valueEur", label: /^Saldo op 31-12-\d{4}/, nextYear: true },
+      { field: "incomeEur", label: /^Rente, (ontvangen|betaald) in \d{4}/ },
+    ],
+  },
+];
 
 // ---- Amounts ----
 
@@ -110,6 +130,9 @@ const IN = /\b(inleg|ingelegd|storting(en)?|gestort|ge[ïi]nvesteerd|deposits?|i
 const OUT = /\b(onttrekking(en)?|opname(n|s)?|opgenomen|withdrawals?)\b/i;
 const COSTS = /\b(kosten|costs|fees?)\b/i;
 
+// A line that starts an account's part of a statement: "ING Oranje Spaarrekening: …", or an IBAN.
+const ACCOUNT_HEADER = /(rekening|account|portefeuille|depot)[a-z]*\s*:|\b[A-Z]{2}\d{2} ?[A-Z]{4}(?: ?\d{4}){2}/i;
+
 const MAX_PER_LINE = 3;
 const MAX_FOUND = 60;
 
@@ -118,6 +141,8 @@ const decYear = (m: RegExpExecArray) => Number(m[1] ?? m[2]) + 1;
 
 function guess(pages: StatementPage[], year: number | null): FoundValue[] {
   const found: FoundValue[] = [];
+  // The account the lines below belong to; kept across pages.
+  let group: string | undefined;
   for (const { page, text } of pages) {
     // A table header naming both peildata ("1 januari 2025   31 december 2025"): the years of the
     // amount columns in the lines below it.
@@ -129,10 +154,11 @@ function guess(pages: StatementPage[], year: number | null): FoundValue[] {
       const dec = LAST_DECEMBER.exec(line);
       if (!values.length) {
         if (jan && dec) columns = jan.index < dec.index ? [janYear(jan), decYear(dec)] : [decYear(dec), janYear(jan)];
+        if (ACCOUNT_HEADER.test(line)) group = line;
         continue;
       }
       const push = (field: YearField, y: number | null, v: Amount) => {
-        if (y != null) found.push({ year: y, field, amount: v.value, page, line, sure: false });
+        if (y != null) found.push({ year: y, field, amount: v.value, page, line, sure: false, group });
       };
       const add = (field: YearField, y: number | null) => values.forEach((v) => push(field, y, v));
       // The latest year a line names: "rente over 2025", "1 januari t/m 31 december 2025".
@@ -172,26 +198,32 @@ function guess(pages: StatementPage[], year: number | null): FoundValue[] {
 // ---- With a template ----
 
 function fill(t: StatementTemplate, pages: StatementPage[], year: number): FoundValue[] {
+  // The statement in parts, one per account when the template knows their header lines.
+  const parts: { group?: string; lines: { page: number; line: string }[] }[] = [{ lines: [] }];
+  for (const { page, text } of pages)
+    for (const raw of text.split("\n")) {
+      const line = raw.trim();
+      if (t.group?.test(line)) parts.push({ group: line, lines: [] });
+      else parts.at(-1)!.lines.push({ page, line });
+    }
   const found: FoundValue[] = [];
-  for (const f of t.fields) {
-    for (const { page, text } of pages) {
-      const line = text.split("\n").find((l) => f.label.test(l));
-      if (!line) continue;
-      const m = f.label.exec(line)!;
-      const after = amounts(line).filter((a) => a.index >= m.index + m[0].length);
-      const v = after[f.column ?? 0];
+  for (const part of parts)
+    for (const f of t.fields) {
+      const hit = part.lines.find((l) => f.label.test(l.line));
+      if (!hit) continue;
+      const m = f.label.exec(hit.line)!;
+      const v = amounts(hit.line).filter((a) => a.index >= m.index + m[0].length)[f.column ?? 0];
       if (v)
         found.push({
           year: f.nextYear ? year + 1 : year,
           field: f.field,
           amount: v.value,
-          page,
-          line: line.trim(),
+          page: hit.page,
+          line: hit.line,
           sure: true,
+          group: part.group,
         });
-      break;
     }
-  }
   return found;
 }
 

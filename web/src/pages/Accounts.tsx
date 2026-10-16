@@ -716,6 +716,13 @@ function surePicks(acc: BankImport["accounts"][number] | undefined) {
 
 type FoundRow = YearStatement["found"][number] & { on: boolean };
 
+// Which account of a statement fits this one: a credit card or loan for a debt, otherwise the first
+// that isn't one.
+function likelyGroup(groups: string[], kind: AccountKind): string | undefined {
+  const isDebt = (g: string) => /credit|lening|krediet|hypothe/i.test(g);
+  return (kind === "debt" ? groups.find(isDebt) : groups.find((g) => !isDebt(g))) ?? groups[0];
+}
+
 /**
  * Reads a year statement (PDF) into values per year. The PDF is read here in the browser; the server
  * only gets its text, finds the values and keeps nothing. The user ticks what goes into the table.
@@ -733,6 +740,7 @@ function YearStatementPanel({
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<YearStatement | null>(null);
   const [rows, setRows] = useState<FoundRow[]>([]);
+  const [group, setGroup] = useState<string>();
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const version = useQuery({
@@ -761,7 +769,9 @@ function YearStatementPanel({
       const r = await post<YearStatement>(`/api/accounts/${account.id}/year-statement`, { pages });
       setFileName(file.name);
       setResult(r);
-      setRows(r.found.filter((f) => label[f.field]).map((f) => ({ ...f, on: f.sure })));
+      const found = r.found.filter((f) => label[f.field]);
+      setRows(found.map((f) => ({ ...f, on: f.sure })));
+      setGroup(likelyGroup([...new Set(found.flatMap((f) => (f.group ? [f.group] : [])))], account.kind));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -769,21 +779,27 @@ function YearStatementPanel({
     }
   };
 
-  // One amount per year and column: ticking one unticks the others.
+  // A statement of several accounts (a bank's): only the lines of the one chosen.
+  const groups = [...new Set(rows.flatMap((r) => (r.group ? [r.group] : [])))];
+  const shown = rows.map((r, i) => ({ r, i })).filter(({ r }) => groups.length < 2 || !r.group || r.group === group);
+  // What a debt's statement shows as a negative balance is what you owe.
+  const amountOf = (r: FoundRow) => (account.kind === "debt" ? r.amount.replace(/^-/, "") : r.amount);
+
+  // One amount per year and column (within an account): ticking one unticks the others.
   const update = (i: number, patch: Partial<FoundRow>) =>
     setRows((all) => {
       const next = all.map((r, j) => (j === i ? { ...r, ...patch } : r));
       const me = next[i]!;
       if (!me.on) return next;
       return next.map((r, j) =>
-        j !== i && r.on && r.year === me.year && r.field === me.field ? { ...r, on: false } : r,
+        j !== i && r.on && r.group === me.group && r.year === me.year && r.field === me.field ? { ...r, on: false } : r,
       );
     });
 
   const apply = () => {
-    const picked = rows.filter((r) => r.on);
+    const picked = shown.map(({ r }) => r).filter((r) => r.on);
     const byYear = new Map<number, Picked>();
-    for (const r of picked) byYear.set(r.year, { ...byYear.get(r.year), year: r.year, [r.field]: r.amount });
+    for (const r of picked) byYear.set(r.year, { ...byYear.get(r.year), year: r.year, [r.field]: amountOf(r) });
     const pages = [...new Set(picked.map((r) => r.page))].sort((a, b) => a - b);
     const where = pages.length > 4 ? `${pages[0]}–${pages.at(-1)}` : pages.join(", ");
     // The server keeps at most 200 characters of a source.
@@ -831,7 +847,20 @@ function YearStatementPanel({
           {t("No amounts found next to a date or a word such as beginwaarde. Fill in the values by hand.")}
         </p>
       )}
-      {rows.length > 0 && (
+      {groups.length > 1 && (
+        <Field label={t("Which account in the statement?")}>
+          {(id) => (
+            <Select id={id} value={group} onChange={(e) => setGroup(e.target.value)}>
+              {groups.map((g) => (
+                <option key={g} value={g}>
+                  {g}
+                </option>
+              ))}
+            </Select>
+          )}
+        </Field>
+      )}
+      {shown.length > 0 && (
         <div className="overflow-x-auto">
           <table className="tabular w-full min-w-[600px] text-sm">
             <thead>
@@ -844,21 +873,21 @@ function YearStatementPanel({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => (
+              {shown.map(({ r, i }) => (
                 <tr key={i} className="border-t border-line/60">
                   <td className="py-1 pr-2">
                     <input
                       type="checkbox"
-                      aria-label={t("Use {amount} for {year}", { amount: eur(r.amount), year: r.year })}
+                      aria-label={t("Use {amount} for {year}", { amount: eur(amountOf(r)), year: r.year })}
                       checked={r.on}
                       onChange={(e) => update(i, { on: e.target.checked })}
                     />
                   </td>
                   <td className="py-1 pr-2">{r.year}</td>
-                  <td className="whitespace-nowrap py-1 pr-3 text-right">{eur(r.amount)}</td>
+                  <td className="whitespace-nowrap py-1 pr-3 text-right">{eur(amountOf(r))}</td>
                   <td className="py-1 pr-2">
                     <Select
-                      aria-label={t("Column for {amount}", { amount: eur(r.amount) })}
+                      aria-label={t("Column for {amount}", { amount: eur(amountOf(r)) })}
                       className="w-auto! py-0.5 text-xs"
                       value={r.field}
                       onChange={(e) => update(i, { field: e.target.value as YearField })}
@@ -881,7 +910,7 @@ function YearStatementPanel({
       )}
       <div className="flex gap-2">
         <Button onClick={onCancel}>{t("Back")}</Button>
-        {rows.some((r) => r.on) && (
+        {shown.some(({ r }) => r.on) && (
           <Button variant="primary" onClick={apply}>
             {t("Put in the table")}
           </Button>
