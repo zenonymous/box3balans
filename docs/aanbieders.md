@@ -115,6 +115,12 @@ Daarnaast, als fundament: **een lezer voor pdf-jaaroverzichten** (L). Die maakt 
 
 **Advies:** niets nieuws bouwen; blijven vragen om echte exports. Werk S, prio 2.
 
+**Getest met echte bestanden van ING (oktober 2026):** de CSV-export van de betaalrekening en van de Oranje Spaarrekening (die laatste heeft een eigen indeling: _Omschrijving_, _Rekening naam_, _Bedrag_, _Valuta_, datums als `2025-01-31`), het jaaroverzicht over 2025 en twee _Afschriften Betaalrekening_ (september 2024 t/m 1 januari 2025 en augustus 2025 t/m 1 januari 2026).
+
+- **Spaarrekening:** de saldi op 1 januari 2025 en 2026 en de rente over 2025 uit de export zijn tot op de cent gelijk aan het jaaroverzicht.
+- **Betaalrekening:** de export en de afschriften kloppen onderling volledig (beginsaldo plus mutaties is eindsaldo, dezelfde mutaties per dag), maar het jaaroverzicht noemt een saldo op 1 januari dat 2,5% (2025) en 5,7% (2026) lager is en dat nergens als saldo in de afschriften voorkomt. Niet verklaard door de valutadatum (gelijk aan de boekdatum) of door één mutatie rond de jaarwisseling. ING stuurt de cijfers van het jaaroverzicht naar de Belastingdienst; de gebruiker vraagt ING om uitleg.
+- **Gevolg voor Box3balans:** het sjabloon leest het jaaroverzicht zoals ING het drukt; de bankimport geeft het saldo volgens de afschriften. De README raadt aan bij een betaalrekening het saldo te controleren.
+
 #### Revolut
 
 **Wat:** betaalrekening en _Dagelijks Sparen_ bij de bank van Revolut: banktegoeden, vermoedelijk in het buitenland (Revolut Bank UAB, Litouwen; niet in de gelezen pagina's bevestigd). Daarnaast _Dagelijkse Geldmarktfondsen_ (Flexible Cash Funds) van Revolut Securities Europe UAB: dat zijn beleggingen in geldmarktfondsen, dus overige bezittingen ([verschil tussen beide](https://help.revolut.com/nl-NL/help/app-features/flexible-accounts/difference-between-savings-and-flexible/), [Dagelijks Sparen](https://www.revolut.com/nl-NL/savings/open-a-savings-account/)). Het aandelenoverzicht leest Box3balans al ([README](../README.md#csv-import)).

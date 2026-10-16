@@ -297,7 +297,7 @@ Rente herken je aan de omschrijving ("rente", "creditrente", "interest"). Je zie
 
 Bij elke rekening met waarden per jaar, behalve een woning, leest _Jaaroverzicht (pdf) inlezen_ het jaaroverzicht of de jaaropgaaf van je bank, broker of platform. De pdf wordt in je browser gelezen en niet bewaard: alleen de tekst gaat naar je eigen Box3balans ([ADR 0009](docs/adr/0009-pdf-lezen-in-de-browser.md)). Wat je aanvinkt, komt in de tabel, met de bestandsnaam en de pagina als bron; die staat ook in het dossier.
 
-Het **jaaroverzicht van ING** wordt herkend: kies de rekening uit het overzicht (betaal-, spaar- of creditcardrekening) en de saldi op 1 januari en 31 december en de rente staan meteen aangevinkt. Bij een schuld, zoals een creditcard, komt het saldo erin als wat je verschuldigd bent.
+Het **jaaroverzicht van ING** wordt herkend: kies de rekening uit het overzicht (betaal-, spaar- of creditcardrekening) en de saldi op 1 januari en 31 december en de rente staan meteen aangevinkt. Bij een schuld, zoals een creditcard, komt het saldo erin als wat je verschuldigd bent. Controleer bij een betaalrekening het saldo: bij een gebruiker week het jaaroverzicht van ING daar af van de eigen afschriften en de export van ING (de spaarrekening klopte). De bankexport geeft het saldo zoals het op je afschriften staat.
 
 Box3balans zoekt bedragen naast een peildatum ("1 januari 2025", "31-12-2024") en naast woorden als _beginwaarde_, _eindwaarde_, _dividend_, _rente_, _inleg_, _onttrekkingen_ en _kosten_. Een bedrag op 31 december is de waarde op 1 januari van het jaar erna. Per bedrag kies je of het klopt en in welke kolom het hoort. Een pdf zonder tekst (een scan) of met een wachtwoord kan niet gelezen worden.
 
