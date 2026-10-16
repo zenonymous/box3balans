@@ -136,108 +136,179 @@ export interface Mapped {
   events: SyncEvent[];
   /** Trades between two non-money assets: no value in euros, left out. */
   swaps: number;
+  /** Operations that couldn't be read for sure: no date, or more than one asset on a side. */
+  unread: number;
   /** Lines in metals or commodities, which aren't mapped yet. */
   unsupported: Set<string>;
 }
 
+interface Leg {
+  t: BpTransaction;
+  ref: AssetRef;
+  qty: Decimal;
+}
+
+/** The legs of one direction, added up per asset. */
+function sideOf(legs: Leg[], flow: "INCOMING" | "OUTGOING") {
+  const out = new Map<string, Leg>();
+  for (const l of legs.filter((x) => x.t.flow === flow)) {
+    const k = keyOf(l.ref);
+    const prev = out.get(k);
+    out.set(k, prev ? { ...prev, qty: prev.qty.plus(l.qty) } : l);
+  }
+  return [...out.values()];
+}
+
 /**
- * Bitpanda operations as events. An operation with a trade has a leg out and a leg in: money for an
- * asset is a purchase, an asset for money a sale. Without a trade, a leg in is a deposit (a reward
- * when its type says so) and a leg out a withdrawal; two equal legs of one asset cancel out (a move
- * between Bitpanda's own wallets).
+ * Bitpanda operations as events. An operation with a trade has a side out and a side in: money for
+ * an asset is a purchase, an asset for money a sale; lines marked as a fee are kept apart (a fee in
+ * money is part of the price, one in a coin its own line). Without a trade, a leg in is a deposit (a
+ * reward when its type says so) and a leg out a withdrawal; two equal legs of one asset cancel out (a
+ * move between Bitpanda's own wallets). In a trade of a metal, which isn't mapped yet, the money still
+ * moves.
  */
 export function mapBitpandaOperations(ops: BpOperation[], look: Lookup): Mapped {
   const events: SyncEvent[] = [];
   const unsupported = new Set<string>();
   let swaps = 0;
+  let unread = 0;
   for (const op of ops) {
-    const legs = op.transactions
+    const all = op.transactions
       .map((t) => ({ t, ref: refOf(t.asset_amount, look), qty: D(t.asset_amount?.value ?? "0").abs() }))
       .filter((l) => l.ref && !l.qty.isZero());
-    if (legs.some((l) => l.ref === "unsupported")) {
-      for (const l of legs)
-        if (l.ref === "unsupported") unsupported.add(look.assets.get(l.t.asset_amount?.asset_id ?? "")?.symbol ?? "?");
+    const odd = all.filter((l) => l.ref === "unsupported");
+    for (const l of odd) unsupported.add(look.assets.get(l.t.asset_amount?.asset_id ?? "")?.symbol ?? "?");
+    const legs = all.filter((l): l is Leg => l.ref !== "unsupported" && l.ref !== null);
+    const when = op.transactions.map((t) => t.credited_at).find(Boolean);
+    if (!legs.length) continue;
+    if (!when) {
+      unread++;
       continue;
     }
-    const at = (t: BpTransaction) => new Date(t.credited_at ?? 0);
+    const at = new Date(when);
     const type = `${op.operation_type ?? ""} ${legs.map((l) => l.t.transaction_type ?? "").join(" ")}`;
+    const noteOf = (l: Leg) =>
+      (l.t.transaction_type ?? op.operation_type ?? "").replace(/_/g, " ").toLowerCase() || undefined;
+    const cash = (l: Leg, note?: string): Extract<SyncEvent, { kind: "deposit" | "withdrawal" }> => ({
+      kind: l.t.flow === "INCOMING" ? "deposit" : "withdrawal",
+      id: l.t.transaction_id,
+      at,
+      asset: l.ref,
+      quantity: l.qty.toFixed(),
+      note: note ?? noteOf(l),
+    });
+
+    if (odd.length) {
+      // A metal bought or sold for money: the money moved; the metal is added by hand.
+      for (const l of legs.filter((x) => x.ref.kind === "fiat")) events.push(cash(l, "metal or commodity trade"));
+      continue;
+    }
     const trade = op.transactions.find((t) => t.trade);
-    const out = legs.find((l) => l.t.flow === "OUTGOING");
-    const into = legs.find((l) => l.t.flow === "INCOMING");
-    if (trade && out && into) {
-      const gave = out.ref as AssetRef;
-      const got = into.ref as AssetRef;
-      const fee = trade.trade?.fee ?? trade.fee_amount;
-      const feeRef = refOf(fee, look);
-      const feeIn = (r: AssetRef) =>
-        fee && feeRef && feeRef !== "unsupported" && keyOf(feeRef) === keyOf(r) && !D(fee.value).isZero()
-          ? D(fee.value).abs().toFixed()
-          : undefined;
+    const isFee = (l: Leg) => /fee/i.test(l.t.transaction_type ?? "");
+    const main = legs.filter((l) => !isFee(l));
+    const fees = legs.filter(isFee);
+    const outs = sideOf(main, "OUTGOING");
+    const ins = sideOf(main, "INCOMING");
+
+    if (trade && outs.length && ins.length) {
+      if (outs.length > 1 || ins.length > 1) {
+        unread++;
+        continue;
+      }
+      const gave = outs[0]!;
+      const got = ins[0]!;
       const id = trade.trade?.trade_id ?? op.operation_id;
-      if (gave.kind === "fiat" && got.kind !== "fiat")
+      // A fee in money is part of what was paid or received; one in a coin is its own line.
+      const feeMoney = fees.filter((f) => f.ref.kind === "fiat").reduce((s, f) => s.plus(f.qty), D(0));
+      const reported = trade.trade?.fee ?? trade.fee_amount;
+      const reportedRef = refOf(reported, look);
+      const feeQuote = (r: AssetRef) =>
+        !feeMoney.isZero()
+          ? feeMoney.toFixed()
+          : reported &&
+              reportedRef &&
+              reportedRef !== "unsupported" &&
+              keyOf(reportedRef) === keyOf(r) &&
+              !D(reported.value).isZero()
+            ? D(reported.value).abs().toFixed()
+            : undefined;
+      if (gave.ref.kind === "fiat" && got.ref.kind !== "fiat")
         events.push({
           kind: "trade",
           id,
-          at: at(into.t),
+          at,
           side: "buy",
-          asset: got,
-          quantity: into.qty.toFixed(),
-          quote: { amount: out.qty.toFixed(), currency: gave.currency },
-          feeQuote: feeIn(gave),
+          asset: got.ref,
+          quantity: got.qty.toFixed(),
+          quote: { amount: gave.qty.plus(feeMoney).toFixed(), currency: gave.ref.currency },
+          feeQuote: feeQuote(gave.ref),
           note: "Bitpanda",
         });
-      else if (got.kind === "fiat" && gave.kind !== "fiat")
+      else if (got.ref.kind === "fiat" && gave.ref.kind !== "fiat")
         events.push({
           kind: "trade",
           id,
-          at: at(out.t),
+          at,
           side: "sell",
-          asset: gave,
-          quantity: out.qty.toFixed(),
-          quote: { amount: into.qty.toFixed(), currency: got.currency },
-          feeQuote: feeIn(got),
+          asset: gave.ref,
+          quantity: gave.qty.toFixed(),
+          quote: { amount: got.qty.minus(feeMoney).toFixed(), currency: got.ref.currency },
+          feeQuote: feeQuote(got.ref),
           note: "Bitpanda",
         });
-      else swaps++;
+      else {
+        swaps++;
+        continue;
+      }
+      for (const f of fees.filter((x) => x.ref.kind !== "fiat"))
+        events.push({
+          kind: "fee",
+          id: f.t.transaction_id,
+          at,
+          asset: f.ref,
+          quantity: f.qty.toFixed(),
+          note: noteOf(f),
+        });
       continue;
     }
     // Two equal legs of the same asset: a move between Bitpanda's own wallets.
-    if (out && into && keyOf(out.ref as AssetRef) === keyOf(into.ref as AssetRef) && out.qty.eq(into.qty)) continue;
+    if (
+      outs.length === 1 &&
+      ins.length === 1 &&
+      keyOf(outs[0]!.ref) === keyOf(ins[0]!.ref) &&
+      outs[0]!.qty.eq(ins[0]!.qty)
+    )
+      continue;
     for (const l of legs) {
-      const ref = l.ref as AssetRef;
-      const note = (l.t.transaction_type ?? op.operation_type ?? "").replace(/_/g, " ").toLowerCase() || undefined;
+      if (isFee(l)) {
+        events.push({
+          kind: "fee",
+          id: l.t.transaction_id,
+          at,
+          asset: l.ref,
+          quantity: l.qty.toFixed(),
+          note: noteOf(l),
+        });
+        continue;
+      }
       if (l.t.flow === "INCOMING")
-        events.push({
-          kind: REWARD.test(type) && ref.kind !== "fiat" ? "reward" : "deposit",
-          id: l.t.transaction_id,
-          at: at(l.t),
-          asset: ref,
-          quantity: l.qty.toFixed(),
-          note,
-        });
+        events.push(REWARD.test(type) && l.ref.kind !== "fiat" ? { ...cash(l), kind: "reward" } : cash(l));
       else if (l.t.flow === "OUTGOING") {
-        events.push({
-          kind: "withdrawal",
-          id: l.t.transaction_id,
-          at: at(l.t),
-          asset: ref,
-          quantity: l.qty.toFixed(),
-          note,
-        });
+        events.push(cash(l));
         // A network fee in the asset itself.
         const fee = refOf(l.t.fee_amount, look);
-        if (fee && fee !== "unsupported" && keyOf(fee) === keyOf(ref) && !D(l.t.fee_amount!.value).isZero())
+        if (fee && fee !== "unsupported" && keyOf(fee) === keyOf(l.ref) && !D(l.t.fee_amount!.value).isZero())
           events.push({
             kind: "fee",
             id: `${l.t.transaction_id}:fee`,
-            at: at(l.t),
-            asset: ref,
+            at,
+            asset: l.ref,
             quantity: D(l.t.fee_amount!.value).abs().toFixed(),
           });
       }
     }
   }
-  return { events, swaps, unsupported };
+  return { events, swaps, unread, unsupported };
 }
 
 /** Looks up the assets and currencies the operations and the portfolio refer to. */
@@ -310,6 +381,14 @@ export const bitpanda: ExchangeProvider<Creds> = {
           mapped.swaps,
           "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.",
           "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.",
+        ),
+      );
+    if (mapped.unread)
+      warnings.push(
+        trn(
+          mapped.unread,
+          "{n} Bitpanda operation couldn't be read for sure (no date, or more than one asset on a side) and was left out.",
+          "{n} Bitpanda operations couldn't be read for sure (no date, or more than one asset on a side) and were left out.",
         ),
       );
     if (mapped.unsupported.size)

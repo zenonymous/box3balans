@@ -321,6 +321,10 @@ export const NL: Record<string, string> = {
     "Kies een vervaldatum (hooguit een jaar) en plak de sleutel hier; Bitpanda toont hem maar één keer.",
   "Built on Bitpanda's documentation and not yet tested with a real key: check the balances after the first sync.":
     "Gebouwd op de documentatie van Bitpanda en nog niet getest met een echte sleutel: controleer de saldi na de eerste synchronisatie.",
+  "{n} Bitpanda operation couldn't be read for sure (no date, or more than one asset on a side) and was left out.":
+    "{n} transactie van Bitpanda kon niet met zekerheid gelezen worden (geen datum, of meer dan één belegging aan één kant) en is overgeslagen.",
+  "{n} Bitpanda operations couldn't be read for sure (no date, or more than one asset on a side) and were left out.":
+    "{n} transacties van Bitpanda konden niet met zekerheid gelezen worden (geen datum, of meer dan één belegging aan één kant) en zijn overgeslagen.",
   "Metals and commodities at Bitpanda aren't read yet ({symbols}); add them by hand.":
     "Metalen en grondstoffen bij Bitpanda worden nog niet ingelezen ({symbols}); voeg ze met de hand toe.",
   "Bitpanda shows no operations and no balances for this key. Check that it has the scopes Balances and Transaction.":

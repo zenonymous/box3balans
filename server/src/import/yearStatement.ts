@@ -130,8 +130,10 @@ const IN = /\b(inleg|ingelegd|storting(en)?|gestort|ge[ïi]nvesteerd|deposits?|i
 const OUT = /\b(onttrekking(en)?|opname(n|s)?|opgenomen|withdrawals?)\b/i;
 const COSTS = /\b(kosten|costs|fees?)\b/i;
 
-// A line that starts an account's part of a statement: "ING Oranje Spaarrekening: …", or an IBAN.
+// A line that starts an account's part of a statement: "ING Oranje Spaarrekening: …", or an IBAN. Not a
+// counter-account ("Tegenrekening: NL…") under a value.
 const ACCOUNT_HEADER = /(rekening|account|portefeuille|depot)[a-z]*\s*:|\b[A-Z]{2}\d{2} ?[A-Z]{4}(?: ?\d{4}){2}/i;
+const COUNTER_ACCOUNT = /tegenrekening|counterparty|counter account/i;
 
 const MAX_PER_LINE = 3;
 const MAX_FOUND = 60;
@@ -154,7 +156,7 @@ function guess(pages: StatementPage[], year: number | null): FoundValue[] {
       const dec = LAST_DECEMBER.exec(line);
       if (!values.length) {
         if (jan && dec) columns = jan.index < dec.index ? [janYear(jan), decYear(dec)] : [decYear(dec), janYear(jan)];
-        if (ACCOUNT_HEADER.test(line)) group = line;
+        if (ACCOUNT_HEADER.test(line) && !COUNTER_ACCOUNT.test(line)) group = line;
         continue;
       }
       const push = (field: YearField, y: number | null, v: Amount) => {

@@ -199,6 +199,24 @@ describe("year statements", () => {
     ]);
   });
 
+  it("doesn't take a counter-account for a new account", () => {
+    const r = readYearStatement([
+      page(
+        [
+          "Jaaroverzicht 2025",
+          "Spaarrekening: NL00 BANK 0000 0000 00",
+          "Saldo per 1 januari 2025   1.000,00",
+          "Tegenrekening: NL11 BANK 1111 1111 11",
+          "Saldo per 31 december 2025   1.100,00",
+        ].join("\n"),
+      ),
+    ]);
+    expect(r.found.map((f) => f.group)).toEqual([
+      "Spaarrekening: NL00 BANK 0000 0000 00",
+      "Spaarrekening: NL00 BANK 0000 0000 00",
+    ]);
+  });
+
   it("without a template, still keeps the accounts of a statement apart", () => {
     const r = readYearStatement(ing, []);
     expect(r.template).toBeNull();

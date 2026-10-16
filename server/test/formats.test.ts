@@ -801,12 +801,17 @@ describe("broker exports", () => {
         detailRow({ 11: "03/01/2025", 12: "$70.00", 13: "08/29/2025", 14: "$63.75", 15: "$90.00" }),
         '"03/17/2025","Deposit","ACME","RS","30","","","","","","","","","","","","","","","","","",""',
         detailRow({ 18: "03/15/2025", 19: "$80.00", 21: "03/01/2024", 22: "C0000001" }),
+        // A large vest: "1,000" is a thousand shares (US notation).
+        '"03/16/2025","Deposit","ACME","RS","1,000","","","","","","","","","","","","","","","","","",""',
+        detailRow({ 18: "03/15/2025", 19: "$1,080.00", 21: "03/01/2024", 22: "C0000002" }),
         '"03/15/2025","Lapse","ACME","Restricted Stock Lapse","45","","","","","","","","","","","","","","","","","",""',
         '"01/10/2025","Wire Transfer","ACME","Cash Disbursement","","","","-$500.00","","","","","","","","","","","","","","",""',
       ),
     );
     expect(id).toBe("schwab-equity-awards");
     expect(rows).toEqual([
+      // "1,000" is a thousand shares, the price "$1,080.00".
+      expect.objectContaining({ date: "2025-03-16", type: "buy", quantity: "1000", price: "1080.00" }),
       // A vest at its fair market value (taxed as wages, so the cost for box 3).
       expect.objectContaining({
         date: "2025-03-17",

@@ -532,6 +532,68 @@ describe("Bitpanda", () => {
     expect(swaps).toBe(1);
     expect([...unsupported]).toEqual(["XAU"]);
   });
+
+  it("keeps fee lines apart, books the money of a metal trade, and leaves out what it can't read", () => {
+    const XAU = { asset_id: "a-xau" };
+    const BEST = { asset_id: "a-best" };
+    const withBest: Lookup = {
+      ...look,
+      assets: new Map([
+        ...look.assets,
+        ["a-best", { id: "a-best", symbol: "BEST", type: "CRYPTO", group: "CRYPTOCOIN" }],
+      ]),
+    };
+    const { events, unread, unsupported } = mapBitpandaOperations(
+      [
+        {
+          operation_id: "f1",
+          operation_type: "TRADE",
+          transactions: [
+            leg("f1a", "OUTGOING", "100.00", EUR, { trade: { trade_id: "trf1" } }),
+            leg("f1b", "OUTGOING", "1.49", EUR, { transaction_type: "FEE" }),
+            leg("f1c", "OUTGOING", "0.50000000", BEST, { transaction_type: "FEE" }),
+            leg("f1d", "INCOMING", "0.00100000", BTC),
+          ],
+        },
+        // Gold for euros: the euros still leave; the gold is added by hand.
+        {
+          operation_id: "g1",
+          operation_type: "TRADE",
+          transactions: [
+            leg("g1a", "OUTGOING", "250.00", EUR, { trade: { trade_id: "trg1" } }),
+            leg("g1b", "INCOMING", "2.50", XAU),
+          ],
+        },
+        // No date anywhere.
+        {
+          operation_id: "n1",
+          operation_type: "DEPOSIT",
+          transactions: [{ ...leg("n1a", "INCOMING", "5.00", EUR), credited_at: undefined }],
+        },
+        // Two assets given for one: unclear.
+        {
+          operation_id: "u1",
+          operation_type: "TRADE",
+          transactions: [
+            leg("u1a", "OUTGOING", "10.00", EUR, { trade: { trade_id: "tru1" } }),
+            leg("u1b", "OUTGOING", "0.10000000", ETH),
+            leg("u1c", "INCOMING", "0.00100000", BTC),
+          ],
+        },
+      ],
+      withBest,
+    );
+    expect(events.map((e) => [e.kind, e.id, qty(e)])).toEqual([
+      ["trade", "trf1", "0.001"],
+      ["fee", "f1c", "0.5"],
+      ["withdrawal", "g1a", "250"],
+    ]);
+    // The euro fee is part of what was paid.
+    expect(events[0]).toMatchObject({ quote: { amount: "101.49", currency: "EUR" }, feeQuote: "1.49" });
+    expect(events[2]).toMatchObject({ note: "metal or commodity trade" });
+    expect([...unsupported]).toEqual(["XAU"]);
+    expect(unread).toBe(2);
+  });
 });
 
 describe("IBKR Flex", () => {

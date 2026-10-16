@@ -849,10 +849,13 @@ function mdy(raw: string): string | null {
   return m ? `${m[3]}-${m[1]!.padStart(2, "0")}-${m[2]!.padStart(2, "0")}` : null;
 }
 
+/** A US number: a comma is always a thousands separator ("1,000" shares is a thousand, not one). */
+const usNum = (raw: string) => num(raw.replace(/,/g, ""), ".");
+
 /** "$4,255.31", "-$0.49" → "4255.31", "-0.49". */
 function dollars(raw: string): string | null {
   const s = raw.replace(/[$\s]/g, "");
-  const v = looseNum(s.replace(/^-/, ""));
+  const v = usNum(s.replace(/^-/, ""));
   return v && s.startsWith("-") ? `-${v}` : v;
 }
 
@@ -909,7 +912,7 @@ export const schwabEquityAwards: BrokerFormat = {
       const date = mdy(cell(tx.top, c.date));
       const action = norm(cell(tx.top, c.action));
       const symbol = cell(tx.top, c.symbol).toUpperCase();
-      const quantity = abs(looseNum(cell(tx.top, c.quantity)));
+      const quantity = abs(usNum(cell(tx.top, c.quantity)));
       const description = cell(tx.top, c.description);
       const key = `${cell(tx.top, c.date)}|${cell(tx.top, c.symbol)}`;
       if (!date) continue;
