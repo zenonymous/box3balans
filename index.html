@@ -84,6 +84,12 @@
       .button:hover {
         filter: brightness(0.96);
       }
+      .caption {
+        margin: 10px 0 0;
+        color: var(--ink-2);
+        font-size: 15px;
+        text-align: center;
+      }
       .shot {
         display: block;
         width: 100%;
@@ -128,21 +134,29 @@
         eigen computer of NAS: je gegevens gaan nergens anders heen.
       </p>
       <div class="actions">
-        <a class="button primary" href="https://github.com/zenonymous/box3balans">Bekijk Box3balans</a>
+        <a class="button primary" href="demo/">Probeer de demo</a>
+        <a class="button" href="https://github.com/zenonymous/box3balans">Bekijk Box3balans</a>
         <a class="button" href="https://github.com/zenonymous/box3balans/blob/main/docs/installatie.md">Installeren</a>
         <a class="button" href="https://github.com/zenonymous/box3balans/discussions/categories/q-a">Een vraag stellen</a>
       </div>
 
-      <picture>
-        <source srcset="img/overzicht-dark.webp" media="(prefers-color-scheme: dark)" />
-        <img
-          class="shot"
-          src="img/overzicht-light.webp"
-          width="1600"
-          height="1050"
-          alt="Het overzicht van Box3balans: je vermogen, de verdeling over soorten beleggingen en het verloop door de tijd"
-        />
-      </picture>
+      <a href="demo/" aria-label="Probeer de demo">
+        <picture>
+          <source srcset="img/overzicht-dark.webp" media="(prefers-color-scheme: dark)" />
+          <img
+            class="shot"
+            src="img/overzicht-light.webp"
+            width="1600"
+            height="1050"
+            alt="Het overzicht van Box3balans: je vermogen, de verdeling over soorten beleggingen en het verloop door de tijd"
+          />
+        </picture>
+      </a>
+      <p class="caption">
+        In de demo kijk je rond in een voorbeeldhuishouden met verzonnen koersen, in je browser (<a href="demo/?lang=en"
+          >in English</a
+        >).
+      </p>
 
       <ul>
         <li>
