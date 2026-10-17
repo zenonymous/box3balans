@@ -10,6 +10,18 @@ export type Lang = "nl" | "en";
 const KEY = "lang";
 
 function initial(): Lang {
+  // The online demo can be linked to in a language: box3balans.nl/demo/?lang=en.
+  if (__STATIC_DEMO__) {
+    const asked = new URLSearchParams(location.search).get("lang");
+    if (asked === "nl" || asked === "en") {
+      try {
+        localStorage.setItem(KEY, asked);
+      } catch {
+        // this visit only
+      }
+      return asked;
+    }
+  }
   try {
     const v = localStorage.getItem(KEY);
     if (v === "nl" || v === "en") return v;

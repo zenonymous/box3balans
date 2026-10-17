@@ -132,7 +132,7 @@ function Login({ setup }: { setup: boolean }) {
     <main className="flex min-h-dvh items-center justify-center p-4">
       <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-line bg-surface p-6">
         <div className="mb-6 flex flex-col items-center text-center">
-          <img src="/favicon.svg" alt="" className="size-14" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-14" />
           <div className="mt-3 text-xl font-semibold tracking-tight">Box3balans</div>
           <div className="text-sm text-muted">{t("Your box 3, in balance")}</div>
         </div>
@@ -213,7 +213,7 @@ function Login({ setup }: { setup: boolean }) {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <AuthGate />
       </BrowserRouter>
     </QueryClientProvider>

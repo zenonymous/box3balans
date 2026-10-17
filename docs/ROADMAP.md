@@ -14,6 +14,7 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Koersen voor crypto:** Bitvavo als koersbron; koersgeschiedenis voor munten die een beurs niet meer verhandelt en voor ingeruilde munten (NU → T, FTM → S, MATIC → POL en andere), van Yahoo of Binance, maar alleen als vaststaat dat het dezelfde munt is; omwisselingen door Bitvavo als verkoop en aankoop. Uitgebracht in 0.1.4 tot en met 0.1.7, na het testen met echte accounts.
 - **Rendement:** tijd- en geldgewogen rendement met een benchmark, een kostenoverzicht en verwachte dividenden.
 - **Box 3:** werkelijk rendement voor de tegenbewijsregeling en een vooruitblik op het stelsel vanaf 2028.
+- **Online demo** (0.1.26): op [box3balans.nl/demo](https://box3balans.nl/demo/) rondkijken in het voorbeeldhuishouden, zonder te installeren; opgenomen uit de echte demo bij elke release ([ADR 0010](adr/0010-online-demo-zonder-server.md)).
 - **Beheer:** versleutelde back-ups, wijzigingsgeschiedenis met terugzetten, _Aandacht nodig_, tweede koersbronnen, PostgreSQL 18 met een geteste upgrade.
 
 ## Fase A: installeerbaar voor iedereen ✅

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { get, put, post } from "../api";
+import { downloadHref, get, put, post } from "../api";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Button, ButtonLink, Card, Field, Input, PageHeader, Select, Tabs, cx } from "../components/ui";
 import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../format";
@@ -746,8 +746,12 @@ function BackupsCard() {
           <Button variant="primary" onClick={backupNow} disabled={busy}>
             {busy && !restoring ? t("Backing up…") : t("Back up now")}
           </Button>
-          <ButtonLink href="/api/export/transactions.csv">⤓ {t("Transactions (CSV)")}</ButtonLink>
-          <ButtonLink href="/api/export/holdings.csv">⤓ {t("Holdings (CSV)")}</ButtonLink>
+          <ButtonLink href={downloadHref("/api/export/transactions.csv")} download>
+            ⤓ {t("Transactions (CSV)")}
+          </ButtonLink>
+          <ButtonLink href={downloadHref("/api/export/holdings.csv")} download>
+            ⤓ {t("Holdings (CSV)")}
+          </ButtonLink>
         </div>
         {msg && (msg.ok ? <p className="text-sm text-gain">✓ {msg.text}</p> : <Alert tone="danger">{msg.text}</Alert>)}
 

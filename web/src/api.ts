@@ -1,3 +1,5 @@
+import { getLang } from "./i18n";
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -16,6 +18,7 @@ export const setUnauthorizedHandler = (fn: () => void) => {
 };
 
 export async function api<T = unknown>(method: string, url: string, body?: unknown): Promise<T> {
+  if (__STATIC_DEMO__) return (await import("./staticDemo")).staticApi<T>(method, url, body);
   const res = await fetch(url, {
     method,
     credentials: "same-origin",
@@ -49,6 +52,10 @@ export async function pollUntil<T>(
     await new Promise((r) => setTimeout(r, intervalMs));
   }
 }
+
+/** Where a download link goes: the online demo has a saved copy (scripts/build-online-demo.js). */
+export const downloadHref = (url: string) =>
+  __STATIC_DEMO__ ? `${import.meta.env.BASE_URL}data/${getLang()}/files/${url.split("/").pop()}` : url;
 
 export const get = <T>(url: string) => api<T>("GET", url);
 export const post = <T>(url: string, body?: unknown) => api<T>("POST", url, body ?? {});

@@ -1468,6 +1468,13 @@ export const NL: Record<string, string> = {
   // components/Layout.tsx (demo)
   "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Box3balans</0> to keep track of your own.":
     "Dit is de demo: een voorbeeldhuishouden met verzonnen koersen. Wijzigingen gaan verloren als hij herstart. <0>Installeer Box3balans</0> om je eigen vermogen bij te houden.",
+  "This is the online demo: an example household with made-up prices, to look around in. Nothing can be saved here. <0>Install Box3balans</0> to keep track of your own.":
+    "Dit is de online demo: een voorbeeldhuishouden met verzonnen koersen, om rond te kijken. Opslaan kan hier niet. <0>Installeer Box3balans</0> om je eigen vermogen bij te houden.",
+  // staticDemo.ts
+  "Nothing can be saved in the online demo. To try this, run the demo yourself (see Install in the README).":
+    "In de online demo kan niets worden opgeslagen. Wil je dit proberen, draai de demo dan zelf (zie Installeren in de README).",
+  "This isn't part of the online demo.": "Dit zit niet in de online demo.",
+  "The online demo could not load its data.": "De online demo kon zijn gegevens niet laden.",
   // components/RefreshButton.tsx
   "Example prices": "Voorbeeldkoersen",
   "Prices not refreshed yet": "Koersen nog niet ververst",

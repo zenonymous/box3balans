@@ -19,6 +19,7 @@
     "format": "prettier --write .",
     "screenshots": "node scripts/screenshots.js",
     "check:pages": "node scripts/check-pages.js",
+    "build:online-demo": "node scripts/build-online-demo.js",
     "prepare": "husky"
   },
   "devDependencies": {

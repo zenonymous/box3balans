@@ -8,6 +8,7 @@
     "build": "tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
+    "preview:online-demo": "vite preview --mode online-demo --port 4173 --strictPort",
     "test": "vitest run"
   },
   "devDependencies": {

@@ -13,7 +13,7 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 
 **Status:** in ontwikkeling en bruikbaar. De app is in het Nederlands, met de termen uit de aangifte; Engels kan ook (_Instellingen → Weergave → Taal_). Wat er nog komt, staat op de [roadmap](docs/ROADMAP.md).
 
-**Eerst kijken?** Start de [demo](#demo): een voorbeeldhuishouden met verzonnen koersen, zonder iets in te stellen.
+**Eerst kijken?** Kijk rond in de [online demo](https://box3balans.nl/demo/), of start de [demo](#demo) zelf: een voorbeeldhuishouden met verzonnen koersen, zonder iets in te stellen.
 
 **Vragen?** Stel ze bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a). Een fout of een concreet voorstel meld je als [issue](https://github.com/zenonymous/box3balans/issues/new/choose).
 
@@ -112,6 +112,8 @@ docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest
 ```
 
 Open `http://localhost:8080`. Met Ctrl+C stop je de demo, en alles is weg.
+
+Zonder te installeren kan het ook: de [online demo](https://box3balans.nl/demo/) ([in het Engels](https://box3balans.nl/demo/?lang=en)) toont hetzelfde huishouden, met alle pagina's, jaren en filters. Daar kun je alleen kijken: opslaan, inlezen en koppelen kan er niet. Het zijn de antwoorden van de demo, opgenomen bij elke release (zie [ADR 0010](docs/adr/0010-online-demo-zonder-server.md)).
 
 ### Zelf bouwen
 
@@ -349,6 +351,7 @@ npm run dev:web               # Vite op :5173, stuurt /api door naar :8080
 | `npm run db:generate -w server`                    | Maakt een migratie na een wijziging in `server/src/db/schema.ts`                                                                                                                                              |
 | `npm run dev:live -w server`                       | Een tweede instantie op `http://127.0.0.1:8081` met een eigen lege database, om echte API-sleutels en wallets uit te proberen zonder ze te mengen met voorbeeldgegevens. Verwijder `server/.data/live` daarna |
 | `npm run demo`                                     | De demo op `http://127.0.0.1:8082` (bouw eerst de web-app met `npm run build -w web`)                                                                                                                         |
+| `npm run build:online-demo`                        | Bouwt de online demo naar `web/dist-demo`; bekijk hem met `npm run preview:online-demo -w web` op `http://localhost:4173/demo/`                                                                               |
 | `npx tsx scripts/bench.ts [schaal]` (in `server/`) | Meet de belangrijkste pagina's met een grote nagebootste geschiedenis (schaal 1 ≈ 20.000 transacties)                                                                                                         |
 
 Voorbeeldgegevens: maak een gebruiker aan en voer dan `SESSION=<pd_session-cookie> npx tsx server/scripts/sample-data.ts` uit.

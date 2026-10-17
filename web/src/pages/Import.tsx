@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ApiError, del, get, post, type StatementCheck, type TxType } from "../api";
+import { ApiError, del, downloadHref, get, post, type StatementCheck, type TxType } from "../api";
 import { StatementCheckCard, statementKey } from "../components/StatementCheck";
 import {
   Alert,
@@ -338,7 +338,11 @@ export function ImportPage() {
       <PageHeader
         title={t("Import CSV")}
         subtitle={t("Transactions from a broker or exchange export, or from the Box3balans template")}
-        actions={<ButtonLink href="/api/import/template.csv">↓ {t("Template")}</ButtonLink>}
+        actions={
+          <ButtonLink href={downloadHref("/api/import/template.csv")} download>
+            ↓ {t("Template")}
+          </ButtonLink>
+        }
       />
 
       <div className="flex flex-col gap-4">

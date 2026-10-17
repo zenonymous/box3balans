@@ -64,7 +64,7 @@ export function Layout({ user, demo }: { user: User; demo?: boolean }) {
       </a>
       <aside className="print:hidden sticky top-0 hidden h-dvh w-56 shrink-0 flex-col border-r border-line bg-surface px-3 py-5 md:flex">
         <div className="mb-6 flex items-center gap-2.5 px-2">
-          <img src="/favicon.svg" alt="" className="size-8" />
+          <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-8" />
           <div className="leading-tight">
             <div className="font-semibold tracking-tight">Box3balans</div>
             <div className="text-[11px] text-muted">{t("Your box 3, in balance")}</div>
@@ -110,10 +110,15 @@ export function Layout({ user, demo }: { user: User; demo?: boolean }) {
         {demo && (
           <div className="mb-4 print:hidden">
             <Alert>
-              {tj(
-                "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Box3balans</0> to keep track of your own.",
-                [<a key="i" className="underline" href={version.data?.source} target="_blank" rel="noreferrer" />],
-              )}
+              {__STATIC_DEMO__
+                ? tj(
+                    "This is the online demo: an example household with made-up prices, to look around in. Nothing can be saved here. <0>Install Box3balans</0> to keep track of your own.",
+                    [<a key="i" className="underline" href={version.data?.source} target="_blank" rel="noreferrer" />],
+                  )
+                : tj(
+                    "This is the demo: an example household with made-up prices. Changes are lost when it restarts. <0>Install Box3balans</0> to keep track of your own.",
+                    [<a key="i" className="underline" href={version.data?.source} target="_blank" rel="noreferrer" />],
+                  )}
             </Alert>
           </div>
         )}
