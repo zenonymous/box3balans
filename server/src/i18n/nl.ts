@@ -463,6 +463,8 @@ export const NL: Record<string, string> = {
     "{asset}: {reported} op het overzicht, {computed} in Box3balans",
   "The statement starts on {date} with other amounts than this account holds in Box3balans: {differences}. Import the statements of the years before first, or check the account.":
     "Het overzicht begint op {date} met andere bedragen dan deze rekening in Box3balans heeft: {differences}. Importeer eerst de overzichten van de jaren ervoor, of controleer de rekening.",
+  "What will be imported doesn't end at the statement's closing balance ({gaps}): see what was left out.":
+    "Wat geïmporteerd wordt, eindigt niet op het eindsaldo van het overzicht ({gaps}): kijk wat er is weggelaten.",
   "{n} line, like: {line}": "{n} regel, zoals: {line}",
   "{n} lines, like: {line}": "{n} regels, zoals: {line}",
   "none in {year}": "geen in {year}",

@@ -55,7 +55,11 @@ export async function staticApi<T>(method: string, url: string, body?: unknown):
       t("Nothing can be saved in the online demo. To try this, run the demo yourself (see Install in the README)."),
     );
   }
-  index ??= load<Record<string, Saved>>("index.json");
+  // Not kept when it fails, so a later question tries again.
+  index ??= load<Record<string, Saved>>("index.json").catch((err: unknown) => {
+    index = undefined;
+    throw err;
+  });
   const saved = await index;
   const [path, query = ""] = url.split("?");
   const filter = FILTERS[path!];

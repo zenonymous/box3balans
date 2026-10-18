@@ -49,6 +49,7 @@ export interface Entry {
   date: string; // booking date, YYYY-MM-DD
   description: string;
   amount: string; // euros, negative when it leaves the money deposit
+  bullion: string; // "-" or the metal
   page: number;
   line: string;
   order?: Order;
@@ -120,7 +121,7 @@ export function readGoldrepublic(pages: StatementPage[]): GoldrepublicStatement 
     const e = entries.at(-1);
     if (!details || !e) return;
     const [product = "", vault = ""] = (details.Product ?? "").split(",").map((s) => s.trim());
-    const metal = isMetal(product) ? product : null;
+    const metal = isMetal(product) ? product : isMetal(e.bullion) ? e.bullion : null;
     const action = details.Action?.toLowerCase();
     const value = euros(details["Transaction Value"]);
     const total = euros(details.Total);
@@ -153,6 +154,8 @@ export function readGoldrepublic(pages: StatementPage[]): GoldrepublicStatement 
         waitingForDate = !balance.date;
         continue;
       }
+      // A balance ends with its Total line, or at the latest where the transactions start.
+      if (balance && (/^Transactions$/.test(line) || HEADER.test(line))) balance = null;
       if (balance) {
         if (waitingForDate && longDate(line) && !COLS.test(line)) {
           balance.date = longDate(line);
@@ -189,6 +192,7 @@ export function readGoldrepublic(pages: StatementPage[]): GoldrepublicStatement 
             date: `${h[4]}-${h[3]}-${h[2]}`,
             description: cols.slice(0, -3).join(" ") || cols[0]!,
             amount,
+            bullion: cols.length >= 4 ? cols.at(-3)! : "-",
             page,
             line,
           });
@@ -259,6 +263,8 @@ export function goldrepublicTransactions(s: GoldrepublicStatement): Converted {
       out.rows.push(cash(e.date, "withdrawal", e.amount, e.description));
     else if (e.type === "Cost Order" && e.amount.startsWith("-"))
       out.rows.push(cash(e.date, "fee", e.amount, e.description));
+    // A cost given back (a correction): money in, so the money deposit stays right.
+    else if (e.type === "Cost Order") out.rows.push(cash(e.date, "deposit", e.amount, e.description));
     else skip(out.skipped, tr("Other kinds: {kind}", { kind: e.type }));
   }
   if (unread)
@@ -269,6 +275,36 @@ export function goldrepublicTransactions(s: GoldrepublicStatement): Converted {
         "{n} orders couldn't be read (no product, quantity or amount): add them by hand.",
       ),
     );
+  // What was imported, from the opening balance on: does it end at the closing balance? Catches
+  // lines that were left out or couldn't be read, also when the statement itself adds up.
+  if (s.opening && s.closing && !s.gaps.length) {
+    const cash = D(s.opening.cash);
+    const grams = new Map(Object.entries(s.opening.metals).map(([m, v]) => [SYMBOL[m as Metal], D(v.grams)]));
+    let money = cash;
+    for (const r of out.rows) {
+      const q = D(r.quantity ?? 0);
+      const fee = D(r.fee ?? 0);
+      if (r.assetType === "cash") money = r.type === "deposit" ? money.plus(q) : money.minus(q);
+      else {
+        const sign = r.type === "buy" ? 1 : -1;
+        grams.set(r.symbol!, (grams.get(r.symbol!) ?? D(0)).plus(q.mul(sign)));
+        money = r.type === "buy" ? money.minus(D(r.total).plus(fee)) : money.plus(D(r.total).minus(fee));
+      }
+    }
+    const off: string[] = [];
+    if (!money.minus(s.closing.cash).abs().lt("0.005"))
+      off.push(tr("cash differs by €{amount}", { amount: str(money.minus(s.closing.cash)) }));
+    for (const [metal, code] of Object.entries(SYMBOL) as [Metal, string][]) {
+      const diff = (grams.get(code) ?? D(0)).minus(s.closing.metals[metal]?.grams ?? 0);
+      if (!diff.isZero()) off.push(tr("{metal} differs by {grams} g", { metal: tr(metal), grams: str(diff) }));
+    }
+    if (off.length)
+      out.warnings.push(
+        tr("What will be imported doesn't end at the statement's closing balance ({gaps}): see what was left out.", {
+          gaps: off.join(", "),
+        }),
+      );
+  }
   if (s.gaps.length)
     out.warnings.push(
       tr("After reading, the statement doesn't add up ({gaps}): check the balances after importing.", {

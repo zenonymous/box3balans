@@ -185,6 +185,48 @@ describe("Goldrepublic account statement", () => {
     expect(c.rows.filter((r) => r.type === "fee")).toEqual([]);
   });
 
+  it("copes with a missing Total line, a refunded cost and an order without a product line", () => {
+    const changed = [
+      PAGES[0]!.replace("Total   €1,700.50\n", "").replace("Product   Gold, Zurich\n", ""),
+      PAGES[1]!
+        .replace(
+          "Cost Order   05-02-2025   Opslagkosten januari 2025   -   €-1.20   €0.50\n",
+          "Cost Order   05-02-2025   Opslagkosten januari 2025   -   €-1.20   €0.50\nCost Order   10-03-2025   Correctie opslagkosten   -   €0.40   €0.90\n",
+        )
+        .replace("Cash   €0.50\nGold   6.200", "Cash   €0.90\nGold   6.200")
+        .replace("Total   €1,670.50", "Total   €1,670.90"),
+    ];
+    const s = readGoldrepublic(pages(changed))!;
+    // Without its Total line, the opening balance still ends where the transactions start.
+    expect(s.entries).toHaveLength(9);
+    expect(s.gaps).toEqual([]);
+    const c = goldrepublicTransactions(s);
+    // The metal comes from the bullion column.
+    expect(c.rows[0]).toMatchObject({ type: "buy", symbol: "XAU", notes: "Savings Order 1000001" });
+    expect(c.rows).toContainEqual(
+      expect.objectContaining({ type: "deposit", quantity: "0.40", notes: "Correctie opslagkosten" }),
+    );
+    expect(c.warnings).toEqual([]);
+  });
+
+  it("warns when what's imported won't end at the closing balance", () => {
+    const changed = [
+      PAGES[0]!,
+      PAGES[1]!
+        .replace(
+          "Withdrawal   25-06-2025",
+          "Bank Transfer   10-03-2025   Iets anders   -   €0.40   €0.90\nWithdrawal   25-06-2025",
+        )
+        .replace("Cash   €0.50\nGold   6.200", "Cash   €0.90\nGold   6.200")
+        .replace("Total   €1,670.50", "Total   €1,670.90"),
+    ];
+    const s = readGoldrepublic(pages(changed))!;
+    expect(s.gaps).toEqual([]);
+    const c = goldrepublicTransactions(s);
+    expect([...c.skipped.keys()]).toEqual([expect.stringMatching(/Bank Transfer/)]);
+    expect(c.warnings).toEqual([expect.stringMatching(/-0\.4/)]);
+  });
+
   it("is a year statement for an account with values per year", () => {
     const r = readYearStatement(pages());
     expect(r.template).toBe("Goldrepublic, rekeningoverzicht");
