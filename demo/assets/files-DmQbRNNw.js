@@ -1,0 +1,1 @@
+async function e(e){let t=await e.arrayBuffer();try{return new TextDecoder(`utf-8`,{fatal:!0}).decode(t)}catch{return new TextDecoder(`windows-1252`).decode(t)}}export{e as t};

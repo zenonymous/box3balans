@@ -1,0 +1,8 @@
+date,time,type,symbol,isin,name,asset_type,quantity,price,total,currency,fee,amount,tax_withheld,notes,id
+2024-01-02,,deposit,EUR,,,cash,2000,,,EUR,,,,Monthly deposit,
+2024-01-15,10:30,buy,IWDA,IE00B4L5Y983,iShares Core MSCI World,etf,10,85.20,,EUR,2.00,,,,
+2024-02-01,,buy,BTC,,Bitcoin,crypto,0.01,42000,,EUR,1.50,,,,
+2024-03-20,,dividend,VWRL,IE00B3RBWM25,Vanguard FTSE All-World,etf,,,,USD,,12.50,1.88,,
+2024-05-10,,sell,IWDA,IE00B4L5Y983,iShares Core MSCI World,etf,2,90.10,,EUR,1.00,,,,
+2024-06-01,,reward,ETH,,Ethereum,crypto,0.002,,,EUR,,,,Staking reward,
+2024-07-01,,split,AAPL,US0378331005,Apple,stock,4,,,USD,,,,4-for-1 split,

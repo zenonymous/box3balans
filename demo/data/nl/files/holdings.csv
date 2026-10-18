@@ -1,0 +1,11 @@
+﻿Asset,Symbol,Class,Account,Quantity,Unit,Price EUR,Value EUR,Cost EUR
+Bitcoin,BTC,crypto,Bitvavo,0.15,unit,96333.240000,14449.99,3214.67
+Bitcoin,BTC,crypto,Ledger,0.2999,unit,96333.240000,28890.34,6429.33
+iShares Core MSCI World UCITS ETF,IWDA,etf,DEGIRO,220,unit,114.840000,25264.80,18011.00
+Goud (fysiek),XAU,metal,Kluis thuis,92.487762,g,108.670000,10050.65,5340.00
+Ethereum,ETH,crypto,Bitvavo,2.542,unit,3711.890000,9435.62,4265.30
+Goud (in kluis),XAU,metal,Goldrepublic,50,g,108.670000,5433.50,2905.00
+ASML Holding,ASML,stock,DEGIRO,5,unit,852.700000,4263.50,3251.25
+Zilver (fysiek),XAG,metal,Kluis thuis,777.672225,g,1.531000,1190.62,720.00
+Euro,EUR,cash,Bitvavo,423,EUR,1.000000,423.00,423.00
+Euro,EUR,cash,DEGIRO,740.3,EUR,1.000000,740.30,740.30
