@@ -3,12 +3,52 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Box3balans</title>
+    <title>Box3balans – je box 3 en beleggingen zelf bijhouden, gratis</title>
     <meta
       name="description"
-      content="Houd je beleggingen, crypto en edelmetaal bij en zie wat je in box 3 betaalt. Gratis en open source, op je eigen computer of NAS."
+      content="Bereken je box 3 per jaar, ook met de tegenbewijsregeling. Houd beleggingen, crypto, goud en spaargeld bij op je eigen computer. Gratis en open source."
     />
     <link rel="canonical" href="https://box3balans.nl/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#121315" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- How a link to this page looks when shared. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Box3balans" />
+    <meta property="og:locale" content="nl_NL" />
+    <meta property="og:url" content="https://box3balans.nl/" />
+    <meta property="og:title" content="Box3balans – je box 3 en beleggingen zelf bijhouden" />
+    <meta
+      property="og:description"
+      content="Box 3 per jaar, met het werkelijk rendement voor de tegenbewijsregeling. Beleggingen, crypto, goud en spaargeld, op je eigen computer. Gratis en open source."
+    />
+    <meta property="og:image" content="https://box3balans.nl/img/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Box3balans: het overzicht van je vermogen en je box 3" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Box3balans",
+        "url": "https://box3balans.nl/",
+        "description": "Houd je beleggingen, crypto, edelmetaal en spaargeld bij en bereken je box 3 per jaar, met het werkelijk rendement voor de tegenbewijsregeling. Draait op je eigen computer, NAS of thuisserver.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "Linux, macOS, Windows (Docker)",
+        "inLanguage": ["nl", "en"],
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+        "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+        "screenshot": "https://box3balans.nl/img/overzicht-light.webp",
+        "image": "https://box3balans.nl/img/og.jpg",
+        "sameAs": ["https://github.com/zenonymous/box3balans"]
+      }
+    </script>
     <style>
       :root {
         --bg: #f7f7f5;
@@ -54,6 +94,24 @@
         line-height: 1.15;
         letter-spacing: -0.02em;
       }
+      h1 span {
+        display: block;
+        margin-top: 6px;
+        color: var(--ink-2);
+        font-size: clamp(19px, 3.4vw, 24px);
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      h2 {
+        margin: 48px 0 16px;
+        font-size: 24px;
+        line-height: 1.25;
+        letter-spacing: -0.01em;
+      }
+      h3 {
+        margin: 0 0 2px;
+        font-size: 17px;
+      }
       .lead {
         max-width: 40em;
         margin: 0 0 28px;
@@ -97,27 +155,38 @@
         border: 1px solid var(--line);
         border-radius: 12px;
       }
-      ul {
+      .features {
         display: grid;
         gap: 14px;
-        margin: 40px 0;
+        margin: 0;
         padding: 0;
         list-style: none;
       }
-      li {
+      .features li,
+      details {
         padding: 16px 18px;
         border: 1px solid var(--line);
         border-radius: 12px;
         background: var(--surface);
       }
-      li strong {
-        display: block;
-        margin-bottom: 2px;
-      }
-      li span {
+      .features p,
+      details p {
+        margin: 0;
         color: var(--ink-2);
       }
+      .faq {
+        display: grid;
+        gap: 10px;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      details[open] summary {
+        margin-bottom: 6px;
+      }
       footer {
+        margin-top: 48px;
         color: var(--muted);
         font-size: 14px;
       }
@@ -128,10 +197,11 @@
   </head>
   <body>
     <main>
-      <h1>Box3balans</h1>
+      <h1>Box3balans <span>Je box 3 en je beleggingen zelf bijhouden</span></h1>
       <p class="lead">
-        Houd je beleggingen, crypto en edelmetaal bij en zie wat je in box 3 betaalt. Box3balans draait thuis, op je
-        eigen computer of NAS: je gegevens gaan nergens anders heen.
+        Houd je beleggingen, crypto, edelmetaal en spaargeld bij en zie per jaar wat je in box 3 betaalt, ook met de
+        tegenbewijsregeling. Box3balans draait thuis, op je eigen computer of NAS: je gegevens gaan nergens anders heen.
+        Gratis en open source.
       </p>
       <div class="actions">
         <a class="button primary" href="demo/">Probeer de demo</a>
@@ -148,6 +218,7 @@
             src="img/overzicht-light.webp"
             width="1600"
             height="1050"
+            fetchpriority="high"
             alt="Het overzicht van Box3balans: je vermogen, de verdeling over soorten beleggingen en het verloop door de tijd"
           />
         </picture>
@@ -158,30 +229,101 @@
         >).
       </p>
 
-      <ul>
-        <li>
-          <strong>Alles op één plek</strong>
-          <span
-            >Koppelingen met Bitvavo, Kraken, Coinbase en Interactive Brokers, wallets op Bitcoin, Ethereum, Solana,
-            Cardano en andere blockchains, en de exports van onder meer DEGIRO en Trade Republic. Spaargeld, een tweede
-            woning en schulden vul je per jaar in.</span
-          >
-        </li>
-        <li>
-          <strong>Box 3 per jaar, zoals de aangifte het vraagt</strong>
-          <span
-            >Wat je op 1 januari had, per onderdeel en per rekening, met de belasting, het werkelijk rendement voor de
-            tegenbewijsregeling en een dossier dat laat zien waar elk bedrag vandaan komt.</span
-          >
-        </li>
-        <li>
-          <strong>Van jou</strong>
-          <span
-            >Gratis en open source (AGPL-3.0). Geen account en geen abonnement; je installeert het zelf, bijvoorbeeld
-            met Docker.</span
-          >
-        </li>
-      </ul>
+      <section aria-labelledby="wat">
+        <h2 id="wat">Wat Box3balans doet</h2>
+        <ul class="features">
+          <li>
+            <h3>Box 3 per jaar, zoals de aangifte het vraagt</h3>
+            <p>
+              Wat je op 1 januari had, per onderdeel en per rekening, voor je hele huishouden. De forfaitaire belasting
+              met de afronding van de Belastingdienst, het werkelijk rendement voor de tegenbewijsregeling en wat dat
+              scheelt, en een dossier dat laat zien waar elk bedrag vandaan komt.
+            </p>
+          </li>
+          <li>
+            <h3>Alles op één plek</h3>
+            <p>
+              Aandelen en ETF's, crypto, goud en zilver, spaargeld, een tweede woning, uitgeleend geld en schulden.
+              Koppelingen met Bitvavo, Kraken, Coinbase, Bitpanda en Interactive Brokers, en wallets op Bitcoin, Ethereum,
+              Solana, Cardano en andere blockchains.
+            </p>
+          </li>
+          <li>
+            <h3>Inlezen in plaats van overtikken</h3>
+            <p>
+              De exports van onder meer DEGIRO, Trade Republic, Trading 212, eToro, Bitvavo en Binance, bankexports (ook
+              van ING, Rabobank, Revolut en Wise) en jaaroverzichten als pdf, zoals dat van ING en Goldrepublic.
+            </p>
+          </li>
+          <li>
+            <h3>Van jou</h3>
+            <p>
+              Gratis en open source (AGPL-3.0). Geen account en geen abonnement: je installeert het zelf, met Docker,
+              en je gegevens blijven op je eigen apparaat.
+            </p>
+          </li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="vragen">
+        <h2 id="vragen">Veelgestelde vragen</h2>
+        <div class="faq">
+          <details>
+            <summary>Hoe werkt box 3?</summary>
+            <p>
+              Box 3 is de belasting over sparen en beleggen. De Belastingdienst gaat uit van wat je op 1 januari had,
+              de peildatum, en rekent met een verondersteld rendement per soort bezit: banktegoeden, overige
+              bezittingen en schulden. Box3balans houdt die waarden voor je bij en rekent de belasting per jaar uit.
+            </p>
+          </details>
+          <details>
+            <summary>Wat is de tegenbewijsregeling?</summary>
+            <p>
+              Was je werkelijke rendement lager dan het veronderstelde, dan kun je dat aantonen en betaal je over wat je
+              echt verdiende. Box3balans berekent per jaar je werkelijk rendement zoals de Belastingdienst erom vraagt,
+              en laat zien wat het je scheelt.
+            </p>
+          </details>
+          <details>
+            <summary>Wat verandert er vanaf 2028?</summary>
+            <p>
+              Er ligt een wetsvoorstel voor een box 3 op basis van werkelijk rendement. Box3balans laat zien wat dat
+              voorstel over je afgelopen jaren zou hebben betekend. Het is nog geen wet; de aannames pas je zelf aan.
+            </p>
+          </details>
+          <details>
+            <summary>Waar blijven mijn gegevens?</summary>
+            <p>
+              Bij jou. Box3balans draait op je eigen computer, NAS of thuisserver, zonder account en zonder dienst
+              ertussen. Een pdf lees je in je eigen browser, en back-ups kun je versleutelen.
+            </p>
+          </details>
+          <details>
+            <summary>Welke banken, brokers en beurzen werken ermee?</summary>
+            <p>
+              Ruim twintig exports van brokers, beurzen en trackers worden vanzelf herkend; voor andere bestanden kies je zelf de kolommen.
+              Bankexports in CAMT.053, MT940 of CSV, jaaroverzichten als pdf, koppelingen met alleen-lezen-sleutels en
+              wallets op adres. De lijst staat in de
+              <a href="https://github.com/zenonymous/box3balans/blob/main/docs/importeren.md">handleiding</a>.
+            </p>
+          </details>
+          <details>
+            <summary>Wat kost het, en hoe installeer ik het?</summary>
+            <p>
+              Niets: Box3balans is gratis en open source. Je installeert het met Docker, op een NAS, thuisserver of
+              laptop; voor Unraid en CasaOS zijn er sjablonen. Zie de
+              <a href="https://github.com/zenonymous/box3balans/blob/main/docs/installatie.md">installatiehandleiding</a>.
+            </p>
+          </details>
+          <details>
+            <summary>Is het belastingadvies?</summary>
+            <p>
+              Nee. Box3balans maakt schattingen. Controleer de bedragen met de jaaroverzichten van je bank en broker
+              voordat je ze in je aangifte gebruikt.
+            </p>
+          </details>
+        </div>
+      </section>
 
       <footer>
         Box3balans is een hulpmiddel, geen belastingadvies.
