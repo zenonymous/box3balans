@@ -21,8 +21,10 @@ import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
 import { recognise, recognisePdf } from "../import/formats/index.js";
+import type { OpeningBalance } from "../import/formats/types.js";
 import {
   type Statement,
+  checkOpening,
   checkStatement,
   ensureCashAssets,
   readStatement,
@@ -128,7 +130,7 @@ export async function importRoutes(app: FastifyInstance) {
   // A statement of positions (DEGIRO's portfolio export) is kept parsed instead.
   const uploads = new Map<
     string,
-    { fileName: string; content: string; notes: string[]; at: number; statement?: Statement }
+    { fileName: string; content: string; notes: string[]; at: number; statement?: Statement; opening?: OpeningBalance }
   >();
   const upload = (id: string) => {
     for (const [k, v] of uploads) if (Date.now() - v.at > UPLOAD_TTL_MS) uploads.delete(k);
@@ -161,8 +163,8 @@ export async function importRoutes(app: FastifyInstance) {
           "Box3balans can't read this PDF as transactions: only Goldrepublic's account statement so far. For a year statement (jaaroverzicht), use Values per year on the account.",
         ),
       );
-    const keep = (c: string, notes: string[], statement?: Statement) => {
-      uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement });
+    const keep = (c: string, notes: string[], statement?: Statement, opening?: OpeningBalance) => {
+      uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement, opening });
       while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
     };
     const statement = raw || known ? null : readStatement(content);
@@ -179,7 +181,7 @@ export async function importRoutes(app: FastifyInstance) {
       };
     }
     if (known) {
-      keep(known.content, known.notes);
+      keep(known.content, known.notes, undefined, known.result.opening);
       return {
         uploadId: id,
         fileName,
@@ -197,7 +199,13 @@ export async function importRoutes(app: FastifyInstance) {
     const u = upload(b.uploadId);
     try {
       const plan = await planImport(deps, u.content, b.accountId, b.mapping);
-      return { ...plan, warnings: [...u.notes, ...plan.warnings] };
+      // A statement that starts with what the account already held: is that in Box3balans?
+      const opening = u.opening ? await checkOpening(db, b.accountId, u.opening) : null;
+      return {
+        ...plan,
+        warnings: [...u.notes, ...(opening && !opening.matches ? [opening.message] : []), ...plan.warnings],
+        checks: opening?.matches ? [opening.message] : [],
+      };
     } catch (err) {
       if ((err as Error).message === "Unknown account") throw new HttpError(400, tr("Unknown account"));
       throw err;

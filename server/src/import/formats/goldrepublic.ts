@@ -222,7 +222,8 @@ const DEPOSITS = new Set(["Direct Debit", "Deposit"]);
 /**
  * The statement as transactions on a vault account: purchases and sales in grams (at the moment the
  * order was carried out, with the fee and handling costs), money in and out, and the monthly storage
- * costs as costs in euros. The money deposit is kept too, so it ends at the statement's cash.
+ * costs as costs in euros. The money deposit is kept too, so it ends at the statement's cash. What
+ * the account held at the start is passed on, for the preview to check against Box3balans.
  */
 export function goldrepublicTransactions(s: GoldrepublicStatement): Converted {
   const out = converted({ settleCash: true });
@@ -274,21 +275,12 @@ export function goldrepublicTransactions(s: GoldrepublicStatement): Converted {
         gaps: s.gaps.join(", "),
       }),
     );
-  const held = s.opening
-    ? Object.entries(s.opening.metals)
-        .filter(([, m]) => Number(m.grams))
-        .map(([metal, m]) => `${m.grams} g ${tr(metal).toLowerCase()}`)
-    : [];
-  if (s.opening && (held.length || Number(s.opening.cash)))
-    out.warnings.push(
-      tr(
-        "The statement starts with what you already had on {date} ({held}). If that isn't in Box3balans yet, import the statements of the years before first.",
-        {
-          date: s.opening.date ?? "—",
-          held: [...held, ...(Number(s.opening.cash) ? [`€${s.opening.cash}`] : [])].join(", "),
-        },
-      ),
-    );
+  if (s.opening?.date)
+    out.opening = {
+      date: s.opening.date,
+      metals: Object.entries(s.opening.metals).map(([metal, m]) => ({ code: SYMBOL[metal as Metal], grams: m.grams })),
+      cash: [{ currency: "EUR", amount: s.opening.cash }],
+    };
   out.rows.sort((a, b) => `${a.date} ${a.time ?? ""}`.localeCompare(`${b.date} ${b.time ?? ""}`));
   return out;
 }

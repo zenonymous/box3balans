@@ -35,6 +35,14 @@ export interface Converted {
   warnings: string[];
   /** Mapping settings that differ from the template's. */
   mapping?: { feeCurrency?: "trade" | "EUR"; settleCash?: boolean };
+  /** What a statement says the account held when it starts; the preview checks it against the account. */
+  opening?: OpeningBalance;
+}
+
+export interface OpeningBalance {
+  date: string; // YYYY-MM-DD: held at the start of this day
+  metals: { code: string; grams: string }[]; // XAU, XAG …
+  cash: { currency: string; amount: string }[];
 }
 
 export interface BrokerFormat {

@@ -456,8 +456,13 @@ export const NL: Record<string, string> = {
     "{n} orders konden niet worden gelezen (geen product, hoeveelheid of bedrag): voeg die met de hand toe.",
   "After reading, the statement doesn't add up ({gaps}): check the balances after importing.":
     "Na het lezen klopt het overzicht niet ({gaps}): controleer de saldi na het importeren.",
-  "The statement starts with what you already had on {date} ({held}). If that isn't in Box3balans yet, import the statements of the years before first.":
-    "Het overzicht begint met wat je op {date} al had ({held}). Staat dat nog niet in Box3balans, importeer dan eerst de overzichten van de jaren ervoor.",
+  // import/statement.ts (opening balance)
+  "The opening balance on {date} matches what this account already holds in Box3balans.":
+    "Het beginsaldo op {date} klopt met wat deze rekening al in Box3balans heeft.",
+  "{asset}: {reported} on the statement, {computed} in Box3balans":
+    "{asset}: {reported} op het overzicht, {computed} in Box3balans",
+  "The statement starts on {date} with other amounts than this account holds in Box3balans: {differences}. Import the statements of the years before first, or check the account.":
+    "Het overzicht begint op {date} met andere bedragen dan deze rekening in Box3balans heeft: {differences}. Importeer eerst de overzichten van de jaren ervoor, of controleer de rekening.",
   "{n} line, like: {line}": "{n} regel, zoals: {line}",
   "{n} lines, like: {line}": "{n} regels, zoals: {line}",
   "none in {year}": "geen in {year}",

@@ -1,11 +1,12 @@
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like, or } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { accounts, assets, settings } from "../db/schema.js";
+import { tr } from "../i18n/index.js";
 import { D, Decimal } from "../lib/decimal.js";
 import { fromLocal } from "../lib/time.js";
 import type { AssetResolver } from "../sync/assets.js";
 import { compareHoldings } from "../sync/reconcile.js";
-import { norm, num } from "./formats/types.js";
+import { type OpeningBalance, norm, num } from "./formats/types.js";
 import { detectDecimal, detectDelimiter, parseCsv } from "./parse.js";
 
 /**
@@ -211,4 +212,82 @@ export async function storedChecks(db: DB, accountId?: number, day?: string): Pr
     out.push(await checkStatement(db, id, v.day, v.statement));
   }
   return out.sort((a, b) => b.day.localeCompare(a.day));
+}
+
+const METAL_NAMES: Record<string, () => string> = {
+  XAU: () => tr("Gold"),
+  XAG: () => tr("Silver"),
+  XPT: () => tr("Platinum"),
+  XPD: () => tr("Palladium"),
+};
+
+/**
+ * Whether what a statement says an account held at its start (Goldrepublic's opening balance) is what
+ * the account holds in Box3balans at the start of that day: so the statements of earlier years are
+ * in, or still missing. Null when both are empty (the first statement, into a new account).
+ */
+export async function checkOpening(
+  db: DB,
+  accountId: number,
+  o: OpeningBalance,
+): Promise<{ matches: boolean; message: string } | null> {
+  const codes = o.metals.map((m) => m.code);
+  const currencies = o.cash.map((c) => c.currency);
+  const known = await db
+    .select({ id: assets.id, source: assets.priceSource, ref: assets.priceRef })
+    .from(assets)
+    .where(
+      or(
+        and(eq(assets.priceSource, "metal"), inArray(assets.priceRef, codes.length ? codes : ["-"])),
+        and(eq(assets.priceSource, "fx"), inArray(assets.priceRef, currencies.length ? currencies : ["-"])),
+      ),
+    );
+  const reported = new Map<number, Decimal>();
+  const label = new Map<number, { name: string; unit: (v: string) => string }>();
+  for (const m of o.metals) {
+    const a = known.find((k) => k.source === "metal" && k.ref === m.code);
+    if (!a) continue;
+    reported.set(a.id, D(m.grams));
+    label.set(a.id, { name: (METAL_NAMES[m.code]?.() ?? m.code).toLowerCase(), unit: (v) => `${D(v).toFixed()} g` });
+  }
+  for (const c of o.cash) {
+    const a = known.find((k) => k.source === "fx" && k.ref === c.currency);
+    if (!a) continue;
+    reported.set(a.id, D(c.amount));
+    label.set(a.id, {
+      name: c.currency,
+      unit: (v) => (c.currency === "EUR" ? `€${D(v).toFixed(2)}` : `${D(v).toFixed(2)} ${c.currency}`),
+    });
+  }
+  const [y, m, d] = o.date.split("-").map(Number) as [number, number, number];
+  const mismatches = await compareHoldings(db, accountId, reported, { asOf: fromLocal(y, m, d, 0) });
+  if (!mismatches.length)
+    return [...reported.values()].some((v) => !v.isZero())
+      ? {
+          matches: true,
+          message: tr("The opening balance on {date} matches what this account already holds in Box3balans.", {
+            date: o.date,
+          }),
+        }
+      : null;
+  // In the statement's order: the metals, then the money, then anything else the account holds.
+  const order = [...label.keys()];
+  const rank = (id: number) => (order.includes(id) ? order.indexOf(id) : order.length);
+  const differences = [...mismatches]
+    .sort((a, b) => rank(a.assetId) - rank(b.assetId))
+    .map((x) => {
+      const l = label.get(x.assetId) ?? { name: x.symbol, unit: (v: string) => D(v).toFixed() };
+      return tr("{asset}: {reported} on the statement, {computed} in Box3balans", {
+        asset: l.name,
+        reported: l.unit(x.reported),
+        computed: l.unit(x.computed),
+      });
+    });
+  return {
+    matches: false,
+    message: tr(
+      "The statement starts on {date} with other amounts than this account holds in Box3balans: {differences}. Import the statements of the years before first, or check the account.",
+      { date: o.date, differences: differences.join("; ") },
+    ),
+  };
 }

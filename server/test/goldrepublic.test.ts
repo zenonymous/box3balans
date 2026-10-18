@@ -165,10 +165,17 @@ describe("Goldrepublic account statement", () => {
       }),
       expect.objectContaining({ date: "2025-06-25", type: "withdrawal", quantity: "990.00" }),
     ]);
-    // What was already there on 1 January isn't a transaction: it says so.
-    expect(c.warnings).toEqual([
-      expect.stringMatching(/2025-01-01 \(10\.000 g (gold|goud), 1000\.000 g (silver|zilver), €0\.50\)/),
-    ]);
+    // What was already there on 1 January isn't a transaction: it goes along for the preview to check.
+    expect(c.warnings).toEqual([]);
+    expect(c.opening).toEqual({
+      date: "2025-01-01",
+      metals: [
+        { code: "XAU", grams: "10.000" },
+        { code: "XAG", grams: "1000.000" },
+        { code: "XPT", grams: "0.000" },
+      ],
+      cash: [{ currency: "EUR", amount: "0.50" }],
+    });
   });
 
   it("says so when it doesn't add up", () => {
@@ -238,6 +245,8 @@ describe("Goldrepublic account statement", () => {
     });
 
     const content = PAGES.join("\f");
+    // Into an empty vault, the preview says the years before are missing.
+    const empty = (await t.api("POST", "/api/accounts", { name: "Empty vault", kind: "vault" })).json();
     const upload = async () =>
       (
         await t!.api("POST", "/api/import/upload", { fileName: "goldrepublic-statement.pdf", content, pdf: true })
@@ -250,6 +259,18 @@ describe("Goldrepublic account statement", () => {
       ).json();
     const plan = await preview(up);
     expect(plan.summary).toMatchObject({ new: 8, error: 0 });
+    // What the account held before 2025 is in: the opening balance matches.
+    expect(plan.checks).toEqual([expect.stringMatching(/2025-01-01/)]);
+    expect(plan.warnings.join(" ")).not.toMatch(/2025-01-01/);
+    const elsewhere = (
+      await t.api("POST", "/api/import/preview", { uploadId: up.uploadId, accountId: empty.id, mapping: up.mapping })
+    ).json();
+    expect(elsewhere.checks).toEqual([]);
+    expect(elsewhere.warnings).toEqual([
+      expect.stringMatching(
+        /2025-01-01.*(gold|goud): 10 g .*, 0 g .*(silver|zilver): 1000 g .*, 0 g .*EUR: €0\.50 .*, €0\.00/,
+      ),
+    ]);
     const done = await t.api("POST", "/api/import/commit", {
       uploadId: up.uploadId,
       accountId: vault.id,

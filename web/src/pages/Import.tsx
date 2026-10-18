@@ -106,6 +106,8 @@ interface Plan {
   }[];
   summary: Record<RowStatus, number>;
   warnings: string[];
+  // Checks that came out right, such as a statement's opening balance.
+  checks?: string[];
 }
 
 interface Upload {
@@ -905,6 +907,11 @@ function ReviewCard({
           </Badge>
         ))}
       </div>
+      {plan.checks?.map((c) => (
+        <p key={c} className="mb-2 text-sm text-gain">
+          ✓ {c}
+        </p>
+      ))}
       {plan.warnings.map((w) => (
         <div key={w} className="mb-2">
           <Alert>{w}</Alert>
