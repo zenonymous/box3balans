@@ -1,4 +1,4 @@
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 import { and, eq, gt, lt, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
@@ -85,7 +85,8 @@ const SETUP_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
 /** A one-time code for creating the first account, like "K7QX2-MPF9R" (about 49 bits). */
 export function newSetupCode(): string {
-  const chars = [...randomBytes(10)].map((b) => SETUP_ALPHABET[b % SETUP_ALPHABET.length]).join("");
+  // randomInt picks each character evenly (a byte modulo 31 would favour some).
+  const chars = Array.from({ length: 10 }, () => SETUP_ALPHABET[randomInt(SETUP_ALPHABET.length)]).join("");
   return `${chars.slice(0, 5)}-${chars.slice(5)}`;
 }
 

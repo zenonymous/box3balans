@@ -10,6 +10,7 @@ import {
   isAllowedHost,
 } from "../src/lib/net.js";
 import type { RequestRecord } from "../src/lib/net.js";
+import { newSetupCode } from "../src/auth/service.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
@@ -154,6 +155,10 @@ describe("the network log", () => {
 });
 
 describe("the setup code", () => {
+  it("looks like K7QX2-MPF9R, from characters that are easy to read", () => {
+    for (let i = 0; i < 50; i++) expect(newSetupCode()).toMatch(/^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/);
+  });
+
   it("is needed for the first account when the app made one", async () => {
     t = await createTestApp(undefined, { login: false, setupCode: "K7QX2-MPF9R" });
     const state = (await t.api("GET", "/api/auth/state")).json();
