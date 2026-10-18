@@ -20,6 +20,8 @@ import { tradeRepublic } from "./trade-republic.js";
 import { trading212 } from "./trading212.js";
 import { xtb } from "./xtb.js";
 import { degiroAccount, degiroTransactions } from "./degiro.js";
+import { goldrepublicStatement } from "./goldrepublic.js";
+import type { StatementPage } from "../yearStatement.js";
 import { type BrokerFormat, type Converted, templateCsv } from "./types.js";
 
 /** Exports Box3balans recognises and converts to its own template. */
@@ -49,7 +51,7 @@ export const FORMATS: BrokerFormat[] = [
 ];
 
 export interface Recognised {
-  format: BrokerFormat;
+  format: Pick<BrokerFormat, "id" | "label">;
   result: Converted;
   /** The converted file, in the Box3balans template. */
   content: string;
@@ -69,6 +71,23 @@ export function recognise(content: string): Recognised | null {
     const format = FORMATS.find((f) => f.detect(headers));
     if (!format) continue;
     const result = format.convert([headers, ...table.slice(i + 1)]);
+    const notes = [
+      ...result.warnings,
+      ...[...result.skipped].map(([reason, n]) => tr("Left out: {reason} ({n})", { reason, n })),
+    ];
+    return { format, result, content: templateCsv(result.rows), notes };
+  }
+  return null;
+}
+
+/** Statements read from a PDF (in the browser) that list transactions, read like an export. */
+const PDF_FORMATS = [goldrepublicStatement];
+
+export function recognisePdf(pages: StatementPage[]): Recognised | null {
+  for (const format of PDF_FORMATS) {
+    const statement = format.read(pages);
+    if (!statement) continue;
+    const result = format.convert(statement);
     const notes = [
       ...result.warnings,
       ...[...result.skipped].map(([reason, n]) => tr("Left out: {reason} ({n})", { reason, n })),

@@ -90,8 +90,9 @@ export async function computeCosts(db: DB, method: CostMethod) {
     if (!tx) continue;
     const a = assetById.get(r.assetId);
     const acc = accountById.get(tx.accountId);
+    // A vault's costs are storage, also when paid in euros (Goldrepublic charges them monthly).
     const category: CostCategory =
-      a?.assetClass === "cash" ? "account" : acc?.kind === "vault" || a?.assetClass === "metal" ? "storage" : "network";
+      acc?.kind === "vault" || a?.assetClass === "metal" ? "storage" : a?.assetClass === "cash" ? "account" : "network";
     add(Number(r.date.slice(0, 4)), category, tx.accountId, r.assetId, D(r.costEur));
   }
   for (const e of income) {

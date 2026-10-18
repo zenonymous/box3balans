@@ -185,10 +185,11 @@ export function MetalsPage() {
         {m.vaulted.length === 0 ? (
           <Empty title={t("No vaulted metal")}>
             {tj(
-              "For Goldrepublic or similar, create a <0>vault account</0> and record <1>buy transactions</1> on the Gold or Silver asset, in grams.",
+              "For Goldrepublic or similar, create a <0>vault account</0> and record <1>buy transactions</1> on the Gold or Silver asset, in grams. Goldrepublic's account statement (PDF) can be <2>imported</2>.",
               [
                 <Link key="a" to="/accounts" className="text-accent underline" />,
                 <Link key="t" to="/transactions" className="text-accent underline" />,
+                <Link key="i" to="/transactions/import" className="text-accent underline" />,
               ],
             )}
           </Empty>

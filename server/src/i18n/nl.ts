@@ -446,6 +446,23 @@ export const NL: Record<string, string> = {
   "Moves within Crypto.com (Earn, staking, lockups)": "Verplaatsingen binnen Crypto.com (Earn, staking, lockups)",
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
+  // import/formats/goldrepublic.ts
+  "Goldrepublic account statement": "Goldrepublic, rekeningoverzicht",
+  "cash differs by €{amount}": "het geld wijkt €{amount} af",
+  "{metal} differs by {grams} g": "{metal} wijkt {grams} g af",
+  "{n} order couldn't be read (no product, quantity or amount): add it by hand.":
+    "{n} order kon niet worden gelezen (geen product, hoeveelheid of bedrag): voeg die met de hand toe.",
+  "{n} orders couldn't be read (no product, quantity or amount): add them by hand.":
+    "{n} orders konden niet worden gelezen (geen product, hoeveelheid of bedrag): voeg die met de hand toe.",
+  "After reading, the statement doesn't add up ({gaps}): check the balances after importing.":
+    "Na het lezen klopt het overzicht niet ({gaps}): controleer de saldi na het importeren.",
+  "The statement starts with what you already had on {date} ({held}). If that isn't in Box3balans yet, import the statements of the years before first.":
+    "Het overzicht begint met wat je op {date} al had ({held}). Staat dat nog niet in Box3balans, importeer dan eerst de overzichten van de jaren ervoor.",
+  "{n} line, like: {line}": "{n} regel, zoals: {line}",
+  "{n} lines, like: {line}": "{n} regels, zoals: {line}",
+  "none in {year}": "geen in {year}",
+  "Box3balans can't read this PDF as transactions: only Goldrepublic's account statement so far. For a year statement (jaaroverzicht), use Values per year on the account.":
+    "Box3balans kan deze pdf niet als transacties lezen: voorlopig alleen het rekeningoverzicht van Goldrepublic. Een jaaroverzicht lees je in bij Waarden per jaar van de rekening.",
   "Revolut crypto statement": "Revolut crypto-overzicht",
   "Bitstamp transactions": "Bitstamp transacties",
   "Binance transaction history": "Binance transactiegeschiedenis",

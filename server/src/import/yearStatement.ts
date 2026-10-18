@@ -1,3 +1,5 @@
+import { goldrepublicYearValues, readGoldrepublic } from "./formats/goldrepublic.js";
+
 /**
  * Reads the text of a year statement (the jaaroverzicht of a bank, broker or platform, a PDF read in
  * the browser) into values per year. A template per provider and document says where each value is;
@@ -44,6 +46,8 @@ export interface StatementTemplate {
    * value at the end of the year, so the value on 1 January of the next.
    */
   fields: { field: YearField; label: RegExp; column?: number; nextYear?: boolean }[];
+  /** A statement read by code of its own instead of `fields` (one that lists every transaction). */
+  read?: (pages: StatementPage[]) => { year: number | null; found: FoundValue[] } | null;
 }
 
 /**
@@ -65,6 +69,20 @@ export const TEMPLATES: StatementTemplate[] = [
       { field: "valueEur", label: /^Saldo op 31-12-\d{4}/, nextYear: true },
       { field: "incomeEur", label: /^Rente, (ontvangen|betaald) in \d{4}/ },
     ],
+  },
+  {
+    // Goldrepublic's account statement: the balance at the start and the end, and every transaction
+    // in between (formats/goldrepublic.ts, which the CSV import uses too). Tested with a real
+    // statement over 2025.
+    id: "goldrepublic",
+    label: "Goldrepublic, rekeningoverzicht",
+    detect: [/goldrepublic/i, /^\s*Account Statement\s*$/m],
+    year: /^\s*Opening balance\s+[A-Z][a-z]+ \d{1,2},? (\d{4})/m,
+    fields: [],
+    read: (pages) => {
+      const s = readGoldrepublic(pages);
+      return s && goldrepublicYearValues(s);
+    },
   },
 ];
 
@@ -232,7 +250,10 @@ function fill(t: StatementTemplate, pages: StatementPage[], year: number): Found
 export function readYearStatement(pages: StatementPage[], templates: StatementTemplate[] = TEMPLATES): YearStatement {
   const all = pages.map((p) => p.text).join("\n");
   const template = templates.find((t) => t.detect.every((re) => re.test(all)));
-  if (template) {
+  if (template?.read) {
+    const r = template.read(pages);
+    if (r?.found.length) return { template: template.label, year: r.year, found: r.found };
+  } else if (template) {
     const y = template.year.exec(all);
     const year = y ? Number(y[1]) : statementYear(all);
     if (year != null) {

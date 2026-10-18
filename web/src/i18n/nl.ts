@@ -766,9 +766,10 @@ export const NL: Record<string, string> = {
   "1 · Account and file": "1 · Rekening en bestand",
   "Import into account": "Importeren in rekening",
   "Each file goes into one account.": "Elk bestand gaat in één rekening.",
-  "CSV file": "CSV-bestand",
+  File: "Bestand",
   "Using your saved settings “{name}”": "Je opgeslagen instellingen “{name}” worden gebruikt",
-  "Exported from your broker, exchange or spreadsheet": "Geëxporteerd uit je broker, exchange of spreadsheet",
+  "A CSV export from your broker, exchange or spreadsheet, or Goldrepublic's account statement (PDF)":
+    "Een CSV-export van je broker, exchange of spreadsheet, of het rekeningoverzicht van Goldrepublic (pdf)",
   "The uploaded file has expired. Choose it again.": "Het geüploade bestand is verlopen. Kies het opnieuw.",
   "Rows with problems are left out.": "Regels met problemen worden overgeslagen.",
   "Importing…": "Importeren…",
@@ -949,8 +950,8 @@ export const NL: Record<string, string> = {
   "{pct} premium": "{pct} opslag",
   "Vaulted & allocated": "In kluis en toegewezen",
   "No vaulted metal": "Geen edelmetaal in kluizen",
-  "For Goldrepublic or similar, create a <0>vault account</0> and record <1>buy transactions</1> on the Gold or Silver asset, in grams.":
-    "Maak voor Goldrepublic en dergelijke een <0>kluisrekening</0> aan en leg <1>aankopen</1> vast op de belegging Goud of Zilver, in grammen.",
+  "For Goldrepublic or similar, create a <0>vault account</0> and record <1>buy transactions</1> on the Gold or Silver asset, in grams. Goldrepublic's account statement (PDF) can be <2>imported</2>.":
+    "Maak voor Goldrepublic en dergelijke een <0>kluisrekening</0> aan en leg <1>aankopen</1> vast op de belegging Goud of Zilver, in grammen. Het rekeningoverzicht van Goldrepublic (pdf) kun je <2>importeren</2>.",
   "cost {amount}": "kostprijs {amount}",
   "Gross weight": "Brutogewicht",
   "Price paid": "Betaalde prijs",

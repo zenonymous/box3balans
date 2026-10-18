@@ -22,6 +22,7 @@ import {
 import { CLASS_LABEL, TX_LABEL, date, eurPrice, num, relativeTime, todayIso } from "../format";
 import { useAccounts, useAssets, useInvalidateAll } from "../queries";
 import { readText } from "../files";
+import { readPdf } from "../pdfText";
 import { t, tj, tn } from "../i18n";
 
 // ---- Types mirroring /api/import ----
@@ -44,6 +45,8 @@ type Field =
   | "notes"
   | "id";
 type CsvType = Exclude<TxType, "transfer_in" | "transfer_out">;
+const isPdf = (f: File | null | undefined) => !!f && (f.type === "application/pdf" || /\.pdf$/i.test(f.name));
+
 const CSV_TYPES: CsvType[] = ["buy", "sell", "deposit", "withdrawal", "dividend", "reward", "fee", "split"];
 
 interface Mapping {
@@ -281,8 +284,10 @@ export function ImportPage() {
     setFile(picked);
     setBusy(true);
     try {
-      const content = await readText(picked);
-      const up = await post<Upload>("/api/import/upload", { fileName: picked.name, content, raw });
+      // A PDF statement is read here in the browser; only its text goes to the server.
+      const pdf = isPdf(picked);
+      const content = pdf ? (await readPdf(picked)).map((p) => p.text).join("\f") : await readText(picked);
+      const up = await post<Upload>("/api/import/upload", { fileName: picked.name, content, raw, pdf });
       setUpload(up);
       setMapping(up.mapping ?? null);
       // A portfolio statement belongs to the broker account it came from, when there's just one.
@@ -363,18 +368,20 @@ export function ImportPage() {
               )}
             </Field>
             <Field
-              label={t("CSV file")}
+              label={t("File")}
               hint={
                 upload?.preset
                   ? t("Using your saved settings “{name}”", { name: upload.preset })
-                  : t("Exported from your broker, exchange or spreadsheet")
+                  : t(
+                      "A CSV export from your broker, exchange or spreadsheet, or Goldrepublic's account statement (PDF)",
+                    )
               }
             >
               {(id) => (
                 <Input
                   id={id}
                   type="file"
-                  accept=".csv,.txt,text/csv,text/plain"
+                  accept=".csv,.txt,.pdf,text/csv,text/plain,application/pdf"
                   disabled={busy}
                   onChange={(e) => void choose(e.target.files?.[0])}
                   className="file:mr-3 file:rounded-md file:border-0 file:bg-surface-2 file:px-2.5 file:py-1 file:text-sm file:text-ink"
@@ -425,19 +432,23 @@ export function ImportPage() {
                       "Box3balans read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.",
                     )}
                   </p>
-                  <p className="mt-2 text-xs text-muted">
-                    {t(
-                      "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.",
-                    )}
-                  </p>
-                  <Button
-                    size="sm"
-                    className="mt-3"
-                    onClick={() => void choose(file ?? undefined, true)}
-                    disabled={busy}
-                  >
-                    {t("Choose the columns myself")}
-                  </Button>
+                  {!isPdf(file) && (
+                    <>
+                      <p className="mt-2 text-xs text-muted">
+                        {t(
+                          "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.",
+                        )}
+                      </p>
+                      <Button
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => void choose(file ?? undefined, true)}
+                        disabled={busy}
+                      >
+                        {t("Choose the columns myself")}
+                      </Button>
+                    </>
+                  )}
                 </Card>
               ) : (
                 <MappingCard

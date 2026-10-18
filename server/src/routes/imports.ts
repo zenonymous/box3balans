@@ -20,7 +20,7 @@ import {
 import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
-import { recognise } from "../import/formats/index.js";
+import { recognise, recognisePdf } from "../import/formats/index.js";
 import {
   type Statement,
   checkStatement,
@@ -98,6 +98,8 @@ const uploadBody = z.object({
   content: z.string().min(1).max(MAX_FILE_BYTES),
   // Read the file as it is, even when it's a known export.
   raw: z.boolean().optional(),
+  // The text of a PDF statement (read in the browser), its pages apart by form feeds.
+  pdf: z.boolean().optional(),
 });
 const planBody = z.object({
   uploadId: z.string().uuid(),
@@ -144,10 +146,21 @@ export async function importRoutes(app: FastifyInstance) {
   });
 
   app.post("/import/upload", { bodyLimit: MAX_FILE_BYTES * 2 }, async (req) => {
-    const { fileName, content, raw } = uploadBody.parse(req.body);
+    const { fileName, content, raw, pdf } = uploadBody.parse(req.body);
     if (content.includes("\u0000")) throw new HttpError(400, tr("That isn't a CSV text file"));
     const id = randomUUID();
-    const known = raw ? null : recognise(content);
+    const known = pdf
+      ? recognisePdf(content.split("\f").map((text, i) => ({ page: i + 1, text })))
+      : raw
+        ? null
+        : recognise(content);
+    if (pdf && !known)
+      throw new HttpError(
+        400,
+        tr(
+          "Box3balans can't read this PDF as transactions: only Goldrepublic's account statement so far. For a year statement (jaaroverzicht), use Values per year on the account.",
+        ),
+      );
     const keep = (c: string, notes: string[], statement?: Statement) => {
       uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement });
       while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
