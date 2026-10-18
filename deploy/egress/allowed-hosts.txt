@@ -1,0 +1,45 @@
+# The only hosts the egress proxy lets Box3balans reach (see docs/privacy.md).
+# Generated from server/src/lib/net.ts; test/net.test.ts checks that they match.
+# ".example.com" means example.com and its subdomains.
+
+# metals
+api.gold-api.com
+
+# fx
+api.frankfurter.dev
+
+# securities
+query1.finance.yahoo.com
+www.tradegatebsx.com
+
+# crypto
+api.bitvavo.com
+api.coingecko.com
+api.binance.com
+
+# wallets
+mempool.space
+litecoinspace.org
+api.blockcypher.com
+api.koios.rest
+eth.blockscout.com
+arbitrum.blockscout.com
+base.blockscout.com
+polygon.blockscout.com
+unichain.blockscout.com
+soneium.blockscout.com
+explorer.optimism.io
+explorer.inkonchain.com
+rpc.ankr.com
+api.mainnet-beta.solana.com
+api.trongrid.io
+xrplcluster.com
+
+# exchanges
+api.kraken.com
+api.coinbase.com
+api.public.bitpanda.com
+.interactivebrokers.com
+
+# updates
+api.github.com

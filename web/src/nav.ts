@@ -63,6 +63,12 @@ export const PAGES = {
     icon: "✦",
     more: t("✦ Start wizard — set up your household, accounts and values step by step"),
   },
+  network: {
+    to: "/network",
+    label: t("Network"),
+    icon: "⇢",
+    more: t("⇢ Network — where Box3balans may connect, and what it sent"),
+  },
   settings: { to: "/settings", label: t("Settings"), icon: "⚙" },
 } satisfies Record<string, Page>;
 

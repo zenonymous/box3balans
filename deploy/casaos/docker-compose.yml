@@ -81,9 +81,11 @@ x-casaos:
     before_install:
       en_us: >-
         Don't open Box3balans to the internet; use a VPN such as WireGuard or Tailscale to reach it
-        from outside. After the first start, keep a copy of /DATA/AppData/box3balans/data/app-secret
-        in your password manager.
+        from outside. Creating your account needs the setup code from the app's log (first start).
+        After the first start, keep a copy of /DATA/AppData/box3balans/data/app-secret in your
+        password manager.
       nl_nl: >-
         Zet Box3balans niet open naar het internet; gebruik een VPN zoals WireGuard of Tailscale voor
-        toegang van buitenaf. Bewaar na de eerste start een kopie van
+        toegang van buitenaf. Voor je gebruiker heb je de setupcode uit het log van de app nodig
+        (eerste start). Bewaar na de eerste start een kopie van
         /DATA/AppData/box3balans/data/app-secret in je wachtwoordmanager.

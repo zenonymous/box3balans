@@ -32,6 +32,8 @@ docker buildx imagetools inspect ghcr.io/zenonymous/box3balans:latest --format '
 
 ## Veilig gebruik
 
+- Box3balans maakt alleen verbinding met een vaste lijst van adressen en verstuurt nooit bedragen; zie [Wat Box3balans verstuurt](docs/privacy.md) en _Instellingen → Netwerk_. Wil je dat ook op netwerkniveau afgedwongen, gebruik dan de [afgeschermde opzet](docs/privacy.md#afgeschermd-draaien).
+- Een nieuwe installatie neemt de eerste gebruiker alleen aan met de **setupcode** uit het log van de app, zodat niemand anders op je netwerk hem kan overnemen.
 - Zet Box3balans **niet open naar het internet**. Gebruik voor toegang buitenshuis een VPN zoals WireGuard of Tailscale (zie de README).
 - Geef API-sleutels van beurzen en brokers **alleen leesrechten**. De verbindingsdialoog vertelt per aanbieder welke rechten nodig zijn.
 - Zet `BACKUP_PASSPHRASE`, zodat back-ups versleuteld zijn voordat ze ergens anders terechtkomen.

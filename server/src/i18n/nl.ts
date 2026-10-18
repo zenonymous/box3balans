@@ -446,6 +446,36 @@ export const NL: Record<string, string> = {
   "Moves within Crypto.com (Earn, staking, lockups)": "Verplaatsingen binnen Crypto.com (Earn, staking, lockups)",
   "Balance conversions without their other half": "Saldo-omzettingen zonder hun andere helft",
   "Other kinds: {kind}": "Andere soorten: {kind}",
+  // lib/net.ts (where Box3balans may go)
+  "Prices of gold, silver, platinum and palladium": "Koersen van goud, zilver, platina en palladium",
+  "Only which metal": "Alleen welk metaal",
+  "At every price refresh": "Bij elke koersverversing",
+  "Exchange rates of the ECB": "Wisselkoersen van de ECB",
+  "Only the currency and the day": "Alleen de valuta en de dag",
+  "Daily, and for the dates of transactions in another currency":
+    "Dagelijks, en voor de data van transacties in een andere valuta",
+  "Prices of stocks and ETFs": "Koersen van aandelen en ETF's",
+  "The symbols and ISINs of the stocks and ETFs you hold, and what you search for":
+    "De symbolen en ISIN's van de aandelen en ETF's die je hebt, en wat je zoekt",
+  "At every price refresh, for price history, and when you add an asset":
+    "Bij elke koersverversing, voor koersgeschiedenis, en als je een belegging toevoegt",
+  "Crypto prices": "Cryptokoersen",
+  "The symbols (or contract addresses) of the coins you hold, and what you search for":
+    "De symbolen (of contractadressen) van de munten die je hebt, en wat je zoekt",
+  "Balances and transactions of your wallets": "Saldi en transacties van je wallets",
+  "The addresses or public keys (xpub) you add; never a private key":
+    "De adressen of publieke sleutels (xpub) die je toevoegt; nooit een privésleutel",
+  "Only for wallets you add, at every sync": "Alleen voor wallets die je toevoegt, bij elke synchronisatie",
+  "Connections with exchanges and brokers": "Koppelingen met beurzen en brokers",
+  "Requests signed with your read-only key; they answer with your balances and transactions":
+    "Verzoeken ondertekend met je sleutel met alleen leesrechten; het antwoord bevat je saldi en transacties",
+  "Only for connections you set up, at every sync": "Alleen voor koppelingen die je instelt, bij elke synchronisatie",
+  "Check for new versions": "Controleren op nieuwe versies",
+  "Nothing about you: only which project": "Niets over jou: alleen welk project",
+  "Only when you turn it on (Settings → About)": "Alleen als je het aanzet (Instellingen → Over)",
+  // routes/auth.ts (setup code)
+  "That setup code isn't right. Box3balans prints it in its log when it starts (docker compose logs app).":
+    "Die setupcode klopt niet. Box3balans zet hem bij het starten in zijn log (docker compose logs app).",
   // import/formats/goldrepublic.ts
   "Goldrepublic account statement": "Goldrepublic, rekeningoverzicht",
   "cash differs by €{amount}": "het geld wijkt €{amount} af",

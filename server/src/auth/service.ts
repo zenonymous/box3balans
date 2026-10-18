@@ -1,4 +1,4 @@
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
 import { and, eq, gt, lt, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
@@ -78,4 +78,21 @@ export async function sessionUser(db: DB, token: string | undefined) {
 
 export async function destroySession(db: DB, token: string | undefined) {
   if (token) await db.delete(sessions).where(eq(sessions.id, sha256(token)));
+}
+
+// No 0/O, 1/I/L: easy to read from a log and type over.
+const SETUP_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+/** A one-time code for creating the first account, like "K7QX2-MPF9R" (about 49 bits). */
+export function newSetupCode(): string {
+  const chars = [...randomBytes(10)].map((b) => SETUP_ALPHABET[b % SETUP_ALPHABET.length]).join("");
+  return `${chars.slice(0, 5)}-${chars.slice(5)}`;
+}
+
+/** Whether `given` is the setup code, ignoring case, spaces and dashes; in constant time. */
+export function isSetupCode(expected: string, given: string | undefined): boolean {
+  const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");
+  const a = Buffer.from(norm(expected));
+  const b = Buffer.from(norm(given ?? ""));
+  return a.length === b.length && timingSafeEqual(a, b);
 }

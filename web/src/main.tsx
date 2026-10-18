@@ -30,6 +30,7 @@ const HouseholdPage = lazy(() => import("./pages/Household").then((m) => ({ defa
 const StartPage = lazy(() => import("./pages/Start").then((m) => ({ default: m.StartPage })));
 const TaxReturnPage = lazy(() => import("./pages/TaxReturn").then((m) => ({ default: m.TaxReturnPage })));
 const DossierPage = lazy(() => import("./pages/Dossier").then((m) => ({ default: m.DossierPage })));
+const NetworkPage = lazy(() => import("./pages/Network").then((m) => ({ default: m.NetworkPage })));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -39,6 +40,7 @@ const queryClient = new QueryClient({
 
 interface AuthState {
   needsSetup: boolean;
+  needsSetupCode?: boolean;
   user: User | null;
   language?: Lang;
   demo?: boolean;
@@ -60,7 +62,8 @@ function AuthGate() {
   if (auth.isLoading) return <Spinner />;
   if (auth.error)
     return <p className="p-6 text-loss">{t("Cannot reach the server: {error}", { error: auth.error.message })}</p>;
-  if (!auth.data?.user) return <Login setup={auth.data?.needsSetup ?? false} />;
+  if (!auth.data?.user)
+    return <Login setup={auth.data?.needsSetup ?? false} needsCode={auth.data?.needsSetupCode ?? false} />;
 
   return (
     <Routes>
@@ -85,17 +88,20 @@ function AuthGate() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="activity" element={<ActivityPage />} />
         <Route path="attention" element={<AttentionPage />} />
+        <Route path="network" element={<NetworkPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
   );
 }
 
-function Login({ setup }: { setup: boolean }) {
+function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; needsCode: boolean }) {
   const qc = useQueryClient();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  // The one-time code a fresh install prints in its log.
+  const [setupCode, setSetupCode] = useState("");
   // Asked for after the password when two-step verification is on.
   const [code, setCode] = useState("");
   const [needsCode, setNeedsCode] = useState(false);
@@ -112,6 +118,7 @@ function Login({ setup }: { setup: boolean }) {
         username,
         password,
         ...(needsCode ? { code } : {}),
+        ...(setup && needsSetupCode ? { setupCode } : {}),
       });
       switchSession(qc, user);
     } catch (err) {
@@ -177,6 +184,25 @@ function Login({ setup }: { setup: boolean }) {
                   autoComplete="new-password"
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
+                  required
+                />
+              )}
+            </Field>
+          )}
+          {setup && needsSetupCode && (
+            <Field
+              label={t("Setup code")}
+              hint={t(
+                "Box3balans printed it in its log when it started: docker compose logs app, or the log of the container on your NAS.",
+              )}
+            >
+              {(id) => (
+                <Input
+                  id={id}
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={setupCode}
+                  onChange={(e) => setSetupCode(e.target.value)}
                   required
                 />
               )}

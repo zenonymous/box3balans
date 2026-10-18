@@ -37,6 +37,8 @@ import { returnRoutes } from "./routes/returns.js";
 import { dividendRoutes } from "./routes/dividends.js";
 import { householdRoutes } from "./routes/household.js";
 import { updateRoutes } from "./routes/updates.js";
+import { networkRoutes } from "./routes/network.js";
+import type { NetworkLog } from "./domain/networkLog.js";
 import { tr } from "./i18n/index.js";
 
 export interface AppDeps {
@@ -47,6 +49,10 @@ export interface AppDeps {
   sync: SyncService;
   wallets: WalletService;
   backfill: BackfillService;
+  /** Every request to the internet (lib/net.ts), for Settings → Network. */
+  network: NetworkLog;
+  /** While nobody has an account: the one-time code the first one needs (null: none needed). */
+  setup: { code: string | null };
 }
 
 declare module "fastify" {
@@ -193,6 +199,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
   await app.register(analyticsRoutes, { prefix: "/api" });
   await app.register(box3Routes, { prefix: "/api/box3" });
   await app.register(backupRoutes, { prefix: "/api/backups" });
+  await app.register(networkRoutes, { prefix: "/api" });
   await app.register(exportRoutes, { prefix: "/api/export" });
   await app.register(importRoutes, { prefix: "/api" });
   await app.register(activityRoutes, { prefix: "/api/activity" });

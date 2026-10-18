@@ -7,6 +7,7 @@ import {
   createSession,
   createFirstUser,
   destroySession,
+  isSetupCode,
   userCount,
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
@@ -34,7 +35,7 @@ const newPassword = z
   .max(256);
 
 export async function authRoutes(app: FastifyInstance) {
-  const { db, config, secrets } = app.deps;
+  const { db, config, secrets, setup } = app.deps;
   const codeBody = z.object({ code: z.string().trim().min(1).max(20) });
   // Wrong codes per account: after five in a row, codes aren't checked for 15 minutes, doubling with
   // each lockout up to a day. The login rate limit counts per IP address; this holds however many
@@ -89,19 +90,33 @@ export async function authRoutes(app: FastifyInstance) {
     });
   };
 
-  app.get("/state", async (req) => ({
-    needsSetup: (await userCount(db)) === 0,
-    user: req.user,
-    // Public, so the sign-in screen is in the right language too.
-    language: await getLanguage(db),
-    demo: config.DEMO,
-  }));
+  app.get("/state", async (req) => {
+    const needsSetup = (await userCount(db)) === 0;
+    return {
+      needsSetup,
+      // The first account needs the one-time code from the app's log (index.ts).
+      needsSetupCode: needsSetup && !!setup.code,
+      user: req.user,
+      // Public, so the sign-in screen is in the right language too.
+      language: await getLanguage(db),
+      demo: config.DEMO,
+    };
+  });
 
   // First-run: creates the single user. Refused once a user exists.
   app.post("/setup", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async (req, reply) => {
-    const body = credentials.extend({ password: newPassword }).parse(req.body);
+    const body = credentials
+      .extend({ password: newPassword, setupCode: z.string().trim().max(64).optional() })
+      .parse(req.body);
+    // Without the code from the log, someone else on the network can't claim a fresh install.
+    if (setup.code && !isSetupCode(setup.code, body.setupCode))
+      throw new HttpError(
+        403,
+        tr("That setup code isn't right. Box3balans prints it in its log when it starts (docker compose logs app)."),
+      );
     const user = await createFirstUser(db, body.username, body.password);
     if (!user) throw new HttpError(409, tr("Already set up"));
+    setup.code = null;
     await startSession(reply, user.id);
     return { user };
   });

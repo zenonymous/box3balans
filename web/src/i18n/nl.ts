@@ -1471,6 +1471,38 @@ export const NL: Record<string, string> = {
     "Dit is de demo: een voorbeeldhuishouden met verzonnen koersen. Wijzigingen gaan verloren als hij herstart. <0>Installeer Box3balans</0> om je eigen vermogen bij te houden.",
   "This is the online demo: an example household with made-up prices, to look around in. Nothing can be saved here. <0>Install Box3balans</0> to keep track of your own.":
     "Dit is de online demo: een voorbeeldhuishouden met verzonnen koersen, om rond te kijken. Opslaan kan hier niet. <0>Installeer Box3balans</0> om je eigen vermogen bij te houden.",
+  // main.tsx (setup code)
+  "Setup code": "Setupcode",
+  "Box3balans printed it in its log when it started: docker compose logs app, or the log of the container on your NAS.":
+    "Box3balans zette hem bij het starten in zijn log: docker compose logs app, of het log van de container op je NAS.",
+  // pages/Network.tsx
+  Network: "Netwerk",
+  "⇢ Network — where Box3balans may connect, and what it sent":
+    "⇢ Netwerk — waarmee Box3balans verbinding mag maken, en wat het verstuurde",
+  "Box3balans only connects to the addresses below, only over HTTPS, and never sends amounts, balances or transactions. Anything else is refused and shown here. Your browser only talks to your own Box3balans.":
+    "Box3balans maakt alleen verbinding met de adressen hieronder, alleen via HTTPS, en verstuurt nooit bedragen, saldi of transacties. Al het andere wordt geweigerd en hier getoond. Je browser praat alleen met je eigen Box3balans.",
+  "No request has been refused: everything went to an address on the list.":
+    "Er is geen verzoek geweigerd: alles ging naar een adres op de lijst.",
+  "{n} request was refused: it went to an address that isn't on the list.":
+    "{n} verzoek is geweigerd: het ging naar een adres dat niet op de lijst staat.",
+  "{n} requests were refused: they went to addresses that aren't on the list.":
+    "{n} verzoeken zijn geweigerd: ze gingen naar adressen die niet op de lijst staan.",
+  "Where Box3balans may connect": "Waarmee Box3balans verbinding mag maken",
+  For: "Waarvoor",
+  "What goes out": "Wat er naar buiten gaat",
+  Addresses: "Adressen",
+  "The list is in the source code, with an explanation per address: <0>what Box3balans sends</0>.":
+    "De lijst staat in de broncode, met uitleg per adres: <0>wat Box3balans verstuurt</0>.",
+  "Per day": "Per dag",
+  "Nothing sent yet.": "Nog niets verstuurd.",
+  "Latest requests": "Laatste verzoeken",
+  "Nothing sent since Box3balans started ({date}).": "Niets verstuurd sinds Box3balans startte ({date}).",
+  When: "Wanneer",
+  Sent: "Verstuurd",
+  Answer: "Antwoord",
+  Refused: "Geweigerd",
+  "Keys and long values (addresses, tokens) are shortened here. The latest requests are kept until a restart; the counts per day for 90 days.":
+    "Sleutels en lange waarden (adressen, tokens) staan hier ingekort. De laatste verzoeken blijven tot een herstart bewaard, de aantallen per dag 90 dagen.",
   // staticDemo.ts
   "Nothing can be saved in the online demo. To try this, run the demo yourself (see Install in the README).":
     "In de online demo kan niets worden opgeslagen. Wil je dit proberen, draai de demo dan zelf (zie Installeren in de README).",

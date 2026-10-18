@@ -15,6 +15,36 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // The server reaches the internet only through fetch, which lib/net.ts guards with its list of
+    // destinations (docs/privacy.md). Other ways out would go around that list.
+    files: ["server/src/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            "http",
+            "https",
+            "net",
+            "tls",
+            "dgram",
+            "http2",
+            "undici",
+            "axios",
+            "got",
+            "node-fetch",
+            "ws",
+          ].flatMap((name) =>
+            [name, `node:${name}`].map((n) => ({
+              name: n,
+              message: "Use fetch: it only reaches the destinations in server/src/lib/net.ts.",
+            })),
+          ),
+        },
+      ],
+    },
+  },
+  {
     // Node scripts; screenshots.js also runs functions inside the page (puppeteer's evaluate).
     files: ["scripts/**/*.js"],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },

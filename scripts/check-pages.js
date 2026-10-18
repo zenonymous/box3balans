@@ -33,6 +33,7 @@ const ALL = [
   "/settings",
   "/activity",
   "/start",
+  "/network",
 ];
 const PAGES = process.argv.length > 2 ? process.argv.slice(2) : ALL;
 const SCREENS = [

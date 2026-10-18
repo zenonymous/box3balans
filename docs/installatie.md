@@ -4,7 +4,7 @@ Box3balans draait in Docker. Hieronder per systeem hoe je het installeert. Overa
 
 1. Een map met daarin [`docker-compose.yml`](../docker-compose.yml), en eventueel een `.env` met je instellingen ([`.env.example`](../.env.example) laat zien wat kan).
 2. `docker compose up -d`, of het equivalent in de app van je NAS.
-3. Open `http://<adres-van-je-server>:8080` en maak je gebruiker aan. _Aan de slag_ helpt je daarna op weg; zet onder _Instellingen_ ook tweestapsverificatie aan.
+3. Open `http://<adres-van-je-server>:8080` en maak je gebruiker aan, met de **setupcode** uit het log van de app (`docker compose logs app`, of het log van de container in de app van je NAS). _Aan de slag_ helpt je daarna op weg; zet onder _Instellingen_ ook tweestapsverificatie aan.
 
 Wil je eerst rondkijken zonder iets in te stellen? Start de demo: `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`.
 
@@ -98,6 +98,8 @@ Een laptop staat niet altijd aan: zolang hij slaapt, worden koersen en koppeling
 
 ## Na de installatie
 
+- **De setupcode:** bij de eerste start zet Box3balans een eenmalige code in zijn log (`No account yet … setup code: K7QX2-MPF9R`); die vraagt het scherm waarop je je gebruiker aanmaakt. Zo kan niemand anders op je netwerk een nieuwe installatie overnemen. Bij elke herstart zolang er nog geen gebruiker is, komt er een nieuwe. Een eigen code kan ook, met `SETUP_CODE` in `.env`.
+- **Extra afgeschermd (optioneel):** draai Box3balans zonder eigen internettoegang, met een proxy die alleen de adressen van de lijst doorlaat; zie [Wat Box3balans verstuurt](privacy.md#afgeschermd-draaien).
 - **Toegang buitenshuis:** gebruik een VPN, zie de [README](../README.md#toegang-buitenshuis-vpn). Zet poort 8080 niet open in je router.
 - **Bijwerken:** `docker compose pull && docker compose up -d` (met `-f docker-compose.lite.yml` voor de variant met één container).
 - **Problemen:** `docker compose logs app --tail 50`, en de tabel [Problemen oplossen](../README.md#problemen-oplossen). Kom je er niet uit, stel je vraag dan bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a). Is er iets kapot, open dan [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).

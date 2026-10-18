@@ -47,6 +47,7 @@ const FIXED = [
   "/api/backups",
   "/api/imports",
   "/api/import/presets",
+  "/api/network",
 ];
 const RANGES = ["1M", "3M", "1Y", "5Y", "ALL"];
 // Saved whole; staticDemo.ts filters and pages them.
@@ -72,6 +73,7 @@ const PAGES = [
   "settings",
   "activity",
   "attention",
+  "network",
 ];
 
 function version() {

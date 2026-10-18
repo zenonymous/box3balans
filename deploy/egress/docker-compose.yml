@@ -1,0 +1,99 @@
+# Box3balans without internet access of its own: optional, for who wants it shielded at the network
+# level (docs/privacy.md → Afgeschermd draaien).
+#
+# The app and its database are on a network with no way out. A proxy (Squid) on two networks lets
+# your browser in, and lets the app out only to the hosts in allowed-hosts.txt, over HTTPS. Docker
+# stops every other connection, whatever the app's code would try.
+#
+# Put this file, squid.conf and allowed-hosts.txt in one folder, then:
+#   docker compose up -d                          start
+#   docker compose pull && docker compose up -d   update
+#   docker compose logs proxy                     every connection the proxy let through or refused
+#
+# The same settings as the normal docker-compose.yml work here (.env.example).
+name: box3balans
+
+services:
+  app:
+    image: ghcr.io/zenonymous/box3balans:${BOX3BALANS_VERSION:-latest}
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      TIME_ZONE: ${TIME_ZONE:-Europe/Amsterdam}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      # Requests come in through the proxy, which passes on the browser's address.
+      TRUST_PROXY: "1"
+      SESSION_DAYS: ${SESSION_DAYS:-30}
+      PRICE_REFRESH_MINUTES: ${PRICE_REFRESH_MINUTES:-15}
+      SYNC_INTERVAL_HOURS: ${SYNC_INTERVAL_HOURS:-6}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-24}
+      BACKUP_KEEP: ${BACKUP_KEEP:-14}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:-}
+      ANKR_API_KEY: ${ANKR_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      PUID: ${PUID:-1000}
+      PGID: ${PGID:-1000}
+      APP_SECRET: ${APP_SECRET:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      PGHOST: db
+      PGPORT: "5432"
+      PGUSER: ${DB_NAME:-box3balans}
+      PGDATABASE: ${DB_NAME:-box3balans}
+      # Out only through the proxy (Node uses these with NODE_USE_ENV_PROXY); the database directly.
+      HTTPS_PROXY: http://proxy:3128
+      HTTP_PROXY: http://proxy:3128
+      NO_PROXY: db,localhost,127.0.0.1
+      NODE_USE_ENV_PROXY: "1"
+    volumes:
+      - app-data:/data
+      - ./backups:/backups
+    networks:
+      - inside
+
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      - app
+    environment:
+      POSTGRES_DB: ${DB_NAME:-box3balans}
+      POSTGRES_USER: ${DB_NAME:-box3balans}
+      POSTGRES_PASSWORD_FILE: /box3balans/db-password
+    volumes:
+      - db-data:/var/lib/postgresql
+      - app-data:/box3balans:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_NAME:-box3balans} -d ${DB_NAME:-box3balans}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - inside
+
+  proxy:
+    # Squid, maintained by Canonical: the only container that reaches the internet.
+    image: ubuntu/squid:6.6-24.04_edge
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - "${HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./squid.conf:/etc/squid/squid.conf:ro
+      - ./allowed-hosts.txt:/etc/squid/allowed-hosts.txt:ro
+    networks:
+      - inside
+      - outside
+
+networks:
+  # No way out: Docker gives this network no route to the internet.
+  inside:
+    internal: true
+  outside: {}
+
+volumes:
+  app-data:
+  db-data:

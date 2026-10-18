@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import type { FastifyInstance, LightMyRequestResponse } from "fastify";
 import { buildApp } from "../src/app.js";
+import { NetworkLog } from "../src/domain/networkLog.js";
 import { loadConfig } from "../src/config.js";
 import { openDatabase, type Database } from "../src/db/client.js";
 import { seed } from "../src/db/seed.js";
@@ -85,7 +86,7 @@ export interface TestApp {
 
 export async function createTestApp(
   routes: Record<string, unknown> = defaultRoutes,
-  opts: { login?: boolean; env?: Record<string, string>; lang?: "nl" | "en" } = {},
+  opts: { login?: boolean; env?: Record<string, string>; lang?: "nl" | "en"; setupCode?: string } = {},
 ): Promise<TestApp> {
   const backupDir = fs.mkdtempSync(path.join(os.tmpdir(), "pd-backups-"));
   const config = loadConfig({
@@ -106,7 +107,10 @@ export async function createTestApp(
   const backfill = new BackfillService(database.db, prices.fx, fetch, async () => {});
   // Tests run backfills explicitly; don't let request() fire timers in the background.
   backfill.request = () => {};
-  const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill });
+  const network = new NetworkLog(database.db);
+  // No setup code unless a test asks for one (opts.setupCode).
+  const setup = { code: opts.setupCode ?? null };
+  const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill, network, setup });
   // Tests read messages in English unless they ask for Dutch.
   await setLanguage(database.db, opts.lang ?? "en");
 

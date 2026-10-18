@@ -2,7 +2,7 @@
 
 _Je box 3 in balans._ · [box3balans.nl](https://box3balans.nl)
 
-Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen en ETF's, crypto, goud en zilver** (thuis of in een kluis), een tweede woning, uitgeleend geld en schulden, alles in **euro's**. Met een schatting van je belasting, je werkelijk rendement en een overzicht voor de aangifte. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Box3balans stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet.
+Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen en ETF's, crypto, goud en zilver** (thuis of in een kluis), een tweede woning, uitgeleend geld en schulden, alles in **euro's**. Met een schatting van je belasting, je werkelijk rendement en een overzicht voor de aangifte. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Box3balans stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet. Die adressen staan op een vaste lijst; al het andere weigert de app. Wat er precies naar buiten gaat (nooit bedragen), staat in [Wat Box3balans verstuurt](docs/privacy.md), en _Instellingen → Netwerk_ laat het zien.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/images/overzicht-dark.webp">
@@ -19,7 +19,7 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 
 ## In English
 
-Box3balans is a self-hosted tracker for the Dutch wealth tax (**box 3**): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household, in euros. Per year it calculates the deemed-return tax (rounded the way the Belastingdienst does) and your actual return for the _tegenbewijsregeling_, with an overview in the order of the tax return and a dossier that shows where every amount comes from. It reads CSV exports from about twenty brokers and exchanges, bank statements (CAMT.053, MT940, CSV) and PDF annual statements, connects read-only to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and follows wallets by address. It runs with Docker on a NAS, home server or laptop, and your data stays on your machine. The interface is in Dutch, with English as an option; free and open source (AGPL-3.0).
+Box3balans is a self-hosted tracker for the Dutch wealth tax (**box 3**): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household, in euros. Per year it calculates the deemed-return tax (rounded the way the Belastingdienst does) and your actual return for the _tegenbewijsregeling_, with an overview in the order of the tax return and a dossier that shows where every amount comes from. It reads CSV exports from about twenty brokers and exchanges, bank statements (CAMT.053, MT940, CSV) and PDF annual statements, connects read-only to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and follows wallets by address. It runs with Docker on a NAS, home server or laptop, and your data stays on your machine: the server only connects to a fixed list of hosts (price sources, and the wallets and exchanges you add), never sends amounts, and shows every request in the app ([docs/privacy.md](docs/privacy.md), in Dutch). The interface is in Dutch, with English as an option; free and open source (AGPL-3.0).
 
 Try the [online demo in English](https://box3balans.nl/demo/?lang=en), or run it yourself with `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`. Installing for real: [docs/installatie.md](docs/installatie.md) (in Dutch). Questions in English are welcome in [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a).
 
@@ -76,7 +76,7 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 
    De eerste keer worden de images gedownload. Na ongeveer een halve minuut toont `docker compose ps` beide containers als `healthy`.
 
-3. Open `http://<je-server>:8080` en maak meteen je gebruiker aan, met een wachtwoord van minstens 12 tekens. Tot dat gebeurd is, kan iedereen die de server bereikt dat doen. _Aan de slag_ (te vinden op het lege overzicht) helpt je daarna in vier stappen op weg. Zet ook meteen tweestapsverificatie aan (_Instellingen_).
+3. Open `http://<je-server>:8080` en maak je gebruiker aan, met een wachtwoord van minstens 12 tekens. Daarvoor heb je de **setupcode** nodig die Box3balans bij de eerste start in zijn log zet (`docker compose logs app`, of het log van de container op je NAS): zo kan niemand anders op je netwerk je installatie overnemen. _Aan de slag_ (te vinden op het lege overzicht) helpt je daarna in vier stappen op weg. Zet ook meteen tweestapsverificatie aan (_Instellingen_).
 
 4. **Aanbevolen:** maak naast `docker-compose.yml` een bestand `.env` (voorbeeld: [`.env.example`](.env.example)) met minstens:
 

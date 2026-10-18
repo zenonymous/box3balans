@@ -13,7 +13,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/zenonymous/box3balans/discussions/categories/q-a</Support>
   <Project>https://github.com/zenonymous/box3balans</Project>
-  <Overview>Self-hosted overview of your investments, crypto and precious metals, with the Dutch box 3 wealth tax: what you had on 1 January, the tax under the current system, the actual return, and a yearly dossier of where every amount comes from. Connects to Bitvavo, Kraken, Coinbase and Interactive Brokers (read-only keys), reads wallets on Bitcoin, Ethereum, Solana, Cardano and other chains, and imports exports from DEGIRO, Trade Republic and others. The interface is in Dutch, with English available. Open source (AGPL-3.0); your data stays on your server.</Overview>
+  <Overview>Self-hosted overview of your investments, crypto and precious metals, with the Dutch box 3 wealth tax: what you had on 1 January, the tax under the current system, the actual return, and a yearly dossier of where every amount comes from. Connects to Bitvavo, Kraken, Coinbase and Interactive Brokers (read-only keys), reads wallets on Bitcoin, Ethereum, Solana, Cardano and other chains, and imports exports from DEGIRO, Trade Republic and others. The interface is in Dutch, with English available. Open source (AGPL-3.0); your data stays on your server. To create your account, use the setup code from the container log (first start).</Overview>
   <Category>Productivity: Tools:</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/unraid/box3balans.xml</TemplateURL>
