@@ -82,6 +82,7 @@ jobs:
       - name: Deploy templates
         run: |
           python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('deploy/unraid/box3balans.xml')"
+          python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('ca_profile.xml')"
           PUID=1000 PGID=1000 docker compose -f deploy/casaos/docker-compose.yml config -q
           docker compose -f deploy/egress/docker-compose.yml config -q
 

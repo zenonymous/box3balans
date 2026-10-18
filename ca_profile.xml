@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Repository profile for Unraid Community Applications (the template is deploy/unraid/box3balans.xml). -->
+<CommunityApplications>
+  <Profile>
+Box3balans is a self-hosted tracker for the Dutch wealth tax (box 3): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household. Per year it calculates the deemed-return tax and your actual return for the tegenbewijsregeling, with an overview for the tax return and a dossier of where every amount comes from.
+
+One container with the database built in. It connects only to a fixed list of hosts (price sources, and the wallets and exchanges you add), never sends amounts, and shows every request in the app. The interface is in Dutch, with English as an option.
+
+Questions: GitHub Discussions (English welcome). Bugs: GitHub issues.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/icon.png</Icon>
+  <WebPage>https://box3balans.nl</WebPage>
+  <Photo>https://raw.githubusercontent.com/zenonymous/box3balans/main/docs/images/overzicht-light.webp</Photo>
+  <Photo>https://raw.githubusercontent.com/zenonymous/box3balans/main/docs/images/box3-light.webp</Photo>
+</CommunityApplications>
