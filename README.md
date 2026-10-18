@@ -17,6 +17,12 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 
 **Vragen?** Stel ze bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a). Een fout of een concreet voorstel meld je als [issue](https://github.com/zenonymous/box3balans/issues/new/choose).
 
+## In English
+
+Box3balans is a self-hosted tracker for the Dutch wealth tax (**box 3**): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household, in euros. Per year it calculates the deemed-return tax (rounded the way the Belastingdienst does) and your actual return for the _tegenbewijsregeling_, with an overview in the order of the tax return and a dossier that shows where every amount comes from. It reads CSV exports from about twenty brokers and exchanges, bank statements (CAMT.053, MT940, CSV) and PDF annual statements, connects read-only to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and follows wallets by address. It runs with Docker on a NAS, home server or laptop, and your data stays on your machine. The interface is in Dutch, with English as an option; free and open source (AGPL-3.0).
+
+Try the [online demo in English](https://box3balans.nl/demo/?lang=en), or run it yourself with `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`. Installing for real: [docs/installatie.md](docs/installatie.md) (in Dutch). Questions in English are welcome in [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a).
+
 ## Wat het kan
 
 - **Overzicht:** vermogen door de tijd, de verdeling over beleggingssoorten, posities en rekeningen, en per positie de kostprijs en het gerealiseerde en ongerealiseerde resultaat.
