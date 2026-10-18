@@ -7,6 +7,8 @@ Box3balans draait bij jou, op je eigen computer, NAS of thuisserver. Er is geen 
 - **Een vaste lijst van bestemmingen.** Alle adressen waarmee Box3balans verbinding mag maken, staan in één bestand: [`server/src/lib/net.ts`](../server/src/lib/net.ts). De server maakt alleen verbinding met die adressen, alleen via HTTPS, en volgt een doorverwijzing alleen naar een adres op de lijst. Elk ander verzoek wordt geweigerd en getoond in de app. Een test laat de bouw falen als er code bij komt met een adres dat niet op de lijst staat.
 - **De browser praat alleen met je eigen Box3balans.** De app stuurt een beveiligingsbeleid mee (Content-Security-Policy met `connect-src 'self'`): de pagina laadt niets van buiten en kan niets naar buiten sturen.
 - **Zelf zien wat er is verstuurd.** _Instellingen → Netwerk_ toont de lijst, per dag hoe vaak elk adres is benaderd, de laatste verzoeken (zonder sleutels) en elk geweigerd verzoek.
+- **Zelf uitzetten.** Op dezelfde pagina zet je per functie de verbindingen uit, of met _Offline: alles uit_ allemaal. Wat uit staat, weigert Box3balans net zo als een adres dat niet op de lijst staat; koersen vul je dan zelf in. Een adres dat voor twee functies dient (Bitvavo: koersen en je koppeling), blijft bereikbaar zolang een van beide aan staat. De controle op nieuwe versies heeft zijn eigen schakelaar (_Instellingen → Over_) en staat standaard uit.
+- **Bij elke wijziging gecontroleerd.** Een stap in de CI start het image van die wijziging in de [afgeschermde opzet](#afgeschermd-draaien), gebruikt het (een gebruiker, een aandeel, een munt, de koersen) en faalt als er een verbinding was met een adres dat niet op de lijst staat ([`scripts/check-network.sh`](../scripts/check-network.sh)).
 - **Afgeschermd draaien (optioneel).** Wil je het niet op de code laten aankomen, draai Box3balans dan zonder eigen internettoegang: een proxy laat alleen de adressen van de lijst door, en Docker houdt de rest tegen. Zie [Afgeschermd draaien](#afgeschermd-draaien).
 
 ## Per functie
@@ -31,6 +33,7 @@ Een nieuwe installatie zonder beleggingen benadert alleen de eerste twee: de koe
 - **In de code:** de lijst in [`server/src/lib/net.ts`](../server/src/lib/net.ts), en [`test/net.test.ts`](../server/test/net.test.ts) dat de lijst bewaakt.
 - **Met je eigen firewall:** bijvoorbeeld [LuLu](https://objective-see.org/products/lulu.html) (gratis, macOS), Little Snitch (macOS), [OpenSnitch](https://github.com/evilsocket/opensnitch) (Linux) of de firewall van je NAS. Je ziet alleen de adressen hierboven.
 - **Het image:** de images worden door GitHub gebouwd uit deze broncode en zijn ondertekend; zie [SECURITY.md](../SECURITY.md#images-controleren).
+- **Onafhankelijk beoordeeld:** de [OpenSSF Scorecard](https://scorecard.dev/viewer/?uri=github.com/zenonymous/box3balans) controleert elke week automatisch hoe het project beveiligd is (vastgezette afhankelijkheden, ondertekende uitgaven, workflows en meer).
 
 ## Afgeschermd draaien
 

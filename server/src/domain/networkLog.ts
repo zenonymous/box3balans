@@ -38,6 +38,8 @@ export class NetworkLog {
     this.recent.push(r);
     if (this.recent.length > RECENT) this.recent.shift();
     if (r.blocked) {
+      // Turned off by you isn't an alarm; an address that isn't on the list is.
+      if (r.reason === "off") return;
       this.blocked.push(r);
       if (this.blocked.length > BLOCKED) this.blocked.shift();
     } else {
@@ -72,4 +74,21 @@ export class NetworkLog {
       daily,
     };
   }
+}
+
+// ---- Switches (Settings → Network) ----
+
+const OFF_KEY = "network:off";
+
+/** The destinations turned off (lib/net.ts SWITCHABLE ids). */
+export async function loadTurnedOff(db: DB): Promise<string[]> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, OFF_KEY));
+  return Array.isArray(row?.value) ? (row.value as string[]) : [];
+}
+
+export async function saveTurnedOff(db: DB, ids: string[]): Promise<void> {
+  await db
+    .insert(settings)
+    .values({ key: OFF_KEY, value: ids })
+    .onConflictDoUpdate({ target: settings.key, set: { value: ids } });
 }

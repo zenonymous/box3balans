@@ -72,7 +72,7 @@ jobs:
         run: >-
           docker run --rm -v "$PWD:/mnt"
           koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
-          docker-entrypoint.sh scripts/deploy.sh scripts/test-dates.sh
+          docker-entrypoint.sh scripts/deploy.sh scripts/test-dates.sh scripts/check-network.sh
       - name: actionlint
         run: >-
           docker run --rm -v "$PWD:/repo" --workdir /repo
@@ -84,6 +84,17 @@ jobs:
           python3 -c "import xml.dom.minidom; xml.dom.minidom.parse('deploy/unraid/box3balans.xml')"
           PUID=1000 PGID=1000 docker compose -f deploy/casaos/docker-compose.yml config -q
           docker compose -f deploy/egress/docker-compose.yml config -q
+
+  network:
+    # The image of this commit in the shielded setup (deploy/egress), used a little: every connection
+    # it makes must go to a host on the list (docs/privacy.md). Uses the internet through the proxy.
+    name: "Network: only listed hosts"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/check-network.sh
 
   image:
     name: Docker image

@@ -1,4 +1,5 @@
 import { and, eq } from "drizzle-orm";
+import { isOn } from "../lib/net.js";
 import type { DB } from "../db/client.js";
 import { accounts, walletAddresses } from "../db/schema.js";
 import type { FetchFn } from "../lib/http.js";
@@ -305,6 +306,8 @@ export class WalletService {
 
   /** Syncs every enabled wallet group, one after another. */
   async runAll() {
+    // Wallets turned off under Settings → Network don't sync on their own.
+    if (!isOn("wallets")) return [];
     const rows = await this.db
       .selectDistinct({ accountId: walletAddresses.accountId, chain: walletAddresses.chain, account: accounts.name })
       .from(walletAddresses)

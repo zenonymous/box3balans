@@ -2,6 +2,8 @@
 
 _Je box 3 in balans._ · [box3balans.nl](https://box3balans.nl)
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/zenonymous/box3balans/badge)](https://scorecard.dev/viewer/?uri=github.com/zenonymous/box3balans)
+
 Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen en ETF's, crypto, goud en zilver** (thuis of in een kluis), een tweede woning, uitgeleend geld en schulden, alles in **euro's**. Met een schatting van je belasting, je werkelijk rendement en een overzicht voor de aangifte. Je draait het zelf, op je NAS, een thuisserver of je laptop. Je gegevens blijven dus bij jou: Box3balans stuurt niets naar de makers en verzamelt geen gebruiksgegevens. Het maakt alleen verbinding met koersbronnen, met de beurzen, brokers en blockchainverkenners die jij koppelt, en met GitHub als je de controle op nieuwe versies aanzet. Die adressen staan op een vaste lijst; al het andere weigert de app. Wat er precies naar buiten gaat (nooit bedragen), staat in [Wat Box3balans verstuurt](docs/privacy.md), en _Instellingen → Netwerk_ laat het zien.
 
 <picture>

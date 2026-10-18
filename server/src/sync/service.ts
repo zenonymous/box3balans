@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { isOn } from "../lib/net.js";
 import type { DB } from "../db/client.js";
 import { accounts, integrations } from "../db/schema.js";
 import type { FetchFn } from "../lib/http.js";
@@ -169,6 +170,8 @@ export class SyncService {
 
   /** Syncs every enabled connection, one after another. */
   async runAll(): Promise<{ id: number; account: string; result: SyncResult }[]> {
+    // Connections turned off under Settings → Network don't sync on their own.
+    if (!isOn("exchanges")) return [];
     const rows = await this.db
       .select({ id: integrations.id, account: accounts.name })
       .from(integrations)

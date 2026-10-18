@@ -14,8 +14,8 @@ import { SyncService } from "./sync/service.js";
 import { WalletService } from "./wallets/service.js";
 import { BackfillService } from "./jobs/backfill.js";
 import { APP_VERSION } from "./lib/version.js";
-import { NetworkLog } from "./domain/networkLog.js";
-import { allowConfiguredUrl, installNetworkGuard } from "./lib/net.js";
+import { NetworkLog, loadTurnedOff } from "./domain/networkLog.js";
+import { allowConfiguredUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
 import { newSetupCode, userCount } from "./auth/service.js";
 
 const config = loadConfig();
@@ -40,6 +40,8 @@ await seed(database.db);
 const network = new NetworkLog(config.DEMO ? undefined : database.db);
 await network.load();
 allowConfiguredUrl("wallets", process.env.SOLANA_RPC_URL);
+// What you turned off under Settings → Network stays off.
+if (!config.DEMO) setTurnedOff(await loadTurnedOff(database.db));
 installNetworkGuard(network.record);
 
 // A fresh install takes its first account only with a one-time code from this log, so nobody else

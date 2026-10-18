@@ -1,4 +1,5 @@
 import { and, eq, inArray, lt, desc, ne } from "drizzle-orm";
+import { isOn, priceSourceOn } from "../lib/net.js";
 import type { DB } from "../db/client.js";
 import { assets, priceHistory, pricesLatest, settings } from "../db/schema.js";
 import { D, type Decimal, str } from "../lib/decimal.js";
@@ -56,10 +57,13 @@ export class PriceService {
   /** Refreshes FX rates and latest quotes for every visible asset; records today's close. */
   async refreshAll(assetIds?: number[]): Promise<RefreshResult> {
     const result: RefreshResult = { at: new Date().toISOString(), updated: 0, failed: [] };
-    try {
-      result.fxDate = await this.fx.refreshLatest();
-    } catch (err) {
-      result.fxError = (err as Error).message;
+    // What's turned off under Settings → Network is skipped, not counted as failed.
+    if (isOn("fx")) {
+      try {
+        result.fxDate = await this.fx.refreshLatest();
+      } catch (err) {
+        result.fxError = (err as Error).message;
+      }
     }
 
     const conditions = [ne(assets.priceSource, "manual")];
@@ -75,7 +79,7 @@ export class PriceService {
         await this.storeFxAsset(a, result);
         continue;
       }
-      if (!a.priceRef) continue;
+      if (!a.priceRef || !priceSourceOn(a.priceSource, a.assetClass)) continue;
       const list = bySource.get(a.priceSource) ?? [];
       list.push(a);
       bySource.set(a.priceSource, list);
@@ -149,6 +153,7 @@ export class PriceService {
    * rate. A price you entered yourself stays.
    */
   private async refreshSwapped(assetIds: number[] | undefined, result: RefreshResult) {
+    if (!isOn("crypto")) return;
     const conditions = [eq(assets.assetClass, "crypto"), eq(assets.priceSource, "manual")];
     if (assetIds) conditions.push(inArray(assets.id, assetIds));
     const rows = await this.db

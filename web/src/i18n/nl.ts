@@ -1501,6 +1501,13 @@ export const NL: Record<string, string> = {
   Sent: "Verstuurd",
   Answer: "Antwoord",
   Refused: "Geweigerd",
+  "Offline: all off": "Offline: alles uit",
+  "All on": "Alles aan",
+  "Turned off: Box3balans doesn't contact those addresses, also not when you ask it to. Prices and syncs from there stop until you turn them on again; you can fill in prices yourself.":
+    "Uitgezet: Box3balans maakt geen verbinding met die adressen, ook niet als je erom vraagt. Koersen en synchronisaties van daar stoppen tot je ze weer aanzet; koersen kun je zelf invullen.",
+  On: "Aan",
+  "Settings → About": "Instellingen → Over",
+  "Turned off": "Uitgezet",
   "Keys and long values (addresses, tokens) are shortened here. The latest requests are kept until a restart; the counts per day for 90 days.":
     "Sleutels en lange waarden (adressen, tokens) staan hier ingekort. De laatste verzoeken blijven tot een herstart bewaard, de aantallen per dag 90 dagen.",
   // staticDemo.ts

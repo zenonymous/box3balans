@@ -116,10 +116,41 @@ export const destinationsOf = (host: string) => DESTINATIONS.filter((d) => d.hos
 
 export const isAllowedHost = (host: string) => destinationsOf(host.toLowerCase()).length > 0;
 
-/** A request that was refused: an address not on the list, or not HTTPS. */
+// ---- Switches (Settings → Network): destinations turned off are refused like unlisted ones ----
+
+/** The destinations that can be turned off; the update check has its own switch (Settings → About). */
+export const SWITCHABLE = DESTINATIONS.filter((d) => d.id !== "updates").map((d) => d.id);
+
+const off = new Set<string>();
+
+export function setTurnedOff(ids: string[]): void {
+  off.clear();
+  for (const id of ids) if (SWITCHABLE.includes(id)) off.add(id);
+}
+export const turnedOff = () => [...off];
+export const isOn = (id: string) => !off.has(id);
+
+/** Whether a host may be contacted now: listed, and at least one of its destinations on. */
+export const isReachable = (host: string) => destinationsOf(host.toLowerCase()).some((d) => isOn(d.id));
+
+/** Where an asset's prices come from, so a refresh can skip what's turned off. */
+export function priceSourceOn(priceSource: string, assetClass?: string): boolean {
+  if (priceSource === "manual") return assetClass !== "crypto" || isOn("crypto");
+  const id = { fx: "fx", metal: "metals", yahoo: "securities" }[priceSource] ?? "crypto";
+  return isOn(id);
+}
+
+/** A request that was refused: an address not on the list, not HTTPS, or turned off. */
 export class BlockedRequestError extends Error {
-  constructor(public url: string) {
-    super(`Box3balans doesn't contact ${url}: not on its list of destinations (docs/privacy.md)`);
+  constructor(
+    public url: string,
+    public reason: "unlisted" | "off" = "unlisted",
+  ) {
+    super(
+      reason === "off"
+        ? `Box3balans doesn't contact ${url}: turned off in Settings → Network`
+        : `Box3balans doesn't contact ${url}: not on its list of destinations (docs/privacy.md)`,
+    );
   }
 }
 
@@ -131,6 +162,8 @@ export interface RequestRecord {
   status?: number;
   error?: string;
   blocked?: boolean;
+  // Why it was refused: not on the list, or its destination is turned off.
+  reason?: "unlisted" | "off";
 }
 
 // Query parameters that carry a key or token: their value is never recorded.
@@ -168,8 +201,12 @@ export function guardFetch(realFetch: FetchFn, record: (r: RequestRecord) => voi
     let body = init.body;
     for (let hop = 0; ; hop++) {
       if (url.protocol !== "https:" || !isAllowedHost(url.hostname)) {
-        record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true });
+        record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "unlisted" });
         throw new BlockedRequestError(`${url.protocol}//${url.host}`);
+      }
+      if (!isReachable(url.hostname)) {
+        record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "off" });
+        throw new BlockedRequestError(`${url.protocol}//${url.host}`, "off");
       }
       let res: Response;
       try {

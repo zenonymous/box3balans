@@ -1,13 +1,14 @@
 import fs from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { NetworkLog } from "../src/domain/networkLog.js";
+import { NetworkLog, loadTurnedOff } from "../src/domain/networkLog.js";
 import {
   BlockedRequestError,
   DESTINATIONS,
   describe as describeUrl,
   guardFetch,
   isAllowedHost,
+  setTurnedOff,
 } from "../src/lib/net.js";
 import type { RequestRecord } from "../src/lib/net.js";
 import { newSetupCode } from "../src/auth/service.js";
@@ -17,6 +18,7 @@ let t: TestApp | undefined;
 afterEach(async () => {
   await t?.close();
   t = undefined;
+  setTurnedOff([]);
 });
 
 const ROOT = path.resolve(__dirname, "../..");
@@ -151,6 +153,41 @@ describe("the network log", () => {
     // Bitvavo is both a price source and an exchange.
     expect(res.recent[0]).toMatchObject({ host: "api.bitvavo.com", purposes: ["crypto", "exchanges"] });
     expect(res.blocked).toEqual([]);
+  });
+});
+
+describe("switches", () => {
+  it("refuse what's turned off, but keep a host that serves something still on", async () => {
+    const records: RequestRecord[] = [];
+    const f = guardFetch(fakeNet({}).fetchFn, (r) => records.push(r));
+    setTurnedOff(["metals", "crypto"]);
+    await expect(f("https://api.gold-api.com/price/XAU")).rejects.toMatchObject({ reason: "off" });
+    // Bitvavo is also an exchange, which is still on.
+    expect((await f("https://api.bitvavo.com/v2/balance")).status).toBe(200);
+    setTurnedOff(["crypto", "exchanges"]);
+    await expect(f("https://api.bitvavo.com/v2/balance")).rejects.toBeInstanceOf(BlockedRequestError);
+    expect(records.filter((r) => r.blocked).map((r) => r.reason)).toEqual(["off", "off"]);
+    // Turned off by you isn't counted among the refusals that matter.
+    const log = new NetworkLog();
+    records.forEach(log.record);
+    expect(log.snapshot().blocked).toEqual([]);
+  });
+
+  it("are saved, and a price refresh skips what's off", async () => {
+    t = await createTestApp();
+    expect((await t.api("PUT", "/api/network/off", { off: ["nonsense"] })).statusCode).toBe(400);
+    const off = ["metals", "fx", "securities", "crypto", "wallets", "exchanges"];
+    expect((await t.api("PUT", "/api/network/off", { off })).json()).toEqual({ off });
+    expect(await loadTurnedOff(t.database.db)).toEqual(off);
+    expect((await t.api("GET", "/api/network")).json()).toMatchObject({ off, switchable: off });
+    // Offline: the refresh asks nothing and reports nothing as failed.
+    const before = t.fetch.calls.length;
+    const r = await t.prices.refreshAll();
+    // (Only the euro, which is 1 and needs no network.)
+    expect(r.failed).toEqual([]);
+    expect(t.fetch.calls.length).toBe(before);
+    expect(await t.sync.runAll()).toEqual([]);
+    expect(await t.wallets.runAll()).toEqual([]);
   });
 });
 

@@ -1,4 +1,5 @@
 import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { priceSourceOn } from "../lib/net.js";
 import type { DB } from "../db/client.js";
 import { assets, fxRates, metalItems, priceHistory, settings, transactions } from "../db/schema.js";
 import { METAL_CODES } from "../db/seed.js";
@@ -126,6 +127,8 @@ export class BackfillService {
       // Manual coins too: for one an exchange delisted, history may still be found (see history.ts).
       if (!from || (asset.priceSource === "manual" && asset.assetClass !== "crypto")) continue;
       if (asset.priceSource === "fx" && asset.priceRef === "EUR") continue; // always 1
+      // Turned off under Settings → Network: no history from there either.
+      if (!priceSourceOn(asset.priceSource, asset.assetClass)) continue;
       result.checked++;
       const prev = state[asset.id];
       const loaded = prev && prev.from <= from && (prev.v ?? 1) >= SOURCES;
