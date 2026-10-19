@@ -71,7 +71,12 @@ const schema = z.object({
     .default("false")
     .transform((v) => v === "true"),
   // The one-time code the first account needs (see index.ts); made up at startup when not set.
-  SETUP_CODE: z.string().trim().min(8).max(64).optional(),
+  SETUP_CODE: z
+    .string()
+    .trim()
+    .max(64)
+    .refine((s) => s.replace(/[^A-Za-z0-9]/g, "").length >= 8, "at least 8 letters or digits")
+    .optional(),
   // Where the running code's source can be found (AGPL); the Docker build sets it.
   SOURCE_URL: z.string().default("https://github.com/zenonymous/box3balans"),
 });

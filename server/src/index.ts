@@ -20,6 +20,12 @@ import { newSetupCode, userCount } from "./auth/service.js";
 
 const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
+
+// Before anything else, every request to the internet passes the list of destinations (lib/net.ts)
+// and is logged for Settings → Network; anything else is refused.
+const network = new NetworkLog();
+allowConfiguredUrl("wallets", process.env.SOLANA_RPC_URL);
+installNetworkGuard(network.record);
 if (config.DEMO) {
   // Nothing is kept: data in memory, backups in a temporary folder that goes with the process.
   config.BACKUP_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "box3balans-demo-"));
@@ -35,14 +41,12 @@ const database = config.DEMO
     });
 await seed(database.db);
 
-// From here on every request to the internet passes the list of destinations (lib/net.ts) and is
-// logged for Settings → Network; anything else is refused.
-const network = new NetworkLog(config.DEMO ? undefined : database.db);
-await network.load();
-allowConfiguredUrl("wallets", process.env.SOLANA_RPC_URL);
-// What you turned off under Settings → Network stays off.
-if (!config.DEMO) setTurnedOff(await loadTurnedOff(database.db));
-installNetworkGuard(network.record);
+// What you turned off under Settings → Network stays off, and earlier counts are kept.
+if (!config.DEMO) {
+  network.attach(database.db);
+  await network.load();
+  setTurnedOff(await loadTurnedOff(database.db));
+}
 
 // A fresh install takes its first account only with a one-time code from this log, so nobody else
 // on the network (or a website, via DNS rebinding) can claim it first.

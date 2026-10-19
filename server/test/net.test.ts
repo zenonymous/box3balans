@@ -12,6 +12,7 @@ import {
 } from "../src/lib/net.js";
 import type { RequestRecord } from "../src/lib/net.js";
 import { newSetupCode } from "../src/auth/service.js";
+import { loadConfig } from "../src/config.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
@@ -27,10 +28,19 @@ const LINK_ONLY = new Set(["github.com"]);
 
 /** A fake network: answers per URL; a redirect is { status, location }. */
 function fakeNet(answers: Record<string, { status: number; location?: string }>) {
-  const calls: { url: string; method: string; redirect?: string }[] = [];
+  const calls: { url: string; method: string; redirect?: string; headers: Record<string, string>; body?: string }[] =
+    [];
   const fetchFn = (async (input: RequestInfo | URL, init?: RequestInit) => {
+    const req = input instanceof Request ? input : null;
     const url = input instanceof Request ? input.url : input instanceof URL ? input.href : input;
-    calls.push({ url, method: init?.method ?? "GET", redirect: init?.redirect });
+    const body = req ? await req.text() : typeof init?.body === "string" ? init.body : undefined;
+    calls.push({
+      url,
+      method: req ? req.method : (init?.method ?? "GET"),
+      redirect: req ? req.redirect : init?.redirect,
+      headers: Object.fromEntries(new Headers(req ? req.headers : init?.headers)),
+      body: body || undefined,
+    });
     const a = answers[url] ?? { status: 200 };
     return new Response(a.status >= 300 && a.status < 400 ? null : "{}", {
       status: a.status,
@@ -81,6 +91,44 @@ describe("the list of destinations", () => {
       "POST https://api.kraken.com/post manual",
       "GET https://api.kraken.com/done manual",
     ]);
+  });
+
+  it("passes no keys on to another site through a redirect", async () => {
+    const net = fakeNet({
+      "https://api.kraken.com/a": { status: 302, location: "https://api.kraken.com/b" },
+      "https://api.kraken.com/b": { status: 302, location: "https://api.bitvavo.com/c" },
+    });
+    await guardFetch(net.fetchFn)("https://api.kraken.com/a", {
+      headers: { "API-Key": "secret", Authorization: "Bearer x", Accept: "application/json" },
+    });
+    expect(net.calls.map((c) => [c.url, Object.keys(c.headers).sort()])).toEqual([
+      ["https://api.kraken.com/a", ["accept", "api-key", "authorization"]],
+      // The same site keeps them; another site gets only the harmless ones.
+      ["https://api.kraken.com/b", ["accept", "api-key", "authorization"]],
+      ["https://api.bitvavo.com/c", ["accept"]],
+    ]);
+  });
+
+  it("only uses the normal HTTPS port", async () => {
+    const f = guardFetch(fakeNet({}).fetchFn);
+    await expect(f("https://api.gold-api.com:8443/price/XAU")).rejects.toBeInstanceOf(BlockedRequestError);
+    expect((await f("https://api.gold-api.com:443/price/XAU")).status).toBe(200);
+  });
+
+  it("keeps the headers and body of a Request", async () => {
+    const net = fakeNet({});
+    const req = new Request("https://api.kraken.com/0/private/Balance", {
+      method: "POST",
+      headers: { "API-Key": "k" },
+      body: "nonce=1",
+    });
+    await guardFetch(net.fetchFn)(req);
+    expect(net.calls[0]).toMatchObject({
+      method: "POST",
+      headers: { "api-key": "k" },
+      body: "nonce=1",
+      redirect: "manual",
+    });
   });
 
   it("records what was sent without keys", () => {
@@ -192,6 +240,13 @@ describe("switches", () => {
 });
 
 describe("the setup code", () => {
+  it("can be your own, with enough letters or digits", () => {
+    const base = { APP_SECRET: "x".repeat(40), SCHEDULER: "false" };
+    // Only symbols would leave nothing to compare: an empty field would match.
+    expect(() => loadConfig({ ...base, SETUP_CODE: "!!!!-!!!!-!!" })).toThrow(/SETUP_CODE/);
+    expect(loadConfig({ ...base, SETUP_CODE: "kies-zelf-een-code" }).SETUP_CODE).toBe("kies-zelf-een-code");
+  });
+
   it("looks like K7QX2-MPF9R, from characters that are easy to read", () => {
     for (let i = 0; i < 50; i++) expect(newSetupCode()).toMatch(/^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/);
   });

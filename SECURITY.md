@@ -30,6 +30,18 @@ Die images hebben ook een lijst van alles wat erin zit (een SBOM in SPDX-formaat
 docker buildx imagetools inspect ghcr.io/zenonymous/box3balans:latest --format '{{ json (index .SBOM "linux/amd64").SPDX }}'
 ```
 
+## Downloads controleren
+
+Elke release heeft vanaf 0.1.33 ook downloadbare bestanden: de broncode (`box3balans-<versie>-source.tar.gz`), de lijst van afhankelijkheden (`box3balans-<versie>.spdx.json`) en `SHA256SUMS`, elk met een handtekening (`….sigstore.json`) van de workflow **Release files**, zonder sleutel, net als bij de images. Zo controleer je er een:
+
+```bash
+cosign verify-blob box3balans-0.1.33-source.tar.gz \
+  --bundle box3balans-0.1.33-source.tar.gz.sigstore.json \
+  --certificate-identity-regexp '^https://github\.com/zenonymous/box3balans/\.github/workflows/release-files\.yml@refs/(tags/v|heads/main)' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+sha256sum -c SHA256SUMS
+```
+
 ## Veilig gebruik
 
 - Box3balans maakt alleen verbinding met een vaste lijst van adressen en verstuurt nooit bedragen; zie [Wat Box3balans verstuurt](docs/privacy.md) en _Instellingen → Netwerk_. Wil je dat ook op netwerkniveau afgedwongen, gebruik dan de [afgeschermde opzet](docs/privacy.md#afgeschermd-draaien). De CI controleert bij elke wijziging dat het image alleen adressen van de lijst benadert, en onder _Instellingen → Netwerk_ zet je functies uit, tot helemaal offline.

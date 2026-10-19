@@ -25,6 +25,11 @@ export class NetworkLog {
 
   constructor(private db?: DB) {}
 
+  /** The database to keep counts and refusals in, once it's open (the log starts before it). */
+  attach(db: DB): void {
+    this.db = db;
+  }
+
   async load(): Promise<void> {
     if (!this.db) return;
     const [row] = await this.db.select().from(settings).where(eq(settings.key, KEY));

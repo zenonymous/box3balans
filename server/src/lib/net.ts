@@ -188,6 +188,8 @@ export function describe(url: URL): string {
 }
 
 const MAX_REDIRECTS = 5;
+// What may go along when a redirect leads to another site: never keys, signatures or Authorization.
+const CROSS_SITE_HEADERS = new Set(["accept", "accept-language", "user-agent"]);
 
 /**
  * fetch that only reaches listed hosts over HTTPS, follows redirects itself so each hop is checked,
@@ -199,8 +201,10 @@ export function guardFetch(realFetch: FetchFn, record: (r: RequestRecord) => voi
     let url = new URL(input instanceof Request ? input.url : input instanceof URL ? input.href : input);
     let method = (init.method ?? request?.method ?? "GET").toUpperCase();
     let body = init.body;
+    let headers = new Headers(init.headers ?? request?.headers);
     for (let hop = 0; ; hop++) {
-      if (url.protocol !== "https:" || !isAllowedHost(url.hostname)) {
+      // HTTPS on its normal port, to a listed host.
+      if (url.protocol !== "https:" || (url.port !== "" && url.port !== "443") || !isAllowedHost(url.hostname)) {
         record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "unlisted" });
         throw new BlockedRequestError(`${url.protocol}//${url.host}`);
       }
@@ -208,9 +212,17 @@ export function guardFetch(realFetch: FetchFn, record: (r: RequestRecord) => voi
         record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "off" });
         throw new BlockedRequestError(`${url.protocol}//${url.host}`, "off");
       }
+      const options: RequestInit = {
+        ...init,
+        method,
+        headers,
+        redirect: "manual",
+        ...(body !== undefined ? { body } : {}),
+      };
       let res: Response;
       try {
-        res = await realFetch(url, { ...init, method, body, redirect: "manual" });
+        // A Request passed in keeps its own body on the first hop.
+        res = await (hop === 0 && request ? realFetch(new Request(request, options)) : realFetch(url, options));
       } catch (err) {
         record({ at: new Date(), method, host: url.host, what: describe(url), error: (err as Error).message });
         throw err;
@@ -224,7 +236,11 @@ export function guardFetch(realFetch: FetchFn, record: (r: RequestRecord) => voi
         method = "GET";
         body = undefined;
       }
-      url = new URL(location, url);
+      const next = new URL(location, url);
+      // To another site, keys and signatures don't go along (fetch itself drops Authorization too).
+      if (next.origin !== url.origin)
+        headers = new Headers([...headers].filter(([name]) => CROSS_SITE_HEADERS.has(name.toLowerCase())));
+      url = next;
     }
   };
 }

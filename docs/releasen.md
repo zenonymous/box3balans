@@ -37,7 +37,8 @@ Versies volgen [semantic versioning](https://semver.org/lang/nl/): `MAJOR.MINOR.
 
 3. Maak op GitHub een release van de tag (**Releases → Draft a new release**, **Generate release notes**) en schrijf erboven in gewone taal wat er voor gebruikers verandert. De controle op nieuwe versies in de app (voor wie die aanzet) kijkt naar de nieuwste gepubliceerde release, niet naar tags en niet naar proefversies: zonder release ziet niemand de nieuwe versie.
 
-4. Daarna zet de workflow **Online demo** de [online demo](https://box3balans.nl/demo/) van deze versie in `demo/` op de branch `gh-pages` ([ADR 0010](adr/0010-online-demo-zonder-server.md)). Hij draait ook op 1 januari, zodat de jaren in de demo meegaan, en kan met de hand (**Actions → Online demo → Run workflow**); hij bouwt altijd de nieuwste release.
+4. Daarna hangt de workflow **Release files** de broncode, de SBOM en de checksums met hun handtekeningen aan de release (zie [SECURITY.md](../SECURITY.md#downloads-controleren)); voor een eerdere release start je hem met de hand, met de tag.
+5. De workflow **Online demo** de [online demo](https://box3balans.nl/demo/) van deze versie in `demo/` op de branch `gh-pages` ([ADR 0010](adr/0010-online-demo-zonder-server.md)). Hij draait ook op 1 januari, zodat de jaren in de demo meegaan, en kan met de hand (**Actions → Online demo → Run workflow**); hij bouwt altijd de nieuwste release.
 
 ## App-catalogi
 
