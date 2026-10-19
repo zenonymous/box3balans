@@ -32,7 +32,7 @@ docker buildx imagetools inspect ghcr.io/zenonymous/box3balans:latest --format '
 
 ## Downloads controleren
 
-Elke release heeft vanaf 0.1.33 ook downloadbare bestanden: de broncode (`box3balans-<versie>-source.tar.gz`), de lijst van afhankelijkheden (`box3balans-<versie>.spdx.json`) en `SHA256SUMS`, elk met een handtekening (`….sigstore.json`) van de workflow **Release files**, zonder sleutel, net als bij de images. Zo controleer je er een:
+Elke release heeft vanaf 0.1.28 ook downloadbare bestanden: de broncode (`box3balans-<versie>-source.tar.gz`), de lijst van afhankelijkheden (`box3balans-<versie>.spdx.json`) en `SHA256SUMS`, elk met een handtekening (`….sigstore.json`) van de workflow **Release files**, zonder sleutel, net als bij de images. Zo controleer je er een:
 
 ```bash
 cosign verify-blob box3balans-0.1.33-source.tar.gz \
