@@ -5,6 +5,8 @@ import { accounts, accountYears, metalItems, persons, transactions } from "../db
 import { YEARLY_ONLY_KINDS } from "../domain/yearly.js";
 import { foreignDays, parseBankExport, summarizeExport } from "../import/bank.js";
 import { readYearStatement } from "../import/yearStatement.js";
+import { pdfContribution, personalNames } from "../import/contribute.js";
+import { APP_VERSION } from "../lib/version.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
 import type { Decimal } from "../lib/decimal.js";
@@ -60,6 +62,12 @@ const yearRow = z.object({
 });
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
+
+// The text of a PDF's pages, read in the browser.
+const statementPages = z
+  .array(z.object({ page: z.number().int().positive(), text: z.string().max(200_000) }))
+  .min(1)
+  .max(100);
 
 export async function accountRoutes(app: FastifyInstance) {
   const { db, prices } = app.deps;
@@ -234,15 +242,37 @@ export async function accountRoutes(app: FastifyInstance) {
    */
   app.post("/:id/year-statement", { bodyLimit: 5 * 1024 * 1024 }, async (req) => {
     idParam.parse(req.params);
-    const { pages } = z
+    const { pages } = z.object({ pages: statementPages }).parse(req.body);
+    return readYearStatement(pages);
+  });
+
+  /**
+   * A year statement without a template, to share (ADR 0012): its text with every number made up and
+   * every uncommon word turned into x's, plus which lines the user picked for which value. For the user
+   * to check and share themselves; nothing is sent anywhere and nothing is kept.
+   */
+  app.post("/:id/year-statement/contribution", { bodyLimit: 5 * 1024 * 1024 }, async (req) => {
+    idParam.parse(req.params);
+    const b = z
       .object({
-        pages: z
-          .array(z.object({ page: z.number().int().positive(), text: z.string().max(200_000) }))
+        pages: statementPages,
+        picked: z
+          .array(
+            z.object({
+              page: z.number().int().positive(),
+              line: z.string().max(2000),
+              field: z.enum(["valueEur", "inEur", "outEur", "incomeEur", "costsEur"]),
+              year: z.number().int().min(1900).max(2100),
+            }),
+          )
           .min(1)
-          .max(100),
+          .max(50),
+        provider: z.string().trim().min(1).max(60),
+        document: z.string().trim().max(300).default(""),
+        replace: z.array(z.string().max(500)).max(1000).default([]),
       })
       .parse(req.body);
-    return readYearStatement(pages);
+    return pdfContribution({ ...b, avoid: await personalNames(db), version: APP_VERSION });
   });
 
   app.delete("/:id", async (req) => {

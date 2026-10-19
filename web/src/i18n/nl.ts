@@ -190,8 +190,6 @@ export const NL: Record<string, string> = {
     "Kies het jaaroverzicht van deze rekening als pdf. Het wordt hier in je browser gelezen en niet bewaard. Box3balans zoekt de waarde op 1 januari en, als het overzicht ze noemt, het geld erin en eruit, de inkomsten en de kosten. Er wordt niets opgeslagen tot je op Opslaan drukt.",
   "Recognised: {name}.": "Herkend: {name}.",
   "Which account in the statement?": "Welke rekening in het overzicht?",
-  "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. <0>Share its text</0> and it can be recognised next time.":
-    "Box3balans kent dit overzicht nog niet. Hieronder staan de bedragen die op waarden lijken: vink de juiste aan. <0>Deel de tekst</0>, dan kan het de volgende keer herkend worden.",
   "No amounts found next to a date or a word such as beginwaarde. Fill in the values by hand.":
     "Geen bedragen gevonden bij een datum of een woord als beginwaarde. Vul de waarden met de hand in.",
   Column: "Kolom",
@@ -1616,4 +1614,61 @@ export const NL: Record<string, string> = {
   "Nothing to show yet.": "Nog niets te tonen.",
   "Not enough history yet. Add transactions, or wait for price history to load.":
     "Nog niet genoeg geschiedenis. Voeg transacties toe, of wacht tot de koersgeschiedenis geladen is.",
+  // components/ShareFormat.tsx, sharing a format (ADR 0012)
+  "Column names": "Kolomnamen",
+  "Type words": "Woorden voor de soort",
+  "Currency codes": "Valutacodes",
+  "Asset types": "Soorten bezit",
+  Words: "Woorden",
+  "a name in your household": "een naam in je huishouden",
+  "looks like an IBAN": "lijkt een IBAN",
+  "looks like an e-mail address": "lijkt een e-mailadres",
+  "looks like a phone number": "lijkt een telefoonnummer",
+  "looks like a BSN": "lijkt een BSN",
+  "Help others read this file": "Help anderen dit bestand in te lezen",
+  "Help others read this statement": "Help anderen dit overzicht in te lezen",
+  "Box3balans doesn't know this export yet. You can share its format, so it's read by itself in a next version: Box3balans makes a file with your column settings and a few made-up lines in the same layout, without your data. You see exactly what's in it before you share it yourself.":
+    "Box3balans kent deze export nog niet. Je kunt het formaat delen, zodat een volgende versie het vanzelf leest: Box3balans maakt een bestand met je kolominstellingen en een paar verzonnen regels in dezelfde opmaak, zonder jouw gegevens. Je ziet precies wat erin staat voordat je het zelf deelt.",
+  "Box3balans doesn't know this statement yet. You can share its layout, so it's recognised in a next version: Box3balans makes a file with the text of the statement in which every number is made up and every uncommon word is crossed out. You see exactly what's in it before you share it yourself.":
+    "Box3balans kent dit overzicht nog niet. Je kunt de opmaak delen, zodat een volgende versie het herkent: Box3balans maakt een bestand met de tekst van het overzicht, waarin elk getal verzonnen is en elk ongewoon woord doorgestreept. Je ziet precies wat erin staat voordat je het zelf deelt.",
+  "Make a file to share…": "Bestand om te delen maken…",
+  "Broker, bank or exchange": "Broker, bank of beurs",
+  Provider: "Aanbieder",
+  "Which export?": "Welke export?",
+  "Which statement?": "Welk overzicht?",
+  "Where in their app or website you get it. Optional.": "Waar je het in hun app of website vindt. Hoeft niet.",
+  "e.g. Account → Transactions → Export as CSV": "bijv. Account → Transacties → Exporteren als CSV",
+  "e.g. Financial year statement": "bijv. Financieel jaaroverzicht",
+  "Making…": "Bezig…",
+  "Make again": "Opnieuw maken",
+  "Make the file": "Bestand maken",
+  "The file has {n} made-up line in the layout of yours (which has {total}): other dates, amounts, IDs and texts, and well-known funds and coins instead of yours.":
+    "Het bestand heeft {n} verzonnen regel in de opmaak van het jouwe (dat er {total} heeft): andere datums, bedragen, ID's en teksten, en bekende fondsen en munten in plaats van de jouwe.",
+  "The file has {n} made-up lines in the layout of yours (which has {total}): other dates, amounts, IDs and texts, and well-known funds and coins instead of yours.":
+    "Het bestand heeft {n} verzonnen regels in de opmaak van het jouwe (dat er {total} heeft): andere datums, bedragen, ID's en teksten, en bekende fondsen en munten in plaats van de jouwe.",
+  "The file has the text of the first page and of the pages with the values you ticked. Every number is made up (years, 1 January and 31 December stay); words below that aren't ticked are crossed out (xxxx).":
+    "Het bestand heeft de tekst van de eerste pagina en van de pagina's met de waarden die je aanvinkte. Elk getal is verzonnen (jaartallen, 1 januari en 31 december blijven); woorden die hieronder niet aangevinkt zijn, zijn doorgestreept (xxxx).",
+  "What stays from your file": "Wat er van je bestand in blijft",
+  "Untick anything that shouldn't be shared; it's then replaced by a made-up value. What looks like a name, an IBAN or a phone number is replaced already.":
+    "Vink uit wat niet gedeeld mag worden; dat wordt dan door iets verzonnens vervangen. Wat op een naam, een IBAN of een telefoonnummer lijkt, is al vervangen.",
+  "{n} common word of statements, such as “saldo” or “januari”":
+    "{n} gewoon woord uit overzichten, zoals ‘saldo’ of ‘januari’",
+  "{n} common words of statements, such as “saldo” or “januari”":
+    "{n} gewone woorden uit overzichten, zoals ‘saldo’ of ‘januari’",
+  "What the file shows": "Wat er in het bestand staat",
+  "Share it": "Delen",
+  "Download the file.": "Download het bestand.",
+  "Open the form on GitHub, drag the file into it and send it. You need a GitHub account for that.":
+    "Open het formulier op GitHub, sleep het bestand erin en verstuur het. Daar heb je een GitHub-account voor nodig.",
+  "The form is public: anyone can see the file, and that you have this provider, under your GitHub name. Box3balans itself sends nothing.":
+    "Het formulier is openbaar: iedereen kan het bestand zien, en dat je deze aanbieder hebt, onder je GitHub-naam. Box3balans zelf verstuurt niets.",
+  "Download the file": "Bestand downloaden",
+  Copied: "Gekopieerd",
+  Copy: "Kopiëren",
+  "Open the form on GitHub": "Formulier op GitHub openen",
+  "Read with the format another user shared for {name}. Check the columns and the preview before you import.":
+    "Gelezen met het formaat dat een andere gebruiker deelde voor {name}. Controleer de kolommen en het voorbeeld voordat je importeert.",
+  "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. Below the table you can then share its layout, without your data, so it's recognised next time.":
+    "Box3balans kent dit overzicht nog niet; hieronder staan de bedragen die op waarden lijken: vink de juiste aan. Onder de tabel kun je daarna de opmaak delen, zonder je gegevens, zodat het de volgende keer herkend wordt.",
+  "Tick the right values above first.": "Vink eerst hierboven de juiste waarden aan.",
 };

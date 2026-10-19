@@ -7,6 +7,10 @@ body:
       value: |
         Met de tekst van een jaaroverzicht kan Box3balans er een sjabloon voor maken: dan staan de juiste bedragen bij _Jaaroverzicht (pdf) inlezen_ meteen aangevinkt.
 
+        **Makkelijker en veiliger:** laat Box3balans de tekst maken. Lees het overzicht in bij _Jaaroverzicht (pdf) inlezen_, vink de juiste bedragen aan en kies _Help anderen dit overzicht in te lezen_: dat maakt een bestand waarin elk getal verzonnen is en elk ongewoon woord doorgestreept. Deel het met het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml).
+
+        Zelf de tekst maken kan ook, als volgt.
+
         **Stuur geen pdf**: zwart gemaakte tekst is in een pdf vaak nog te lezen. Maak er tekst van met `pdftotext` (uit Poppler: op een Mac `brew install poppler`, op Debian of Ubuntu `sudo apt install poppler-utils`; op Windows zit het ook in de Xpdf-tools):
 
         ```

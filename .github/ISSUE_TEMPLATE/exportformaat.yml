@@ -5,7 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        Met een voorbeeldbestand kan Box3balans het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
+        **Makkelijker en veiliger:** laat Box3balans het voorbeeld maken. Stel bij _Transacties → Importeren_ de kolommen voor je bestand in en kies onderaan _Help anderen dit bestand in te lezen_: dat maakt een bestand met verzonnen regels in de opmaak van het jouwe, zonder je gegevens. Deel het met het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml).
+
+        Zelf een voorbeeld maken kan ook. Met een voorbeeldbestand kan Box3balans het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
   - type: input
     id: aanbieder
     attributes:

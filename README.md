@@ -261,13 +261,12 @@ Welk bestand je per bank kiest, en hoe je aanbieders zonder bruikbare export bij
 
 Bij elke rekening met waarden per jaar, behalve een woning, leest _Jaaroverzicht (pdf) inlezen_ het jaaroverzicht van je bank, broker of platform. De pdf wordt in je browser gelezen en niet bewaard ([ADR 0009](docs/adr/0009-pdf-lezen-in-de-browser.md)). Het jaaroverzicht van ING en het rekeningoverzicht van Goldrepublic worden herkend; bij andere aanbieders biedt Box3balans de bedragen naast een peildatum of een woord als _beginwaarde_ aan, en vink je zelf aan wat klopt. Meer: [Gegevens binnenhalen](docs/importeren.md#jaaroverzicht-als-pdf).
 
-**Help een overzicht herkennen.** Daarvoor is per aanbieder een voorbeeld van de tekst nodig. Stuur geen pdf, want zwart gemaakte tekst is in een pdf vaak nog te lezen. Stuur de uitvoer van dit commando (uit [Poppler](https://poppler.freedesktop.org/), op een Mac met `brew install poppler`), met namen, adressen, rekeningnummers en bedragen veranderd:
+**Help een overzicht of export herkennen.** Kent Box3balans je jaaroverzicht of de CSV van je broker nog niet, dan maakt _Help anderen dit … in te lezen_ een bestand om te delen, zonder je gegevens:
 
-```bash
-pdftotext -layout jaaroverzicht.pdf -
-```
+- **Een CSV:** verzonnen regels in de opmaak van de jouwe.
+- **Een jaaroverzicht:** de tekst met verzonnen getallen en doorgestreepte namen.
 
-Plak die in een issue met het formulier [_Jaaroverzicht (pdf) van een aanbieder_](https://github.com/zenonymous/box3balans/issues/new?template=jaaroverzicht.yml).
+Je ziet precies wat erin staat. Daarna deel je het zelf met het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml). Meer: [Je formaat delen](docs/importeren.md#je-formaat-delen).
 
 ### CSV-import
 

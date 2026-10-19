@@ -36,6 +36,13 @@ export const localDay = (d: Date): string => fmt.format(d);
 /** Today's date in the configured time zone. */
 export const localToday = (): string => localDay(new Date());
 
+/** "YYYY-MM-DD HH:mm:ss" of `d` on the clock of the configured time zone. */
+export function localDateTime(d: Date): string {
+  const p = Object.fromEntries(wallFmt.formatToParts(d).map((x) => [x.type, x.value]));
+  const two = (v: string | undefined) => (v ?? "0").padStart(2, "0");
+  return `${p.year}-${two(p.month)}-${two(p.day)} ${two(p.hour)}:${two(p.minute)}:${two(p.second)}`;
+}
+
 /** Milliseconds the configured zone is ahead of UTC at instant `t`. */
 function offsetAt(t: number): number {
   const p = Object.fromEntries(wallFmt.formatToParts(new Date(t)).map((x) => [x.type, x.value]));

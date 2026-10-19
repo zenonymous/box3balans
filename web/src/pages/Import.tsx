@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, del, downloadHref, get, post, type StatementCheck, type TxType } from "../api";
 import { StatementCheckCard, statementKey } from "../components/StatementCheck";
+import { type Contribution, ShareFormat } from "../components/ShareFormat";
 import {
   Alert,
   Badge,
@@ -115,6 +116,8 @@ interface Upload {
   fileName: string;
   mapping?: Mapping;
   preset?: string | null;
+  // Read with a format another user shared (server/src/import/formats/shared.ts).
+  shared?: { provider: string; export: string };
   // A known export (DEGIRO, Bitvavo …), converted to the Box3balans template.
   format?: { id: string; label: string; rows: number } | null;
   // Not transactions but a statement of positions on a day (DEGIRO's portfolio export).
@@ -372,11 +375,18 @@ export function ImportPage() {
             <Field
               label={t("File")}
               hint={
-                upload?.preset
-                  ? t("Using your saved settings “{name}”", { name: upload.preset })
-                  : t(
-                      "A CSV export from your broker, exchange or spreadsheet, or Goldrepublic's account statement (PDF)",
+                upload?.shared
+                  ? t(
+                      "Read with the format another user shared for {name}. Check the columns and the preview before you import.",
+                      {
+                        name: upload.shared.provider,
+                      },
                     )
+                  : upload?.preset
+                    ? t("Using your saved settings “{name}”", { name: upload.preset })
+                    : t(
+                        "A CSV export from your broker, exchange or spreadsheet, or Goldrepublic's account statement (PDF)",
+                      )
               }
             >
               {(id) => (
@@ -481,6 +491,23 @@ export function ImportPage() {
                   {busy ? t("Importing…") : tn(toImport, "Import {n} transaction", "Import {n} transactions")}
                 </Button>
               </div>
+              {!upload.format && !upload.shared && plan.data?.rows.some((r) => r.status !== "error") && (
+                <ShareFormat
+                  key={upload.uploadId}
+                  kind="csv"
+                  provider={account?.provider ?? ""}
+                  make={({ provider, hint, replace }) =>
+                    post<Contribution>("/api/import/contribution", {
+                      uploadId: upload.uploadId,
+                      accountId: Number(accountId),
+                      mapping,
+                      provider,
+                      export: hint,
+                      replace,
+                    })
+                  }
+                />
+              )}
             </>
           )
         )}

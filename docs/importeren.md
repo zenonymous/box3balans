@@ -64,13 +64,20 @@ Het **rekeningoverzicht van Goldrepublic** over een heel jaar wordt ook herkend:
 
 Box3balans zoekt bedragen naast een peildatum ("1 januari 2025", "31-12-2024") en naast woorden als _beginwaarde_, _eindwaarde_, _dividend_, _rente_, _inleg_, _onttrekkingen_ en _kosten_. Een bedrag op 31 december is de waarde op 1 januari van het jaar erna. Per bedrag kies je of het klopt en in welke kolom het hoort. Een pdf zonder tekst (een scan) of met een wachtwoord kan niet gelezen worden.
 
-**Help een overzicht herkennen.** Kent Box3balans een overzicht, dan staan de juiste bedragen meteen aangevinkt. Daarvoor is per aanbieder een voorbeeld van de tekst nodig. Stuur geen pdf, want zwart gemaakte tekst is in een pdf vaak nog te lezen. Stuur de uitvoer van dit commando (uit [Poppler](https://poppler.freedesktop.org/), op een Mac met `brew install poppler`), met namen, adressen, rekeningnummers en bedragen veranderd:
+**Help een overzicht herkennen.** Kent Box3balans een overzicht, dan staan de juiste bedragen meteen aangevinkt. Daarvoor is per aanbieder een voorbeeld van de tekst nodig. Kent Box3balans je overzicht nog niet, vink dan de juiste bedragen aan en kies onder de tabel _Help anderen dit overzicht in te lezen_. Box3balans maakt dan een bestand met de tekst van het overzicht:
+
+- de tekst komt van de eerste pagina en van de pagina's met wat je aanvinkte;
+- elk getal is verzonnen (jaartallen, 1 januari en 31 december blijven);
+- elk woord dat niet gewoon is in overzichten, of in de aangevinkte regels staat, is doorgestreept;
+- je ziet precies wat erin staat, en kunt meer woorden laten doorstrepen.
+
+Deel het met het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml) (zie [Je formaat delen](#je-formaat-delen)). Welke aanbieders het meest opleveren, staat in [docs/aanbieders.md](aanbieders.md#route-het-pdf-jaaroverzicht).
+
+Zelf de tekst maken kan ook. Stuur geen pdf, want zwart gemaakte tekst is in een pdf vaak nog te lezen. Stuur de uitvoer van dit commando (uit [Poppler](https://poppler.freedesktop.org/), op een Mac met `brew install poppler`), met namen, adressen, rekeningnummers en bedragen veranderd, met het formulier [_Jaaroverzicht (pdf) van een aanbieder_](https://github.com/zenonymous/box3balans/issues/new?template=jaaroverzicht.yml):
 
 ```bash
 pdftotext -layout jaaroverzicht.pdf -
 ```
-
-Plak die in een issue met het formulier [_Jaaroverzicht (pdf) van een aanbieder_](https://github.com/zenonymous/box3balans/issues/new?template=jaaroverzicht.yml). Welke aanbieders het meest opleveren, staat in [docs/aanbieders.md](aanbieders.md#route-het-pdf-jaaroverzicht).
 
 In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
 
@@ -130,7 +137,25 @@ Tijden zonder tijdzone worden gelezen als lokale tijd (`TIME_ZONE`). Prijzen in 
 
 **Sjabloon:** voor alles zonder bruikbare export vul je [het sjabloon](../server/src/import/mapping.ts) in (_↓ Template_ op de importpagina). Kolommen: `date` (JJJJ-MM-DD), `time`, `type` (buy, sell, deposit, withdrawal, dividend, reward, fee, split), `symbol`, `isin`, `name`, `asset_type` (stock, etf, crypto, metal, cash), `quantity` (bij een split: de verhouding, bijvoorbeeld 4), `price`, `total`, `currency`, `fee`, `amount` en `tax_withheld` (dividenden), `notes`, `id`.
 
-Wil je dat Box3balans het bestand van jouw broker of bank vanzelf herkent? Stuur een geanonimiseerd voorbeeld via [een issue](https://github.com/zenonymous/box3balans/issues/new/choose).
+### Je formaat delen
+
+Kent Box3balans de export van je broker, bank of beurs nog niet? Stel de kolommen in zoals hierboven. Kies daarna onderaan de importpagina _Help anderen dit bestand in te lezen_ (vóór het importeren; daarna is het bestand weg). Box3balans maakt dan op je eigen server een bestand met:
+
+- **je kolominstellingen;**
+- **een paar verzonnen regels in de opmaak van je bestand:** hoogstens drie per soort, zoals aankoop, dividend en storting.
+  - Datums, bedragen, ID's en teksten zijn verzonnen.
+  - Je fondsen en munten worden bekende fondsen en munten, zoals iShares Core MSCI World of Bitcoin.
+  - De volgorde van de datums blijft gelijk.
+- **wat Box3balans daaruit leest.**
+
+Van je eigen bestand blijven alleen de kolomnamen, de woorden voor de soort, de valutacodes en woorden als _goud_ of _ETF_. Die staan in een lijst; vink uit wat niet gedeeld mag worden. Wat op een naam uit je huishouden, een IBAN, een e-mailadres, een telefoonnummer of een BSN lijkt, is al vervangen. Daarna:
+
+1. Download het bestand (`box3balans-formaat-….json`).
+2. Open het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml) op GitHub, sleep het bestand erin en verstuur het. Daar heb je een GitHub-account voor nodig.
+
+Box3balans verstuurt zelf niets. Het issue is openbaar: iedereen ziet het bestand, en dat je bij deze aanbieder zit, onder je GitHub-naam. Hoe het werkt en waarom zo: [ADR 0012](adr/0012-formaten-delen-zonder-gegevens.md).
+
+**Gedeelde formaten.** Een gedeeld formaat komt in een volgende versie van Box3balans. Wie daarna zo'n bestand kiest, krijgt de kolommen van dat formaat al ingevuld, met de melding dat het formaat van een andere gebruiker komt: controleer de kolommen en het voorbeeld voordat je importeert. De eigen formaten van Box3balans en je eigen opgeslagen instellingen gaan voor.
 
 ## Koppelingen met beurzen en brokers
 

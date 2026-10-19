@@ -21,6 +21,9 @@ import { detectDelimiter, parseCsv } from "../import/parse.js";
 import { commitImport, planImport, readTable } from "../import/plan.js";
 import { matchTransfers } from "../sync/transfers.js";
 import { recognise, recognisePdf } from "../import/formats/index.js";
+import { matchShared } from "../import/formats/shared.js";
+import { csvContribution, personalNames } from "../import/contribute.js";
+import { APP_VERSION } from "../lib/version.js";
 import type { OpeningBalance } from "../import/formats/types.js";
 import {
   type Statement,
@@ -73,14 +76,27 @@ function templateMapping(skipRows = 0, extra: Partial<Mapping> = {}): Mapping {
   return mappingSchema.parse({ skipRows, columns, typeMode: "column", decimal: ".", dateOrder: "YMD", ...extra });
 }
 
-/** A starting mapping for a new file: a saved preset, the template, or a guess from the headers. */
-async function initialMapping(db: DB, content: string): Promise<{ mapping: Mapping; preset: string | null }> {
+/**
+ * A starting mapping for a new file: a saved preset, the template, a format another user shared, or a
+ * guess from the headers.
+ */
+async function initialMapping(
+  db: DB,
+  content: string,
+): Promise<{ mapping: Mapping; preset: string | null; shared?: { provider: string; export: string } }> {
   const skipRows = guessSkipRows(content);
   const base = mappingSchema.parse({ skipRows });
   const { headers, data } = readTable(content, base);
   const preset = (await getPresets(db)).find((p) => p.signature === headerSignature(headers));
   if (preset) return { mapping: mappingSchema.parse(preset.mapping), preset: preset.name };
   if (isTemplate(headers)) return { mapping: templateMapping(skipRows), preset: tr("Box3balans template") };
+  const shared = matchShared(content);
+  if (shared)
+    return {
+      mapping: shared.mapping,
+      preset: shared.format.provider,
+      shared: { provider: shared.format.provider, export: shared.format.export },
+    };
   const columns = guessColumns(headers);
   const negatives = columns.quantity != null && data.some((r) => /^\s*[-(\u2212]/.test(r[columns.quantity!] ?? ""));
   const typeMode = columns.type != null ? "column" : negatives ? "sign" : "fixed";
@@ -115,6 +131,14 @@ const statementBody = z.object({
   day: isoDay,
 });
 
+// A format to share: the mapping the user set up, and what to call it.
+const contributionBody = planBody.extend({
+  provider: z.string().trim().min(1).max(60),
+  export: z.string().trim().max(300).default(""),
+  // Kept values to make up as well, as "kind:value".
+  replace: z.array(z.string().max(500)).max(1000).default([]),
+});
+
 const presetBody = z.object({
   name: z.string().trim().min(1).max(60),
   headers: z.array(z.string().max(500)).max(500),
@@ -127,10 +151,19 @@ export async function importRoutes(app: FastifyInstance) {
 
   // Uploaded files wait here between preview and import (single user, so a small map will do).
   // A recognised export is kept converted to the template, with notes on what was left out.
-  // A statement of positions (DEGIRO's portfolio export) is kept parsed instead.
+  // A statement of positions (DEGIRO's portfolio export) is kept parsed instead. `original`: the file
+  // as it was chosen, which a format can be shared from.
   const uploads = new Map<
     string,
-    { fileName: string; content: string; notes: string[]; at: number; statement?: Statement; opening?: OpeningBalance }
+    {
+      fileName: string;
+      content: string;
+      notes: string[];
+      at: number;
+      statement?: Statement;
+      opening?: OpeningBalance;
+      original?: boolean;
+    }
   >();
   const upload = (id: string) => {
     for (const [k, v] of uploads) if (Date.now() - v.at > UPLOAD_TTL_MS) uploads.delete(k);
@@ -163,8 +196,8 @@ export async function importRoutes(app: FastifyInstance) {
           "Box3balans can't read this PDF as transactions: only Goldrepublic's account statement so far. For a year statement (jaaroverzicht), use Values per year on the account.",
         ),
       );
-    const keep = (c: string, notes: string[], statement?: Statement, opening?: OpeningBalance) => {
-      uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement, opening });
+    const keep = (c: string, notes: string[], statement?: Statement, opening?: OpeningBalance, original = false) => {
+      uploads.set(id, { fileName, content: c, notes, at: Date.now(), statement, opening, original });
       while (uploads.size > 5) uploads.delete(uploads.keys().next().value!);
     };
     const statement = raw || known ? null : readStatement(content);
@@ -190,7 +223,7 @@ export async function importRoutes(app: FastifyInstance) {
         format: { id: known.format.id, label: tr(known.format.label), rows: known.result.rows.length },
       };
     }
-    keep(content, []);
+    keep(content, [], undefined, undefined, !pdf);
     return { uploadId: id, fileName, format: null, ...(await initialMapping(db, content)) };
   });
 
@@ -228,6 +261,27 @@ export async function importRoutes(app: FastifyInstance) {
     backfill.request();
     uploads.delete(b.uploadId);
     return { ...result, transfersMatched };
+  });
+
+  // A file to share the format of (ADR 0012): the mapping with a made-up sample, for the user to check
+  // and share themselves. Nothing is sent anywhere and nothing is kept.
+  app.post("/import/contribution", async (req) => {
+    const b = contributionBody.parse(req.body);
+    const u = upload(b.uploadId);
+    if (!u.original)
+      throw new HttpError(400, tr("A format can only be shared for a CSV file Box3balans doesn't read by itself"));
+    const [account] = await db.select({ kind: accounts.kind }).from(accounts).where(eq(accounts.id, b.accountId));
+    if (!account) throw new HttpError(400, tr("Unknown account"));
+    return csvContribution({
+      content: u.content,
+      mapping: b.mapping,
+      account: account.kind,
+      provider: b.provider,
+      export: b.export,
+      avoid: await personalNames(db),
+      replace: b.replace,
+      version: APP_VERSION,
+    });
   });
 
   // A statement of positions on a day: kept per account and checked against the transactions.

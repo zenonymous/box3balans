@@ -617,4 +617,12 @@ export const NL: Record<string, string> = {
   // lib/secrets.ts
   "Stored credentials cannot be decrypted (was APP_SECRET changed?). Re-enter the API key.":
     "Opgeslagen sleutels zijn niet te ontsleutelen (is APP_SECRET veranderd?). Voer de API-sleutel opnieuw in.",
+  // import/contribute.ts, routes/imports.ts
+  "Box3balans couldn't make a sample without parts of your file in it. Please report this.":
+    "Box3balans kon geen voorbeeld maken zonder stukjes van je bestand erin. Meld dit alsjeblieft.",
+  "A format can be shared when the file has a header row with at least three columns":
+    "Een formaat delen kan als het bestand een kopregel met minstens drie kolommen heeft",
+  "The file has no lines below the header row": "Het bestand heeft geen regels onder de kopregel",
+  "A format can only be shared for a CSV file Box3balans doesn't read by itself":
+    "Een formaat delen kan alleen voor een CSV-bestand dat Box3balans niet zelf leest",
 };

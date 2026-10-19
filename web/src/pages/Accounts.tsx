@@ -31,7 +31,8 @@ import {
   Textarea,
 } from "../components/ui";
 import { readText } from "../files";
-import { readPdf } from "../pdfText";
+import { type PdfPage, readPdf } from "../pdfText";
+import { type Contribution, ShareFormat } from "../components/ShareFormat";
 import { eur, eurPrice, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
@@ -739,15 +740,11 @@ function YearStatementPanel({
   const cols = columns(account.kind);
   const [fileName, setFileName] = useState("");
   const [result, setResult] = useState<YearStatement | null>(null);
+  const [pages, setPages] = useState<PdfPage[]>([]);
   const [rows, setRows] = useState<FoundRow[]>([]);
   const [group, setGroup] = useState<string>();
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const version = useQuery({
-    queryKey: ["version"],
-    queryFn: () => get<{ version: string; source: string }>("/api/version"),
-    staleTime: Infinity,
-  });
 
   // The columns this kind of account has.
   const label: Record<YearField, string | null> = {
@@ -768,6 +765,7 @@ function YearStatementPanel({
       const pages = await readPdf(file);
       const r = await post<YearStatement>(`/api/accounts/${account.id}/year-statement`, { pages });
       setFileName(file.name);
+      setPages(pages);
       setResult(r);
       const found = r.found.filter((f) => label[f.field]);
       setRows(found.map((f) => ({ ...f, on: f.sure })));
@@ -828,17 +826,8 @@ function YearStatementPanel({
           <p className="text-ink-2">{t("Recognised: {name}.", { name: result.template })}</p>
         ) : (
           <Alert>
-            {tj(
-              "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. <0>Share its text</0> and it can be recognised next time.",
-              [
-                <a
-                  key="s"
-                  className="underline"
-                  href={`${version.data?.source ?? "https://github.com/zenonymous/box3balans"}#jaaroverzicht-als-pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                />,
-              ],
+            {t(
+              "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. Below the table you can then share its layout, without your data, so it's recognised next time.",
             )}
           </Alert>
         ))}
@@ -916,6 +905,27 @@ function YearStatementPanel({
           </Button>
         )}
       </div>
+      {/* Shown as soon as the statement is read, so ticking a value doesn't move the table. */}
+      {result && !result.template && shown.length > 0 && (
+        <ShareFormat
+          key={fileName}
+          kind="pdf"
+          provider={account.provider ?? ""}
+          waitFor={shown.some(({ r }) => r.on) ? undefined : t("Tick the right values above first.")}
+          make={({ provider, hint, replace }) =>
+            post<Contribution>(`/api/accounts/${account.id}/year-statement/contribution`, {
+              pages,
+              picked: shown
+                .map(({ r }) => r)
+                .filter((r) => r.on)
+                .map((r) => ({ page: r.page, line: r.line, field: r.field, year: r.year })),
+              provider,
+              document: hint,
+              replace,
+            })
+          }
+        />
+      )}
     </div>
   );
 }

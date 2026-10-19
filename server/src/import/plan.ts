@@ -106,7 +106,7 @@ export interface Plan {
 type Kind = "security" | "crypto" | "metal" | "fiat";
 
 /** A data line parsed with the mapping, before assets are resolved. */
-interface ParsedRow {
+export interface ParsedRow {
   line: number;
   at: Date;
   type: CsvType;
@@ -125,7 +125,7 @@ interface ParsedRow {
 
 class RowError extends Error {}
 
-const METALS: Record<string, string> = {
+export const METALS: Record<string, string> = {
   gold: "XAU",
   goud: "XAU",
   xau: "XAU",
@@ -141,7 +141,7 @@ const METALS: Record<string, string> = {
   xpd: "XPD",
 };
 
-const ASSET_TYPES: Record<string, Kind | "etf" | "stock"> = {
+export const ASSET_TYPES: Record<string, Kind | "etf" | "stock"> = {
   stock: "stock",
   share: "stock",
   equity: "stock",
@@ -163,7 +163,7 @@ const ASSET_TYPES: Record<string, Kind | "etf" | "stock"> = {
   valuta: "fiat",
 };
 
-const KIND_BY_ACCOUNT: Record<string, Kind> = {
+export const KIND_BY_ACCOUNT: Record<string, Kind> = {
   broker: "security",
   exchange: "crypto",
   wallet: "crypto",
@@ -521,7 +521,8 @@ async function loadAccount(db: DB, accountId: number) {
   return acc;
 }
 
-function detect(data: string[][], m: Mapping) {
+/** The decimal mark and date order the mapping says, or else the ones the data shows. */
+export function detectNotation(data: string[][], m: Mapping) {
   const values = (f: Field) =>
     m.columns[f] == null
       ? []
@@ -537,6 +538,16 @@ function detect(data: string[][], m: Mapping) {
   return { decimal, dateOrder };
 }
 
+/**
+ * What each line of `content` becomes with the mapping, without the database: the parsed rows and the
+ * lines skipped or rejected. Used for shared formats, whose sample must read the same everywhere.
+ */
+export function readWithMapping(content: string, m: Mapping, accountKind: string) {
+  const { delimiter, headers, data } = readTable(content, m);
+  const { decimal, dateOrder } = detectNotation(data, m);
+  return { delimiter, headers, data, decimal, dateOrder, ...parseRows(data, m, accountKind, decimal, dateOrder) };
+}
+
 export interface PlanDeps {
   db: DB;
   fetchFn?: FetchFn;
@@ -546,7 +557,7 @@ export interface PlanDeps {
 export async function planImport(deps: PlanDeps, content: string, accountId: number, m: Mapping): Promise<Plan> {
   const account = await loadAccount(deps.db, accountId);
   const { delimiter, headers, data } = readTable(content, m);
-  const { decimal, dateOrder } = detect(data, m);
+  const { decimal, dateOrder } = detectNotation(data, m);
   const { parsed, rejected } = parseRows(data, m, account.kind, decimal, dateOrder);
 
   const resolver = new AssetResolver(deps.db, deps.fetchFn, 0, undefined, { dryRun: true });
@@ -646,7 +657,7 @@ export async function commitImport(
   const { db } = deps;
   const account = await loadAccount(db, accountId);
   const { data } = readTable(content, m);
-  const { decimal, dateOrder } = detect(data, m);
+  const { decimal, dateOrder } = detectNotation(data, m);
   const { parsed } = parseRows(data, m, account.kind, decimal, dateOrder);
 
   const resolver = new AssetResolver(db, deps.fetchFn, 0, undefined, { via: "import" });

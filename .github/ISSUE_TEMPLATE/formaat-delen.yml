@@ -1,0 +1,40 @@
+name: Formaat delen (bestand uit Box3balans)
+description: Deel het bestand dat Box3balans maakte bij “Help anderen dit bestand in te lezen”, zodat een volgende versie je export of jaaroverzicht vanzelf leest.
+labels: [exportformaat]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dank je! Sleep het bestand dat Box3balans maakte (`box3balans-formaat-….json` of `box3balans-jaaroverzicht-….json`) in het vak hieronder.
+
+        Box3balans maakte het zonder je gegevens: verzonnen regels of getallen in de opmaak van jouw bestand. Wat er van je bestand in bleef (kolomnamen, woorden voor de soort, valutacodes, gewone woorden uit overzichten), zag je in Box3balans voordat je het downloadde. Hoe dat werkt: [ADR 0012](https://github.com/zenonymous/box3balans/blob/main/docs/adr/0012-formaten-delen-zonder-gegevens.md).
+
+        Dit issue is openbaar.
+  - type: input
+    id: aanbieder
+    attributes:
+      label: Aanbieder
+      placeholder: Nordnet, Brand New Day, Peaks …
+    validations:
+      required: true
+  - type: textarea
+    id: bestand
+    attributes:
+      label: Bestand uit Box3balans
+      description: Sleep het .json-bestand hierheen, of plak de inhoud.
+    validations:
+      required: true
+  - type: textarea
+    id: toelichting
+    attributes:
+      label: Toelichting
+      description: Optioneel. Bijvoorbeeld wat er bij het inlezen nog niet goed ging, of welke regels in je bestand voorkomen maar niet in het voorbeeld.
+  - type: checkboxes
+    id: controle
+    attributes:
+      label: Controle
+      options:
+        - label: Ik heb in Box3balans bekeken wat er in het bestand staat.
+          required: true
+        - label: Ik deel het onder de licentie van Box3balans (AGPL-3.0).
+          required: true

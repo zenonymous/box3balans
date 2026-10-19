@@ -1,9 +1,11 @@
 import fc from "fast-check";
 import { describe, expect, it } from "vitest";
 import { parseBankExport } from "../src/import/bank.js";
+import { csvContribution } from "../src/import/contribute.js";
 import { goldrepublicTransactions, readGoldrepublic } from "../src/import/formats/goldrepublic.js";
 import { recognise } from "../src/import/formats/index.js";
 import { looseNum } from "../src/import/formats/types.js";
+import { mappingSchema } from "../src/import/mapping.js";
 import { detectDelimiter, parseCsv, parseNumber } from "../src/import/parse.js";
 import { amounts, readYearStatement } from "../src/import/yearStatement.js";
 import { toCsv } from "../src/lib/csv.js";
@@ -390,6 +392,120 @@ describe("Goldrepublic account statements", () => {
         });
       }),
       runs(1000),
+    );
+  });
+});
+
+describe("sharing a format", () => {
+  // Words the shared file may have anyway: the stand-ins it uses, and words it keeps on purpose
+  // (types, metals, asset types, months) when a cell is just that word.
+  const ALLOWED = new Set(
+    (
+      "ishares core msci world ucits vanguard ftse holding apple heineken microsoft ahold delhaize bitcoin " +
+      "ethereum cardano solana polkadot litecoin chainlink text column type security crypto metal fiat " +
+      "bought staking interest dividend reward withdraw withdrawal deposit storting opname silver zilver " +
+      "platinum platina palladium equity share stock aandeel tracker fonds token metal valuta currency " +
+      "januari februari maart april augustus september oktober november december january february march june july october " +
+      // The header row of the test file, which stays, and the fields of what a sample reads as.
+      "datum soort isin aantal koers notitie extra line status date asset quantity price currency fee amount tax"
+    ).split(" "),
+  );
+  const word = fc
+    .stringMatching(/^[bcdfghjklmnpqrstvwxz][aeiou][bcdfghjklmnpqrstvwxz][aeiou][bcdfghjklmnpqrstvwxz]{1,3}$/)
+    .filter((w) => !ALLOWED.has(w));
+  const words = fc.array(word, { minLength: 1, maxLength: 4 }).map((ws) => ws.join(" "));
+  const day = fc.date({ min: new Date("2015-01-01"), max: new Date("2030-12-31"), noInvalidDate: true });
+  type Line = {
+    day: Date;
+    type: string;
+    isin: string;
+    quantity: number;
+    price: number;
+    note: string;
+    extra: string;
+    id: string;
+  };
+  const line: fc.Arbitrary<Line> = fc.record({
+    day,
+    type: fc.constantFrom("Koop", "Verkoop", "Dividend"),
+    isin: fc.constantFrom("IE00B4L5Y983", "NL0010273215", "US0378331005", "DE0007164600"),
+    quantity: fc.integer({ min: 1, max: 5000 }),
+    price: fc.integer({ min: 1, max: 999_999 }),
+    note: words,
+    extra: words,
+    id: fc.stringMatching(/^[A-Z]{2}\d{4,8}$/),
+  });
+
+  const share = (titles: string[][], lines: Line[], seed: number, shiftDays = 0, prices?: number[]) => {
+    const dmy = (d: Date) =>
+      new Date(d.getTime() + shiftDays * 86_400_000).toISOString().slice(0, 10).split("-").reverse().join("-");
+    const money = (cents: number) => (cents / 100).toFixed(2).replace(".", ",");
+    const content = [
+      ...titles.map((t) => t.join(";")),
+      "Datum;Soort;ISIN;Aantal;Koers;Notitie;Extra;Id",
+      ...lines.map((l, i) =>
+        [dmy(l.day), l.type, l.isin, l.quantity, money(prices?.[i] ?? l.price), l.note, l.extra, l.id].join(";"),
+      ),
+    ].join("\n");
+    return csvContribution({
+      content,
+      mapping: mappingSchema.parse({
+        skipRows: titles.length,
+        delimiter: ";",
+        columns: { date: 0, type: 1, isin: 2, quantity: 3, price: 4, notes: 5, id: 7 },
+        typeMode: "column",
+        typeValues: { Koop: "buy", Verkoop: "sell", Dividend: "dividend" },
+      }),
+      account: "broker",
+      provider: "Fuzz",
+      seed,
+    }).file;
+  };
+  const titles = fc.array(fc.array(words, { minLength: 1, maxLength: 3 }), { maxLength: 2 });
+  const lines = fc.array(line, { minLength: 1, maxLength: 30 });
+  const seed = fc.integer({ min: 0, max: 2 ** 31 - 1 });
+
+  it("never puts a word of the file in the shared file, except what it keeps on purpose", () => {
+    fc.assert(
+      fc.property(titles, lines, seed, (titles, lines, seed) => {
+        // What the file has from the export (not the names of its own fields).
+        const file = share(titles, lines, seed);
+        const content = [
+          file.sample,
+          ...file.headers,
+          ...Object.keys(file.mapping.typeValues),
+          JSON.stringify(file.expected),
+        ];
+        const shared = new Set(
+          content
+            .join("\n")
+            .toLowerCase()
+            .match(/[a-z0-9]+/g),
+        );
+        const secrets = [...titles.flat(), ...lines.flatMap((l) => [l.note, l.extra, l.id])].flatMap(
+          (w) => w.toLowerCase().match(/[a-z0-9]+/g) ?? [],
+        );
+        for (const secret of secrets) expect(shared.has(secret), secret).toBe(false);
+      }),
+      runs(200),
+    );
+  });
+
+  it("makes the same file whatever your amounts and dates are: they don't show through", () => {
+    fc.assert(
+      fc.property(
+        titles,
+        lines,
+        seed,
+        fc.integer({ min: 1, max: 4000 }),
+        fc.array(fc.integer({ min: 100, max: 999_999 }), { minLength: 30, maxLength: 30 }),
+        (titles, lines, seed, shift, others) => {
+          // Other prices of the same shape (below one euro stays below one), every date moved.
+          const prices = lines.map((l, i) => (l.price < 100 ? (others[i]! % 99) + 1 : others[i]!));
+          expect(share(titles, lines, seed, shift, prices)).toEqual(share(titles, lines, seed));
+        },
+      ),
+      runs(100),
     );
   });
 });
