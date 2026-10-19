@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { disableTwoFactor } from "../src/auth/twoFactor.js";
 import { users } from "../src/db/schema.js";
 import { base32Decode, base32Encode, hotp, matchTotp, otpauthUri, totpStep } from "../src/lib/totp.js";
@@ -36,9 +36,17 @@ describe("TOTP", () => {
 });
 
 describe("signing in with a second factor", () => {
+  // Codes follow the clock in steps of 30 seconds. Hold it in the middle of one, so a slow run (CI) can't
+  // pass into the next step halfway and find a code that was just right too old.
+  beforeEach(() => {
+    vi.spyOn(Date, "now").mockReturnValue((totpStep() * 30 + 15) * 1000);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("sets up with a code, asks for it at sign-in, refuses reuse, and takes recovery codes once", async () => {
     t = await createTestApp();
-    // One step for the whole test: codes stay valid (±1 step) even if a 30 s boundary passes.
     const step = totpStep();
     const codeFor = (secret: string, offset = 0) => hotp(base32Decode(secret), step + offset);
     expect((await t.api("GET", "/api/auth/2fa")).json()).toEqual({ enabled: false, recoveryCodesLeft: 0 });
