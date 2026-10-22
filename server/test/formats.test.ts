@@ -497,6 +497,19 @@ describe("broker exports", () => {
     ]);
   });
 
+  it("Binance: adds up a trade's amounts in decimals, without float rounding", () => {
+    const { rows } = read(
+      lines(
+        '"User_ID","UTC_Time","Account","Operation","Coin","Change","Remark"',
+        // A meme coin in two fills in the same second: 17 significant digits each.
+        '"1","2024-03-01 10:00:00","Spot","Transaction Buy","PEPE","12345678.123456789",""',
+        '"1","2024-03-01 10:00:00","Spot","Transaction Buy","PEPE","0.000000000000001",""',
+        '"1","2024-03-01 10:00:00","Spot","Transaction Spend","EUR","-10.00",""',
+      ),
+    );
+    expect(rows).toEqual([expect.objectContaining({ type: "buy", quantity: "12345678.123456789000001", total: "10" })]);
+  });
+
   it("Binance: trades grouped per second, stablecoins at a dollar, rewards; moves, futures and euros left out", () => {
     const { id, rows, skipped, notes } = read(
       lines(
