@@ -7,27 +7,33 @@ type Account = typeof accounts.$inferSelect;
 export type AccountYear = typeof accountYears.$inferSelect;
 
 /**
- * Leegwaarderatio (2023–2026, unchanged): a home let with rent protection counts in box 3 at a
- * percentage of its WOZ value, depending on the yearly rent as a percentage of that WOZ value.
- * Belastingdienst, "Bezittingen en schulden box 3" (fisin2023–fisin2026); the bands are in src/rules/box3.json.
+ * Leegwaarderatio: a home let with rent protection counts in box 3 at a percentage of its WOZ value,
+ * depending on the yearly rent as a percentage of that WOZ value. Let to a related party (your child,
+ * your own BV) at a rent well below the usual, it counts at 100%. Belastingdienst, "Bezittingen en
+ * schulden box 3" (fisin2023–fisin2026); the tables are in src/rules/box3.json, per first year.
  */
-const LEEGWAARDE = RULES.leegwaarderatio;
+export const leegwaardeTable = (year: number) =>
+  ([...RULES.leegwaarderatio].reverse().find((t) => t.fromYear <= year) ?? RULES.leegwaarderatio[0]!).bands;
 
 /** The fraction of the WOZ value a let home counts at. */
-export function leegwaarderatio(rentEur: Decimal, wozEur: Decimal): Decimal {
-  if (wozEur.lte(0)) return D(1);
+export function leegwaarderatio(rentEur: Decimal, wozEur: Decimal, year: number, relatedBelowMarket = false): Decimal {
+  if (wozEur.lte(0) || relatedBelowMarket) return D(1);
   const rentPct = rentEur.div(wozEur).mul(100);
   // "0–1%" includes 1%, "1–2%" includes 2% and so on: the upper bound belongs to the band.
-  const band = LEEGWAARDE.find((b) => rentPct.lte(b.upToRentPct));
+  const band = leegwaardeTable(year).find((b) => rentPct.lte(b.upToRentPct));
   return D(band ? band.valuePct : 100).div(100);
 }
 
 /** What a value per year counts for in box 3: a home let with rent protection at its leegwaarde. */
-export function yearlyValue(kind: Account["kind"], row: Pick<AccountYear, "valueEur" | "details"> | undefined) {
+export function yearlyValue(
+  kind: Account["kind"],
+  row: Pick<AccountYear, "year" | "valueEur" | "details"> | undefined,
+) {
   if (!row || row.valueEur == null) return null;
   const v = D(row.valueEur);
   const details = row.details ?? {};
-  if (kind === "property" && details.rented) return v.mul(leegwaarderatio(D(details.rentEur || 0), v));
+  if (kind === "property" && details.rented)
+    return v.mul(leegwaarderatio(D(details.rentEur || 0), v, row.year, !!details.relatedBelowMarket));
   return v;
 }
 

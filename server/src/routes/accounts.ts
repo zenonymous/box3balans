@@ -56,6 +56,7 @@ const yearRow = z.object({
     .object({
       rented: z.boolean().optional(),
       rentEur: money.optional(),
+      relatedBelowMarket: z.boolean().optional(),
       source: z.string().max(200).optional(),
     })
     .default({}),

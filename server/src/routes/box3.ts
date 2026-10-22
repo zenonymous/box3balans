@@ -45,6 +45,9 @@ export async function box3Routes(app: FastifyInstance) {
     };
   });
 
+  // The leegwaarderatio tables, for the preview when entering a let home's values.
+  app.get("/leegwaarderatio", async () => RULES.leegwaarderatio);
+
   app.get("/:year", async (req) => {
     const { year } = z.object({ year: z.coerce.number().int().min(2000).max(2100) }).parse(req.params);
     if (year > Number(localToday().slice(0, 4)))

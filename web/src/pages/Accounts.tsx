@@ -382,6 +382,7 @@ interface Draft {
   costsEur: string;
   rented: boolean;
   rentEur: string;
+  relatedBelowMarket: boolean;
   source?: string;
 }
 
@@ -394,6 +395,7 @@ const toDraft = (r: AccountYear): Draft => ({
   costsEur: zeroBlank(r.costsEur),
   rented: !!r.details?.rented,
   rentEur: toInputNumber(r.details?.rentEur ?? ""),
+  relatedBelowMarket: !!r.details?.relatedBelowMarket,
   source: r.details?.source,
 });
 const zeroBlank = (v: string) => (Number(v) === 0 ? "" : toInputNumber(String(Number(v))));
@@ -401,18 +403,17 @@ const zeroBlank = (v: string) => (Number(v) === 0 ? "" : toInputNumber(String(Nu
 /** A year's values from a bank export or year statement; what's left out stays as it is. */
 type Picked = { year: number } & Partial<Record<YearField, string | null>>;
 
-/** The leegwaarderatio (2023–2026): a let home counts at this share of its WOZ value. Same table as the server. */
-function leegwaarde(rent: number, woz: number): number {
-  if (woz <= 0) return 1;
+type LeegwaardeTables = { fromYear: number; bands: { upToRentPct: number; valuePct: number }[] }[];
+
+/**
+ * The leegwaarderatio: a let home counts at this share of its WOZ value. A preview: the tables come
+ * from the server (src/rules/box3.json), which does the counting itself.
+ */
+function leegwaarde(tables: LeegwaardeTables, year: number, rent: number, woz: number, related: boolean): number {
+  if (woz <= 0 || related) return 1;
+  const bands = [...tables].reverse().find((t) => t.fromYear <= year)?.bands ?? tables[0]?.bands ?? [];
   const pct = (rent / woz) * 100;
-  const band = [
-    [1, 73],
-    [2, 79],
-    [3, 84],
-    [4, 90],
-    [5, 95],
-  ].find(([upTo]) => pct <= upTo!);
-  return (band ? band[1]! : 100) / 100;
+  return (bands.find((b) => pct <= b.upToRentPct)?.valuePct ?? 100) / 100;
 }
 
 const parsed = (v: string) => {
@@ -462,6 +463,12 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState<"bank" | "pdf" | null>(null);
+  const tables = useQuery({
+    queryKey: ["leegwaarderatio"],
+    queryFn: () => get<LeegwaardeTables>("/api/box3/leegwaarderatio"),
+    staleTime: Infinity,
+    enabled: account.kind === "property",
+  });
   const cols = columns(account.kind);
   const thisYear = new Date().getFullYear();
 
@@ -481,9 +488,11 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
       costsEur: "",
       rented: false,
       rentEur: "",
+      relatedBelowMarket: false,
     };
     const prev = draft.find((r) => r.year === y - 1 || r.year === y + 1);
-    if (prev) Object.assign(blank, { rented: prev.rented, rentEur: prev.rentEur });
+    if (prev)
+      Object.assign(blank, { rented: prev.rented, rentEur: prev.rentEur, relatedBelowMarket: prev.relatedBelowMarket });
     setRows([...draft, blank].sort((a, b) => b.year - a.year));
   };
 
@@ -501,7 +510,11 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
         costsEur: num(r.costsEur, `${cols.costs} ${r.year}`),
         details: {
           ...(account.kind === "property"
-            ? { rented: r.rented, rentEur: r.rented ? num(r.rentEur, `${t("Yearly rent")} ${r.year}`) : undefined }
+            ? {
+                rented: r.rented,
+                rentEur: r.rented ? num(r.rentEur, `${t("Yearly rent")} ${r.year}`) : undefined,
+                relatedBelowMarket: r.rented && r.relatedBelowMarket ? true : undefined,
+              }
             : {}),
           ...(r.source ? { source: r.source } : {}),
         },
@@ -533,6 +546,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
             costsEur: "",
             rented: false,
             rentEur: "",
+            relatedBelowMarket: false,
           };
       if (p.valueEur != null) r.valueEur = toInputNumber(String(Number(p.valueEur)));
       if (p.inEur != null) r.inEur = zeroBlank(p.inEur);
@@ -629,16 +643,39 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                               placeholder={t("rent")}
                               onChange={(e) => set(r.year, { rentEur: e.target.value })}
                             />
-                            {parsed(r.valueEur) > 0 && (
-                              <div className="mt-1 text-[11px] text-muted">
-                                {t("counts as {value} ({pct}%)", {
-                                  value: eur(parsed(r.valueEur) * leegwaarde(parsed(r.rentEur), parsed(r.valueEur)), {
-                                    decimals: 0,
-                                  }),
-                                  pct: Math.round(leegwaarde(parsed(r.rentEur), parsed(r.valueEur)) * 100),
-                                })}
-                              </div>
-                            )}
+                            <label
+                              className="mt-1 flex max-w-36 items-start gap-1 text-[11px] text-ink-2"
+                              title={t(
+                                "Let to your child or your own BV, for example, at a rent well below the usual: it counts at 100% of the WOZ value.",
+                              )}
+                            >
+                              <input
+                                type="checkbox"
+                                className="mt-0.5"
+                                checked={r.relatedBelowMarket}
+                                onChange={(e) => set(r.year, { relatedBelowMarket: e.target.checked })}
+                              />
+                              {t("to family, well below the usual rent")}
+                            </label>
+                            {parsed(r.valueEur) > 0 &&
+                              tables.data &&
+                              (() => {
+                                const share = leegwaarde(
+                                  tables.data,
+                                  r.year,
+                                  parsed(r.rentEur),
+                                  parsed(r.valueEur),
+                                  r.relatedBelowMarket,
+                                );
+                                return (
+                                  <div className="mt-1 text-[11px] text-muted">
+                                    {t("counts as {value} ({pct}%)", {
+                                      value: eur(parsed(r.valueEur) * share, { decimals: 0 }),
+                                      pct: Math.round(share * 100),
+                                    })}
+                                  </div>
+                                );
+                              })()}
                           </>
                         )}
                       </td>

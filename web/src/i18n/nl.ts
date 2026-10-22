@@ -1672,4 +1672,7 @@ export const NL: Record<string, string> = {
     "Box3balans kent dit overzicht nog niet; hieronder staan de bedragen die op waarden lijken: vink de juiste aan. Onder de tabel kun je daarna de opmaak delen, zonder je gegevens, zodat het de volgende keer herkend wordt.",
   "Tick the right values above first.": "Vink eerst hierboven de juiste waarden aan.",
   "Both after the green-investment credit of": "Beide na de heffingskorting groene beleggingen van",
+  "Let to your child or your own BV, for example, at a rent well below the usual: it counts at 100% of the WOZ value.":
+    "Bijvoorbeeld verhuurd aan je kind of je eigen bv, voor een huur ver onder de gewone: dan telt 100% van de WOZ-waarde.",
+  "to family, well below the usual rent": "aan familie, ver onder de gewone huur",
 };

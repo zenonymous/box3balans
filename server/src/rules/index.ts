@@ -24,10 +24,19 @@ const schema = z.object({
       source: z.string().url(),
     }),
   ),
-  // Bands from low to high rent; a rent above the last band counts at 100%.
+  // Per table the first year it applies to; bands from low to high rent, and a rent above the last
+  // band counts at 100%.
   leegwaarderatio: z
-    .array(z.object({ upToRentPct: z.number().positive(), valuePct: z.number().min(0).max(100) }))
-    .refine((b) => b.every((x, i) => i === 0 || x.upToRentPct > b[i - 1]!.upToRentPct), "Bands must go up"),
+    .array(
+      z.object({
+        fromYear: z.number().int().min(2000),
+        bands: z
+          .array(z.object({ upToRentPct: z.number().positive(), valuePct: z.number().min(0).max(100) }))
+          .refine((b) => b.every((x, i) => i === 0 || x.upToRentPct > b[i - 1]!.upToRentPct), "Bands must go up"),
+      }),
+    )
+    .min(1)
+    .refine((t) => t.every((x, i) => i === 0 || x.fromYear > t[i - 1]!.fromYear), "Tables must go up by year"),
 });
 
 export const RULES = schema.parse(data);

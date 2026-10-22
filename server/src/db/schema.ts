@@ -168,6 +168,8 @@ export interface AccountYearDetails {
   // A let home: rented out with rent protection, at this yearly rent (the leegwaarderatio applies).
   rented?: boolean;
   rentEur?: string;
+  // Let to a related party (a child, your own BV) at a rent well below the usual: counts at 100%.
+  relatedBelowMarket?: boolean;
   // Where the values came from, e.g. "bank export kluis-2024.csv".
   source?: string;
 }

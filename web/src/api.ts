@@ -122,7 +122,7 @@ export interface AccountYear {
   outEur: string;
   incomeEur: string;
   costsEur: string;
-  details: { rented?: boolean; rentEur?: string; source?: string };
+  details: { rented?: boolean; rentEur?: string; relatedBelowMarket?: boolean; source?: string };
 }
 
 export interface BankYear {

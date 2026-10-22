@@ -65,24 +65,14 @@
   },
   "leegwaarderatio": [
     {
-      "upToRentPct": 1,
-      "valuePct": 73
-    },
-    {
-      "upToRentPct": 2,
-      "valuePct": 79
-    },
-    {
-      "upToRentPct": 3,
-      "valuePct": 84
-    },
-    {
-      "upToRentPct": 4,
-      "valuePct": 90
-    },
-    {
-      "upToRentPct": 5,
-      "valuePct": 95
+      "fromYear": 2023,
+      "bands": [
+        { "upToRentPct": 1, "valuePct": 73 },
+        { "upToRentPct": 2, "valuePct": 79 },
+        { "upToRentPct": 3, "valuePct": 84 },
+        { "upToRentPct": 4, "valuePct": 90 },
+        { "upToRentPct": 5, "valuePct": 95 }
+      ]
     }
   ]
 }
