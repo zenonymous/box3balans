@@ -15,7 +15,7 @@ import { WalletService } from "./wallets/service.js";
 import { BackfillService } from "./jobs/backfill.js";
 import { APP_VERSION } from "./lib/version.js";
 import { NetworkLog, loadTurnedOff } from "./domain/networkLog.js";
-import { allowConfiguredUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
+import { allowConfiguredUrl, allowLocalUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
 import { newSetupCode, userCount } from "./auth/service.js";
 import { ensureBackupPassphrase } from "./backup/passphrase.js";
 
@@ -26,6 +26,9 @@ setTimeZone(config.TIME_ZONE);
 // and is logged for Settings → Network; anything else is refused.
 const network = new NetworkLog();
 allowConfiguredUrl("wallets", process.env.SOLANA_RPC_URL);
+// Bitcoin wallets from your own mempool or Electrs server instead of mempool.space, when set.
+if (config.MEMPOOL_URL && !allowLocalUrl("wallets", config.MEMPOOL_URL))
+  allowConfiguredUrl("wallets", config.MEMPOOL_URL);
 installNetworkGuard(network.record);
 if (config.DEMO) {
   // Nothing is kept: data in memory, backups in a temporary folder that goes with the process.

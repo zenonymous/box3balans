@@ -15,7 +15,8 @@ import { xrpAdapter } from "./xrp.js";
  */
 export function buildChains(): Record<string, ChainAdapter> {
   const list: ChainAdapter[] = [
-    utxoAdapter(BITCOIN),
+    // Your own mempool or Electrs server (MEMPOOL_URL), or mempool.space.
+    utxoAdapter({ ...BITCOIN, api: process.env.MEMPOOL_URL?.trim().replace(/\/+$/, "") || BITCOIN.api }),
     ...EVM_CHAINS.map(evmAdapter),
     ankrAdapter(BSC),
     solanaAdapter(),

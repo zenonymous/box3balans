@@ -26,7 +26,9 @@ Box3balans draait bij jou, op je eigen computer, NAS of thuisserver. Er is geen 
 
 Een nieuwe installatie zonder beleggingen benadert alleen de eerste twee: de koersen van edelmetaal en de wisselkoersen. Stel je met `SOLANA_RPC_URL` een eigen Solana-server in, dan komt die bij de wallets op de lijst.
 
-**Wat een buitenstaander kan afleiden.** Een koersbron ziet vanaf jouw internetadres welke beleggingen er worden opgevraagd, niet hoeveel je ervan hebt. Een blockchainverkenner ziet welke adressen je opvraagt; die zijn op de blockchain al openbaar, de koppeling met jouw internetadres niet. Wil je ook dat afschermen, laat Box3balans dan via een VPN naar buiten gaan.
+**Wat een buitenstaander kan afleiden.** Een koersbron ziet vanaf jouw internetadres welke beleggingen er worden opgevraagd, niet hoeveel je ervan hebt. Een blockchainverkenner ziet welke adressen je opvraagt; die zijn op de blockchain al openbaar, de koppeling met jouw internetadres niet. Bij een xpub ziet hij bovendien welke adressen bij elkaar horen, en dus het saldo en de geschiedenis van die hele wallet. Wil je ook dat afschermen, laat Box3balans dan via een VPN naar buiten gaan.
+
+**Je eigen Bitcoin-server.** Draai je zelf een mempool- of Electrs-server (bijvoorbeeld op een Umbrel of Start9), zet dan `MEMPOOL_URL` op het adres van de API, zoals `http://192.168.1.10:3006/api`. Bitcoin-wallets worden dan daar opgevraagd en niet bij mempool.space, zodat er niets over je Bitcoin-wallets je netwerk verlaat. Op je eigen netwerk (een privé-adres zoals 192.168.x.x of 10.x.x.x, Tailscale's 100.64.x.x, of een lokale naam zoals `umbrel.local`) mag dat gewoon http zijn op een eigen poort; elders alleen https. Alleen dat ene adres krijgt die uitzondering, en het staat bij de wallets op de lijst onder _Instellingen → Netwerk_. In de [afgeschermde opzet](#afgeschermd-draaien) heeft de app geen weg naar je thuisnetwerk; daar werkt dit niet.
 
 ## Zelf controleren
 

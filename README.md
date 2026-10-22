@@ -234,6 +234,7 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 | `PRICE_REFRESH_MINUTES` | `15`               | Minuten tussen koersupdates                                                                                                                       |
 | `SYNC_INTERVAL_HOURS`   | `6`                | Uren tussen synchronisaties van koppelingen en wallets; `0` = alleen met de hand                                                                  |
 | `SOLANA_RPC_URL`        | openbare RPC       | Eigen Solana-RPC (bijvoorbeeld een gratis Helius-sleutel) voor snellere eerste imports                                                            |
+| `MEMPOOL_URL`           | mempool.space      | Je eigen mempool- of Electrs-server voor Bitcoin-wallets (het adres van de API; http mag op je eigen netwerk)                                     |
 | `ANKR_API_KEY`          | —                  | Gratis Ankr Advanced API-sleutel; nodig voor BNB Chain-wallets                                                                                    |
 | `LOG_LEVEL`             | `info`             | `debug` logt ook elk verzoek                                                                                                                      |
 | `DEMO`                  | `false`            | `true`: de [demo](#demo), met een voorbeeldhuishouden in het geheugen; er wordt niets bewaard                                                     |

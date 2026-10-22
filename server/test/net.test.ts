@@ -6,8 +6,11 @@ import {
   BlockedRequestError,
   DESTINATIONS,
   describe as describeUrl,
+  allowLocalUrl,
+  forgetLocalUrls,
   guardFetch,
   isAllowedHost,
+  isLocalHost,
   setTurnedOff,
 } from "../src/lib/net.js";
 import type { RequestRecord } from "../src/lib/net.js";
@@ -201,6 +204,46 @@ describe("the network log", () => {
     // Bitvavo is both a price source and an exchange.
     expect(res.recent[0]).toMatchObject({ host: "api.bitvavo.com", purposes: ["crypto", "exchanges"] });
     expect(res.blocked).toEqual([]);
+  });
+});
+
+describe("your own server on your own network (MEMPOOL_URL)", () => {
+  afterEach(() => forgetLocalUrls());
+
+  it("tells local addresses from the internet", () => {
+    for (const h of ["192.168.1.10", "10.0.0.5", "172.20.0.3", "127.0.0.1", "100.101.102.103", "[::1]", "fd12::1"])
+      expect(isLocalHost(h), h).toBe(true);
+    for (const h of ["umbrel.local", "nas.lan", "box.home.arpa", "mempool", "localhost"])
+      expect(isLocalHost(h), h).toBe(true);
+    for (const h of ["mempool.space", "8.8.8.8", "172.32.0.1", "100.128.0.1", "example.com", "2001:db8::1"])
+      expect(isLocalHost(h), h).toBe(false);
+  });
+
+  it("allows exactly that server, over plain HTTP on its own port, and nothing else", async () => {
+    const records: RequestRecord[] = [];
+    const net = fakeNet({});
+    const f = guardFetch(net.fetchFn, (r) => records.push(r));
+    expect(allowLocalUrl("wallets", "http://192.168.1.10:3006/api")).toBe(true);
+    expect((await f("http://192.168.1.10:3006/api/address/bc1q")).status).toBe(200);
+    expect(DESTINATIONS.find((d) => d.id === "wallets")!.hosts).toContain("192.168.1.10:3006");
+    // Another port on that machine, or plain HTTP elsewhere, stays refused.
+    await expect(f("http://192.168.1.10:8080/")).rejects.toBeInstanceOf(BlockedRequestError);
+    await expect(f("http://192.168.1.11:3006/")).rejects.toBeInstanceOf(BlockedRequestError);
+    // An address on the internet isn't taken this way at all.
+    expect(allowLocalUrl("wallets", "http://mempool.example.com/api")).toBe(false);
+    await expect(f("http://mempool.example.com/api/x")).rejects.toBeInstanceOf(BlockedRequestError);
+    // Turning wallets off turns it off too.
+    setTurnedOff(["wallets"]);
+    await expect(f("http://192.168.1.10:3006/api/address/bc1q")).rejects.toMatchObject({ reason: "off" });
+    expect(records.at(-1)).toMatchObject({ blocked: true, reason: "off" });
+  });
+
+  it("is checked at startup: HTTPS, or HTTP only on your own network", () => {
+    const env = (MEMPOOL_URL: string) => ({ APP_SECRET: "x".repeat(40), MEMPOOL_URL });
+    expect(loadConfig(env("http://umbrel.local:3006/api/")).MEMPOOL_URL).toBe("http://umbrel.local:3006/api");
+    expect(loadConfig(env("https://mempool.example.org/api")).MEMPOOL_URL).toBe("https://mempool.example.org/api");
+    expect(() => loadConfig(env("http://mempool.example.org/api"))).toThrow(/MEMPOOL_URL/);
+    expect(() => loadConfig(env("not a url"))).toThrow(/MEMPOOL_URL/);
   });
 });
 

@@ -1,3 +1,4 @@
+import { buildChains } from "../src/wallets/registry.js";
 import { afterEach, describe, expect, it } from "vitest";
 import { D } from "../src/lib/decimal.js";
 import { movementsToEvents } from "../src/wallets/netting.js";
@@ -217,6 +218,27 @@ const btcRoutes = {
 };
 
 describe("wallet tracking (Bitcoin)", () => {
+  it("asks your own mempool or Electrs server when MEMPOOL_URL is set, mempool.space otherwise", async () => {
+    const asked: string[] = [];
+    const fetchFn = (async (url: string) => {
+      asked.push(url);
+      return Response.json(url.includes("/txs") ? [] : stats(0, 0, 0));
+    }) as typeof fetch;
+    const ctx = { fetchFn, sleep: async () => {}, cursor: null };
+    const before = process.env.MEMPOOL_URL;
+    try {
+      process.env.MEMPOOL_URL = "http://192.168.1.10:3006/api/";
+      await buildChains().bitcoin!.fetch([{ address: A }], ctx);
+      delete process.env.MEMPOOL_URL;
+      await buildChains().bitcoin!.fetch([{ address: A }], ctx);
+    } finally {
+      if (before === undefined) delete process.env.MEMPOOL_URL;
+      else process.env.MEMPOOL_URL = before;
+    }
+    expect(asked[0]).toBe(`http://192.168.1.10:3006/api/address/${A}`);
+    expect(asked.at(-1)).toMatch(/^https:\/\/mempool\.space\/api\/address\//);
+  });
+
   it("imports an address, then re-imports when a second address joins the wallet", async () => {
     t = await createTestApp(btcRoutes);
     const first = json(

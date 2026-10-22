@@ -108,6 +108,62 @@ export function allowConfiguredUrl(id: string, url: string | undefined): void {
   if (d && !d.hosts.includes(host)) d.hosts.push(host);
 }
 
+/**
+ * Whether a host is on your own network: a private or loopback address (also Tailscale's 100.64/10),
+ * or a local name ("umbrel.local", "nas.lan", a Docker service name without dots).
+ */
+export function isLocalHost(hostname: string): boolean {
+  const h = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.\d{1,3}\.\d{1,3}$/.exec(h);
+  if (v4) {
+    const [a, b] = [Number(v4[1]), Number(v4[2])];
+    return (
+      a === 10 ||
+      a === 127 ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168) ||
+      (a === 169 && b === 254) ||
+      (a === 100 && b >= 64 && b <= 127)
+    );
+  }
+  if (h.includes(":")) return h === "::1" || /^f[cd]/.test(h) || /^fe[89ab]/.test(h);
+  return h === "localhost" || !h.includes(".") || /\.(local|lan|home\.arpa|internal)$/.test(h);
+}
+
+// Servers on your own network that you set up yourself (MEMPOOL_URL), per exact origin: they may use
+// plain HTTP and their own port, which the guard refuses for everything else.
+const localOrigins = new Map<string, string>();
+
+/**
+ * Allows a server you run yourself on your own network, for a destination (MEMPOOL_URL, for the
+ * wallets): only its exact origin (scheme, host and port), and only when the host is local. An
+ * HTTPS address on the internet goes through allowConfiguredUrl instead. False when refused.
+ */
+export function allowLocalUrl(id: string, url: string | undefined): boolean {
+  if (!url) return false;
+  let u: URL;
+  try {
+    u = new URL(url);
+  } catch {
+    return false;
+  }
+  if ((u.protocol !== "http:" && u.protocol !== "https:") || !isLocalHost(u.hostname)) return false;
+  localOrigins.set(u.origin, id);
+  const d = DESTINATIONS.find((x) => x.id === id);
+  if (d && !d.hosts.includes(u.host)) d.hosts.push(u.host);
+  return true;
+}
+
+/** Forgets the servers allowed with allowLocalUrl (for tests). */
+export function forgetLocalUrls(): void {
+  for (const [origin, id] of localOrigins) {
+    const d = DESTINATIONS.find((x) => x.id === id);
+    const host = new URL(origin).host;
+    if (d) d.hosts = d.hosts.filter((h) => h !== host);
+  }
+  localOrigins.clear();
+}
+
 const matches = (pattern: string, host: string) =>
   pattern.startsWith("*.") ? host === pattern.slice(2) || host.endsWith(pattern.slice(1)) : host === pattern;
 
@@ -203,12 +259,21 @@ export function guardFetch(realFetch: FetchFn, record: (r: RequestRecord) => voi
     let body = init.body;
     let headers = new Headers(init.headers ?? request?.headers);
     for (let hop = 0; ; hop++) {
-      // HTTPS on its normal port, to a listed host.
-      if (url.protocol !== "https:" || (url.port !== "" && url.port !== "443") || !isAllowedHost(url.hostname)) {
+      // A server on your own network that you set up yourself: its own origin only.
+      const local = localOrigins.get(url.origin);
+      if (local && !isOn(local)) {
+        record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "off" });
+        throw new BlockedRequestError(url.origin, "off");
+      }
+      // Otherwise HTTPS on its normal port, to a listed host.
+      if (
+        !local &&
+        (url.protocol !== "https:" || (url.port !== "" && url.port !== "443") || !isAllowedHost(url.hostname))
+      ) {
         record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "unlisted" });
         throw new BlockedRequestError(`${url.protocol}//${url.host}`);
       }
-      if (!isReachable(url.hostname)) {
+      if (!local && !isReachable(url.hostname)) {
         record({ at: new Date(), method, host: url.host, what: describe(url), blocked: true, reason: "off" });
         throw new BlockedRequestError(`${url.protocol}//${url.host}`, "off");
       }

@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import fs from "node:fs";
 import { z } from "zod";
+import { isLocalHost } from "./lib/net.js";
 
 const schema = z.object({
   NODE_ENV: z.string().default("production"),
@@ -84,6 +85,22 @@ const schema = z.object({
     .max(64)
     .refine((s) => s.replace(/[^A-Za-z0-9]/g, "").length >= 8, "at least 8 letters or digits")
     .optional(),
+  // Your own mempool or Electrs server for Bitcoin wallets, instead of mempool.space: the address of
+  // its API. HTTPS, or plain HTTP on your own network (a private address or a local name).
+  MEMPOOL_URL: z
+    .string()
+    .trim()
+    .optional()
+    .transform((v) => (v ? v.replace(/\/+$/, "") : undefined))
+    .refine((v) => {
+      if (v === undefined) return true;
+      try {
+        const u = new URL(v);
+        return u.protocol === "https:" || (u.protocol === "http:" && isLocalHost(u.hostname));
+      } catch {
+        return false;
+      }
+    }, "an address of its API: https://…, or http://… on your own network (e.g. http://192.168.1.10:3006/api)"),
   // Where the running code's source can be found (AGPL); the Docker build sets it.
   SOURCE_URL: z.string().default("https://github.com/zenonymous/box3balans"),
 });
