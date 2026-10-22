@@ -325,6 +325,7 @@ export function goldrepublicTransactions(s: GoldrepublicStatement): Converted {
 export const goldrepublicStatement = {
   id: "goldrepublic",
   label: msg("Goldrepublic account statement"),
+  tested: true,
   read: readGoldrepublic,
   convert: goldrepublicTransactions,
 };

@@ -51,7 +51,7 @@ export const FORMATS: BrokerFormat[] = [
 ];
 
 export interface Recognised {
-  format: Pick<BrokerFormat, "id" | "label">;
+  format: Pick<BrokerFormat, "id" | "label" | "tested">;
   result: Converted;
   /** The converted file, in the Box3balans template. */
   content: string;

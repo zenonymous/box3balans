@@ -49,6 +49,8 @@ export interface BrokerFormat {
   id: string;
   /** Shown as "Recognised as …"; marked with msg() and translated when shown. */
   label: string;
+  /** Tested with a real export (otherwise built from public samples, which the import page says). */
+  tested?: boolean;
   /** True when `headers` is this format's header row. */
   detect(headers: string[]): boolean;
   /** `table[0]` is the header row. */

@@ -119,7 +119,7 @@ interface Upload {
   // Read with a format another user shared (server/src/import/formats/shared.ts).
   shared?: { provider: string; export: string };
   // A known export (DEGIRO, Bitvavo …), converted to the Box3balans template.
-  format?: { id: string; label: string; rows: number } | null;
+  format?: { id: string; label: string; rows: number; tested: boolean } | null;
   // Not transactions but a statement of positions on a day (DEGIRO's portfolio export).
   statement?: { label: string; positions: number; currencies: string[] };
 }
@@ -444,13 +444,19 @@ export function ImportPage() {
                       "Box3balans read this export and turned it into {n} transactions. What was left out, and why, is listed under Review.",
                     )}
                   </p>
+                  {upload.format.tested ? (
+                    <p className="mt-2 text-xs text-muted">{t("Tested with a real export.")}</p>
+                  ) : (
+                    <div className="mt-3">
+                      <Alert>
+                        {t(
+                          "This reader was built from public examples and hasn't been tested with a real export yet. Check the lines under Review before you import. Something off? Choose the columns yourself, and share the format so it gets fixed.",
+                        )}
+                      </Alert>
+                    </div>
+                  )}
                   {!isPdf(file) && (
                     <>
-                      <p className="mt-2 text-xs text-muted">
-                        {t(
-                          "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.",
-                        )}
-                      </p>
                       <Button
                         size="sm"
                         className="mt-3"

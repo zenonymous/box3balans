@@ -1523,8 +1523,6 @@ export const NL: Record<string, string> = {
   "The deemed return is lower (or equal): no reason to give your actual return for {year}.":
     "Het forfaitair rendement is lager (of gelijk): geen reden om je werkelijk rendement over {year} op te geven.",
   "2 · Recognised: {name}": "2 · Herkend: {name}",
-  "Built from public sample files; if something doesn't match your export, choose the columns yourself and let us know.":
-    "Gebouwd op openbare voorbeeldbestanden; klopt er iets niet met jouw export, kies dan zelf de kolommen en laat het ons weten.",
   "Choose the columns myself": "Zelf de kolommen kiezen",
   "Box3balans read this export and turned it into {n} transaction. What was left out, and why, is listed under Review.":
     "Box3balans heeft deze export gelezen en er {n} transactie van gemaakt. Wat is weggelaten, en waarom, staat bij Controleren.",
@@ -1675,4 +1673,7 @@ export const NL: Record<string, string> = {
   "Let to your child or your own BV, for example, at a rent well below the usual: it counts at 100% of the WOZ value.":
     "Bijvoorbeeld verhuurd aan je kind of je eigen bv, voor een huur ver onder de gewone: dan telt 100% van de WOZ-waarde.",
   "to family, well below the usual rent": "aan familie, ver onder de gewone huur",
+  "Tested with a real export.": "Getest met een echte export.",
+  "This reader was built from public examples and hasn't been tested with a real export yet. Check the lines under Review before you import. Something off? Choose the columns yourself, and share the format so it gets fixed.":
+    "Deze lezer is gebouwd op openbare voorbeelden en nog niet getest met een echte export. Controleer de regels onder Controleren voordat je importeert. Klopt er iets niet? Kies dan zelf de kolommen en deel het formaat, zodat het wordt verbeterd.",
 };

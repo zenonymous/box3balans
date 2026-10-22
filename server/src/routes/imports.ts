@@ -220,7 +220,12 @@ export async function importRoutes(app: FastifyInstance) {
         fileName,
         mapping: templateMapping(0, known.result.mapping),
         preset: tr(known.format.label),
-        format: { id: known.format.id, label: tr(known.format.label), rows: known.result.rows.length },
+        format: {
+          id: known.format.id,
+          label: tr(known.format.label),
+          rows: known.result.rows.length,
+          tested: !!known.format.tested,
+        },
       };
     }
     keep(content, [], undefined, undefined, !pdf);

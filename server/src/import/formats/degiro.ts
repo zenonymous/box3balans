@@ -44,6 +44,7 @@ const inFile = (raw: string, decimal: DecimalMark) => num(raw, decimal);
 export const degiroAccount: BrokerFormat = {
   id: "degiro-account",
   label: msg("DEGIRO account statement"),
+  tested: true,
   detect(h) {
     return (
       h.length >= 11 &&

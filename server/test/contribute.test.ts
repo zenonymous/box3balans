@@ -332,6 +332,8 @@ describe("the API", () => {
     ].join("\n");
     const known = JSON.parse((await t.api("POST", "/api/import/upload", { fileName: "b.csv", content: bitvavo })).body);
     expect(known.format?.id).toBe("bitvavo");
+    // Built from public samples: the import page says so.
+    expect(known.format?.tested).toBe(false);
     const refused = await t.api("POST", "/api/import/contribution", {
       uploadId: known.uploadId,
       accountId: account,
