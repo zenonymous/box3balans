@@ -1,4 +1,4 @@
-import { and, eq, gte, isNotNull, lte, sql } from "drizzle-orm";
+import { and, eq, gte, isNotNull, isNull, like, lt, lte, or, sql } from "drizzle-orm";
 import { priceSourceOn } from "../lib/net.js";
 import type { DB } from "../db/client.js";
 import { assets, fxRates, metalItems, priceHistory, settings, transactions } from "../db/schema.js";
@@ -14,6 +14,8 @@ const STATE_KEY = "history_backfill";
 // 31 December closes of holdings already looked up for their source ("assetId:day"). A new key
 // when the lookup learns more sources, so earlier misses are tried again.
 const LABELS_KEY = "history_labels_2";
+// Stocks and ETFs whose stored Yahoo closes have been checked for splits (see repairSplits).
+const SPLITS_KEY = "history_splits_1";
 // Re-check each asset at most this often (the price refresh keeps today's close current).
 const RECHECK_MS = 20 * 3_600_000;
 
@@ -121,6 +123,7 @@ export class BackfillService {
       ).map((r) => [r.id, String(r.day)]),
     );
     const rows = await this.db.select().from(assets);
+    await this.repairSplits(rows, state);
 
     for (const asset of rows) {
       const from = first.get(asset.id);
@@ -175,6 +178,46 @@ export class BackfillService {
     }
     this.lastResult = result;
     return result;
+  }
+
+  /**
+   * Closes from Yahoo stored before 0.1.35 can be adjusted for a later split: a tenth of the real
+   * price before a 10:1 split, so a peildatum before it was valued ten times too low. Once per stock
+   * or ETF that has had a split, its Yahoo closes before the last split are deleted; the run then
+   * loads them again as they were on the day (history.ts, `unsplit`).
+   */
+  private async repairSplits(rows: (typeof assets.$inferSelect)[], state: State) {
+    const [row] = await this.db.select().from(settings).where(eq(settings.key, SPLITS_KEY));
+    const done = new Set((row?.value as number[] | undefined) ?? []);
+    const before = done.size;
+    for (const asset of rows) {
+      if (done.has(asset.id) || asset.priceSource !== "yahoo" || !asset.priceRef) continue;
+      if (!["stock", "etf"].includes(asset.assetClass) || !priceSourceOn(asset.priceSource, asset.assetClass)) continue;
+      try {
+        const last = (await this.history.splits(asset.priceRef)).at(-1);
+        if (last) {
+          await this.db
+            .delete(priceHistory)
+            .where(
+              and(
+                eq(priceHistory.assetId, asset.id),
+                lt(priceHistory.day, last.day),
+                or(like(priceHistory.source, "yahoo:%"), isNull(priceHistory.source)),
+              ),
+            );
+          // A full load again, from the first day held.
+          delete state[asset.id];
+        }
+        done.add(asset.id);
+      } catch {
+        // Yahoo didn't answer: try again on the next run.
+      }
+    }
+    if (done.size === before) return;
+    await this.db
+      .insert(settings)
+      .values({ key: SPLITS_KEY, value: [...done] })
+      .onConflictDoUpdate({ target: settings.key, set: { value: [...done] } });
   }
 
   /**

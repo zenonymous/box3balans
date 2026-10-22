@@ -19,6 +19,28 @@ const DAY = 86_400_000;
 const METAL_FUTURES: Record<string, string> = { XAU: "GC=F", XAG: "SI=F", XPT: "PL=F", XPD: "PA=F" };
 const isoDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
+/** A stock split: from `day` on, one share is `ratio` shares (a 10:1 split has ratio 10). */
+export interface Split {
+  day: string;
+  ratio: Decimal;
+}
+
+/**
+ * Yahoo's daily closes are adjusted for every split since: a close from before a 10:1 split comes
+ * back divided by 10. Stored history is the price of one share on the day itself, which is what the
+ * quantities held that day were, so this undoes it. Splits come from the whole history (see
+ * `splits`): a request for an older period carries the adjustment but not the events.
+ */
+export function unsplit(points: Point[], splits: Split[]): Point[] {
+  if (!splits.length) return points;
+  return points.map((p) => {
+    const factor = splits.filter((s) => p.day < s.day).reduce((f, s) => f.mul(s.ratio), D(1));
+    return factor.eq(1) ? p : { ...p, close: p.close.mul(factor) };
+  });
+}
+
+const SPLITS_TTL_MS = 12 * 3_600_000;
+
 interface ChartHistory {
   chart: {
     result:
@@ -26,6 +48,7 @@ interface ChartHistory {
           meta: { currency: string; regularMarketPrice?: number; longName?: string; shortName?: string };
           timestamp?: number[];
           indicators: { quote: { close: (number | null)[] }[] };
+          events?: { splits?: Record<string, { date: number; numerator: number; denominator: number }> };
         }[]
       | null;
   };
@@ -47,6 +70,24 @@ export class HistoryService {
   ) {}
 
   private lastCoingecko = 0;
+  private splitCache = new Map<string, { at: number; splits: Split[] }>();
+
+  /** Every split of a Yahoo ticker, oldest first (one small request, kept for a while). */
+  async splits(ticker: string): Promise<Split[]> {
+    const hit = this.splitCache.get(ticker);
+    if (hit && Date.now() - hit.at < SPLITS_TTL_MS) return hit.splits;
+    const data = await getJson<ChartHistory>(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?range=max&interval=3mo&events=split`,
+      { fetchFn: this.fetchFn },
+    );
+    const events = data.chart.result?.[0]?.events?.splits ?? {};
+    const splits = Object.values(events)
+      .filter((e) => e.numerator > 0 && e.denominator > 0 && e.numerator !== e.denominator)
+      .map((e) => ({ day: isoDay(e.date * 1000), ratio: D(e.numerator).div(e.denominator) }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+    this.splitCache.set(ticker, { at: Date.now(), splits });
+    return splits;
+  }
 
   // Bitvavo's current prices, loaded once per service (one call covers every market).
   private bitvavoQuotes?: Promise<Awaited<ReturnType<typeof bitvavoTickers>>>;
@@ -189,7 +230,8 @@ export class HistoryService {
     if (asset.priceSource === "yahoo" && asset.priceRef) {
       try {
         const { points } = await this.yahoo(asset.priceRef, from, to);
-        if (points.length) return points;
+        // Without the splits the closes can't be trusted, so nothing is stored then (tried again later).
+        if (points.length) return unsplit(points, await this.splits(asset.priceRef));
       } catch {
         // try the next source
       }
