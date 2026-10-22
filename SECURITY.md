@@ -51,6 +51,12 @@ cosign verify-blob box3balans-0.1.33-source.tar.gz \
 sha256sum -c SHA256SUMS
 ```
 
+Vanaf 0.1.32 staat er ook een beschrijving bij van hoe en waaruit de bestanden zijn gebouwd (_provenance_ volgens SLSA): `box3balans-<versie>.intoto.jsonl`, ondertekend met Sigstore en ook bewaard bij GitHub. Met de [GitHub CLI](https://cli.github.com/) controleer je die zo:
+
+```bash
+gh attestation verify box3balans-0.1.36-source.tar.gz --repo zenonymous/box3balans
+```
+
 ## Veilig gebruik
 
 - Box3balans maakt alleen verbinding met een vaste lijst van adressen en verstuurt nooit bedragen; zie [Wat Box3balans verstuurt](docs/privacy.md) en _Instellingen → Netwerk_. Wil je dat ook op netwerkniveau afgedwongen, gebruik dan de [afgeschermde opzet](docs/privacy.md#afgeschermd-draaien). De CI controleert bij elke wijziging dat het image alleen adressen van de lijst benadert, en onder _Instellingen → Netwerk_ zet je functies uit, tot helemaal offline.
