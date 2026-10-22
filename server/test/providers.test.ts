@@ -399,6 +399,29 @@ describe("Coinbase", () => {
     expect((await coinbase.fetch(creds, ctx([held]))).warnings).not.toContain(warning);
   });
 
+  it("refuses a key that can trade or move money, and warns at a sync (where Coinbase can tell)", async () => {
+    const empty = { data: [], pagination: { next_uri: null } };
+    const ctx = (permissions: unknown) => ({
+      fetchFn: (async (url: string) =>
+        permissions === undefined && url.includes("key_permissions")
+          ? new Response("not found", { status: 404 })
+          : Response.json(url.includes("key_permissions") ? permissions : empty)) as typeof fetch,
+      cursor: null,
+      isKnown: async () => new Set<string>(),
+      sleep: async () => {},
+    });
+    const message =
+      "This Coinbase key can also trade and move money. Make a new key with only “View” permissions: Box3balans only reads, and a key that can do more is worth more to anyone who gets hold of it.";
+    const both = { can_view: true, can_trade: true, can_transfer: true };
+    await expect(coinbase.test(creds, ctx(both))).rejects.toThrow(message);
+    expect((await coinbase.fetch(creds, ctx(both))).warnings).toContain(message);
+    // View only, or a key type Coinbase can't tell about: fine.
+    await expect(
+      coinbase.test(creds, ctx({ can_view: true, can_trade: false, can_transfer: false })),
+    ).resolves.toBeUndefined();
+    await expect(coinbase.test(creds, ctx(undefined))).resolves.toBeUndefined();
+  });
+
   it("treats the ETH2 wallet as ether and drops moves between Coinbase wallets", () => {
     const base = { status: "completed" };
     const tx = (id: string, type: string, amount: string, currency: string, at: string) => ({

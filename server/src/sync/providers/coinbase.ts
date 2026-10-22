@@ -246,6 +246,25 @@ export function mapCoinbaseTxs(list: { tx: CbTx; eur: string | undefined }[]): {
   return { events, dropped };
 }
 
+/**
+ * What the key may do besides viewing, as Coinbase reports it (Advanced Trade: key_permissions).
+ * Null when Coinbase doesn't say: not every key type supports the call.
+ */
+async function extraRights(c: Creds, ctx: ProviderContext): Promise<string[] | null> {
+  try {
+    const p = await call<{ can_trade?: boolean; can_transfer?: boolean }>(c, ctx, "/api/v3/brokerage/key_permissions");
+    return [...(p.can_trade ? [tr("trade")] : []), ...(p.can_transfer ? [tr("move money")] : [])];
+  } catch {
+    return null;
+  }
+}
+
+const rightsMessage = (rights: string[]) =>
+  tr(
+    "This Coinbase key can also {rights}. Make a new key with only “View” permissions: Box3balans only reads, and a key that can do more is worth more to anyone who gets hold of it.",
+    { rights: rights.join(tr(" and ")) },
+  );
+
 export const coinbase: ExchangeProvider<Creds> = {
   id: "coinbase",
   label: "Coinbase",
@@ -275,6 +294,9 @@ export const coinbase: ExchangeProvider<Creds> = {
 
   async test(c, ctx) {
     await call(c, ctx, "/v2/accounts?limit=1");
+    // A key with more than view rights isn't accepted (checked where Coinbase can tell).
+    const rights = await extraRights(c, ctx);
+    if (rights?.length) throw new ProviderError(rightsMessage(rights));
   },
 
   async fetch(c, ctx) {
@@ -290,6 +312,9 @@ export const coinbase: ExchangeProvider<Creds> = {
     const skipped = new Set((ctx.cursor?.skipped as string[] | undefined) ?? []);
     const list: { tx: CbTx; eur: string | undefined }[] = [];
     const warnings: string[] = [];
+    // A key made before this check, or changed since: said at every sync.
+    const rights = await extraRights(c, ctx);
+    if (rights?.length) warnings.push(rightsMessage(rights));
     let nonEurNative = false;
     for (const acc of accounts) {
       for (let path: string | null | undefined = `/v2/accounts/${acc.id}/transactions?limit=100`; path;) {

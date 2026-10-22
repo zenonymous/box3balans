@@ -635,4 +635,10 @@ export const NL: Record<string, string> = {
     "De tarieven van {year} zijn niet compleet: het belastingtarief, het heffingsvrij vermogen of het percentage voor overige bezittingen is 0. Vul ze in onder “Regels en tarieven”.",
   "The {year} rates are a proposal: the tax-free allowance and the percentage for other assets are what the cabinet proposes, not yet law, and the other figures are those of {previous} until the {year} ones are known.":
     "De tarieven van {year} zijn een voorstel: het heffingsvrij vermogen en het percentage voor overige bezittingen zijn wat het kabinet voorstelt, nog geen wet, en de andere cijfers zijn die van {previous} tot die van {year} bekend zijn.",
+  // sync/providers/coinbase.ts
+  trade: "handelen",
+  "move money": "geld verplaatsen",
+  " and ": " en ",
+  "This Coinbase key can also {rights}. Make a new key with only “View” permissions: Box3balans only reads, and a key that can do more is worth more to anyone who gets hold of it.":
+    "Deze Coinbase-sleutel kan ook {rights}. Maak een nieuwe sleutel met alleen “View”-rechten: Box3balans leest alleen, en een sleutel die meer kan, is meer waard voor wie hem in handen krijgt.",
 };
