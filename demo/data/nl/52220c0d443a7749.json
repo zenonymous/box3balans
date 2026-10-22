@@ -1,1 +1,1 @@
-{"dir":"/backups","intervalHours":24,"keep":14,"encrypted":false,"status":{},"backups":[]}
+{"dir":"/backups","intervalHours":24,"keep":14,"encrypted":false,"passphrase":null,"status":{},"backups":[]}
