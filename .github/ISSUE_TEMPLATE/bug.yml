@@ -6,6 +6,8 @@ body:
     attributes:
       value: |
         Bedankt voor het melden. **Deel geen persoonlijke financiële gegevens**: geen bedragen, rekeningnummers, adressen van wallets, API-sleutels of back-ups. Vervang ze door voorbeeldwaarden.
+
+        Een beveiligingsprobleem? Meld dat privé met [Report a vulnerability](https://github.com/zenonymous/box3balans/security/advisories/new), niet hier (zie [SECURITY.md](https://github.com/zenonymous/box3balans/blob/main/SECURITY.md#een-kwetsbaarheid-melden)).
   - type: textarea
     id: wat
     attributes:

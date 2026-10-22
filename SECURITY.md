@@ -4,11 +4,20 @@ Box3balans bewaart financiële gegevens en API-sleutels van beurzen. Beveiliging
 
 ## Een kwetsbaarheid melden
 
-Meld een kwetsbaarheid **privé**, niet in een openbaar issue: ga naar het tabblad **Security** van deze repository en kies **Report a vulnerability**. Beschrijf wat er mis is, hoe je het kunt nadoen en welke versie je gebruikt.
+Meld een kwetsbaarheid **privé**, niet in een openbaar issue of in Discussions:
 
-Je krijgt zo snel mogelijk een reactie. Box3balans is een hobbyproject, dus dat kan een paar dagen duren. We houden je op de hoogte van de oplossing en noemen je graag bij naam in de release notes, als je dat wilt.
+1. Open het meldformulier met [**Report a vulnerability**](https://github.com/zenonymous/box3balans/security/advisories/new). Je kunt het ook vinden op het tabblad **Security and quality** van deze repository (op een smal scherm onder **⋯**): kies daar **Report a vulnerability**. Je hebt een GitHub-account nodig.
+2. Beschrijf:
+   - wat er mis is;
+   - hoe je het kunt nadoen;
+   - wat iemand ermee kan;
+   - welke versie je gebruikt (linksonder in de app).
 
-_In English: please report vulnerabilities privately via **Security → Report a vulnerability**, not in a public issue._
+Alleen jij en de beheerder zien de melding. Je krijgt zo snel mogelijk een reactie; Box3balans is een hobbyproject, dus dat kan een paar dagen duren. We houden je op de hoogte van de oplossing. Wil je meehelpen, dan kan dat in de melding zelf: GitHub biedt daar een tijdelijke privé-fork. De oplossing komt in een nieuwe uitgave, met in de release notes en in een security advisory wat er was. We noemen je daar graag bij naam, als je dat wilt.
+
+Houd het voor je tot de uitgave met de oplossing er is, of tot een datum die we samen afspreken.
+
+_In English: please report vulnerabilities privately, not in a public issue, with [**Report a vulnerability**](https://github.com/zenonymous/box3balans/security/advisories/new) (or the **Security and quality** tab → **Report a vulnerability**; you need a GitHub account). Describe what is wrong, how to reproduce it, its impact and the version (bottom left in the app). Please keep it private until a release with the fix is out._
 
 ## Welke versies
 

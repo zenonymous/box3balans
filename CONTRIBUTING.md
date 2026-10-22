@@ -9,7 +9,7 @@ _In English: contributions in English are welcome too. Issues and pull requests 
 ## Waar je het meest mee helpt
 
 - **Het formaat van je export of jaaroverzicht.** Kent Box3balans de CSV van je broker, bank of beurs of je jaaroverzicht (pdf) nog niet, kies dan in de app _Help anderen dit bestand in te lezen_ (of _… dit overzicht …_). Box3balans maakt een bestand met verzonnen gegevens in de opmaak van het jouwe; je ziet wat erin staat en deelt het met het formulier _Formaat delen_ bij [Issues](../../issues/new/choose). Zie [Je formaat delen](docs/importeren.md#je-formaat-delen). Zelf een geanonimiseerd voorbeeld sturen kan ook, met de formulieren _Exportbestand van een broker, bank of beurs_ en _Jaaroverzicht (pdf) van een aanbieder_; stuur nooit de pdf zelf.
-- **Fouten melden**, met de versie (linksonder in de app) en hoe je het kunt nadoen. Deel nooit echte bedragen, rekeningnummers, wallet-adressen of API-sleutels.
+- **Fouten melden**, met de versie (linksonder in de app) en hoe je het kunt nadoen. Deel nooit echte bedragen, rekeningnummers, wallet-adressen of API-sleutels. Een beveiligingsprobleem meld je privé, niet als issue: zie [SECURITY.md](SECURITY.md#een-kwetsbaarheid-melden).
 - **Belastingregels controleren.** Klopt een berekening niet met wat de Belastingdienst zegt? Meld het met een link naar de bron. De regels en hun bronnen staan in [`docs/box3-sources.md`](docs/box3-sources.md), de cijfers in [`server/src/rules/box3.json`](server/src/rules/box3.json).
 - **Code.** Kijk in de [roadmap](docs/ROADMAP.md) wat er gepland is. Open voor grotere wijzigingen eerst een issue, zodat we de aanpak kunnen afstemmen voordat je er veel tijd in steekt.
 
