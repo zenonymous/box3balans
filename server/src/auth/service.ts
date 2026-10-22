@@ -46,6 +46,12 @@ export async function checkCredentials(db: DB, username: string, password: strin
   return ok && user ? { id: user.id, username: user.username } : null;
 }
 
+/** Whether `password` is the user's own (to show a secret, for instance). */
+export async function isUserPassword(db: DB, userId: number, password: string): Promise<boolean> {
+  const [user] = await db.select().from(users).where(eq(users.id, userId));
+  return !!user && (await verify(user.passwordHash, password));
+}
+
 export async function changePassword(db: DB, userId: number, current: string, next: string): Promise<boolean> {
   const [user] = await db.select().from(users).where(eq(users.id, userId));
   if (!user || !(await verify(user.passwordHash, current))) return false;

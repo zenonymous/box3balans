@@ -12,7 +12,7 @@ Kies bij twijfel de **standaardopstelling** (`docker-compose.yml`: Box3balans me
 
 > **Map voor back-ups.** In `docker-compose.yml` staat `./backups:/backups`: de back-ups komen in een map `backups` naast het compose-bestand. Plak je het compose-bestand in de webinterface van je NAS, vervang `./backups` dan door een volledig pad (bijvoorbeeld `/volume1/docker/box3balans/backups`), zodat je zeker weet waar ze terechtkomen. Zet die map in de back-uptool van je NAS.
 
-Na de installatie: zet `BACKUP_PASSPHRASE` (versleutelde back-ups) en, als je de back-upbestanden zelf wilt openen, `PUID`/`PGID` op je eigen gebruiker. Zie de [README](../README.md#installeren).
+Na de installatie: zet de wachtzin van je back-ups in je wachtwoordmanager (_Instellingen → Back-ups_; back-ups zijn vanzelf versleuteld) en, als je de back-upbestanden zelf wilt openen, `PUID`/`PGID` op je eigen gebruiker. Zie de [README](../README.md#installeren).
 
 ## Synology (DSM 7.2 of nieuwer)
 
@@ -59,7 +59,7 @@ Er is een sjabloon voor Community Applications ([`deploy/unraid/box3balans.xml`]
 
 1. Open de **App Store** en kies rechtsboven **Custom Install** (het plusje), en dan **Import**.
 2. Plak de inhoud van [`deploy/casaos/docker-compose.yml`](../deploy/casaos/docker-compose.yml) en kies **Submit**.
-3. Vul eventueel een back-upwachtwoord in (`BACKUP_PASSPHRASE`) en kies **Install**.
+3. Vul eventueel een eigen wachtzin voor de back-ups in (`BACKUP_PASSPHRASE`; leeg laten mag, dan maakt Box3balans er een) en kies **Install**.
 4. Open `http://<ip-van-je-server>:8080`. De database en de sleutel staan in `/DATA/AppData/box3balans/data`, de back-ups in `/DATA/AppData/box3balans/backups`.
 
 Dit is de variant met één container en de ingebouwde database, net als `docker-compose.lite.yml`.

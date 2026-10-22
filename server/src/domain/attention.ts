@@ -502,9 +502,22 @@ export async function collectIssues(
       key: "backup-unencrypted",
       severity: "warning",
       title: tr("Backups aren't encrypted"),
-      detail: tr("Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and restart."),
+      detail: tr("Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false from .env and restart."),
       link: { to: "/settings", label: tr("Backups") },
       fingerprint: "unencrypted",
+    });
+  }
+  // A passphrase Box3balans made: until it's in a password manager, losing the server loses the backups.
+  if (config.BACKUP_PASSPHRASE_SOURCE === "file" && !config.DEMO) {
+    add({
+      key: "backup-passphrase",
+      severity: "info",
+      title: tr("Keep your backup passphrase"),
+      detail: tr(
+        "Backups are encrypted with a passphrase Box3balans made. Put it in your password manager (Settings → Backups shows it); without it, a backup can't be restored on another server. Dismiss this once it's there.",
+      ),
+      link: { to: "/settings", label: tr("Backups") },
+      fingerprint: "file",
     });
   }
 

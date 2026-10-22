@@ -17,6 +17,7 @@ import { APP_VERSION } from "./lib/version.js";
 import { NetworkLog, loadTurnedOff } from "./domain/networkLog.js";
 import { allowConfiguredUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
 import { newSetupCode, userCount } from "./auth/service.js";
+import { ensureBackupPassphrase } from "./backup/passphrase.js";
 
 const config = loadConfig();
 setTimeZone(config.TIME_ZONE);
@@ -54,6 +55,9 @@ const setup = {
   code: !config.DEMO && (await userCount(database.db)) === 0 ? (config.SETUP_CODE ?? newSetupCode()) : null,
 };
 
+// Backups are encrypted by default: with a passphrase made now if there's none yet.
+const madePassphrase = ensureBackupPassphrase(config);
+
 const prices = new PriceService(database.db);
 const secrets = new SecretBox(config.APP_SECRET);
 const sync = new SyncService(database.db, secrets, prices);
@@ -65,6 +69,10 @@ wallets.onDone = () => backfill.request();
 if (config.DEMO) backfill.request = () => {};
 const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill, network, setup });
 if (config.DEMO) await seedDemo(app, database.db);
+if (madePassphrase)
+  app.log.warn(
+    `Backups are now encrypted with a passphrase made for them, kept in ${madePassphrase}. Store it in your password manager (Settings → Backups shows it): without it, a backup can't be restored once this folder is lost.`,
+  );
 const stopScheduler =
   config.SCHEDULER && !config.DEMO
     ? startScheduler(database.db, prices, sync, wallets, backfill, config, app.log)

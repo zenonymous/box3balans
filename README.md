@@ -83,10 +83,11 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
 4. **Aanbevolen:** maak naast `docker-compose.yml` een bestand `.env` (voorbeeld: [`.env.example`](.env.example)) met minstens:
 
    ```bash
-   BACKUP_PASSPHRASE='vier willekeurige woorden hier'   # versleutelt de back-ups
-   PUID=1000                                            # jouw gebruikers-id (commando: id)
-   PGID=1000                                            # jouw groeps-id
+   PUID=1000   # jouw gebruikers-id (commando: id)
+   PGID=1000   # jouw groeps-id
    ```
+
+   Back-ups worden vanzelf versleuteld, met een wachtzin die Box3balans bij de eerste start maakt. Zet die in je wachtwoordmanager: _Instellingen → Back-ups_ laat hem zien.
 
    Voer daarna `docker compose up -d` opnieuw uit. Bewaar de wachtwoordzin in je wachtwoordmanager: zonder kun je een versleutelde back-up niet terugzetten.
 
@@ -177,7 +178,7 @@ Een back-up is een gzip-bestand met **alle** gegevens behalve inlogsessies: reke
 - **Handmatig**, via _Instellingen → Back-ups en export → Nu back-up maken_, of `docker compose exec app node dist/cli.js backup`. Handmatige back-ups worden nooit automatisch verwijderd.
 - **Vóór elke terugzetting**, als vangnet (`…-prerestore…`).
 
-**Versleutel ze.** Met `BACKUP_PASSPHRASE` in `.env` (minstens 12 tekens) worden nieuwe back-ups versleuteld (`….json.gz.enc`, AES-256-GCM met een sleutel afgeleid via scrypt). Een verkeerde wachtwoordzin of een beschadigd bestand wordt herkend; er wordt nooit half teruggezet. **Zonder de wachtwoordzin kun je een versleutelde back-up niet terugzetten.** Zonder wachtwoordzin zijn back-ups gewone gzip-bestanden, met je wachtwoord-hash en al je financiële gegevens leesbaar erin; _Aandacht nodig_ herinnert je daaraan.
+**Versleuteld, vanzelf.** Back-ups zijn versleuteld (`….json.gz.enc`, AES-256-GCM met een sleutel afgeleid via scrypt). Zonder `BACKUP_PASSPHRASE` maakt Box3balans bij de eerste start een wachtzin en bewaart die in het volume `app-data` (`/data/backup-passphrase`); _Instellingen → Back-ups_ laat hem zien na je wachtwoord, en _Aandacht nodig_ herinnert je eraan hem in je wachtwoordmanager te zetten. **Zonder de wachtzin kun je een versleutelde back-up niet terugzetten**, bijvoorbeeld op een nieuwe server als het volume weg is. Liever een eigen wachtzin: zet `BACKUP_PASSPHRASE` in `.env` (minstens 12 tekens). Een verkeerde wachtzin of een beschadigd bestand wordt herkend; er wordt nooit half teruggezet. Met `BACKUP_ENCRYPT=false` blijven back-ups gewone gzip-bestanden, met je wachtwoord-hash en al je financiële gegevens leesbaar erin. Back-ups van vóór 0.1.37 zonder versleuteling blijven gewoon terug te zetten.
 
 **Kopieën elders.** Laat de back-uptool van je NAS (Hyper Backup, rclone, een cloudsync …) de map `backups` meenemen. De bestanden zijn van `PUID`/`PGID` uit `.env`: zet die op je eigen gebruiker (het commando `id` op de NAS toont ze), zodat jij en je back-uptool erbij kunnen. Of gebruik _Downloaden_ naast een back-up in Instellingen.
 
@@ -221,7 +222,8 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 | `HTTP_PORT`             | `8080`             | Poort op de server                                                                                                                                |
 | `HTTP_BIND`             | `0.0.0.0`          | Netwerkadres van die poort; `127.0.0.1` voor alleen de server zelf (achter een reverse proxy). Docker zet de poort buiten een firewall als ufw om |
 | `BOX3BALANS_VERSION`    | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                                                                                      |
-| `BACKUP_PASSPHRASE`     | —                  | Versleutelt back-ups (minstens 12 tekens). Nodig om terug te zetten: bewaar hem goed                                                              |
+| `BACKUP_PASSPHRASE`     | gemaakt            | Je eigen wachtzin voor de back-ups (minstens 12 tekens); zonder maakt Box3balans er een. Nodig om terug te zetten: bewaar hem goed                |
+| `BACKUP_ENCRYPT`        | `true`             | `false`: back-ups onversleuteld                                                                                                                   |
 | `PUID` / `PGID`         | `1000`             | Eigenaar van de back-upbestanden: jouw gebruikers- en groeps-id                                                                                   |
 | `BACKUP_INTERVAL_HOURS` | `24`               | Uren tussen automatische back-ups; `0` = uit                                                                                                      |
 | `BACKUP_KEEP`           | `14`               | Aantal automatische back-ups dat bewaard blijft                                                                                                   |

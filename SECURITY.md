@@ -63,7 +63,7 @@ gh attestation verify box3balans-0.1.36-source.tar.gz --repo zenonymous/box3bala
 - Een nieuwe installatie neemt de eerste gebruiker alleen aan met de **setupcode** uit het log van de app, zodat niemand anders op je netwerk hem kan overnemen.
 - Zet Box3balans **niet open naar het internet**. Gebruik voor toegang buitenshuis een VPN zoals WireGuard of Tailscale (zie de README).
 - Geef API-sleutels van beurzen en brokers **alleen leesrechten**. De verbindingsdialoog vertelt per aanbieder welke rechten nodig zijn.
-- Zet `BACKUP_PASSPHRASE`, zodat back-ups versleuteld zijn voordat ze ergens anders terechtkomen.
+- Back-ups zijn versleuteld voordat ze ergens anders terechtkomen. Zet de wachtzin (_Instellingen → Back-ups_, of je eigen `BACKUP_PASSPHRASE`) in je wachtwoordmanager.
 - Zet **tweestapsverificatie** aan (_Instellingen_) en bewaar de herstelcodes buiten de server.
 - Bewaar de app-sleutel (`/data/app-secret`, of je eigen `APP_SECRET`) in je wachtwoordmanager: zonder kun je API-sleutels en tweestapsverificatie na een verhuizing niet meer lezen.
 - Wil je weten wanneer er een beveiligingsoplossing is, zet dan _Instellingen → Over → Controleren op nieuwe versies_ aan, of volg de releases op GitHub.

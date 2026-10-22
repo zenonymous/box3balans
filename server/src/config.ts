@@ -64,6 +64,13 @@ const schema = z.object({
     .optional()
     .transform((v) => (v ? v : undefined))
     .refine((v) => v === undefined || v.length >= 12, "BACKUP_PASSPHRASE must be at least 12 characters"),
+  // Without BACKUP_PASSPHRASE, backups are encrypted with one Box3balans makes and keeps in this file
+  // (the Docker image: /data/backup-passphrase). BACKUP_ENCRYPT=false keeps them unencrypted instead.
+  BACKUP_PASSPHRASE_FILE: z.string().optional(),
+  BACKUP_ENCRYPT: z
+    .enum(["true", "false"])
+    .default("true")
+    .transform((v) => v === "true"),
   LOG_LEVEL: z.string().default("info"),
   // Demo mode: an example household in an in-memory database, signed in automatically, nothing kept.
   DEMO: z
@@ -84,6 +91,8 @@ const schema = z.object({
 export type Config = Omit<z.infer<typeof schema>, "APP_SECRET" | "PGPASSWORD"> & {
   APP_SECRET: string;
   PGPASSWORD?: string;
+  // Where BACKUP_PASSPHRASE came from: set by you, or made by Box3balans (backup/passphrase.ts).
+  BACKUP_PASSPHRASE_SOURCE?: "env" | "file";
 };
 
 /** A value given directly, else the trimmed contents of its file (when that exists). */
@@ -105,9 +114,14 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     issues.push("  APP_SECRET: not set (nor a readable APP_SECRET_FILE); use at least 32 random characters");
   else if (appSecret && appSecret.length < 32) issues.push("  APP_SECRET: must be at least 32 characters");
   if (!parsed.success || issues.length) throw new Error(`Invalid configuration:\n${issues.join("\n")}`);
+  const d = parsed.data;
+  const fromBackupFile =
+    !d.BACKUP_PASSPHRASE && d.BACKUP_ENCRYPT ? fromFile(undefined, d.BACKUP_PASSPHRASE_FILE) : undefined;
   return {
-    ...parsed.data,
+    ...d,
     APP_SECRET: appSecret!,
-    PGPASSWORD: fromFile(parsed.data.PGPASSWORD, parsed.data.PGPASSWORD_FILE),
+    PGPASSWORD: fromFile(d.PGPASSWORD, d.PGPASSWORD_FILE),
+    BACKUP_PASSPHRASE: d.BACKUP_PASSPHRASE ?? fromBackupFile,
+    BACKUP_PASSPHRASE_SOURCE: d.BACKUP_PASSPHRASE ? "env" : fromBackupFile ? "file" : undefined,
   };
 }

@@ -1230,8 +1230,6 @@ export const NL: Record<string, string> = {
     "Back-ups bevatten alle gegevens (sleutels van exchanges blijven versleuteld, dus terugzetten vraagt dezelfde APP_SECRET) en staan op de server in <0>{dir}</0>.",
   "New backups are encrypted with your BACKUP_PASSPHRASE.":
     "Nieuwe back-ups worden versleuteld met je BACKUP_PASSPHRASE.",
-  "Backups aren't encrypted: anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and restart to encrypt new backups.":
-    "Back-ups zijn niet versleuteld: iedereen met een kopie kan al je gegevens lezen. Zet BACKUP_PASSPHRASE in .env en herstart om nieuwe back-ups te versleutelen.",
   "The last automatic backup failed ({when}): {error}": "De laatste automatische back-up is mislukt ({when}): {error}",
   "Backing up…": "Back-up maken…",
   "Back up now": "Nu back-up maken",
@@ -1676,4 +1674,10 @@ export const NL: Record<string, string> = {
   "Tested with a real export.": "Getest met een echte export.",
   "This reader was built from public examples and hasn't been tested with a real export yet. Check the lines under Review before you import. Something off? Choose the columns yourself, and share the format so it gets fixed.":
     "Deze lezer is gebouwd op openbare voorbeelden en nog niet getest met een echte export. Controleer de regels onder Controleren voordat je importeert. Klopt er iets niet? Kies dan zelf de kolommen en deel het formaat, zodat het wordt verbeterd.",
+  "New backups are encrypted with a passphrase Box3balans made for them. Keep it in your password manager: without it, a backup can't be restored once this server's data is gone (a new computer, a broken disk).":
+    "Nieuwe back-ups zijn versleuteld met een wachtzin die Box3balans ervoor maakte. Bewaar die in je wachtwoordmanager: zonder kun je een back-up niet terugzetten als de gegevens van deze server weg zijn (een nieuwe computer, een kapotte schijf).",
+  "Your password": "Je wachtwoord",
+  "Show the passphrase": "Wachtzin tonen",
+  "Backups aren't encrypted: anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart to encrypt new backups.":
+    "Back-ups zijn niet versleuteld: wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false weg, of zet BACKUP_PASSPHRASE, in .env en herstart om nieuwe back-ups te versleutelen.",
 };

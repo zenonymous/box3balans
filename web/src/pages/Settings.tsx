@@ -624,6 +624,8 @@ interface BackupList {
   intervalHours: number;
   keep: number;
   encrypted: boolean;
+  // "file": a passphrase Box3balans made; "env": BACKUP_PASSPHRASE.
+  passphrase: "file" | "env" | null;
   status: { lastSuccessAt?: string; lastErrorAt?: string; lastError?: string };
   backups: BackupInfo[];
 }
@@ -660,6 +662,67 @@ function LanguageField() {
         </>
       )}
     </Field>
+  );
+}
+
+/**
+ * Backups are encrypted with a passphrase Box3balans made: it's shown after the password, to keep
+ * in a password manager, since a backup can't be restored without it once the server's data is gone.
+ */
+function PassphraseNote() {
+  const [password, setPassword] = useState("");
+  const [shown, setShown] = useState<string>();
+  const [error, setError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const reveal = async (e: FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    setError(undefined);
+    try {
+      setShown((await post<{ passphrase: string }>("/api/backups/passphrase", { password })).passphrase);
+      setPassword("");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="rounded-lg border border-line p-3 text-sm">
+      <p className="text-ink-2">
+        {t(
+          "New backups are encrypted with a passphrase Box3balans made for them. Keep it in your password manager: without it, a backup can't be restored once this server's data is gone (a new computer, a broken disk).",
+        )}
+      </p>
+      {shown ? (
+        <p className="mt-2">
+          <code className="select-all rounded bg-surface-2 px-2 py-1 font-mono text-sm tracking-wide">{shown}</code>
+        </p>
+      ) : (
+        <form onSubmit={(e) => void reveal(e)} className="mt-2 flex flex-wrap items-end gap-2">
+          <Field label={t("Your password")}>
+            {(id) => (
+              <Input
+                id={id}
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-56"
+              />
+            )}
+          </Field>
+          <Button type="submit" disabled={busy || !password}>
+            {t("Show the passphrase")}
+          </Button>
+        </form>
+      )}
+      {error && (
+        <div className="mt-2">
+          <Alert tone="danger">{error}</Alert>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -725,12 +788,13 @@ function BackupsCard() {
             [<code key="d" className="break-all rounded bg-surface-2 px-1 text-xs" />],
             { dir: d?.dir ?? "…" },
           )}
-          {d?.encrypted && ` ${t("New backups are encrypted with your BACKUP_PASSPHRASE.")}`}
+          {d?.passphrase === "env" && ` ${t("New backups are encrypted with your BACKUP_PASSPHRASE.")}`}
         </p>
+        {d?.passphrase === "file" && <PassphraseNote />}
         {d && !d.encrypted && (
           <Alert>
             {t(
-              "Backups aren't encrypted: anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env and restart to encrypt new backups.",
+              "Backups aren't encrypted: anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart to encrypt new backups.",
             )}
           </Alert>
         )}

@@ -3,8 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { backupPath, listBackups, readBackupFile, restoreBackup, writeBackupFile } from "../backup/backup.js";
 import { getBackupStatus } from "../backup/status.js";
-import { SESSION_COOKIE } from "../auth/service.js";
-import { HttpError } from "../lib/errors.js";
+import { SESSION_COOKIE, isUserPassword } from "../auth/service.js";
+import { HttpError, notInDemo } from "../lib/errors.js";
 import { tr } from "../i18n/index.js";
 
 export async function backupRoutes(app: FastifyInstance) {
@@ -16,9 +16,21 @@ export async function backupRoutes(app: FastifyInstance) {
     intervalHours: config.BACKUP_INTERVAL_HOURS,
     keep: config.BACKUP_KEEP,
     encrypted: !!config.BACKUP_PASSPHRASE,
+    // "file": a passphrase Box3balans made (shown with the password below); "env": your own.
+    passphrase: config.BACKUP_PASSPHRASE_SOURCE ?? null,
     status: await getBackupStatus(db),
     backups: listBackups(dir),
   }));
+
+  // The passphrase backups are encrypted with, for the user's password manager; it takes the password.
+  app.post("/passphrase", { config: { rateLimit: { max: 5, timeWindow: "5 minutes" } } }, async (req) => {
+    if (config.DEMO) throw notInDemo();
+    const { password } = z.object({ password: z.string().min(1).max(500) }).parse(req.body);
+    if (!(await isUserPassword(db, req.user!.id, password)))
+      throw new HttpError(400, tr("Current password is incorrect"));
+    if (!config.BACKUP_PASSPHRASE) throw new HttpError(404, tr("Backups aren't encrypted"));
+    return { passphrase: config.BACKUP_PASSPHRASE, source: config.BACKUP_PASSPHRASE_SOURCE ?? null };
+  });
 
   app.post("/", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } }, async () =>
     writeBackupFile(db, dir, "manual", config.BACKUP_PASSPHRASE),

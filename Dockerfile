@@ -52,6 +52,7 @@ ENV PORT=8080 \
     DATA_DIR=/data \
     PGLITE_DIR=/data/pglite \
     APP_SECRET_FILE=/data/app-secret \
+    BACKUP_PASSPHRASE_FILE=/data/backup-passphrase \
     PGPASSWORD_FILE=/data/db-password \
     SOURCE_URL=$SOURCE_URL
 EXPOSE 8080
