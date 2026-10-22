@@ -6,7 +6,7 @@ import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { fromLocal, localDay, localToday } from "../lib/time.js";
 import { type Box3Config, type Category, categoryOf } from "./box3.js";
 import { attribute, loadHousehold } from "./household.js";
-import { holdingsOn } from "./valuation.js";
+import { LedgerData, holdingsOn } from "./valuation.js";
 import { incomeStaysInAccount, loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
 import { tr } from "../i18n/index.js";
 
@@ -52,7 +52,12 @@ const emptyPart = () => ({ start: ZERO, end: ZERO, in: ZERO, out: ZERO, direct: 
  * minus interest paid on debts. Computed per position (account × asset): a buy paid from the
  * account's cash moves value between positions, so it's neither return nor cost.
  */
-export async function actualReturn(db: DB, year: number, config: Box3Config): Promise<ActualReturn> {
+export async function actualReturn(
+  db: DB,
+  year: number,
+  config: Box3Config,
+  data = new LedgerData(db),
+): Promise<ActualReturn> {
   const today = localToday();
   const complete = `${year}-12-31` < today;
   const endDay = complete ? `${year}-12-31` : today;
@@ -62,8 +67,8 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
 
   const fiscalPartner = config.years[String(year)]?.partner ?? false;
   const [startRows, endRows, txs, assetRows, accountRows, items, household, yearly] = await Promise.all([
-    holdingsOn(db, startDay),
-    holdingsOn(db, endDay),
+    holdingsOn(db, startDay, data),
+    holdingsOn(db, endDay, data),
     db
       .select()
       .from(transactions)

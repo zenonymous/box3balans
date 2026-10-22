@@ -1,3 +1,4 @@
+import { LedgerData } from "./valuation.js";
 import type { DB } from "../db/client.js";
 import { accounts, assets } from "../db/schema.js";
 import { D, type Decimal } from "../lib/decimal.js";
@@ -88,9 +89,10 @@ function sectionOf(row: Box3Year["rows"][number]): ReturnSection | null {
  * account with its owner; plus the dividend tax withheld during the year and the actual return.
  */
 export async function taxReturnOverview(db: DB, year: number, config: Box3Config): Promise<TaxReturnOverview> {
+  const data = new LedgerData(db);
   const [box3, actual, accountRows, yearly, method, assetRows] = await Promise.all([
-    computeBox3Year(db, year, config),
-    actualReturn(db, year, config),
+    computeBox3Year(db, year, config, data),
+    actualReturn(db, year, config, data),
     db.select().from(accounts),
     loadYearly(db),
     getCostMethod(db),

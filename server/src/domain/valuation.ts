@@ -27,20 +27,39 @@ export interface HoldingOn {
 }
 
 /**
+ * The tables a replay of the ledger reads, loaded once and shared by the calculations of one request
+ * (a box 3 year, its actual return, the 2028 preview over every year). Loading every transaction is
+ * most of the work, so each holdingsOn on its own was slow with years of history (issue #84).
+ */
+export class LedgerData {
+  private loaded?: ReturnType<LedgerData["fetch"]>;
+  constructor(private db: DB) {}
+
+  private async fetch() {
+    const [txRows, assetRows, accountRows, items] = await Promise.all([
+      this.db.select().from(transactions),
+      this.db.select().from(assets),
+      this.db.select().from(accounts),
+      this.db.select().from(metalItems),
+    ]);
+    return { txRows: sortTransactions(txRows), assetRows, accountRows, items };
+  }
+
+  load() {
+    return (this.loaded ??= this.fetch());
+  }
+}
+
+/**
  * Everything held at the end of `day`, per account and asset, valued at the close of `day` (or the
  * last close before it, e.g. the last trading day of the year). Holdings without any known price
- * have `priceEur` null and value 0, so callers can flag them.
+ * have `priceEur` null and value 0, so callers can flag them. Pass `data` to share loaded tables.
  */
-export async function holdingsOn(db: DB, day: string): Promise<HoldingOn[]> {
-  const [txRows, assetRows, accountRows, items] = await Promise.all([
-    db.select().from(transactions),
-    db.select().from(assets),
-    db.select().from(accounts),
-    db.select().from(metalItems),
-  ]);
+export async function holdingsOn(db: DB, day: string, data = new LedgerData(db)): Promise<HoldingOn[]> {
+  const { txRows, assetRows, accountRows, items } = await data.load();
   // Cost basis doesn't affect quantities, so the method doesn't matter here.
   const ledger = new Ledger("average");
-  for (const tx of sortTransactions(txRows)) {
+  for (const tx of txRows) {
     if (localDay(tx.occurredAt) > day) break;
     ledger.apply(tx);
   }

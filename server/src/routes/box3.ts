@@ -15,6 +15,7 @@ import { buildDossier } from "../domain/dossier.js";
 import { peildatumChecklist } from "../domain/peildatum.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
 import { RULES } from "../rules/index.js";
+import { LedgerData } from "../domain/valuation.js";
 import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
@@ -53,7 +54,11 @@ export async function box3Routes(app: FastifyInstance) {
     if (year > Number(localToday().slice(0, 4)))
       throw new HttpError(400, tr("The peildatum of that year hasn't happened yet"));
     const config = await loadConfig(db);
-    const [result, actual] = await Promise.all([computeBox3Year(db, year, config), actualReturn(db, year, config)]);
+    const data = new LedgerData(db);
+    const [result, actual] = await Promise.all([
+      computeBox3Year(db, year, config, data),
+      actualReturn(db, year, config, data),
+    ]);
     // Tegenbewijsregeling: the actual return of the calendar year against the deemed-return tax.
     return {
       ...result,
@@ -112,10 +117,12 @@ export async function box3Routes(app: FastifyInstance) {
     // The first year with activity has a return too (it has no peildatum of its own).
     const years = taxYears.length ? [...taxYears, taxYears.at(-1)! - 1].sort((a, b) => a - b) : [];
     const inputs = [];
+    // Every year replays the same transactions: loaded once.
+    const data = new LedgerData(db);
     for (const year of years) {
       const [actual, box3] = await Promise.all([
-        actualReturn(db, year, config),
-        taxYears.includes(year) ? computeBox3Year(db, year, config) : Promise.resolve(null),
+        actualReturn(db, year, config, data),
+        taxYears.includes(year) ? computeBox3Year(db, year, config, data) : Promise.resolve(null),
       ]);
       inputs.push({
         year,

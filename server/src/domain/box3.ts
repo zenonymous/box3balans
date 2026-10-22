@@ -3,7 +3,7 @@ import { z } from "zod";
 import type { DB } from "../db/client.js";
 import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
-import { holdingsOn } from "./valuation.js";
+import { LedgerData, holdingsOn } from "./valuation.js";
 import { localDay, localToday } from "../lib/time.js";
 import { type AttributionNote, attribute, loadHousehold } from "./household.js";
 import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
@@ -372,12 +372,17 @@ const otherKind = (assetClass: string): OtherKind =>
           ? "cash"
           : "other";
 
-export async function computeBox3Year(db: DB, year: number, config: Box3Config): Promise<Box3Year> {
+export async function computeBox3Year(
+  db: DB,
+  year: number,
+  config: Box3Config,
+  data = new LedgerData(db),
+): Promise<Box3Year> {
   const valuedAt = `${year - 1}-12-31`;
   const input = config.years[String(year)];
   const fiscalPartner = input?.partner ?? false;
   const [holdings, household, accountRows, yearly] = await Promise.all([
-    holdingsOn(db, valuedAt),
+    holdingsOn(db, valuedAt, data),
     loadHousehold(db),
     db.select().from(accounts),
     loadYearly(db),

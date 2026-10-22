@@ -8,7 +8,7 @@ import type { FetchFn } from "../lib/http.js";
 import type { FxService } from "../prices/fx.js";
 import { HistoryService } from "../prices/history.js";
 import { availableYears } from "../domain/box3.js";
-import { holdingsOn } from "../domain/valuation.js";
+import { LedgerData, holdingsOn } from "../domain/valuation.js";
 
 const STATE_KEY = "history_backfill";
 // 31 December closes of holdings already looked up for their source ("assetId:day"). A new key
@@ -233,8 +233,9 @@ export class BackfillService {
     const tried = new Set((row?.value as string[] | undefined) ?? []);
     const before = tried.size;
     const byId = new Map((await this.db.select().from(assets)).map((a) => [a.id, a]));
+    const data = new LedgerData(this.db);
     for (const year of await availableYears(this.db)) {
-      for (const h of await holdingsOn(this.db, `${year - 1}-12-31`)) {
+      for (const h of await holdingsOn(this.db, `${year - 1}-12-31`, data)) {
         const asset = byId.get(h.assetId);
         const key = `${h.assetId}:${h.priceDay}`;
         // Cash is valued at the ECB rate, which says so itself.
