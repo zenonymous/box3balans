@@ -167,7 +167,7 @@ Zet Box3balans niet open naar het internet: stuur poort 8080 niet door in je rou
 
   Box3balans staat dan op `https://<servernaam>.<tailnet>.ts.net`. Zet `COOKIE_SECURE=true` in `.env` en voer `docker compose up -d` uit. Gebruik vanaf dan alleen het https-adres: via het gewone `http://`-adres blijf je niet ingelogd. Laat `TRUST_PROXY=false`. Alle verzoeken delen dan één limiet voor inlogpogingen; voor één gebruiker is dat prima.
 
-  Wil je dat het https-adres de enige ingang is, publiceer de poort dan alleen op de server zelf: verander in `docker-compose.yml` de regel onder `ports` in `"127.0.0.1:${HTTP_PORT:-8080}:8080"`.
+  Wil je dat het https-adres de enige ingang is, publiceer de poort dan alleen op de server zelf: zet `HTTP_BIND=127.0.0.1` in `.env` en voer `docker compose up -d` uit.
 
 ## Back-ups en terugzetten
 
@@ -216,26 +216,27 @@ docker compose exec db pg_dump -U box3balans box3balans | gzip > box3balans-db.s
 
 Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-compose.yml` en voer daarna `docker compose up -d` uit.
 
-| Variabele               | Standaard          | Waarvoor                                                                                      |
-| ----------------------- | ------------------ | --------------------------------------------------------------------------------------------- |
-| `HTTP_PORT`             | `8080`             | Poort op de server                                                                            |
-| `BOX3BALANS_VERSION`    | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                                  |
-| `BACKUP_PASSPHRASE`     | —                  | Versleutelt back-ups (minstens 12 tekens). Nodig om terug te zetten: bewaar hem goed          |
-| `PUID` / `PGID`         | `1000`             | Eigenaar van de back-upbestanden: jouw gebruikers- en groeps-id                               |
-| `BACKUP_INTERVAL_HOURS` | `24`               | Uren tussen automatische back-ups; `0` = uit                                                  |
-| `BACKUP_KEEP`           | `14`               | Aantal automatische back-ups dat bewaard blijft                                               |
-| `COOKIE_SECURE`         | `false`            | Op `true` als je Box3balans via HTTPS opent                                                   |
-| `TRUST_PROXY`           | `false`            | Alleen achter een reverse proxy: `true`, het aantal proxy's, of hun IP-adres(sen)             |
-| `SESSION_DAYS`          | `30`               | Hoe lang je ingelogd blijft                                                                   |
-| `TIME_ZONE`             | `Europe/Amsterdam` | Kalender voor "welke dag of welk jaar" (box 3-peildatum, jaarresultaten)                      |
-| `PRICE_REFRESH_MINUTES` | `15`               | Minuten tussen koersupdates                                                                   |
-| `SYNC_INTERVAL_HOURS`   | `6`                | Uren tussen synchronisaties van koppelingen en wallets; `0` = alleen met de hand              |
-| `SOLANA_RPC_URL`        | openbare RPC       | Eigen Solana-RPC (bijvoorbeeld een gratis Helius-sleutel) voor snellere eerste imports        |
-| `ANKR_API_KEY`          | —                  | Gratis Ankr Advanced API-sleutel; nodig voor BNB Chain-wallets                                |
-| `LOG_LEVEL`             | `info`             | `debug` logt ook elk verzoek                                                                  |
-| `DEMO`                  | `false`            | `true`: de [demo](#demo), met een voorbeeldhuishouden in het geheugen; er wordt niets bewaard |
-| `APP_SECRET`            | aangemaakt         | Eigen sleutel (minstens 32 tekens) voor API-sleutels, in plaats van de aangemaakte            |
-| `POSTGRES_PASSWORD`     | aangemaakt         | Eigen databasewachtwoord, alleen bij de allereerste start; daarna staat het in de database    |
+| Variabele               | Standaard          | Waarvoor                                                                                                                                          |
+| ----------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `HTTP_PORT`             | `8080`             | Poort op de server                                                                                                                                |
+| `HTTP_BIND`             | `0.0.0.0`          | Netwerkadres van die poort; `127.0.0.1` voor alleen de server zelf (achter een reverse proxy). Docker zet de poort buiten een firewall als ufw om |
+| `BOX3BALANS_VERSION`    | `latest`           | Welke versie je draait, bijvoorbeeld `1.2.0`                                                                                                      |
+| `BACKUP_PASSPHRASE`     | —                  | Versleutelt back-ups (minstens 12 tekens). Nodig om terug te zetten: bewaar hem goed                                                              |
+| `PUID` / `PGID`         | `1000`             | Eigenaar van de back-upbestanden: jouw gebruikers- en groeps-id                                                                                   |
+| `BACKUP_INTERVAL_HOURS` | `24`               | Uren tussen automatische back-ups; `0` = uit                                                                                                      |
+| `BACKUP_KEEP`           | `14`               | Aantal automatische back-ups dat bewaard blijft                                                                                                   |
+| `COOKIE_SECURE`         | `false`            | Op `true` als je Box3balans via HTTPS opent                                                                                                       |
+| `TRUST_PROXY`           | `false`            | Alleen achter een reverse proxy: `true`, het aantal proxy's, of hun IP-adres(sen)                                                                 |
+| `SESSION_DAYS`          | `30`               | Hoe lang je ingelogd blijft                                                                                                                       |
+| `TIME_ZONE`             | `Europe/Amsterdam` | Kalender voor "welke dag of welk jaar" (box 3-peildatum, jaarresultaten)                                                                          |
+| `PRICE_REFRESH_MINUTES` | `15`               | Minuten tussen koersupdates                                                                                                                       |
+| `SYNC_INTERVAL_HOURS`   | `6`                | Uren tussen synchronisaties van koppelingen en wallets; `0` = alleen met de hand                                                                  |
+| `SOLANA_RPC_URL`        | openbare RPC       | Eigen Solana-RPC (bijvoorbeeld een gratis Helius-sleutel) voor snellere eerste imports                                                            |
+| `ANKR_API_KEY`          | —                  | Gratis Ankr Advanced API-sleutel; nodig voor BNB Chain-wallets                                                                                    |
+| `LOG_LEVEL`             | `info`             | `debug` logt ook elk verzoek                                                                                                                      |
+| `DEMO`                  | `false`            | `true`: de [demo](#demo), met een voorbeeldhuishouden in het geheugen; er wordt niets bewaard                                                     |
+| `APP_SECRET`            | aangemaakt         | Eigen sleutel (minstens 32 tekens) voor API-sleutels, in plaats van de aangemaakte                                                                |
+| `POSTGRES_PASSWORD`     | aangemaakt         | Eigen databasewachtwoord, alleen bij de allereerste start; daarna staat het in de database                                                        |
 
 ## Gebruiken
 

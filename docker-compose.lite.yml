@@ -33,7 +33,8 @@ services:
       PGID: ${PGID:-1000}
       APP_SECRET: ${APP_SECRET:-}
     ports:
-      - "${HTTP_PORT:-8080}:8080"
+      # HTTP_BIND=127.0.0.1 publishes it on this machine only (behind a reverse proxy or Tailscale Serve).
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-8080}:8080"
     volumes:
       - app-data:/data
       - ./backups:/backups

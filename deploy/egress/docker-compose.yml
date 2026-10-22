@@ -80,7 +80,8 @@ services:
     security_opt:
       - no-new-privileges:true
     ports:
-      - "${HTTP_PORT:-8080}:8080"
+      # HTTP_BIND=127.0.0.1 publishes it on this machine only (behind a reverse proxy or Tailscale Serve).
+      - "${HTTP_BIND:-0.0.0.0}:${HTTP_PORT:-8080}:8080"
     volumes:
       - ./squid.conf:/etc/squid/squid.conf:ro
       - ./allowed-hosts.txt:/etc/squid/allowed-hosts.txt:ro
