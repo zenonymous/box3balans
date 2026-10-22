@@ -1,0 +1,1209 @@
+{
+  "/api/box3": {
+    "years": [2026, 2025, 2024, 2023],
+    "config": {
+      "mapping": {
+        "cashByAccountKind": {
+          "bank": "bank",
+          "broker": "bank",
+          "exchange": "other",
+          "wallet": "other",
+          "vault": "other",
+          "physical": "other",
+          "other": "bank",
+          "property": "other",
+          "receivable": "other",
+          "debt": "other",
+          "insurance": "other"
+        },
+        "classCategory": {
+          "stock": "other",
+          "etf": "other",
+          "crypto": "other",
+          "metal": "other",
+          "other": "other"
+        },
+        "accountOverrides": {},
+        "accountChanges": {}
+      },
+      "rates": {},
+      "years": {
+        "2023": {
+          "partner": true,
+          "debtsEur": "0",
+          "extraOtherEur": "0",
+          "extraBankEur": "0",
+          "debtInterestEur": "0",
+          "extraReturnEur": "0",
+          "allocationSelfPct": "50"
+        },
+        "2024": {
+          "partner": true,
+          "debtsEur": "0",
+          "extraOtherEur": "0",
+          "extraBankEur": "0",
+          "debtInterestEur": "0",
+          "extraReturnEur": "0",
+          "allocationSelfPct": "50"
+        },
+        "2025": {
+          "partner": true,
+          "debtsEur": "0",
+          "extraOtherEur": "0",
+          "extraBankEur": "0",
+          "debtInterestEur": "0",
+          "extraReturnEur": "0",
+          "allocationSelfPct": "50"
+        },
+        "2026": {
+          "partner": true,
+          "debtsEur": "0",
+          "extraOtherEur": "0",
+          "extraBankEur": "0",
+          "debtInterestEur": "0",
+          "extraReturnEur": "0",
+          "allocationSelfPct": "50"
+        }
+      }
+    },
+    "defaultRates": {
+      "2023": {
+        "bankPct": "0.92",
+        "otherPct": "6.17",
+        "debtPct": "2.46",
+        "allowanceEur": "57000",
+        "debtThresholdEur": "3400",
+        "taxRatePct": "32",
+        "greenExemptEur": "65072",
+        "greenCreditPct": "0.7",
+        "final": true
+      },
+      "2024": {
+        "bankPct": "1.44",
+        "otherPct": "6.04",
+        "debtPct": "2.61",
+        "allowanceEur": "57000",
+        "debtThresholdEur": "3700",
+        "taxRatePct": "36",
+        "greenExemptEur": "71251",
+        "greenCreditPct": "0.7",
+        "final": true
+      },
+      "2025": {
+        "bankPct": "1.37",
+        "otherPct": "5.88",
+        "debtPct": "2.70",
+        "allowanceEur": "57684",
+        "debtThresholdEur": "3800",
+        "taxRatePct": "36",
+        "greenExemptEur": "26312",
+        "greenCreditPct": "0.1",
+        "final": true
+      },
+      "2026": {
+        "bankPct": "1.28",
+        "otherPct": "6.00",
+        "debtPct": "2.70",
+        "allowanceEur": "59357",
+        "debtThresholdEur": "3800",
+        "taxRatePct": "36",
+        "greenExemptEur": "26715",
+        "greenCreditPct": "0.1",
+        "final": false
+      },
+      "2027": {
+        "bankPct": "1.28",
+        "otherPct": "7.87",
+        "debtPct": "2.70",
+        "allowanceEur": "30846",
+        "debtThresholdEur": "3800",
+        "taxRatePct": "36",
+        "greenExemptEur": "26715",
+        "greenCreditPct": "0.1",
+        "final": false
+      }
+    },
+    "rules": {
+      "checkedAt": "2026-10-09",
+      "sources": {
+        "2023": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2023",
+        "2024": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2024",
+        "2025": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025",
+        "2026": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2026",
+        "2027": "https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf"
+      }
+    },
+    "accounts": [
+      {
+        "id": 7,
+        "name": "ASN Sparen",
+        "kind": "bank",
+        "archived": false
+      },
+      {
+        "id": 2,
+        "name": "Bitvavo",
+        "kind": "exchange",
+        "archived": false
+      },
+      {
+        "id": 1,
+        "name": "DEGIRO",
+        "kind": "broker",
+        "archived": false
+      },
+      {
+        "id": 4,
+        "name": "Goldrepublic",
+        "kind": "vault",
+        "archived": false
+      },
+      {
+        "id": 6,
+        "name": "ING Betalen",
+        "kind": "bank",
+        "archived": false
+      },
+      {
+        "id": 5,
+        "name": "Kluis thuis",
+        "kind": "physical",
+        "archived": false
+      },
+      {
+        "id": 3,
+        "name": "Ledger",
+        "kind": "wallet",
+        "archived": false
+      },
+      {
+        "id": 11,
+        "name": "Lening aan Eva",
+        "kind": "receivable",
+        "archived": false
+      },
+      {
+        "id": 9,
+        "name": "Spaarrekening Daan",
+        "kind": "bank",
+        "archived": false
+      },
+      {
+        "id": 8,
+        "name": "Spaarrekening Noor",
+        "kind": "bank",
+        "archived": false
+      },
+      {
+        "id": 12,
+        "name": "Studieschuld",
+        "kind": "debt",
+        "archived": false
+      },
+      {
+        "id": 10,
+        "name": "Vakantiehuis Zeeland",
+        "kind": "property",
+        "archived": false
+      }
+    ]
+  },
+  "/api/box3/2025": {
+    "year": 2025,
+    "peildatum": "2025-01-01",
+    "valuedAt": "2024-12-31",
+    "partner": true,
+    "rates": {
+      "bankPct": "1.37",
+      "otherPct": "5.88",
+      "debtPct": "2.70",
+      "allowanceEur": "57684",
+      "debtThresholdEur": "3800",
+      "taxRatePct": "36",
+      "greenExemptEur": "26312",
+      "greenCreditPct": "0.1",
+      "final": true,
+      "source": "default"
+    },
+    "totals": {
+      "bank": "63533.48",
+      "other": "385342.41",
+      "exempt": "0.00",
+      "excluded": "0.00"
+    },
+    "otherBreakdown": {
+      "investments": "21422.10",
+      "crypto": "49400.36",
+      "metals": "12096.95",
+      "cash": "423.00",
+      "other": "302000.00"
+    },
+    "extra": {
+      "bankEur": "0.00",
+      "otherEur": "0.00",
+      "debtsEur": "0.00"
+    },
+    "debtsEur": "16800.00",
+    "calculation": {
+      "bankEur": "63533.00",
+      "otherEur": "385342.00",
+      "debtsEur": "16800.00",
+      "deductibleDebtsEur": "9200.00",
+      "deemedReturnEur": "23280.00",
+      "baseEur": "439675.00",
+      "allowanceEur": "115368.00",
+      "taxableBaseEur": "324307.00",
+      "sharePct": "73.76",
+      "benefitEur": "17170.00",
+      "taxEur": "6180.00",
+      "greenEur": "0.00",
+      "greenExemptEur": "0.00",
+      "greenAboveLimitEur": "0.00",
+      "greenCreditEur": "0.00",
+      "netTaxEur": "6180.00",
+      "persons": [
+        {
+          "taxableBaseEur": "162153.00",
+          "sharePct": "36.88",
+          "benefitEur": "8585.00",
+          "taxEur": "3090.00"
+        },
+        {
+          "taxableBaseEur": "162154.00",
+          "sharePct": "36.88",
+          "benefitEur": "8585.00",
+          "taxEur": "3090.00"
+        }
+      ]
+    },
+    "perPerson": {
+      "self": {
+        "bank": "45913.48",
+        "other": "182472.57",
+        "green": "0.00",
+        "debts": "16800.00"
+      },
+      "partner": {
+        "bank": "17620.00",
+        "other": "202869.83",
+        "green": "0.00",
+        "debts": "0.00"
+      }
+    },
+    "allocation": {
+      "selfPct": "50",
+      "self": {
+        "taxableBaseEur": "162153.00",
+        "benefitEur": "8585.00",
+        "taxEur": "3090.00"
+      },
+      "partner": {
+        "taxableBaseEur": "162154.00",
+        "benefitEur": "8585.00",
+        "taxEur": "3090.00"
+      }
+    },
+    "rows": [
+      {
+        "accountId": 7,
+        "accountName": "ASN Sparen",
+        "accountKind": "bank",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "ASN Sparen",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "35640.00",
+        "countedEur": "35640.00",
+        "category": "bank",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 2,
+        "accountName": "Bitvavo",
+        "accountKind": "exchange",
+        "source": "transactions",
+        "assetId": 8,
+        "symbol": "BTC",
+        "name": "Bitcoin",
+        "assetClass": "crypto",
+        "physical": false,
+        "quantity": "0.15",
+        "unit": "unit",
+        "priceEur": "91958.240000",
+        "priceDay": "2024-12-31",
+        "valueEur": "13793.74",
+        "countedEur": "13793.74",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "partner",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 2,
+        "accountName": "Bitvavo",
+        "accountKind": "exchange",
+        "source": "transactions",
+        "assetId": 9,
+        "symbol": "ETH",
+        "name": "Ethereum",
+        "assetClass": "crypto",
+        "physical": false,
+        "quantity": "2.542",
+        "unit": "unit",
+        "priceEur": "3158.280000",
+        "priceDay": "2024-12-31",
+        "valueEur": "8028.35",
+        "countedEur": "8028.35",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "partner",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 2,
+        "accountName": "Bitvavo",
+        "accountKind": "exchange",
+        "source": "transactions",
+        "assetId": 5,
+        "symbol": "EUR",
+        "name": "Euro",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "423",
+        "unit": "EUR",
+        "priceEur": "1.000000",
+        "priceDay": "2024-12-31",
+        "valueEur": "423.00",
+        "countedEur": "423.00",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "partner",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 1,
+        "accountName": "DEGIRO",
+        "accountKind": "broker",
+        "source": "transactions",
+        "assetId": 6,
+        "symbol": "IWDA",
+        "name": "iShares Core MSCI World UCITS ETF",
+        "assetClass": "etf",
+        "physical": false,
+        "quantity": "180",
+        "unit": "unit",
+        "priceEur": "101.080000",
+        "priceDay": "2024-12-31",
+        "valueEur": "18194.40",
+        "countedEur": "18194.40",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 1,
+        "accountName": "DEGIRO",
+        "accountKind": "broker",
+        "source": "transactions",
+        "assetId": 5,
+        "symbol": "EUR",
+        "name": "Euro",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "4893.48",
+        "unit": "EUR",
+        "priceEur": "1.000000",
+        "priceDay": "2024-12-31",
+        "valueEur": "4893.48",
+        "countedEur": "4893.48",
+        "category": "bank",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 1,
+        "accountName": "DEGIRO",
+        "accountKind": "broker",
+        "source": "transactions",
+        "assetId": 7,
+        "symbol": "ASML",
+        "name": "ASML Holding",
+        "assetClass": "stock",
+        "physical": false,
+        "quantity": "5",
+        "unit": "unit",
+        "priceEur": "645.540000",
+        "priceDay": "2024-12-31",
+        "valueEur": "3227.70",
+        "countedEur": "3227.70",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 4,
+        "accountName": "Goldrepublic",
+        "accountKind": "vault",
+        "source": "transactions",
+        "assetId": 1,
+        "symbol": "XAU",
+        "name": "Goud (in kluis)",
+        "assetClass": "metal",
+        "physical": false,
+        "quantity": "50",
+        "unit": "g",
+        "priceEur": "80.080000",
+        "priceDay": "2024-12-31",
+        "valueEur": "4004.00",
+        "countedEur": "4004.00",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 6,
+        "accountName": "ING Betalen",
+        "accountKind": "bank",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "ING Betalen",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "7200.00",
+        "countedEur": "7200.00",
+        "category": "bank",
+        "missingPrice": false,
+        "owner": "joint",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 5,
+        "accountName": "Kluis thuis",
+        "accountKind": "physical",
+        "source": "transactions",
+        "assetId": 1,
+        "symbol": "XAU",
+        "name": "Goud (fysiek)",
+        "assetClass": "metal",
+        "physical": true,
+        "quantity": "92.487762",
+        "unit": "g",
+        "priceEur": "80.080000",
+        "priceDay": "2024-12-31",
+        "valueEur": "7406.42",
+        "countedEur": "7406.42",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "joint",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 5,
+        "accountName": "Kluis thuis",
+        "accountKind": "physical",
+        "source": "transactions",
+        "assetId": 2,
+        "symbol": "XAG",
+        "name": "Zilver (fysiek)",
+        "assetClass": "metal",
+        "physical": true,
+        "quantity": "777.672225",
+        "unit": "g",
+        "priceEur": "0.882800",
+        "priceDay": "2024-12-31",
+        "valueEur": "686.53",
+        "countedEur": "686.53",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "joint",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 3,
+        "accountName": "Ledger",
+        "accountKind": "wallet",
+        "source": "transactions",
+        "assetId": 8,
+        "symbol": "BTC",
+        "name": "Bitcoin",
+        "assetClass": "crypto",
+        "physical": false,
+        "quantity": "0.2999",
+        "unit": "unit",
+        "priceEur": "91958.240000",
+        "priceDay": "2024-12-31",
+        "valueEur": "27578.28",
+        "countedEur": "27578.28",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "partner",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 11,
+        "accountName": "Lening aan Eva",
+        "accountKind": "receivable",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "Lening aan Eva",
+        "assetClass": "other",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "4000.00",
+        "countedEur": "4000.00",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 9,
+        "accountName": "Spaarrekening Daan",
+        "accountKind": "bank",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "Spaarrekening Daan",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "12240.00",
+        "countedEur": "12240.00",
+        "category": "bank",
+        "missingPrice": false,
+        "owner": "partner",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 8,
+        "accountName": "Spaarrekening Noor",
+        "accountKind": "bank",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "Spaarrekening Noor",
+        "assetClass": "cash",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "3560.00",
+        "countedEur": "3560.00",
+        "category": "bank",
+        "missingPrice": false,
+        "owner": "child",
+        "ownerChildId": 3,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 12,
+        "accountName": "Studieschuld",
+        "accountKind": "debt",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "Studieschuld",
+        "assetClass": "debt",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "16800.00",
+        "countedEur": "16800.00",
+        "category": "debt",
+        "missingPrice": false,
+        "owner": "self",
+        "ownerChildId": null,
+        "countedPct": "100"
+      },
+      {
+        "accountId": 10,
+        "accountName": "Vakantiehuis Zeeland",
+        "accountKind": "property",
+        "source": "yearly",
+        "assetId": 0,
+        "symbol": "",
+        "name": "Vakantiehuis Zeeland",
+        "assetClass": "other",
+        "physical": false,
+        "quantity": "1",
+        "unit": "",
+        "priceEur": null,
+        "priceDay": null,
+        "valueEur": "298000.00",
+        "countedEur": "298000.00",
+        "category": "other",
+        "missingPrice": false,
+        "owner": "joint",
+        "ownerChildId": null,
+        "countedPct": "100"
+      }
+    ],
+    "warnings": [],
+    "actualReturn": {
+      "year": 2025,
+      "complete": true,
+      "endDay": "2025-12-31",
+      "parts": {
+        "bank": {
+          "startEur": 63533.48,
+          "endEur": 62835.3,
+          "inEur": 3762.82,
+          "outEur": 4161,
+          "valueChangeEur": -300,
+          "directEur": 855,
+          "returnEur": 555
+        },
+        "investments": {
+          "startEur": 21422.1,
+          "endEur": 27863.1,
+          "inEur": 4160,
+          "outEur": 0,
+          "valueChangeEur": 2281,
+          "directEur": 9.2,
+          "returnEur": 2290.2
+        },
+        "crypto": {
+          "startEur": 49400.36,
+          "endEur": 42880.06,
+          "inEur": 0,
+          "outEur": 0,
+          "valueChangeEur": -6520.3,
+          "directEur": 0,
+          "returnEur": -6520.3
+        },
+        "metals": {
+          "startEur": 12096.95,
+          "endEur": 16840.61,
+          "inEur": 0,
+          "outEur": 0,
+          "valueChangeEur": 4743.66,
+          "directEur": 0,
+          "returnEur": 4743.66
+        },
+        "cash": {
+          "startEur": 423,
+          "endEur": 423,
+          "inEur": 0,
+          "outEur": 0,
+          "valueChangeEur": 0,
+          "directEur": 0,
+          "returnEur": 0
+        },
+        "other": {
+          "startEur": 302000,
+          "endEur": 313000,
+          "inEur": 0,
+          "outEur": 1000,
+          "valueChangeEur": 12000,
+          "directEur": 120,
+          "returnEur": 12120
+        }
+      },
+      "costsEur": 1,
+      "dividendTaxEur": 1.38,
+      "leftOut": [],
+      "extraReturnEur": 0,
+      "debtInterestEur": 400,
+      "totalEur": 12788.56,
+      "warnings": [],
+      "comparison": {
+        "deemedBenefitEur": 17170,
+        "deemedTaxEur": 6180,
+        "actualTaxableEur": 12788.56,
+        "greenCreditEur": 0,
+        "actualTaxEur": 4603.88,
+        "lowerTaxEur": 4603.88,
+        "savingEur": 1576.12,
+        "worthFiling": true
+      }
+    }
+  },
+  "/api/household": [
+    {
+      "id": 1,
+      "name": "Sanne",
+      "role": "self",
+      "birthDate": null,
+      "custody": "together",
+      "createdAt": "2026-10-22T08:59:22.396Z"
+    },
+    {
+      "id": 2,
+      "name": "Daan",
+      "role": "partner",
+      "birthDate": null,
+      "custody": "together",
+      "createdAt": "2026-10-22T08:59:22.398Z"
+    },
+    {
+      "id": 3,
+      "name": "Noor",
+      "role": "child",
+      "birthDate": "2016-04-12",
+      "custody": "together",
+      "createdAt": "2026-10-22T08:59:22.399Z"
+    }
+  ],
+  "/api/accounts": [
+    {
+      "id": 7,
+      "name": "ASN Sparen",
+      "kind": "bank",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "self",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.610Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "38730.0000000000"
+    },
+    {
+      "id": 2,
+      "name": "Bitvavo",
+      "kind": "exchange",
+      "provider": "bitvavo",
+      "notes": null,
+      "archived": false,
+      "tracking": "transactions",
+      "owner": "partner",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.587Z",
+      "txCount": 8,
+      "itemCount": 0,
+      "latestYear": null,
+      "latestValueEur": null
+    },
+    {
+      "id": 1,
+      "name": "DEGIRO",
+      "kind": "broker",
+      "provider": "degiro",
+      "notes": null,
+      "archived": false,
+      "tracking": "transactions",
+      "owner": "self",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.570Z",
+      "txCount": 10,
+      "itemCount": 0,
+      "latestYear": null,
+      "latestValueEur": null
+    },
+    {
+      "id": 4,
+      "name": "Goldrepublic",
+      "kind": "vault",
+      "provider": "goldrepublic",
+      "notes": null,
+      "archived": false,
+      "tracking": "transactions",
+      "owner": "self",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.599Z",
+      "txCount": 1,
+      "itemCount": 0,
+      "latestYear": null,
+      "latestValueEur": null
+    },
+    {
+      "id": 6,
+      "name": "ING Betalen",
+      "kind": "bank",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "joint",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.606Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "6900.0000000000"
+    },
+    {
+      "id": 5,
+      "name": "Kluis thuis",
+      "kind": "physical",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "transactions",
+      "owner": "joint",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.601Z",
+      "txCount": 0,
+      "itemCount": 3,
+      "latestYear": null,
+      "latestValueEur": null
+    },
+    {
+      "id": 3,
+      "name": "Ledger",
+      "kind": "wallet",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "transactions",
+      "owner": "partner",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.588Z",
+      "txCount": 1,
+      "itemCount": 0,
+      "latestYear": null,
+      "latestValueEur": null
+    },
+    {
+      "id": 11,
+      "name": "Lening aan Eva",
+      "kind": "receivable",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "self",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.619Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "3000.0000000000"
+    },
+    {
+      "id": 9,
+      "name": "Spaarrekening Daan",
+      "kind": "bank",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "partner",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.615Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "12450.0000000000"
+    },
+    {
+      "id": 8,
+      "name": "Spaarrekening Noor",
+      "kind": "bank",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "child",
+      "ownerChildId": 3,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.612Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "4015.0000000000"
+    },
+    {
+      "id": 12,
+      "name": "Studieschuld",
+      "kind": "debt",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "self",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.622Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "15500.0000000000"
+    },
+    {
+      "id": 10,
+      "name": "Vakantiehuis Zeeland",
+      "kind": "property",
+      "provider": null,
+      "notes": null,
+      "archived": false,
+      "tracking": "yearly",
+      "owner": "joint",
+      "ownerChildId": null,
+      "jointSelfPct": "50.00",
+      "foreign": false,
+      "createdAt": "2026-10-22T08:59:22.617Z",
+      "txCount": 0,
+      "itemCount": 0,
+      "latestYear": 2026,
+      "latestValueEur": "310000.0000000000"
+    }
+  ],
+  "/api/settings": {
+    "costMethod": "average",
+    "language": "nl"
+  },
+  "/api/auth/state": {
+    "needsSetup": false,
+    "needsSetupCode": false,
+    "user": {
+      "id": 1,
+      "username": "demo"
+    },
+    "language": "nl",
+    "demo": true
+  },
+  "/api/version": {
+    "version": "0.1.35",
+    "source": "https://github.com/zenonymous/box3balans"
+  },
+  "/api/box3/2025/checklist": {
+    "year": 2025,
+    "day": "2024-12-31",
+    "passed": true,
+    "open": 1,
+    "items": [
+      {
+        "account": "ASN Sparen",
+        "key": "value:7",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Bitvavo",
+        "key": "manual:2",
+        "status": "info",
+        "text": "Met de hand bijgehouden: kijk of de transacties tot en met 31 december compleet zijn",
+        "link": {
+          "to": "/transactions?accountId=2",
+          "label": "Transacties"
+        }
+      },
+      {
+        "account": "DEGIRO",
+        "key": "statement:1",
+        "status": "todo",
+        "text": "Importeer het rekeningoverzicht tot en met 31 december 2024, en daarna de portefeuille van die dag",
+        "link": {
+          "to": "/transactions/import",
+          "label": "Import"
+        }
+      },
+      {
+        "account": "Goldrepublic",
+        "key": "manual:4",
+        "status": "info",
+        "text": "Met de hand bijgehouden: kijk of de transacties tot en met 31 december compleet zijn",
+        "link": {
+          "to": "/transactions?accountId=4",
+          "label": "Transacties"
+        }
+      },
+      {
+        "account": "ING Betalen",
+        "key": "value:6",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Ledger",
+        "key": "manual:3",
+        "status": "info",
+        "text": "Met de hand bijgehouden: kijk of de transacties tot en met 31 december compleet zijn",
+        "link": {
+          "to": "/transactions?accountId=3",
+          "label": "Transacties"
+        }
+      },
+      {
+        "account": "Lening aan Eva",
+        "key": "value:11",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Spaarrekening Daan",
+        "key": "value:9",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Spaarrekening Noor",
+        "key": "value:8",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Studieschuld",
+        "key": "value:12",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      },
+      {
+        "account": "Vakantiehuis Zeeland",
+        "key": "value:10",
+        "status": "ok",
+        "text": "Waarde op 1 januari 2025 ingevuld"
+      }
+    ]
+  },
+  "/api/box3/future": {
+    "presets": [
+      {
+        "id": "bill",
+        "label": "Bill as passed by the Tweede Kamer (12 Feb 2026)",
+        "ratePct": 36,
+        "allowanceEur": 1800,
+        "lossThresholdEur": 500,
+        "carryBackYears": 0
+      },
+      {
+        "id": "letter",
+        "label": "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)",
+        "ratePct": 36,
+        "allowanceEur": 1000,
+        "lossThresholdEur": 500,
+        "carryBackYears": 0
+      }
+    ],
+    "preset": "bill",
+    "params": {
+      "ratePct": 36,
+      "allowanceEur": 1800,
+      "lossThresholdEur": 500,
+      "carryBackYears": 0
+    },
+    "today": "2026-10-22",
+    "rows": [
+      {
+        "year": 2026,
+        "complete": false,
+        "resultEur": 11961.12,
+        "allowanceEur": 3600,
+        "lossUsedEur": 0,
+        "carriedBackEur": 0,
+        "taxableEur": 8361.12,
+        "taxEur": 3010,
+        "lossBalanceEur": 0,
+        "deemedTaxEur": 6562,
+        "differenceEur": -3552
+      },
+      {
+        "year": 2025,
+        "complete": true,
+        "resultEur": 12787.56,
+        "allowanceEur": 3600,
+        "lossUsedEur": 0,
+        "carriedBackEur": 0,
+        "taxableEur": 9187.56,
+        "taxEur": 3307.52,
+        "lossBalanceEur": 0,
+        "deemedTaxEur": 6180,
+        "differenceEur": -2872.48
+      },
+      {
+        "year": 2024,
+        "complete": true,
+        "resultEur": 48850.58,
+        "allowanceEur": 3600,
+        "lossUsedEur": 0,
+        "carriedBackEur": 0,
+        "taxableEur": 45250.58,
+        "taxEur": 16290.21,
+        "lossBalanceEur": 0,
+        "deemedTaxEur": 5170,
+        "differenceEur": 11120.21
+      },
+      {
+        "year": 2023,
+        "complete": true,
+        "resultEur": 14167.19,
+        "allowanceEur": 3600,
+        "lossUsedEur": 0,
+        "carriedBackEur": 0,
+        "taxableEur": 10567.19,
+        "taxEur": 3804.19,
+        "lossBalanceEur": 0,
+        "deemedTaxEur": 0,
+        "differenceEur": 3804.19
+      },
+      {
+        "year": 2022,
+        "complete": true,
+        "resultEur": 22.87,
+        "allowanceEur": 1800,
+        "lossUsedEur": 0,
+        "carriedBackEur": 0,
+        "taxableEur": 0,
+        "taxEur": 0,
+        "lossBalanceEur": 0,
+        "deemedTaxEur": null,
+        "differenceEur": null
+      }
+    ]
+  }
+}
