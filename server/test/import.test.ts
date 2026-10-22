@@ -99,6 +99,22 @@ describe("reading CSV exports", () => {
     expect(parseNumber("", ".")).toBeNull();
   });
 
+  it("refuses a number written in the other notation instead of misreading it", () => {
+    // Was 1.23456 (1,000× too small) and 125 (10× too large).
+    expect(parseNumber("1,234.56", ",")).toBeNull();
+    expect(parseNumber("12,5", ".")).toBeNull();
+    expect(parseNumber("1.5", ",")).toBeNull();
+    expect(parseNumber("1,23,456.7", ".")).toBeNull();
+    // Still fine: grouped or not, with or without decimals, in either notation.
+    expect(parseNumber("1.234.567", ",")).toBe("1234567");
+    expect(parseNumber("1234567,89", ",")).toBe("1234567.89");
+    expect(parseNumber("1,234,567.89", ".")).toBe("1234567.89");
+    expect(parseNumber(",5", ",")).toBe("0.5");
+    expect(parseNumber("1'234.5", ".")).toBe("1234.5");
+    expect(parseNumber("1,5E-3", ",")).toBe("0.0015");
+    expect(parseNumber("12345678901234567890E-10", ".")).toBe("1234567890.123456789");
+  });
+
   it("detects decimal commas and the day order", () => {
     expect(detectDecimal(["1.234,56", "10", "0,5"])).toBe(",");
     expect(detectDecimal(["1,234.56", "0.00012"])).toBe(".");

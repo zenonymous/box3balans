@@ -1,3 +1,4 @@
+import { Decimal } from "../lib/decimal.js";
 import { fromLocal } from "../lib/time.js";
 
 export type Delimiter = "," | ";" | "\t" | "|";
@@ -74,6 +75,12 @@ function mostCommon(xs: number[]): number {
   return [...n.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0]![0];
 }
 
+// Groups of three after the first, or none; then the decimals. ",5" and ".5" are fine too.
+const WELL_FORMED = {
+  ",": /^(\d{1,3}(\.\d{3})+|\d*)(,\d+)?$/,
+  ".": /^(\d{1,3}(,\d{3})+|\d*)(\.\d+)?$/,
+} as const;
+
 /**
  * Parses a number as written in an export: "1.234,56" or "1,234.56" (per `decimal`), with
  * optional currency symbols, spaces, a leading or trailing minus or parentheses for negatives.
@@ -97,14 +104,15 @@ export function parseNumber(raw: string, decimal: DecimalMark): string | null {
     s = s.slice(0, -1);
   }
   if (s.startsWith("+")) s = s.slice(1);
-  const thousands = decimal === "," ? "." : ",";
-  s = s.split(thousands).join("");
-  if (decimal === ",") s = s.replace(",", ".");
-  if (/^\d*\.?\d+e[-+]?\d+$/i.test(s)) {
-    // Scientific notation ("1E-8") from spreadsheet exports.
-    const v = Number(s);
-    if (!Number.isFinite(v)) return null;
-    s = v.toFixed(20).replace(/\.?0+$/, "");
+  if (/^\d*[.,]?\d+e[-+]?\d+$/i.test(s)) {
+    // Scientific notation ("1E-8") from spreadsheet exports, in decimals (no float rounding).
+    s = new Decimal(s.replace(",", ".")).toFixed();
+  } else {
+    // Only well-formed numbers: a separator in the wrong place means the other notation
+    // ("1,234.56" read with a decimal comma), and dropping it would be off by a factor of 1,000.
+    if (!WELL_FORMED[decimal].test(s)) return null;
+    s = s.split(decimal === "," ? "." : ",").join("");
+    if (decimal === ",") s = s.replace(",", ".");
   }
   if (!/^\d*\.?\d+$/.test(s)) return null;
   if (s.startsWith(".")) s = `0${s}`;
