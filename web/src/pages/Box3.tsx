@@ -812,17 +812,23 @@ function RulesCard({ overview }: { overview: Box3Overview }) {
     cfg.rates[y] ?? (overview.defaultRates[y] ? mapRate(overview.defaultRates[y], toInputNumber) : null);
 
   const setRate = (y: string, key: keyof Box3Rates, value: string | boolean) => {
-    const base = rateOf(y) ?? {
-      bankPct: "0",
-      otherPct: "0",
-      debtPct: "0",
-      allowanceEur: "0",
-      debtThresholdEur: "0",
-      taxRatePct: "0",
-      greenExemptEur: "0",
-      greenCreditPct: "0",
-      final: false,
-    };
+    // A year without built-in rates starts as a copy of the nearest year that has them (not final),
+    // rather than at zero, which would make the tax €0.
+    const nearest = Object.keys(overview.defaultRates).sort(
+      (a, b) => Math.abs(Number(a) - Number(y)) - Math.abs(Number(b) - Number(y)),
+    )[0];
+    const base = rateOf(y) ??
+      (nearest ? { ...mapRate(overview.defaultRates[nearest]!, toInputNumber), final: false } : null) ?? {
+        bankPct: "0",
+        otherPct: "0",
+        debtPct: "0",
+        allowanceEur: "0",
+        debtThresholdEur: "0",
+        taxRatePct: "0",
+        greenExemptEur: "0",
+        greenCreditPct: "0",
+        final: false,
+      };
     setCfg({ ...cfg, rates: { ...cfg.rates, [y]: { ...base, [key]: value } } });
   };
   const resetRate = (y: string) => {

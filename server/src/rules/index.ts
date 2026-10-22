@@ -21,6 +21,9 @@ const schema = z.object({
       greenExemptEur: amount,
       greenCreditPct: amount,
       final: z.boolean(),
+      // Added before the year's figures are law: the tax-free allowance and the percentage for other
+      // assets are a proposal (the cabinet's), and the other figures are the year before's.
+      proposal: z.boolean().optional(),
       source: z.string().url(),
     }),
   ),

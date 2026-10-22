@@ -10,7 +10,7 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - Belastingdienst, _Hoe wordt mijn box 3-inkomen over 2025 berekend?_ (rekenvoorbeelden, gecontroleerd 7 oktober 2026): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025
 
-**2027 staat erin als voorlopig jaar** (sinds 0.1.11), met de cijfers uit de kabinetsbrief hieronder. Stand op 9 oktober 2026:
+**2027 staat erin als voorstel** (sinds 0.1.11; `"proposal": true` in `box3.json`), met de cijfers uit de kabinetsbrief hieronder. De app zegt dat ook bij de berekening: het heffingsvrij vermogen en het percentage voor overige bezittingen zijn een voorstel, de andere cijfers die van 2026. Stand op 9 oktober 2026:
 
 - **Belastingplan 2027** (Prinsjesdag, 15 september 2026; wetsvoorstel 37.022): box 3 staat niet in het pakket zelf. De kerncijfers gingen uit van een heffingsvrij vermogen van € 60.098 en een tarief van 36%; de gewone actualisatie brengt het forfaitaire rendement op overige bezittingen op 6,37% (was 6,00%).
 - **Brief van het kabinet van 29 september 2026** (Tweede Kamer 2026Z20444): per 2027 gaat het heffingsvrij vermogen terug naar het niveau van 2020, **€ 30.846** per persoon, en het forfait voor overige bezittingen, inclusief huurinkomsten en voordelen uit eigen gebruik van onroerende zaken, gaat **1,5 procentpunt omhoog** (dus naar 7,87%). Dat betaalt mee aan de novelle hieronder.

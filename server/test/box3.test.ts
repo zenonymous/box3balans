@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { localToday } from "../src/lib/time.js";
 import { priceHistory } from "../src/db/schema.js";
-import { DEFAULT_RATES, calculateBox3 } from "../src/domain/box3.js";
+import { DEFAULT_RATES, calculateBox3, computeBox3Year, loadConfig as loadBox3Config } from "../src/domain/box3.js";
 import { D } from "../src/lib/decimal.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
@@ -401,5 +401,35 @@ describe("box 3 overview", () => {
     config.mapping.classCategory.crypto = "nonsense";
     expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(400);
     expect((await t.api("GET", `/api/box3/${Number(localToday().slice(0, 4)) + 1}`)).statusCode).toBe(400);
+  });
+});
+
+describe("rates that aren't final", () => {
+  it("says 2027 is a proposal, and that zero rates are incomplete", async () => {
+    t = await createTestApp();
+    const db = t.database.db;
+    const config = await loadBox3Config(db);
+    const proposal = await computeBox3Year(db, 2027, config);
+    expect(proposal.warnings).toContain(
+      "The 2027 rates are a proposal: the tax-free allowance and the percentage for other assets are what the cabinet proposes, not yet law, and the other figures are those of 2026 until the 2027 ones are known.",
+    );
+    expect(proposal.warnings.some((w) => w.includes("provisional"))).toBe(false);
+
+    // A year entered by hand with only one field filled in.
+    const zero = {
+      bankPct: "1",
+      otherPct: "0",
+      debtPct: "0",
+      allowanceEur: "0",
+      debtThresholdEur: "0",
+      taxRatePct: "0",
+    };
+    const custom = await computeBox3Year(db, 2030, {
+      ...config,
+      rates: { "2030": { ...zero, greenExemptEur: "0", greenCreditPct: "0", final: false } },
+    });
+    expect(custom.warnings).toContain(
+      "The 2030 rates are incomplete: the tax rate, the tax-free allowance or the percentage for other assets is 0. Fill them in under “Rules & rates”.",
+    );
   });
 });

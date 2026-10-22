@@ -631,4 +631,8 @@ export const NL: Record<string, string> = {
   // domain/box3Actual.ts
   "Interest of {amount} was booked in the first week of January {year}. If it's for December, it belongs to {previous}: it counts for {year} here.":
     "Er is {amount} rente bijgeschreven in de eerste week van januari {year}. Is die over december, dan hoort ze bij {previous}: hier telt ze voor {year}.",
+  "The {year} rates are incomplete: the tax rate, the tax-free allowance or the percentage for other assets is 0. Fill them in under “Rules & rates”.":
+    "De tarieven van {year} zijn niet compleet: het belastingtarief, het heffingsvrij vermogen of het percentage voor overige bezittingen is 0. Vul ze in onder “Regels en tarieven”.",
+  "The {year} rates are a proposal: the tax-free allowance and the percentage for other assets are what the cabinet proposes, not yet law, and the other figures are those of {previous} until the {year} ones are known.":
+    "De tarieven van {year} zijn een voorstel: het heffingsvrij vermogen en het percentage voor overige bezittingen zijn wat het kabinet voorstelt, nog geen wet, en de andere cijfers zijn die van {previous} tot die van {year} bekend zijn.",
 };

@@ -60,6 +60,7 @@
       "greenExemptEur": "26715",
       "greenCreditPct": "0.1",
       "final": false,
+      "proposal": true,
       "source": "https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf"
     }
   },

@@ -47,7 +47,7 @@ export type Box3Rates = z.infer<typeof ratesSchema>;
  * in src/rules/box3.json with when they were last checked and a source per year.
  */
 export const DEFAULT_RATES: Record<string, Box3Rates> = Object.fromEntries(
-  Object.entries(RULES.years).map(([year, { source: _source, ...r }]) => [year, r]),
+  Object.entries(RULES.years).map(([year, { source: _source, proposal: _proposal, ...r }]) => [year, r]),
 );
 
 const ACCOUNT_KINDS = [
@@ -541,8 +541,24 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
   person.self.debts = person.self.debts.plus(extraDebts);
   other.other = other.other.plus(extraOther);
   const rates = ratesFor(config, year);
+  // Rates entered for a year without built-in ones, but left at zero: the tax would be €0.
+  const unset = rates && [rates.taxRatePct, rates.allowanceEur, rates.otherPct].some((v) => D(v).isZero());
   if (!rates)
     warnings.push(tr("No box 3 rates for {year}. Add them under “Rules & rates” to estimate the tax.", { year }));
+  else if (unset)
+    warnings.push(
+      tr(
+        "The {year} rates are incomplete: the tax rate, the tax-free allowance or the percentage for other assets is 0. Fill them in under “Rules & rates”.",
+        { year },
+      ),
+    );
+  else if (rates.source === "default" && RULES.years[String(year)]?.proposal)
+    warnings.push(
+      tr(
+        "The {year} rates are a proposal: the tax-free allowance and the percentage for other assets are what the cabinet proposes, not yet law, and the other figures are those of {previous} until the {year} ones are known.",
+        { year, previous: year - 1 },
+      ),
+    );
   else if (!rates.final)
     warnings.push(
       tr("The {year} rates are provisional; the final bank and debt percentages follow after the year.", { year }),
