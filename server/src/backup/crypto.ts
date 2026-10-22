@@ -1,4 +1,5 @@
-import { createCipheriv, createDecipheriv, randomBytes, scrypt as scryptCb } from "node:crypto";
+import { type CipherGCM, createCipheriv, createDecipheriv, randomBytes, scrypt as scryptCb } from "node:crypto";
+import type fs from "node:fs";
 import { promisify } from "node:util";
 
 const scrypt = promisify(scryptCb) as (
@@ -43,6 +44,32 @@ export async function encryptBackup(plain: Buffer, passphrase: string, logN = LO
   cipher.setAAD(header);
   const body = Buffer.concat([cipher.update(plain), cipher.final()]);
   return Buffer.concat([header, cipher.getAuthTag(), body]);
+}
+
+/**
+ * The same layout as encryptBackup, written as a stream: the header goes first with room for the
+ * GCM tag, which is only known at the end and is then written into that room. Returns the cipher
+ * to pipe the plain bytes through, and `finish` to call once they're all written.
+ */
+export async function encryptingWriter(
+  file: fs.promises.FileHandle,
+  passphrase: string,
+  logN = LOG_N,
+): Promise<{ cipher: CipherGCM; start: number; finish: () => Promise<void> }> {
+  const salt = randomBytes(16);
+  const iv = randomBytes(12);
+  const key = await deriveKey(passphrase, salt, logN, R, P);
+  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const header = Buffer.concat([MAGIC, Buffer.from([logN, R, P]), salt, iv]);
+  cipher.setAAD(header);
+  await file.write(Buffer.concat([header, Buffer.alloc(16)]), 0, header.length + 16, 0);
+  return {
+    cipher,
+    start: header.length + 16,
+    finish: async () => {
+      await file.write(cipher.getAuthTag(), 0, 16, header.length);
+    },
+  };
 }
 
 export async function decryptBackup(buf: Buffer, passphrase: string): Promise<Buffer> {

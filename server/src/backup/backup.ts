@@ -1,12 +1,15 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { gunzipSync, gzipSync } from "node:zlib";
-import { getTableColumns, getTableName, sql, type Table } from "drizzle-orm";
+import { Readable } from "node:stream";
+import { pipeline } from "node:stream/promises";
+import { createGzip, gunzipSync, gzipSync } from "node:zlib";
+import { asc, getTableColumns, getTableName, sql, type Column, type Table } from "drizzle-orm";
+import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
 import type { DB } from "../db/client.js";
 import * as s from "../db/schema.js";
 import { reloadLanguage } from "../domain/settings.js";
-import { decryptBackup, encryptBackup, isEncryptedBackup } from "./crypto.js";
+import { decryptBackup, encryptingWriter, isEncryptedBackup } from "./crypto.js";
 
 export const BACKUP_FORMAT = "box3balans-backup";
 // Backups made under the app's earlier names (portfolio dashboard, then Kluishuis).
@@ -76,6 +79,38 @@ export async function createBackup(db: DB): Promise<BackupFile> {
 }
 
 export const encodeBackup = (b: BackupFile): Buffer => gzipSync(Buffer.from(JSON.stringify(b)));
+
+const PAGE = 2000;
+
+/** A table's primary key columns, so its rows can be read page by page in a fixed order. */
+function keyOf(t: Table): Column[] {
+  const single = Object.values(getTableColumns(t)).filter((c) => c.primary);
+  return single.length ? single : (getTableConfig(t as PgTable).primaryKeys[0]?.columns ?? []);
+}
+
+/**
+ * The backup as the JSON that createBackup and encodeBackup make, in pieces: each table is read a
+ * page at a time, so the whole database is never in memory at once (issue #83).
+ */
+async function* backupJson(db: DB, createdAt: string): AsyncGenerator<string> {
+  yield `{"format":${JSON.stringify(BACKUP_FORMAT)},"schemaVersion":${schemaVersion()},"createdAt":${JSON.stringify(createdAt)},"tables":{`;
+  for (const [i, t] of TABLES.entries()) {
+    yield `${i ? "," : ""}${JSON.stringify(getTableName(t))}:[`;
+    const order = keyOf(t).map((c) => asc(c));
+    for (let offset = 0; ; offset += PAGE) {
+      const rows = (await db
+        .select()
+        .from(t as never)
+        .orderBy(...order)
+        .limit(PAGE)
+        .offset(offset)) as unknown[];
+      if (rows.length) yield (offset ? "," : "") + rows.map((r) => JSON.stringify(r)).join(",");
+      if (rows.length < PAGE) break;
+    }
+    yield "]";
+  }
+  yield "}}";
+}
 
 export function decodeBackup(buf: Buffer): BackupFile {
   let parsed: unknown;
@@ -171,12 +206,28 @@ export async function writeBackupFile(
   passphrase?: string,
 ): Promise<BackupInfo> {
   fs.mkdirSync(dir, { recursive: true });
-  const plain = encodeBackup(await createBackup(db));
-  const data = passphrase ? await encryptBackup(plain, passphrase) : plain;
-  const name = `box3balans-${stamp(new Date())}${label ? `-${label}` : ""}.json.gz${passphrase ? ".enc" : ""}`;
+  const now = new Date();
+  const name = `box3balans-${stamp(now)}${label ? `-${label}` : ""}.json.gz${passphrase ? ".enc" : ""}`;
   const file = backupPath(dir, name);
-  // Write then rename, so a crash never leaves a half-written file that looks valid.
-  fs.writeFileSync(`${file}.tmp`, data, { mode: 0o600 });
+  // Streamed: table by table, through gzip (and the cipher) into the file, without holding the
+  // whole backup in memory or blocking the server while it compresses. Written to a temporary
+  // name and then renamed, so a crash never leaves a half-written file that looks valid.
+  const handle = await fs.promises.open(`${file}.tmp`, "w", 0o600);
+  try {
+    const encrypt = passphrase ? await encryptingWriter(handle, passphrase) : null;
+    const out = fs.createWriteStream("", { fd: handle.fd, start: encrypt?.start ?? 0, autoClose: false });
+    const json = Readable.from(backupJson(db, now.toISOString()));
+    if (encrypt) await pipeline(json, createGzip(), encrypt.cipher, out);
+    else await pipeline(json, createGzip(), out);
+    await encrypt?.finish();
+    await handle.sync();
+  } catch (err) {
+    // A failed pipeline may have closed the file already.
+    await handle.close().catch(() => undefined);
+    fs.rmSync(`${file}.tmp`, { force: true });
+    throw err;
+  }
+  await handle.close();
   fs.renameSync(`${file}.tmp`, file);
   // Run as root (e.g. `docker compose exec app …`): give the file to whoever owns the folder, so the
   // app can still prune it and the NAS backup tool sees the usual owner.
@@ -184,7 +235,7 @@ export async function writeBackupFile(
     const owner = fs.statSync(dir);
     fs.chownSync(file, owner.uid, owner.gid);
   }
-  return { name, sizeBytes: data.length, createdAt: new Date().toISOString(), encrypted: !!passphrase };
+  return { name, sizeBytes: fs.statSync(file).size, createdAt: now.toISOString(), encrypted: !!passphrase };
 }
 
 /** Reads and decodes a backup file, decrypting it when needed. */

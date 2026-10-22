@@ -284,6 +284,63 @@ describe("encrypted backups", () => {
     expect(pruneBackups(t.backupDir, 2)).toEqual(["box3balans-20240101-000000-auto.json.gz.enc"]);
   });
 
+  it("writes a backup a page at a time that reads back exactly as one made in memory", async () => {
+    t = await createTestApp();
+    await populate();
+    const db = t.database.db;
+    // More rows than a page (2,000) in a table with a two-column key.
+    const [asset] = await db.select().from(s.assets).limit(1);
+    const day = (n: number) => new Date(Date.UTC(1990, 0, 1) + n * 86_400_000).toISOString().slice(0, 10);
+    const closes = Array.from({ length: 4321 }, (_, n) => ({
+      assetId: asset!.id,
+      day: day(n),
+      close: String(n),
+      currency: "EUR",
+      closeEur: String(n),
+    }));
+    for (let i = 0; i < closes.length; i += 1000) await db.insert(s.priceHistory).values(closes.slice(i, i + 1000));
+    const made = await writeBackupFile(db, t.backupDir, "manual");
+    const file = await readBackupFile(path.join(t.backupDir, made.name));
+    const memory = decodeBackup(encodeBackup(await createBackup(db)));
+    expect(file.tables.price_history!.length).toBe(memory.tables.price_history!.length);
+    for (const name of Object.keys(memory.tables)) {
+      const key = (r: Record<string, unknown>) => JSON.stringify(r);
+      expect(file.tables[name]!.map(key).sort(), name).toEqual(memory.tables[name]!.map(key).sort());
+    }
+    expect({ ...file, tables: undefined, createdAt: undefined }).toEqual({
+      ...memory,
+      tables: undefined,
+      createdAt: undefined,
+    });
+    expect(made.sizeBytes).toBe(fs.statSync(path.join(t.backupDir, made.name)).size);
+  });
+
+  it("writes encrypted backups as a stream in the same layout; a changed byte is refused", async () => {
+    t = await createTestApp();
+    await populate();
+    const made = await writeBackupFile(t.database.db, t.backupDir, "manual", PASS);
+    const file = path.join(t.backupDir, made.name);
+    const buf = fs.readFileSync(file);
+    expect(isEncryptedBackup(buf)).toBe(true);
+    expect(decodeBackup(await decryptBackup(buf, PASS)).tables.accounts).toHaveLength(2);
+    const changed = Buffer.from(buf);
+    changed[changed.length - 10]! ^= 1;
+    await expect(decryptBackup(changed, PASS)).rejects.toBeInstanceOf(WrongPassphraseError);
+  });
+
+  it("leaves no half-written file when a backup fails", async () => {
+    t = await createTestApp();
+    const failing = {
+      select: () => ({
+        from: () => ({
+          orderBy: () => ({ limit: () => ({ offset: () => Promise.reject(new Error("database gone")) }) }),
+        }),
+      }),
+    };
+    await expect(writeBackupFile(failing as never, t.backupDir, "manual")).rejects.toThrow("database gone");
+    expect(fs.readdirSync(t.backupDir)).toEqual([]);
+  });
+
   it("rejects a short passphrase at startup", async () => {
     await expect(createTestApp(undefined, { env: { BACKUP_PASSPHRASE: "short" } })).rejects.toThrow(/at least 12/);
   });
