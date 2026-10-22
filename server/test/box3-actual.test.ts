@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { assets, priceHistory, transactions } from "../src/db/schema.js";
-import { FUTURE_PRESETS, simulateFuture } from "../src/domain/box3Future.js";
+import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../src/domain/box3Future.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp;
@@ -167,6 +167,58 @@ describe("actual box 3 return (tegenbewijsregeling)", () => {
     expect(a.comparison.deemedTaxEur).toBe(Number(y.calculation.netTaxEur));
     expect(a.comparison.deemedTaxEur).toBeGreaterThan(0);
     expect(a.comparison).toMatchObject({ worthFiling: true, savingEur: a.comparison.deemedTaxEur });
+  });
+});
+
+describe("comparing with the deemed tax", () => {
+  const actual = (totalEur: number) => ({ totalEur, complete: true }) as Parameters<typeof compareWithDeemed>[0];
+  const deemed = { netTaxEur: "1200.00", benefitEur: "3500.00", greenCreditEur: "60.00" }; // 1,260 − 60 credit
+
+  it("takes the green-investment credit off both sides", () => {
+    // 3,450 × 36 % = 1,242: below the deemed 1,260 before the credit, so filing pays 18 either way.
+    expect(compareWithDeemed(actual(3450), deemed, "36")).toMatchObject({
+      actualTaxEur: 1182,
+      deemedTaxEur: 1200,
+      greenCreditEur: 60,
+      savingEur: 18,
+      worthFiling: true,
+    });
+    // 3,400 × 36 % = 1,224 is below the deemed tax after the credit (1,200) only if the credit isn't
+    // taken off the actual side too: it is, so 1,164 < 1,200 and filing pays 36.
+    expect(compareWithDeemed(actual(3400), deemed, "36")).toMatchObject({ actualTaxEur: 1164, savingEur: 36 });
+    // 3,550 × 36 % = 1,278 − 60 = 1,218: more than the deemed 1,200, not worth it (before, 1,278 vs 1,200 said
+    // the same, but 3,340 → 1,202.40 vs 1,200 said "no" where the right answer is "yes").
+    expect(compareWithDeemed(actual(3340), deemed, "36")).toMatchObject({ actualTaxEur: 1142.4, worthFiling: true });
+    expect(compareWithDeemed(actual(3550), deemed, "36")).toMatchObject({ worthFiling: false, savingEur: 0 });
+  });
+
+  it("rounds cents in decimals, halves away from zero", () => {
+    // 2.01 × 50 % = 1.005 exactly; Math.round(1.005 * 100) / 100 gives 1.
+    expect(compareWithDeemed(actual(2.01), { ...deemed, greenCreditEur: "0" }, "50")?.actualTaxEur).toBe(1.01);
+  });
+});
+
+describe("interest booked early in January", () => {
+  it("is flagged, since it may belong to the year before", async () => {
+    t = await createTestApp();
+    const bank = json(await t.api("POST", "/api/accounts", { name: "Savings", kind: "bank" }));
+    const eur = json<any[]>(await t.api("GET", "/api/assets")).find((a) => a.priceRef === "EUR");
+    const tx = (occurredAt: string, type: string, quantity: string) =>
+      t.api("POST", "/api/transactions", {
+        accountId: bank.id,
+        assetId: eur.id,
+        price: "1",
+        occurredAt,
+        type,
+        quantity,
+      });
+    await tx("2025-06-01T12:00:00Z", "deposit", "10000");
+    await tx("2025-01-02T12:00:00Z", "reward", "12.50");
+    await tx("2025-02-01T12:00:00Z", "reward", "3");
+    const warnings: string[] = json(await t.api("GET", "/api/box3/2025")).actualReturn.warnings;
+    expect(warnings).toContain(
+      "Interest of 12.50 was booked in the first week of January 2025. If it's for December, it belongs to 2024: it counts for 2025 here.",
+    );
   });
 });
 

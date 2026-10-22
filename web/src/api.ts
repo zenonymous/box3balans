@@ -754,6 +754,8 @@ export interface ActualReturn {
     deemedTaxEur: number;
     actualTaxableEur: number;
     actualTaxEur: number;
+    // The green-investment credit, taken off both taxes.
+    greenCreditEur: number;
     lowerTaxEur: number;
     savingEur: number;
     worthFiling: boolean;

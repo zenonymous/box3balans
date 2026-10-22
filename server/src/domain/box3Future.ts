@@ -1,29 +1,40 @@
+import { D, Decimal } from "../lib/decimal.js";
 import type { ActualReturn } from "./box3Actual.js";
 
-const round2 = (x: number) => Math.round(x * 100) / 100;
+/** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
+const round2 = (x: number | Decimal) => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 
 /**
  * Tegenbewijsregeling: tax on the actual return (no tax-free allowance, no costs deducted, a negative
  * return counts as zero) against the deemed-return tax. You never pay more than the deemed tax, so
  * the lower one applies; filing is worth it when the actual-return tax is lower.
+ *
+ * The green-investment credit is a heffingskorting on the income tax as a whole, so it applies
+ * whichever way box 3 is taxed: it comes off both sides (see docs/box3-sources.md).
  */
 export function compareWithDeemed(
   actual: ActualReturn,
-  deemed: { taxEur: number; benefitEur: number } | null,
-  ratePct: number | null,
+  deemed: { netTaxEur: string; benefitEur: string; greenCreditEur: string } | null,
+  ratePct: string | null,
 ) {
   if (!deemed || ratePct == null) return null;
-  const taxable = Math.max(0, actual.totalEur);
-  const actualTax = round2((taxable * ratePct) / 100);
+  const taxable = Decimal.max(D(actual.totalEur), 0);
+  const credit = D(deemed.greenCreditEur);
+  const actualTax = Decimal.max(
+    taxable.mul(ratePct).div(100).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).minus(credit),
+    0,
+  );
+  const deemedTax = D(deemed.netTaxEur);
   return {
-    deemedBenefitEur: deemed.benefitEur,
-    deemedTaxEur: deemed.taxEur,
+    deemedBenefitEur: round2(D(deemed.benefitEur)),
+    deemedTaxEur: round2(deemedTax),
     actualTaxableEur: round2(taxable),
-    actualTaxEur: actualTax,
-    lowerTaxEur: Math.min(actualTax, deemed.taxEur),
-    savingEur: round2(Math.max(0, deemed.taxEur - actualTax)),
+    greenCreditEur: round2(credit),
+    actualTaxEur: round2(actualTax),
+    lowerTaxEur: round2(Decimal.min(actualTax, deemedTax)),
+    savingEur: round2(Decimal.max(deemedTax.minus(actualTax), 0)),
     // Only a finished year can be filed.
-    worthFiling: actual.complete && actualTax < deemed.taxEur,
+    worthFiling: actual.complete && actualTax.lt(deemedTax),
   };
 }
 

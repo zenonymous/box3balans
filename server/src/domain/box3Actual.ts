@@ -2,7 +2,7 @@ import { and, asc, gte, inArray, lt, lte } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { accounts, assets, metalItems, priceHistory, transactions } from "../db/schema.js";
 import { METAL_CODES } from "../db/seed.js";
-import { D, type Decimal, ZERO } from "../lib/decimal.js";
+import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { fromLocal, localDay, localToday } from "../lib/time.js";
 import { type Box3Config, type Category, categoryOf } from "./box3.js";
 import { attribute, loadHousehold } from "./household.js";
@@ -42,7 +42,8 @@ export interface ActualReturn {
   warnings: string[];
 }
 
-const num = (d: Decimal) => Math.round(d.toNumber() * 100) / 100;
+// To cents with halves away from zero, in decimals (Math.round on floats rounds 1.005 to 1.00).
+const num = (d: Decimal) => d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 const emptyPart = () => ({ start: ZERO, end: ZERO, in: ZERO, out: ZERO, direct: ZERO });
 
 /**
@@ -125,6 +126,8 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
   for (const h of endRows) pos(h.accountId, h.assetId, h.physical).end = h.valueEur;
 
   const costByPos = new Map<Pos, Decimal>();
+  // Interest on cash booked in the first week of January: often December's (see the warning below).
+  let januaryInterest = ZERO;
   const addCost = (p: Pos, v: Decimal) => costByPos.set(p, (costByPos.get(p) ?? ZERO).plus(v));
   const taxByPos = new Map<Pos, Decimal>();
 
@@ -176,6 +179,7 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
       case "reward": {
         // Interest on cash counts at its amount; staking rewards at the value they were booked at.
         const v = isCash ? q.mul(fx) : gross;
+        if (isCash && day <= `${year}-01-07`) januaryInterest = januaryInterest.plus(v);
         p.direct = p.direct.plus(v);
         p.in = p.in.plus(v);
         break;
@@ -254,6 +258,14 @@ export async function actualReturn(db: DB, year: number, config: Box3Config): Pr
   // Accounts kept as values per year: from this 1 January to the next, plus what came in, went out
   // and was received. A debt only adds the interest paid (repaying it isn't a return).
   const warnings: string[] = [];
+  // Interest counts in the year it accrues, but a transaction counts in the year of its date.
+  if (januaryInterest.gt(0))
+    warnings.push(
+      tr(
+        "Interest of {amount} was booked in the first week of January {year}. If it's for December, it belongs to {previous}: it counts for {year} here.",
+        { amount: num(januaryInterest).toFixed(2), year, previous: year - 1 },
+      ),
+    );
   let accountDebtInterest = ZERO;
   for (const acc of accountRows) {
     if (acc.tracking !== "yearly") continue;

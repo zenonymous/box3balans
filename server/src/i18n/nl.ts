@@ -628,4 +628,7 @@ export const NL: Record<string, string> = {
   // domain/box3.ts
   "{account} owes {amount} in {symbol} on {day} (a margin loan or an overdraft): counted as a debt. If it isn't one, check its history.":
     "{account} heeft op {day} een schuld van {amount} in {symbol} (een effectenkrediet of rood staan): telt als schuld. Is het er geen, controleer dan de geschiedenis.",
+  // domain/box3Actual.ts
+  "Interest of {amount} was booked in the first week of January {year}. If it's for December, it belongs to {previous}: it counts for {year} here.":
+    "Er is {amount} rente bijgeschreven in de eerste week van januari {year}. Is die over december, dan hoort ze bij {previous}: hier telt ze voor {year}.",
 };

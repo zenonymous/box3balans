@@ -1671,4 +1671,5 @@ export const NL: Record<string, string> = {
   "Box3balans doesn't know this statement yet, so below are the amounts that look like values: tick the right ones. Below the table you can then share its layout, without your data, so it's recognised next time.":
     "Box3balans kent dit overzicht nog niet; hieronder staan de bedragen die op waarden lijken: vink de juiste aan. Onder de tabel kun je daarna de opmaak delen, zonder je gegevens, zodat het de volgende keer herkend wordt.",
   "Tick the right values above first.": "Vink eerst hierboven de juiste waarden aan.",
+  "Both after the green-investment credit of": "Beide na de heffingskorting groene beleggingen van",
 };

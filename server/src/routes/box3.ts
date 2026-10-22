@@ -52,14 +52,11 @@ export async function box3Routes(app: FastifyInstance) {
     const config = await loadConfig(db);
     const [result, actual] = await Promise.all([computeBox3Year(db, year, config), actualReturn(db, year, config)]);
     // Tegenbewijsregeling: the actual return of the calendar year against the deemed-return tax.
-    const deemed = result.calculation
-      ? { taxEur: Number(result.calculation.netTaxEur), benefitEur: Number(result.calculation.benefitEur) }
-      : null;
     return {
       ...result,
       actualReturn: {
         ...actual,
-        comparison: compareWithDeemed(actual, deemed, result.rates ? Number(result.rates.taxRatePct) : null),
+        comparison: compareWithDeemed(actual, result.calculation, result.rates?.taxRatePct ?? null),
       },
     };
   });

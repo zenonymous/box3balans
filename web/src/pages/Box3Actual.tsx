@@ -132,6 +132,12 @@ export function ActualReturnCard({ y }: { y: Box3Year }) {
                     })}
               </dt>
               <dd className="text-right">{eur(c.actualTaxEur)}</dd>
+              {c.greenCreditEur > 0 && (
+                <>
+                  <dt className="text-xs text-muted">{t("Both after the green-investment credit of")}</dt>
+                  <dd className="text-right text-xs text-muted">{eur(c.greenCreditEur)}</dd>
+                </>
+              )}
             </dl>
             {!a.complete ? (
               <p className="text-ink-2">{t("The year isn't over yet; check again after 31 December.")}</p>
