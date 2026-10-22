@@ -165,9 +165,52 @@ describe("box 3 overview", () => {
     await tx(bitvavo.id, { type: "withdrawal", occurredAt: "2024-07-01T12:00:00Z", quantity: "100.00000000001" });
     await tx(kraken.id, { type: "withdrawal", occurredAt: "2024-07-01T12:00:00Z", quantity: "5" });
     const warnings: string[] = json(await t.api("GET", "/api/box3/2025")).warnings;
-    expect(warnings.filter((w) => w.includes("negative"))).toEqual([
-      "Kraken has a negative EUR balance on 2024-12-31; check its history.",
+    expect(warnings.filter((w) => w.includes("negative") || w.includes("owes"))).toEqual([
+      "Kraken owes 5.00 in EUR on 2024-12-31 (a margin loan or an overdraft): counted as a debt. If it isn't one, check its history.",
     ]);
+  });
+
+  it("counts cash below zero (a margin loan) as a debt, not as less bank balance", async () => {
+    t = await createTestApp();
+    const mk = async (name: string, kind: string) => json(await t.api("POST", "/api/accounts", { name, kind }));
+    const [bank, broker] = [await mk("Savings", "bank"), await mk("IBKR", "broker")];
+    const eur = json<any[]>(await t.api("GET", "/api/assets")).find((a) => a.priceRef === "EUR");
+    const etf = json(
+      await t.api("POST", "/api/assets", {
+        assetClass: "etf",
+        name: "World ETF",
+        symbol: "WRLD",
+        priceSource: "manual",
+        currency: "EUR",
+      }),
+    );
+    const tx = (accountId: number, body: object) =>
+      t.api("POST", "/api/transactions", { accountId, occurredAt: "2025-06-01T12:00:00Z", ...body });
+    await tx(bank.id, { assetId: eur.id, type: "deposit", quantity: "50000", price: "1" });
+    await tx(broker.id, { assetId: etf.id, type: "buy", quantity: "1000", price: "100" });
+    await tx(broker.id, { assetId: eur.id, type: "withdrawal", quantity: "10000", price: "1" });
+    await t.database.db
+      .insert(priceHistory)
+      .values([{ assetId: etf.id, day: "2025-12-31", close: "100", currency: "EUR", closeEur: "100" }]);
+    const y = json(await t.api("GET", "/api/box3/2026"));
+    expect(y.totals).toMatchObject({ bank: "50000.00", other: "100000.00" });
+    expect(y.rows.find((r: any) => r.accountName === "IBKR" && r.symbol === "EUR")).toMatchObject({
+      category: "debt",
+      valueEur: "-10000.00",
+      countedEur: "10000.00",
+    });
+    // 2026: 640 (50,000 × 1.28 %) + 6,000 (100,000 × 6.00 %) − 167 (6,200 above the threshold × 2.70 %);
+    // grondslag 150,000 − 6,200 = 143,800 (netted into the bank balance it was 140,000).
+    expect(y.calculation).toMatchObject({
+      debtsEur: "10000.00",
+      deductibleDebtsEur: "6200.00",
+      deemedReturnEur: "6473.00",
+      baseEur: "143800.00",
+    });
+    // The tax return lists it under debts, as what is owed.
+    const ret = json(await t.api("GET", "/api/box3/2026/return"));
+    const debts = ret.sections.find((s: any) => s.key === "debts");
+    expect(debts.lines).toEqual([expect.objectContaining({ name: "IBKR", valueEur: 10000 })]);
   });
 
   async function scenario() {

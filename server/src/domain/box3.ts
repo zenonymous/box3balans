@@ -423,8 +423,12 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
     const acc = accountById.get(h.accountId);
     // An account kept as values per year is counted from those values only.
     if (acc?.tracking === "yearly") continue;
-    const cat = categoryOf(config, h, year);
-    const c = count(h.accountId, cat, h.assetClass, h.valueEur);
+    const base = categoryOf(config, h, year);
+    // Cash below zero (a margin loan, an overdraft) is a debt in box 3, at the debt percentage and
+    // above the threshold, not a lower bank balance.
+    const owed = h.assetClass === "cash" && h.valueEur.lt(0) && base !== "excluded";
+    const cat: Category | "debt" = owed ? "debt" : base;
+    const c = count(h.accountId, cat, h.assetClass, owed ? h.valueEur.neg() : h.valueEur);
     const missing = h.priceEur === null;
     if (missing)
       warnings.push(
@@ -440,7 +444,14 @@ export async function computeBox3Year(db: DB, year: number, config: Box3Config):
       );
     }
     // Below zero by more than rounding dust (sums of many decimals leave ~1e-11 behind).
-    if (h.quantity.lt("-0.00000001"))
+    if (owed && h.valueEur.lt("-0.005"))
+      warnings.push(
+        tr(
+          "{account} owes {amount} in {symbol} on {day} (a margin loan or an overdraft): counted as a debt. If it isn't one, check its history.",
+          { account: h.accountName, amount: money2(h.valueEur.neg()), symbol: h.symbol, day: valuedAt },
+        ),
+      );
+    else if (h.quantity.lt("-0.00000001"))
       warnings.push(
         tr("{account} has a negative {symbol} balance on {day}; check its history.", {
           account: h.accountName,

@@ -625,4 +625,7 @@ export const NL: Record<string, string> = {
   "The file has no lines below the header row": "Het bestand heeft geen regels onder de kopregel",
   "A format can only be shared for a CSV file Box3balans doesn't read by itself":
     "Een formaat delen kan alleen voor een CSV-bestand dat Box3balans niet zelf leest",
+  // domain/box3.ts
+  "{account} owes {amount} in {symbol} on {day} (a margin loan or an overdraft): counted as a debt. If it isn't one, check its history.":
+    "{account} heeft op {day} een schuld van {amount} in {symbol} (een effectenkrediet of rood staan): telt als schuld. Is het er geen, controleer dan de geschiedenis.",
 };

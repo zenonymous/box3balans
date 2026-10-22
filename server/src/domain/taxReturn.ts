@@ -133,7 +133,8 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
       value: D(0),
       counted: D(0),
     };
-    line.value = line.value.plus(row.valueEur);
+    // A debt is listed as what is owed (cash below zero at a broker is a negative balance).
+    line.value = line.value.plus(section === "debts" ? D(row.valueEur).abs() : row.valueEur);
     line.counted = line.counted.plus(row.countedEur);
     if (row.source === "transactions" && Number(row.valueEur) !== 0)
       line.details.push({ name: row.name, symbol: row.symbol, valueEur: euros(row.valueEur) });
