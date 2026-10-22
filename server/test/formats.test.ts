@@ -1,4 +1,6 @@
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
+import { priceHistory, transactions } from "../src/db/schema.js";
 import { recognise } from "../src/import/formats/index.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
@@ -559,6 +561,9 @@ describe("broker exports", () => {
       }),
       expect.objectContaining({ type: "buy", symbol: "ETH", quantity: "0.1", total: "300", currency: "USD" }),
       expect.objectContaining({ type: "fee", symbol: "ETH", quantity: "0.0001" }),
+      // ETH for BTC: a sale and a purchase without a price, valued at the day's close when imported.
+      expect.objectContaining({ date: "2022-02-02T12:00:00Z", type: "sell", symbol: "BTC", quantity: "0.01" }),
+      expect.objectContaining({ date: "2022-02-02T12:00:00Z", type: "buy", symbol: "ETH", quantity: "0.15" }),
       expect.objectContaining({ type: "reward", symbol: "USDT", quantity: "0.01000000" }),
       expect.objectContaining({ type: "reward", symbol: "DOT", quantity: "0.05000000" }),
       expect.objectContaining({ type: "withdrawal", symbol: "ETH", quantity: "0.09990000" }),
@@ -570,7 +575,7 @@ describe("broker exports", () => {
       "Small balances converted to BNB": 1,
       "Other kinds: Something New": 1,
     });
-    expect(notes.join(" ")).toMatch(/1 trade between two coins was left out/);
+    expect(notes.join(" ")).toMatch(/1 trade between two coins is booked as a sale and a purchase/);
   });
 
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
@@ -1085,6 +1090,54 @@ describe("importing a recognised export", () => {
     const plain = await upload(true);
     expect(plain.format).toBeNull();
     expect(plain.preset).toBeNull();
+  });
+
+  it("imports a Binance coin-for-coin trade as a sale and a purchase at that day's close", async () => {
+    t = await createTestApp();
+    const db = t.database.db;
+    const acc = (await t.api("POST", "/api/accounts", { name: "Binance", kind: "exchange" })).json();
+    const coin = async (symbol: string, name: string, id: string, close: string) => {
+      const a = (
+        await t!.api("POST", "/api/assets", {
+          assetClass: "crypto",
+          name,
+          symbol,
+          priceSource: "coingecko",
+          priceRef: id,
+        })
+      ).json();
+      await db
+        .insert(priceHistory)
+        .values({ assetId: a.id, day: "2022-02-02", close, currency: "EUR", closeEur: close });
+      return a;
+    };
+    const btc = await coin("BTC", "Bitcoin", "bitcoin", "33000");
+    const eth = await coin("ETH", "Ethereum", "ethereum", "2400");
+    const content = lines(
+      '"User_ID","UTC_Time","Account","Operation","Coin","Change","Remark"',
+      '"1","2022-01-10 09:00:00","Spot","Deposit","BTC","0.05000000",""',
+      '"1","2022-02-02 12:00:00","Spot","Transaction Buy","ETH","0.15000000",""',
+      '"1","2022-02-02 12:00:00","Spot","Transaction Spend","BTC","-0.01000000",""',
+    );
+    const up = (await t.api("POST", "/api/import/upload", { fileName: "binance.csv", content })).json();
+    expect(up.mapping.marketTrades).toBe(true);
+    const plan = (
+      await t.api("POST", "/api/import/preview", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping })
+    ).json();
+    expect(plan.summary).toMatchObject({ new: 3, error: 0 });
+    await t.api("POST", "/api/import/commit", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping });
+    const txs = await db.select().from(transactions).where(eq(transactions.accountId, acc.id));
+    const leg = (type: string) => txs.find((x) => x.type === type)!;
+    // Each leg at its coin's close that day: 0.01 BTC × 33,000 and 0.15 ETH × 2,400.
+    expect(leg("sell")).toMatchObject({ assetId: btc.id, currency: "EUR" });
+    expect(leg("buy")).toMatchObject({ assetId: eth.id, currency: "EUR" });
+    expect([Number(leg("sell").price), Number(leg("buy").price)]).toEqual([33000, 2400]);
+    expect(Number(leg("sell").quantity)).toBe(0.01);
+    expect(Number(leg("buy").quantity)).toBe(0.15);
+
+    // A file mapped by hand still needs a price: a forgotten price column isn't valued silently.
+    const manual = (await t.api("POST", "/api/import/upload", { fileName: "binance.csv", content, raw: true })).json();
+    expect(manual.mapping.marketTrades).toBe(false);
   });
 
   it("previews an eToro statement without errors, prices in dollars", async () => {

@@ -34,7 +34,7 @@ export interface Converted {
   skipped: Map<string, number>;
   warnings: string[];
   /** Mapping settings that differ from the template's. */
-  mapping?: { feeCurrency?: "trade" | "EUR"; settleCash?: boolean };
+  mapping?: { feeCurrency?: "trade" | "EUR"; settleCash?: boolean; marketTrades?: boolean };
   /** What a statement says the account held when it starts; the preview checks it against the account. */
   opening?: OpeningBalance;
 }

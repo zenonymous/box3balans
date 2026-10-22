@@ -510,10 +510,6 @@ export const NL: Record<string, string> = {
     "{n} moment met meer dan één transactie tegelijk is overgeslagen: dat is niet met zekerheid te splitsen.",
   "{n} moments with more than one trade at once were left out: they can't be split for sure.":
     "{n} momenten met meer dan één transactie tegelijk zijn overgeslagen: die zijn niet met zekerheid te splitsen.",
-  "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.":
-    "{n} ruil tussen twee munten is overgeslagen: die heeft geen waarde in geld. Corrigeer dat saldo daarna.",
-  "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
-    "{n} ruilen tussen twee munten zijn overgeslagen: die hebben geen waarde in geld. Corrigeer die saldi daarna.",
   "CoinTracking trade table": "CoinTracking transactietabel",
   "Delta export": "Delta-export",
   "Currency exchanges": "Valutawissels",
@@ -641,4 +637,14 @@ export const NL: Record<string, string> = {
   " and ": " en ",
   "This Coinbase key can also {rights}. Make a new key with only “View” permissions: Box3balans only reads, and a key that can do more is worth more to anyone who gets hold of it.":
     "Deze Coinbase-sleutel kan ook {rights}. Maak een nieuwe sleutel met alleen “View”-rechten: Box3balans leest alleen, en een sleutel die meer kan, is meer waard voor wie hem in handen krijgt.",
+  // import/formats/binance.ts
+  "{n} trade between two coins is booked as a sale and a purchase, each at that day's market price (the export has no value in money for it).":
+    "{n} handel tussen twee munten is geboekt als een verkoop en een aankoop, elk tegen de marktkoers van die dag (de export noemt er geen bedrag in geld bij).",
+  "{n} trades between two coins are booked as a sale and a purchase, each at that day's market price (the export has no value in money for them).":
+    "{n} handels tussen twee munten zijn geboekt als een verkoop en een aankoop, elk tegen de marktkoers van die dag (de export noemt er geen bedrag in geld bij).",
+  // sync/providers/bitpanda.ts
+  "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.":
+    "{n} ruil tussen twee munten is overgeslagen: die heeft geen waarde in geld. Corrigeer dat saldo daarna.",
+  "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
+    "{n} ruilen tussen twee munten zijn overgeslagen: die hebben geen waarde in geld. Corrigeer die saldi daarna.",
 };

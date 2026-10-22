@@ -153,8 +153,13 @@ export const binance: BrokerFormat = {
           { ...row("buy", inCoin, inQty, dollars, "USD"), fee: undefined },
         );
       } else {
+        // Coin for coin: a sale and a purchase, each valued at that day's close when imported.
         swaps++;
-        continue;
+        out.rows.push(
+          { date, type: "sell", ...coinAsset(outCoin), quantity: fmt(outQty), currency: "EUR", notes: group[0]!.rawOp },
+          { date, type: "buy", ...coinAsset(inCoin), quantity: fmt(inQty), currency: "EUR", notes: group[0]!.rawOp },
+        );
+        out.mapping = { ...out.mapping, marketTrades: true };
       }
       // A fee in a coin of its own (BNB, or the coin itself) is its own line.
       for (const [coin, f] of fees)
@@ -165,8 +170,8 @@ export const binance: BrokerFormat = {
       out.warnings.push(
         trn(
           swaps,
-          "{n} trade between two coins was left out: it has no value in money. Correct that balance afterwards.",
-          "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.",
+          "{n} trade between two coins is booked as a sale and a purchase, each at that day's market price (the export has no value in money for it).",
+          "{n} trades between two coins are booked as a sale and a purchase, each at that day's market price (the export has no value in money for them).",
         ),
       );
     if (unclear)

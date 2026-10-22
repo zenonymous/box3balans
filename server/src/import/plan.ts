@@ -295,7 +295,8 @@ function parseRows(
       if (type === "buy" || type === "sell") {
         if (!quantity || quantity.isZero()) throw new RowError(tr("No quantity"));
         if (!unit && total) unit = total.div(quantity);
-        if (!unit) throw new RowError(tr("Needs a price or a total"));
+        // A coin traded for a coin (marketTrades): valued at that day's close when imported.
+        if (!unit && !(m.marketTrades && kind === "crypto")) throw new RowError(tr("Needs a price or a total"));
         if (cash) throw new RowError(tr("Buying or selling a currency isn't supported; use deposit/withdrawal"));
       } else if (type === "dividend") {
         amount = amountCol ?? total ?? (quantity && price ? quantity.mul(price) : ZERO);
@@ -685,9 +686,11 @@ export async function commitImport(
       // single-day lookups below report what's missing
     }
   }
-  const needsMarket = todo.filter(
-    (r) => !r.price && (r.type === "deposit" || r.type === "reward") && r.kind !== "fiat",
-  );
+  const atMarket = (r: ParsedRow) =>
+    !r.price &&
+    r.kind !== "fiat" &&
+    (r.type === "deposit" || r.type === "reward" || (m.marketTrades && (r.type === "buy" || r.type === "sell")));
+  const needsMarket = todo.filter(atMarket);
   for (const key of new Set(needsMarket.map((r) => r.key))) {
     try {
       await history.ensureRange(assetOf.get(key)!.asset, ...span(needsMarket.filter((r) => r.key === key)));
@@ -751,7 +754,7 @@ export async function commitImport(
       let price = r.price;
       let currency = r.currency;
       let fxRate = fx;
-      if (!price && (r.type === "deposit" || r.type === "reward")) {
+      if (atMarket(r)) {
         // No price in the file: value at that day's market close.
         price = await history.eurOn(asset.id, localDay(r.at));
         if (!price)

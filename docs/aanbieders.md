@@ -481,7 +481,7 @@ Algemeen: de Belastingdienst laat je de koers op 1 januari van het platform dat 
 
 **Advies:** (b) op verzoek, omdat het om oude jaren gaat. Werk M, prio 3.
 
-**Stand (oktober 2026):** de herkenner voor _Transaction History_ is gebouwd ([#52](https://github.com/zenonymous/box3balans/issues/52)), op de indeling en de lijst met `Operation`-waarden uit BittyTax, nog niet getest met een echte export. De regels van één seconde vormen één handel. Tegen geld is dat een aankoop of verkoop; tegen een dollar-stablecoin (USDT, USDC, BUSD, FDUSD, TUSD, USDP, DAI) een verkoop van de stablecoin en een aankoop van de munt tegen een dollar per stablecoin, omdat de meeste handel op Binance zo ging; tussen twee andere munten wordt hij overgeslagen en geteld. Verplaatsingen binnen Binance (Earn, staking, sparen), futures en margin, kleine saldi naar BNB en euro's worden overgeslagen.
+**Stand (oktober 2026):** de herkenner voor _Transaction History_ is gebouwd ([#52](https://github.com/zenonymous/box3balans/issues/52)), op de indeling en de lijst met `Operation`-waarden uit BittyTax, nog niet getest met een echte export. De regels van één seconde vormen één handel. Tegen geld is dat een aankoop of verkoop; tegen een dollar-stablecoin (USDT, USDC, BUSD, FDUSD, TUSD, USDP, DAI) een verkoop van de stablecoin en een aankoop van de munt tegen een dollar per stablecoin, omdat de meeste handel op Binance zo ging; tussen twee andere munten een verkoop en een aankoop, elk tegen de slotkoers van die munt op die dag (de export noemt geen bedrag in geld; zonder slotkoers komt hij op € 0, met een melding). Verplaatsingen binnen Binance (Earn, staking, sparen), futures en margin, kleine saldi naar BNB en euro's worden overgeslagen.
 
 #### Bitstamp
 

@@ -52,6 +52,9 @@ export const mappingSchema = z.object({
   feeCurrency: z.enum(["trade", "EUR"]).default("trade"),
   // Book buys, sells and dividends against the account's cash balance.
   settleCash: z.boolean().default(false),
+  // Buys and sells of coins without a price or total are valued at that day's market close: an
+  // exchange's coin-for-coin trades, which a recogniser books as a sale and a purchase.
+  marketTrades: z.boolean().default(false),
   // Asset key (see assetKey) → existing asset chosen by the user.
   assetOverrides: z.record(z.string(), z.number().int().positive()).default({}),
 });
