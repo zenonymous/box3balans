@@ -76,7 +76,8 @@ function sectionOf(row: Box3Year["rows"][number]): ReturnSection | null {
   if (row.accountKind === "receivable") return "receivables";
   if (row.accountKind === "insurance") return "other";
   if (row.assetClass === "crypto") return "crypto";
-  if (["stock", "etf", "bond", "fund"].includes(row.assetClass)) return "investments";
+  // Securities, bonds and funds included: one bought by ISIN is a stock or an ETF.
+  if (row.assetClass === "stock" || row.assetClass === "etf") return "investments";
   // Precious metals, euros on an exchange, and anything else.
   return "other";
 }
