@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { readStatement } from "../src/import/statement.js";
-import { createTestApp, type TestApp } from "./helpers.js";
+import { createTestApp, defaultRoutes, type TestApp } from "./helpers.js";
 
 // Made-up files in the layout of DEGIRO's exports, not real accounts.
 const lines = (...l: string[]) => l.join("\n") + "\n";
@@ -65,7 +65,13 @@ describe("importing a portfolio statement", () => {
     await api("POST", "/api/import/commit", { uploadId: up.uploadId, accountId: acc.id, mapping: up.mapping });
 
     const st = await api("POST", "/api/import/upload", { fileName: "Portfolio.csv", content: PORTFOLIO });
-    expect(st.statement).toEqual({ label: "DEGIRO portfolio", positions: 3, currencies: ["EUR"] });
+    expect(st.statement).toEqual({
+      label: "DEGIRO portfolio",
+      positions: 3,
+      currencies: ["EUR"],
+      day: null,
+      source: "degiro-portfolio",
+    });
 
     const check = await api("POST", "/api/import/statement", {
       uploadId: st.uploadId,
@@ -76,8 +82,8 @@ describe("importing a portfolio statement", () => {
     // The purchase of 6 January 2025 doesn't count for 31 December.
     expect(row("ASML HOLDING")).toMatchObject({ reported: "2", computed: "2", difference: "0" });
     expect(row("ISHARES CORE MSCI WORLD")).toMatchObject({ reported: "9", computed: "10", difference: "-1" });
-    // No transactions yet, so no asset: import the history first.
-    expect(row("MICROSOFT CORP")).toMatchObject({ assetId: null, reported: "3", difference: "3" });
+    // No transactions yet: the asset is made from its ISIN, so the difference can be adjusted too.
+    expect(row("MICROSOFT CORP")).toMatchObject({ assetId: expect.any(Number), reported: "3", difference: "3" });
     // Cash: 12.34 reported, 0.35 of interest booked.
     const cash = check.rows.find((r: { isin: string | null; currency: string }) => !r.isin && r.currency === "EUR");
     expect(cash).toMatchObject({ reported: "12.34", computed: "0.35", difference: "11.99", price: "1" });
@@ -112,5 +118,121 @@ describe("importing a portfolio statement", () => {
       day: "2024-12-31",
     });
     expect(refused.statusCode).toBe(400);
+  });
+});
+
+// A made-up file in the layout of ING's "Historisch portefeuilleoverzicht" (Eenvoudig Beleggen),
+// with ING's own spelling of the title and its byte order mark and Windows line ends.
+const ING = [
+  "﻿Historisch portfeuilleoverzicht",
+  "",
+  "Rekeningnummer;12345678",
+  "Eenvoudig Beleggen",
+  "Datum;31-12-2025",
+  "",
+  "Houders;Hr A Voorbeeld",
+  "Overzicht",
+  "",
+  ";31-12-2025",
+  "Portefeuillewaarde (EUR);1.234,56",
+  "Opgebouwde rente (EUR);0",
+  "Cash-gedeelte (EUR);10,5;",
+  "",
+  "Posities",
+  "",
+  "Naam;ISIN;Type;Aantal(31-12-2025);Koers(31-12-2025);Waarde EUR(31-12-2025);",
+  "ING Global Index Portfolio Dynamic;LU1903451901;Aandelenfondsen;10,512;117,44;1.234,56;",
+  "",
+  "Belangrijke informatie",
+  "",
+  "De getoonde koers is de meest actuele (slot)koers die bij ons beschikbaar is.",
+].join("\r\n");
+
+describe("ING's historical portfolio overview", () => {
+  let t: TestApp | undefined;
+  afterEach(async () => t?.close());
+
+  it("reads the fund by ISIN, the cash part, the day and the product", () => {
+    expect(readStatement(ING)).toEqual({
+      source: "ing-portfolio",
+      day: "2025-12-31",
+      product: "Eenvoudig Beleggen",
+      positions: [
+        {
+          isin: "LU1903451901",
+          name: "ING Global Index Portfolio Dynamic",
+          quantity: "10.512",
+          price: "117.44",
+          currency: "EUR",
+        },
+      ],
+      cash: [{ currency: "EUR", amount: "10.5" }],
+    });
+    // An overview from before the first purchase: no positions, nothing to correct.
+    const empty = ING.replace(/\r\nING Global[^\r]*/, "").replace("Cash-gedeelte (EUR);10,5;", "");
+    expect(readStatement(empty)).toMatchObject({ positions: [], cash: [] });
+  });
+
+  it("makes the fund from its ISIN, so an account without transactions can be set to it", async () => {
+    t = await createTestApp({
+      ...defaultRoutes,
+      "v1/finance/search?q=LU1903451901": {
+        quotes: [
+          {
+            symbol: "0P0001HDKQ.F",
+            quoteType: "MUTUALFUND",
+            longname: "ING ARIA - ING Global Idx Port Dyn B EUR",
+            exchDisp: "Frankfurt",
+          },
+        ],
+      },
+      "query1.finance.yahoo.com/v8/finance/chart/0P0001HDKQ.F": {
+        chart: { result: [{ meta: { currency: "EUR", regularMarketPrice: 117.44 } }], error: null },
+      },
+    });
+    const api = async (method: string, url: string, body?: object) => {
+      const res = await t!.api(method, url, body);
+      if (res.statusCode >= 400) throw new Error(`${url}: ${res.body}`);
+      return res.json();
+    };
+    const acc = await api("POST", "/api/accounts", { name: "ING Beleggen", kind: "broker", provider: "ing" });
+    const st = await api("POST", "/api/import/upload", {
+      fileName: "Historisch portefeuilleoverzicht.csv",
+      content: ING,
+    });
+    expect(st.statement).toMatchObject({
+      label: "ING portfolio overview",
+      positions: 1,
+      day: "2025-12-31",
+      source: "ing-portfolio",
+    });
+    const check = await api("POST", "/api/import/statement", {
+      uploadId: st.uploadId,
+      accountId: acc.id,
+      day: st.statement.day,
+    });
+    const fund = check.rows.find((r: { isin: string | null }) => r.isin === "LU1903451901");
+    expect(fund).toMatchObject({
+      assetId: expect.any(Number),
+      reported: "10.512",
+      computed: "0",
+      difference: "10.512",
+      price: "117.44",
+    });
+    const asset = (await api("GET", "/api/assets")).find((a: { id: number }) => a.id === fund.assetId);
+    expect(asset).toMatchObject({ isin: "LU1903451901", priceSource: "yahoo", priceRef: "0P0001HDKQ.F" });
+
+    // As the page's one-click adjustment does: the account then holds what ING says.
+    for (const r of check.rows)
+      await api("POST", "/api/transactions", {
+        accountId: acc.id,
+        assetId: r.assetId,
+        type: "deposit",
+        occurredAt: "2025-12-31T11:00:00.000Z",
+        quantity: r.difference,
+        price: r.price,
+        currency: r.currency,
+      });
+    expect((await api("GET", `/api/import/statement/${acc.id}`)).differences).toBe(0);
   });
 });

@@ -651,4 +651,6 @@ export const NL: Record<string, string> = {
   "Keep your backup passphrase": "Bewaar de wachtzin van je back-ups",
   "Backups are encrypted with a passphrase Box3balans made. Put it in your password manager (Settings → Backups shows it); without it, a backup can't be restored on another server. Dismiss this once it's there.":
     "Back-ups zijn versleuteld met een wachtzin die Box3balans maakte. Zet die in je wachtwoordmanager (Instellingen → Back-ups laat hem zien); zonder kun je een back-up niet op een andere server terugzetten. Verberg deze melding als hij erin staat.",
+  // routes/imports.ts
+  "ING portfolio overview": "ING-portefeuilleoverzicht",
 };

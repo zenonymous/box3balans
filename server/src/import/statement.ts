@@ -10,21 +10,28 @@ import { type OpeningBalance, norm, num } from "./formats/types.js";
 import { detectDecimal, detectDelimiter, parseCsv } from "./parse.js";
 
 /**
- * A statement of what a broker says an account held on a day: DEGIRO's portfolio export
- * ("Portfolio.csv": Product, Symbool/ISIN, Aantal, Slotkoers, Lokale waarde, …, Waarde in EUR).
- * The file doesn't say which day it is for; the user chooses it when importing.
+ * A statement of what a broker says an account held on a day:
+ * - DEGIRO's portfolio export ("Portfolio.csv": Product, Symbool/ISIN, Aantal, Slotkoers, Lokale
+ *   waarde, …, Waarde in EUR). The file doesn't say which day it is for; the user chooses it.
+ * - ING's "Historisch portefeuilleoverzicht" (Eenvoudig Beleggen, Zelf op de Beurs): a title block,
+ *   then Naam;ISIN;Type;Aantal(d-m-y);Koers(d-m-y);Waarde EUR(d-m-y). It says its own day.
  */
 export interface Statement {
-  source: "degiro-portfolio";
+  source: "degiro-portfolio" | "ing-portfolio";
   positions: { isin: string; name: string; quantity: string; price: string | null; currency: string }[];
-  // Cash per currency ("CASH & CASH FUND & FTX CASH (EUR)").
+  // Cash per currency ("CASH & CASH FUND & FTX CASH (EUR)", "Cash-gedeelte (EUR)").
   cash: { currency: string; amount: string }[];
+  // The day it's for, when the file says (YYYY-MM-DD), and the product ("Eenvoudig Beleggen").
+  day?: string;
+  product?: string;
 }
 
 const ISIN_RE = /^[A-Z]{2}[A-Z0-9]{9}\d$/;
 
 export function readStatement(content: string): Statement | null {
   const text = content.replace(/^\uFEFF/, "");
+  const ing = readIngStatement(text);
+  if (ing) return ing;
   const table = parseCsv(text, detectDelimiter(text)).filter((r) => r.some((c) => c.trim()));
   const h = (table[0] ?? []).map((c) => norm(c));
   const isPortfolio =
@@ -52,6 +59,43 @@ export function readStatement(content: string): Statement | null {
   return out;
 }
 
+const dmyToIso = (s: string) => {
+  const m = /(\d{1,2})-(\d{1,2})-(\d{4})/.exec(s);
+  return m ? `${m[3]}-${m[2]!.padStart(2, "0")}-${m[1]!.padStart(2, "0")}` : undefined;
+};
+
+/** ING's "Historisch portefeuilleoverzicht"; null for anything else. Numbers in Dutch notation. */
+function readIngStatement(text: string): Statement | null {
+  const table = parseCsv(text, ";");
+  const at = table.findIndex(
+    (r) => norm(r[0] ?? "") === "naam" && norm(r[1] ?? "") === "isin" && norm(r[3] ?? "").startsWith("aantal"),
+  );
+  if (at < 0) return null;
+  const head = table.slice(0, at);
+  const cell = (label: RegExp) => head.find((r) => label.test(r[0] ?? ""))?.[1];
+  const day = dmyToIso(cell(/^datum$/i) ?? table[at]![3] ?? "");
+  const product = head.find((r) => r.length === 1 && /beleggen|beurs/i.test(r[0] ?? ""))?.[0];
+  const out: Statement = { source: "ing-portfolio", positions: [], cash: [], day, product };
+  for (const r of table.slice(at + 1)) {
+    const [name = "", isinCell = "", , quantity = "", close = "", value = ""] = r;
+    const isin = isinCell.toUpperCase();
+    if (!ISIN_RE.test(isin)) break;
+    const q = num(quantity, ",");
+    const v = num(value, ",");
+    if (q == null || D(q).isZero()) continue;
+    // The price in euros: the close when it gives the value in euros, else value / quantity (a fund
+    // priced in another currency).
+    const c = num(close, ",");
+    const fromValue = v == null ? null : D(v).div(q);
+    const price =
+      c != null && fromValue && D(c).minus(fromValue).abs().lte(D(c).mul("0.01")) ? c : fromValue?.toFixed();
+    out.positions.push({ isin, name: name.trim(), quantity: q, price: price ?? null, currency: "EUR" });
+  }
+  const cash = num(cell(/^cash-gedeelte \(eur\)$/i) ?? "", ",");
+  if (cash != null && !D(cash).isZero()) out.cash.push({ currency: "EUR", amount: cash });
+  return out;
+}
+
 export interface StatementRow {
   // Null when no asset has this ISIN yet: import the transactions first.
   assetId: number | null;
@@ -73,9 +117,15 @@ export interface StatementCheck {
   differences: number;
 }
 
-/** Makes sure each currency on the statement has its cash asset, so a difference can be corrected. */
+/**
+ * Makes sure each position and currency on the statement has its asset, so a difference can be
+ * corrected with one click, also for an account kept with statements only (ING's overview without
+ * its transactions): a fund is looked up by its ISIN, as an import does.
+ */
 export async function ensureCashAssets(resolver: AssetResolver, st: Statement) {
   for (const c of st.cash) await resolver.resolve({ kind: "fiat", currency: c.currency });
+  for (const p of st.positions)
+    await resolver.resolve({ kind: "security", isin: p.isin, symbol: p.isin, name: p.name, currency: p.currency });
 }
 
 /** The statement against the account's transactions up to the end of `day`. Only reads. */

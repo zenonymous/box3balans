@@ -207,7 +207,9 @@ export async function importRoutes(app: FastifyInstance) {
         uploadId: id,
         fileName,
         statement: {
-          label: tr("DEGIRO portfolio"),
+          label: statement.source === "ing-portfolio" ? tr("ING portfolio overview") : tr("DEGIRO portfolio"),
+          day: statement.day ?? null,
+          source: statement.source,
           positions: statement.positions.length,
           currencies: statement.cash.map((c) => c.currency),
         },

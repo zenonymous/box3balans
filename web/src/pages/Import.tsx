@@ -121,7 +121,13 @@ interface Upload {
   // A known export (DEGIRO, Bitvavo …), converted to the Box3balans template.
   format?: { id: string; label: string; rows: number; tested: boolean } | null;
   // Not transactions but a statement of positions on a day (DEGIRO's portfolio export).
-  statement?: { label: string; positions: number; currencies: string[] };
+  statement?: {
+    label: string;
+    positions: number;
+    currencies: string[];
+    day?: string | null;
+    source?: "degiro-portfolio" | "ing-portfolio";
+  };
 }
 
 interface CommitResult {
@@ -205,15 +211,18 @@ function StatementStep({
   positions,
   accountId,
   accountName,
+  fileDay,
 }: {
   uploadId: string;
   label: string;
   positions: number;
   accountId: number;
   accountName: string;
+  // The day the file says it's for (ING's overview); DEGIRO's doesn't say.
+  fileDay?: string | null;
 }) {
   const qc = useQueryClient();
-  const [day, setDay] = useState(`${new Date().getFullYear() - 1}-12-31`);
+  const [day, setDay] = useState(fileDay ?? `${new Date().getFullYear() - 1}-12-31`);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -242,7 +251,14 @@ function StatementStep({
         )}
       </p>
       <div className="mt-3 flex flex-wrap items-end gap-3">
-        <Field label={t("Which day is it for?")} hint={t("The file doesn't say; for box 3 it's usually 31 December.")}>
+        <Field
+          label={t("Which day is it for?")}
+          hint={
+            fileDay
+              ? t("As the file says. For box 3, use the overview of 31 December.")
+              : t("The file doesn't say; for box 3 it's usually 31 December.")
+          }
+        >
           {(id) => <DateInput id={id} value={day} max={todayIso()} onChange={setDay} required />}
         </Field>
         <Button variant="primary" onClick={() => void compare()} disabled={busy || !day}>
@@ -296,8 +312,9 @@ export function ImportPage() {
       setUpload(up);
       setMapping(up.mapping ?? null);
       // A portfolio statement belongs to the broker account it came from, when there's just one.
-      const degiro = accounts.data?.filter((a) => !a.archived && a.provider?.toLowerCase() === "degiro") ?? [];
-      if (up.statement && !accountId && degiro.length === 1) setAccountId(String(degiro[0]!.id));
+      const provider = up.statement?.source === "ing-portfolio" ? "ing" : "degiro";
+      const from = accounts.data?.filter((a) => !a.archived && a.provider?.toLowerCase() === provider) ?? [];
+      if (up.statement && !accountId && from.length === 1) setAccountId(String(from[0]!.id));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -421,6 +438,7 @@ export function ImportPage() {
             positions={upload.statement.positions}
             accountId={Number(accountId)}
             accountName={account?.name ?? ""}
+            fileDay={upload.statement.day}
           />
         ) : !upload && reviewing ? (
           <StatementCheckCard

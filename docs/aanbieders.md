@@ -262,7 +262,7 @@ Werk S, prio 1.
 
 Staan in [exportformaten.md](exportformaten.md):
 
-- **ING Zelf op de Beurs:** CSV van transacties en portefeuille, kolommen onbekend; voorbeeld nodig. (b) + (c), werk M, prio 2.
+- **ING Zelf op de Beurs en Eenvoudig Beleggen:** het _Historisch portefeuilleoverzicht_ (CSV) wordt gelezen sinds 0.1.39, getest met een echt overzicht van Eenvoudig Beleggen (oktober 2026). De transactie-CSV's van ING (tabbladen Beleggingen en Geld): kolommen nog onbekend, voorbeeld nodig. (b) + (c), werk M, prio 2.
 - **ABN AMRO:** geen effectenexport; fondsregels in de TAB-export van de tegenrekening. Prio 3 tot er een echt bestand is.
 - **Lightyear, Scalable Capital:** herkend.
 - **DEGIRO, Interactive Brokers, Saxo, Trade Republic, Trading 212, BUX, Revolut (aandelen), Rabobank Beleggen:** herkend of gekoppeld ([README](../README.md#csv-import)).

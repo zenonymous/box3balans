@@ -1680,4 +1680,6 @@ export const NL: Record<string, string> = {
   "Show the passphrase": "Wachtzin tonen",
   "Backups aren't encrypted: anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart to encrypt new backups.":
     "Back-ups zijn niet versleuteld: wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false weg, of zet BACKUP_PASSPHRASE, in .env en herstart om nieuwe back-ups te versleutelen.",
+  "As the file says. For box 3, use the overview of 31 December.":
+    "Zoals het bestand zegt. Gebruik voor box 3 het overzicht van 31 december.",
 };
