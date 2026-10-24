@@ -1,5 +1,7 @@
 # Box3balans
 
+_English: [CONTEXT.en.md](CONTEXT.en.md)_
+
 Houdt bij wat een Nederlands huishouden bezit en schuldig is, en rekent daarmee box 3 uit: wat er op de peildatum was, de belasting, en het werkelijk rendement. De termen volgen de aangifte; tussen haakjes staat het Engelse woord dat de code gebruikt.
 
 ## Box 3

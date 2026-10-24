@@ -1,5 +1,7 @@
 # De databasegebruiker van de app blijft superuser
 
+_English: [../en/adr/0006-databasegebruiker-blijft-superuser.md](../en/adr/0006-databasegebruiker-blijft-superuser.md)_
+
 In de installatie met PostgreSQL is de gebruiker waarmee de app verbindt de superuser die het image bij de eerste start aanmaakt. PostgreSQL weigert die gebruiker zijn rechten af te nemen (getest), dus een beperkte gebruiker vraagt een tweede rol met een eigen wachtwoordbestand, het overdragen van alle tabellen en een wisseling bij het opstarten, ook voor bestaande installaties. Omdat de database alleen voor deze app is en geen poort naar buiten heeft, weegt dat niet op tegen het extra werk en de kans op fouten bij upgrades.
 
 ## Gevolgen

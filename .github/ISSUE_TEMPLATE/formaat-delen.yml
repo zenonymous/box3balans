@@ -1,5 +1,5 @@
-name: Formaat delen (bestand uit Box3balans)
-description: Deel het bestand dat Box3balans maakte bij “Help anderen dit bestand in te lezen”, zodat een volgende versie je export of jaaroverzicht vanzelf leest.
+name: Formaat delen (bestand uit Box3balans) / Share a format (file from Box3balans)
+description: Deel het bestand dat Box3balans maakte bij “Help anderen dit bestand in te lezen”, zodat een volgende versie je export of jaaroverzicht vanzelf leest. / Share the file Box3balans made with “Help others read this file”, so a next version reads your export or annual statement by itself.
 labels: [exportformaat]
 body:
   - type: markdown
@@ -10,31 +10,33 @@ body:
         Box3balans maakte het zonder je gegevens: verzonnen regels of getallen in de opmaak van jouw bestand. Wat er van je bestand in bleef (kolomnamen, woorden voor de soort, valutacodes, gewone woorden uit overzichten), zag je in Box3balans voordat je het downloadde. Hoe dat werkt: [ADR 0012](https://github.com/zenonymous/box3balans/blob/main/docs/adr/0012-formaten-delen-zonder-gegevens.md).
 
         Dit issue is openbaar.
+
+        _English: thank you! Drag the file Box3balans made (`box3balans-formaat-….json` or `box3balans-jaaroverzicht-….json`) into the box below. Box3balans made it without your data: made-up rows or numbers in your file's layout; what remained of your file you saw in Box3balans before downloading it. How that works: [ADR 0012](https://github.com/zenonymous/box3balans/blob/main/docs/en/adr/0012-formaten-delen-zonder-gegevens.md). This issue is public._
   - type: input
     id: aanbieder
     attributes:
-      label: Aanbieder
+      label: Aanbieder / Provider
       placeholder: Nordnet, Brand New Day, Peaks …
     validations:
       required: true
   - type: textarea
     id: bestand
     attributes:
-      label: Bestand uit Box3balans
-      description: Sleep het .json-bestand hierheen, of plak de inhoud.
+      label: Bestand uit Box3balans / File from Box3balans
+      description: Sleep het .json-bestand hierheen, of plak de inhoud. / Drag the .json file here, or paste its contents.
     validations:
       required: true
   - type: textarea
     id: toelichting
     attributes:
-      label: Toelichting
-      description: Optioneel. Bijvoorbeeld wat er bij het inlezen nog niet goed ging, of welke regels in je bestand voorkomen maar niet in het voorbeeld.
+      label: Toelichting / Notes
+      description: Optioneel. Bijvoorbeeld wat er bij het inlezen nog niet goed ging, of welke regels in je bestand voorkomen maar niet in het voorbeeld. / Optional. For example what didn't go right when reading it, or which rows occur in your file but not in the sample.
   - type: checkboxes
     id: controle
     attributes:
-      label: Controle
+      label: Controle / Check
       options:
-        - label: Ik heb in Box3balans bekeken wat er in het bestand staat.
+        - label: Ik heb in Box3balans bekeken wat er in het bestand staat. / I looked at what's in the file in Box3balans.
           required: true
-        - label: Ik deel het onder de licentie van Box3balans (AGPL-3.0).
+        - label: Ik deel het onder de licentie van Box3balans (AGPL-3.0). / I share it under Box3balans's licence (AGPL-3.0).
           required: true

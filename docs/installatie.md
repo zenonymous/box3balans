@@ -1,5 +1,7 @@
 # Box3balans installeren
 
+_English: [en/installatie.md](en/installatie.md)_
+
 Box3balans draait in Docker. Hieronder per systeem hoe je het installeert. Overal geldt hetzelfde idee:
 
 1. Een map met daarin [`docker-compose.yml`](../docker-compose.yml), en eventueel een `.env` met je instellingen ([`.env.example`](../.env.example) laat zien wat kan).

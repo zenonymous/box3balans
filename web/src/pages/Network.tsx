@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { get, put } from "../api";
 import { Alert, Button, Card, PageHeader, Spinner } from "../components/ui";
 import { date } from "../format";
-import { dateLocale, t, tj, tn } from "../i18n";
+import { dateLocale, getLang, t, tj, tn } from "../i18n";
 
 interface Destination {
   id: string;
@@ -170,7 +170,7 @@ export function NetworkPage() {
                 <a
                   key="d"
                   className="underline"
-                  href="https://github.com/zenonymous/box3balans/blob/main/docs/privacy.md"
+                  href={`https://github.com/zenonymous/box3balans/blob/main/docs/${getLang() === "en" ? "en/" : ""}privacy.md`}
                   target="_blank"
                   rel="noreferrer"
                 />,

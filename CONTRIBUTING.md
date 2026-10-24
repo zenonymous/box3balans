@@ -4,11 +4,11 @@ Fijn dat je wilt helpen! Box3balans is een hobbyproject voor iedereen in Nederla
 
 **Een vraag?** Stel die bij [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a), niet als issue: issues zijn voor fouten, exportformaten en concrete voorstellen. Een los idee bespreek je eerst bij [Ideas](https://github.com/zenonymous/box3balans/discussions/categories/ideas).
 
-_In English: contributions in English are welcome too. Issues and pull requests may be written in either language; questions go to Discussions._
+_English: [CONTRIBUTING.en.md](CONTRIBUTING.en.md)_
 
 ## Waar je het meest mee helpt
 
-- **Het formaat van je export of jaaroverzicht.** Kent Box3balans de CSV van je broker, bank of beurs of je jaaroverzicht (pdf) nog niet, kies dan in de app _Help anderen dit bestand in te lezen_ (of _… dit overzicht …_). Box3balans maakt een bestand met verzonnen gegevens in de opmaak van het jouwe; je ziet wat erin staat en deelt het met het formulier _Formaat delen_ bij [Issues](../../issues/new/choose). Zie [Je formaat delen](docs/importeren.md#je-formaat-delen). Zelf een geanonimiseerd voorbeeld sturen kan ook, met de formulieren _Exportbestand van een broker, bank of beurs_ en _Jaaroverzicht (pdf) van een aanbieder_; stuur nooit de pdf zelf.
+- **Het formaat van je export of jaaroverzicht.** Kent Box3balans de CSV van je broker, bank of beurs of je jaaroverzicht (pdf) nog niet, kies dan in de app _Help anderen dit bestand in te lezen_ (of _… dit overzicht …_). Box3balans maakt een bestand met verzonnen gegevens in de opmaak van het jouwe; je ziet wat erin staat en deelt het met het formulier _Formaat delen_ bij [Issues](https://github.com/zenonymous/box3balans/issues/new/choose). Zie [Je formaat delen](docs/importeren.md#je-formaat-delen). Zelf een geanonimiseerd voorbeeld sturen kan ook, met de formulieren _Exportbestand van een broker, bank of beurs_ en _Jaaroverzicht (pdf) van een aanbieder_; stuur nooit de pdf zelf.
 - **Fouten melden**, met de versie (linksonder in de app) en hoe je het kunt nadoen. Deel nooit echte bedragen, rekeningnummers, wallet-adressen of API-sleutels. Een beveiligingsprobleem meld je privé, niet als issue: zie [SECURITY.md](SECURITY.md#een-kwetsbaarheid-melden).
 - **Belastingregels controleren.** Klopt een berekening niet met wat de Belastingdienst zegt? Meld het met een link naar de bron. De regels en hun bronnen staan in [`docs/box3-sources.md`](docs/box3-sources.md), de cijfers in [`server/src/rules/box3.json`](server/src/rules/box3.json).
 - **Code.** Kijk in de [roadmap](docs/ROADMAP.md) wat er gepland is. Open voor grotere wijzigingen eerst een issue, zodat we de aanpak kunnen afstemmen voordat je er veel tijd in steekt.
@@ -53,6 +53,7 @@ Verandert de app zichtbaar? Maak de screenshots in de README dan opnieuw: start 
 
 - **Begrippen en beslissingen:** de woorden die de app en de code gebruiken, met hun betekenis, staan in [CONTEXT.md](CONTEXT.md). Keuzes die bewust zo zijn gemaakt (en waarom) staan in [docs/adr/](docs/adr/). Wil je daarvan afwijken, begin dan met een issue.
 
+- **Documentatie in twee talen:** elk Markdown-document heeft een Nederlandse en een Engelse versie (`README.md` en `README.en.md`, `docs/x.md` en `docs/en/x.md`). Pas ze allebei aan; schrijf je maar één taal, zeg dat dan in de pull request, dan wordt de andere aangevuld. `test/docs-english.test.ts` controleert dat elk Nederlands document een Engelse versie heeft.
 - **Geld en hoeveelheden** rekenen met `decimal.js` en worden in de database als `NUMERIC` opgeslagen, nooit als gewone getallen met afrondingsfouten.
 - **Tests gebruiken geen internet.** Alle externe API's krijgen nep-antwoorden via `fakeFetch` in `server/test/helpers.ts`; een test die toch naar buiten gaat, faalt. Let op: `fakeFetch` kiest de **langste** passende URL, dus geef je eigen nep-antwoord de volledige host en het volledige pad als een standaardantwoord er ook op past.
 - **Berekeningen krijgen een test met een uitgerekend voorbeeld**, met in een commentaar hoe je op het verwachte getal komt.

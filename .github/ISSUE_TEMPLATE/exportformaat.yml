@@ -1,5 +1,5 @@
-name: Exportbestand van een broker, bank of beurs
-description: Vraag ingebouwde ondersteuning aan voor het CSV-bestand van jouw broker, bank of beurs.
+name: Exportbestand van een broker, bank of beurs / Export file from a broker, bank or exchange
+description: Vraag ingebouwde ondersteuning aan voor het CSV-bestand van jouw broker, bank of beurs. / Ask for built-in support for your broker's, bank's or exchange's CSV file.
 labels: [exportformaat]
 body:
   - type: markdown
@@ -8,33 +8,35 @@ body:
         **Makkelijker en veiliger:** laat Box3balans het voorbeeld maken. Stel bij _Transacties → Importeren_ de kolommen voor je bestand in en kies onderaan _Help anderen dit bestand in te lezen_: dat maakt een bestand met verzonnen regels in de opmaak van het jouwe, zonder je gegevens. Deel het met het formulier [_Formaat delen_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml).
 
         Zelf een voorbeeld maken kan ook. Met een voorbeeldbestand kan Box3balans het formaat leren lezen. **Maak het eerst anoniem**: vervang namen, rekeningnummers, IBAN's, adressen en ID's door verzonnen waarden en verander de bedragen. Laat de kolomnamen, de volgorde, het scheidingsteken, de datum- en getalnotatie en de soorten regels (aankoop, dividend, kosten …) precies zoals ze zijn.
+
+        _English: **easier and safer:** let Box3balans make the sample. Set up the columns for your file under _Transactions → Import CSV_ and choose _Help others read this file_ at the bottom: that makes a file with made-up rows in your file's layout, without your data. Share it with the [_Share a format_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml) form. You can also make a sample yourself: **anonymise it first** (replace names, account numbers, IBANs, addresses and IDs with made-up values and change the amounts), but keep the column names, order, separator, date and number notation and the types of rows exactly as they are._
   - type: input
     id: aanbieder
     attributes:
-      label: Broker, bank of beurs
+      label: Broker, bank of beurs / Broker, bank or exchange
       placeholder: DEGIRO, Trade Republic, ING, Rabobank …
     validations:
       required: true
   - type: input
     id: export
     attributes:
-      label: Welke export?
-      description: Waar in hun app of website maak je het bestand, en hoe heet het?
+      label: Welke export? / Which export?
+      description: Waar in hun app of website maak je het bestand, en hoe heet het? / Where in their app or website do you make the file, and what's it called?
       placeholder: "Inbox → Rekeningoverzicht → Exporteren als CSV"
     validations:
       required: true
   - type: textarea
     id: voorbeeld
     attributes:
-      label: Geanonimiseerd voorbeeld
-      description: Plak een paar regels (met de kopregel), of sleep het bestand hierheen. Liefst met verschillende soorten regels.
+      label: Geanonimiseerd voorbeeld / Anonymised sample
+      description: Plak een paar regels (met de kopregel), of sleep het bestand hierheen. Liefst met verschillende soorten regels. / Paste a few rows (with the header row), or drag the file here. Preferably with different types of rows.
       render: text
     validations:
       required: true
   - type: checkboxes
     id: anoniem
     attributes:
-      label: Controle
+      label: Controle / Check
       options:
-        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in.
+        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in. / It contains no real names, account numbers, addresses or amounts of mine.
           required: true

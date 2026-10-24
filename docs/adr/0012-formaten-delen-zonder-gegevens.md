@@ -1,5 +1,7 @@
 # Formaten delen zonder gegevens
 
+_English: [../en/adr/0012-formaten-delen-zonder-gegevens.md](../en/adr/0012-formaten-delen-zonder-gegevens.md)_
+
 Een gebruiker met een export die Box3balans nog niet kent (een CSV van een broker, of een jaaroverzicht als pdf) kan het formaat delen zonder zijn gegevens te delen. Box3balans maakt daarvoor op de eigen server een bestand; de gebruiker ziet precies wat erin staat, downloadt het en hangt het zelf aan een issue (formulier _Formaat delen_). De app verstuurt niets: er komt geen bestemming bij in [ADR 0011](0011-vaste-lijst-van-bestemmingen.md), en de knop naar GitHub is een gewone link zonder gegevens erin.
 
 **Wat er blijft, is een vaste lijst; de rest is verzonnen.** De code staat in [`server/src/import/contribute.ts`](../../server/src/import/contribute.ts).

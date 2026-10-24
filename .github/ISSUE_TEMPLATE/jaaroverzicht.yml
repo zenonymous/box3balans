@@ -1,5 +1,5 @@
-name: Jaaroverzicht (pdf) van een aanbieder
-description: Stuur de tekst van een jaaroverzicht, zodat Box3balans het vanzelf kan herkennen.
+name: Jaaroverzicht (pdf) van een aanbieder / Annual statement (PDF) from a provider
+description: Stuur de tekst van een jaaroverzicht, zodat Box3balans het vanzelf kan herkennen. / Send the text of an annual statement, so Box3balans can recognise it by itself.
 labels: [exportformaat]
 body:
   - type: markdown
@@ -18,53 +18,55 @@ body:
         ```
 
         Verander daarna in de tekst namen, adressen, rekeningnummers, IBAN's, klantnummers en bedragen. Laat de labels, de opmaak, de datums en de notatie van getallen (`1.234,56`) precies zoals ze zijn.
+
+        _English: with the text of an annual statement Box3balans can make a template for it. **Easier and safer:** read the statement in under _Read a year statement (PDF)_, tick the right amounts and choose _Help others read this statement_; that makes a file in which every number is made up and every unusual word struck out. Share it with the [_Share a format_](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml) form. To make the text yourself: **don't send a PDF** (blacked-out text can often still be read), but the output of `pdftotext -layout` as above, with names, addresses, account numbers, IBANs, client numbers and amounts changed. Keep the labels, layout, dates and number notation exactly as they are._
   - type: input
     id: aanbieder
     attributes:
-      label: Aanbieder
+      label: Aanbieder / Provider
       placeholder: Brand New Day, Peaks, Geldvoorelkaar, Mintos …
     validations:
       required: true
   - type: input
     id: document
     attributes:
-      label: Welk overzicht?
-      description: Hoe het heet en waar je het vindt.
+      label: Welk overzicht? / Which statement?
+      description: Hoe het heet en waar je het vindt. / What it's called and where you find it.
       placeholder: "Financieel jaaroverzicht 2025, onder Mijn documenten → Overzichten → Jaaroverzichten"
     validations:
       required: true
   - type: dropdown
     id: inhoud
     attributes:
-      label: Wat staat erin?
+      label: Wat staat erin? / What's in it?
       multiple: true
       options:
-        - Waarde op 1 januari (beginwaarde)
-        - Waarde op 31 december (eindwaarde)
-        - Rente of dividend
-        - Inleg of stortingen
-        - Onttrekkingen of opnames
-        - Kosten
-        - Posities per belegging (met ISIN of aantal)
+        - Waarde op 1 januari (beginwaarde) / Value on 1 January (starting value)
+        - Waarde op 31 december (eindwaarde) / Value on 31 December (end value)
+        - Rente of dividend / Interest or dividend
+        - Inleg of stortingen / Deposits
+        - Onttrekkingen of opnames / Withdrawals
+        - Kosten / Costs
+        - Posities per belegging (met ISIN of aantal) / Positions per asset (with ISIN or quantity)
   - type: textarea
     id: tekst
     attributes:
-      label: Tekst van het overzicht (geanonimiseerd)
-      description: De uitvoer van `pdftotext -layout`, met verzonnen namen, nummers en bedragen.
+      label: Tekst van het overzicht (geanonimiseerd) / Text of the statement (anonymised)
+      description: De uitvoer van `pdftotext -layout`, met verzonnen namen, nummers en bedragen. / The output of `pdftotext -layout`, with made-up names, numbers and amounts.
       render: text
     validations:
       required: true
   - type: textarea
     id: toelichting
     attributes:
-      label: Welk bedrag hoort waar?
-      description: Optioneel. Bijvoorbeeld "_Uitstaand vermogen per 1 januari_ is de waarde op 1 januari" of "de rente staat op pagina 2".
+      label: Welk bedrag hoort waar? / Which amount goes where?
+      description: Optioneel. Bijvoorbeeld "_Uitstaand vermogen per 1 januari_ is de waarde op 1 januari" of "de rente staat op pagina 2". / Optional. For example "_Uitstaand vermogen per 1 januari_ is the value on 1 January" or "the interest is on page 2".
   - type: checkboxes
     id: anoniem
     attributes:
-      label: Controle
+      label: Controle / Check
       options:
-        - label: Ik heb tekst geplakt, geen pdf.
+        - label: Ik heb tekst geplakt, geen pdf. / I pasted text, not a PDF.
           required: true
-        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in.
+        - label: Er staan geen echte namen, rekeningnummers, adressen of bedragen van mij in. / It contains no real names, account numbers, addresses or amounts of mine.
           required: true

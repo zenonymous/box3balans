@@ -1,6 +1,6 @@
 # Box3balans
 
-_Je box 3 in balans._ · [box3balans.nl](https://box3balans.nl)
+_Je box 3 in balans._ · [box3balans.nl](https://box3balans.nl) · _English: [README.en.md](README.en.md)_
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/zenonymous/box3balans/badge)](https://scorecard.dev/viewer/?uri=github.com/zenonymous/box3balans)
 
@@ -21,9 +21,9 @@ Box3balans houdt je **box 3** bij, en alles wat erin zit: spaargeld, **aandelen 
 
 ## In English
 
-Box3balans is a self-hosted tracker for the Dutch wealth tax (**box 3**): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household, in euros. Per year it calculates the deemed-return tax (rounded the way the Belastingdienst does) and your actual return for the _tegenbewijsregeling_, with an overview in the order of the tax return and a dossier that shows where every amount comes from. It reads CSV exports from about twenty brokers and exchanges, bank statements (CAMT.053, MT940, CSV) and PDF annual statements, connects read-only to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and follows wallets by address. It runs with Docker on a NAS, home server or laptop, and your amounts and transactions stay on your machine: the server only connects to a fixed list of hosts and never sends amounts. Price sources do see which assets you look up (symbols and ISINs), and block explorers the addresses of wallets you add, and so their balances. Every request shows in the app ([docs/privacy.md](docs/privacy.md), in Dutch). The interface is in Dutch, with English as an option; free and open source (AGPL-3.0).
+Box3balans is a self-hosted tracker for the Dutch wealth tax (**box 3**): savings, stocks and ETFs, crypto, gold and silver, a second home, loans and debts, for a whole household, in euros. Per year it calculates the deemed-return tax (rounded the way the Belastingdienst does) and your actual return for the _tegenbewijsregeling_, with an overview in the order of the tax return and a dossier that shows where every amount comes from. It reads CSV exports from about twenty brokers and exchanges, bank statements (CAMT.053, MT940, CSV) and PDF annual statements, connects read-only to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and follows wallets by address. It runs with Docker on a NAS, home server or laptop, and your amounts and transactions stay on your machine: the server only connects to a fixed list of hosts and never sends amounts. Price sources do see which assets you look up (symbols and ISINs), and block explorers the addresses of wallets you add, and so their balances. Every request shows in the app ([docs/en/privacy.md](docs/en/privacy.md)). The interface is in Dutch, with English as an option; free and open source (AGPL-3.0).
 
-Try the [online demo in English](https://box3balans.nl/demo/?lang=en), or run it yourself with `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`. Installing for real: [docs/installatie.md](docs/installatie.md) (in Dutch). Questions in English are welcome in [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a).
+The full README in English is [README.en.md](README.en.md), and every document has an English version in [docs/en/](docs/en/). Try the [online demo in English](https://box3balans.nl/demo/?lang=en), or run it yourself with `docker run --rm -p 8080:8080 -e DEMO=true ghcr.io/zenonymous/box3balans:latest`. Questions in English are welcome in [Discussions](https://github.com/zenonymous/box3balans/discussions/categories/q-a).
 
 ## Wat het kan
 
@@ -418,7 +418,3 @@ Staat je probleem er niet bij, of kom je er niet uit? Stel je vraag bij [Discuss
 Box3balans is vrije software onder de [GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). Je mag het gebruiken, bestuderen, aanpassen en verspreiden. Verspreid je een aangepaste versie, of laat je anderen die via een netwerk gebruiken, dan moet je hun de broncode van die versie aanbieden, onder dezelfde licentie. De app linkt daarom naar zijn eigen broncode (_Instellingen → Over_). Er is geen garantie.
 
 De naam "Box3balans" valt niet onder de licentie: geef een aangepaste versie die je verspreidt een eigen naam.
-
-## In English
-
-Box3balans keeps track of your Dutch wealth tax (box 3) and everything in it: savings, stocks and ETFs, crypto, gold and silver, property and debts, in euros. It estimates the tax, including the actual-return rebuttal scheme, a per-year overview in the order of the tax return, and a preview of the system planned from 2028. It runs on your own NAS, home server or laptop with Docker (`docker compose up -d` with [`docker-compose.yml`](docker-compose.yml)), and your data never leaves it. The interface is Dutch, with English under Settings → Appearance → Language; the documentation is in Dutch. Contributions in English are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md). Licensed under the AGPL-3.0.

@@ -1,5 +1,7 @@
 # Wat Box3balans verstuurt
 
+_English: [en/privacy.md](en/privacy.md)_
+
 Box3balans draait bij jou, op je eigen computer, NAS of thuisserver. Er is geen account bij ons, geen dienst ertussen, geen telemetrie en geen gebruiksstatistiek. **Bedragen, saldi en transacties gaan nooit naar buiten.** Wat wel naar buiten gaat, staat hieronder per functie: vooral de namen van wat je hebt (symbolen, ISIN's) om koersen op te halen, en alleen voor wat je zelf aanzet de adressen van je wallets en verzoeken aan je beurzen.
 
 ## Zo is het geregeld

@@ -1,5 +1,7 @@
 # Aanbieders: waar Nederlandse huishoudens hun box 3 hebben, en hoe het Box3balans in komt
 
+_English: [en/aanbieders.md](en/aanbieders.md)_
+
 Onderzocht op 13 oktober 2026.
 
 Dit is een backlog: per aanbieder wat er te halen is, langs welke route, hoeveel werk het is en hoe dringend. Elke kaart is los als GitHub-issue te gebruiken. Wat al eerder is uitgezocht, staat in [exportformaten.md](exportformaten.md) (ABN AMRO, ING, Meesman, Brand New Day, Peaks, Lightyear, Scalable Capital) en [degiro-koppeling.md](degiro-koppeling.md); dat wordt hier niet overgedaan.

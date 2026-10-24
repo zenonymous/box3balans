@@ -1,11 +1,11 @@
 blank_issues_enabled: true
 contact_links:
-  - name: Vraag stellen
+  - name: Vraag stellen / Ask a question
     url: https://github.com/zenonymous/box3balans/discussions/categories/q-a
-    about: Hoe werkt iets, hoe vul je iets in, lukt de installatie niet? Stel je vraag bij Discussions.
-  - name: Idee bespreken
+    about: Hoe werkt iets, hoe vul je iets in, lukt de installatie niet? Stel je vraag bij Discussions. / How does something work, how do you fill something in, does the installation fail? Ask in Discussions.
+  - name: Idee bespreken / Discuss an idea
     url: https://github.com/zenonymous/box3balans/discussions/categories/ideas
-    about: Een los idee om eerst over te praten. Een concreet voorstel kan hieronder als issue.
-  - name: Beveiligingsprobleem melden
+    about: Een los idee om eerst over te praten. Een concreet voorstel kan hieronder als issue. / A loose idea to talk about first. A concrete proposal can be an issue below.
+  - name: Beveiligingsprobleem melden / Report a security problem
     url: https://github.com/zenonymous/box3balans/security/advisories/new
-    about: Meld kwetsbaarheden privé, niet in een openbaar issue (zie SECURITY.md).
+    about: Meld kwetsbaarheden privé, niet in een openbaar issue (zie SECURITY.md). / Report vulnerabilities privately, not in a public issue (see SECURITY.md).

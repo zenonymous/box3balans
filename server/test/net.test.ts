@@ -157,10 +157,15 @@ describe("the list of destinations", () => {
     expect([...unlisted]).toEqual([]);
   });
 
-  it("is the same list as in docs/privacy.md and the egress proxy's", () => {
+  it("is the same list as in docs/privacy.md (both languages) and the egress proxy's", () => {
     const hosts = [...new Set(DESTINATIONS.flatMap((d) => d.hosts))];
-    const doc = fs.readFileSync(path.join(ROOT, "docs/privacy.md"), "utf8");
-    expect(hosts.filter((h) => !doc.includes(h))).toEqual([]);
+    for (const file of ["docs/privacy.md", "docs/en/privacy.md"]) {
+      const doc = fs.readFileSync(path.join(ROOT, file), "utf8");
+      expect(
+        hosts.filter((h) => !doc.includes(h)),
+        file,
+      ).toEqual([]);
+    }
     const proxy = fs
       .readFileSync(path.join(ROOT, "deploy/egress/allowed-hosts.txt"), "utf8")
       .split("\n")

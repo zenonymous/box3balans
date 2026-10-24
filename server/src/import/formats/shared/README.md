@@ -1,5 +1,7 @@
 # Gedeelde formaten
 
+_English: [README.en.md](README.en.md)_
+
 Exportformaten die gebruikers hebben gedeeld via _Help anderen dit bestand in te lezen_ op de importpagina ([ADR 0012](../../../../../docs/adr/0012-formaten-delen-zonder-gegevens.md)). Elk bestand is data, geen code: de kolominstellingen van iemands import, met een verzonnen voorbeeld in dezelfde opmaak en wat Box3balans daaruit leest. De app gebruikt een gedeeld formaat als een opgeslagen instelling, na de eigen formaten en de eigen instellingen van de gebruiker.
 
 ## Een bijdrage toevoegen

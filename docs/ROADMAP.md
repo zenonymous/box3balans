@@ -1,5 +1,7 @@
 # Roadmap
 
+_English: [en/ROADMAP.md](en/ROADMAP.md)_
+
 Box3balans begon als persoonlijk project en wordt nu geschikt gemaakt voor iedereen in Nederland die zijn beleggingen en box 3 zelf wil bijhouden, op eigen hardware. Box3balans wordt niet ergens voor je gehost: je draait het zelf.
 
 Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).

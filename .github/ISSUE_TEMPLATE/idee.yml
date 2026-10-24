@@ -1,20 +1,20 @@
-name: Idee of verbetering
-description: Een voorstel voor iets nieuws of iets dat beter kan.
+name: Idee of verbetering / Idea or improvement
+description: Een voorstel voor iets nieuws of iets dat beter kan. / A proposal for something new or something that could be better.
 labels: [idee]
 body:
   - type: textarea
     id: probleem
     attributes:
-      label: Waar loop je tegenaan?
-      description: Beschrijf de situatie, liefst met een voorbeeld. Bijvoorbeeld welke regel uit de aangifte je niet kunt invullen.
+      label: Waar loop je tegenaan? / What's the problem?
+      description: Beschrijf de situatie, liefst met een voorbeeld. Bijvoorbeeld welke regel uit de aangifte je niet kunt invullen. / Describe the situation, preferably with an example, such as which line of the tax return you can't fill in.
     validations:
       required: true
   - type: textarea
     id: oplossing
     attributes:
-      label: Wat zou helpen?
+      label: Wat zou helpen? / What would help?
   - type: textarea
     id: bronnen
     attributes:
-      label: Bronnen
-      description: Gaat het om belastingregels? Link naar de Belastingdienst, wetteksten of andere betrouwbare bronnen.
+      label: Bronnen / Sources
+      description: Gaat het om belastingregels? Link naar de Belastingdienst, wetteksten of andere betrouwbare bronnen. / About tax rules? Link to the Belastingdienst, legal texts or other reliable sources.

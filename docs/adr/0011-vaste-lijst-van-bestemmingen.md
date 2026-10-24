@@ -1,5 +1,7 @@
 # Een vaste lijst van bestemmingen, afgedwongen in de app
 
+_English: [../en/adr/0011-vaste-lijst-van-bestemmingen.md](../en/adr/0011-vaste-lijst-van-bestemmingen.md)_
+
 Box3balans mag alleen verbinding maken met de adressen in [`server/src/lib/net.ts`](../../server/src/lib/net.ts), per functie met wat er naar buiten gaat. Bij het starten komt er een controle voor elke `fetch` in het proces: alleen HTTPS, alleen adressen op de lijst, en een doorverwijzing alleen als het nieuwe adres er ook op staat. Al het andere wordt geweigerd. Elk verzoek wordt bijgehouden voor _Instellingen → Netwerk_ (de laatste in het geheugen, aantallen per dag 90 dagen, weigeringen de laatste 50).
 
 Andere wegen naar buiten (`node:http`, `node:net`, `undici` en dergelijke) verbiedt een lintregel in `server/src`. Een test faalt als de code een adres noemt dat niet op de lijst staat, en houdt de lijst gelijk met [docs/privacy.md](../privacy.md) en met de lijst van de afgeschermde opzet ([`deploy/egress/allowed-hosts.txt`](../../deploy/egress/allowed-hosts.txt)).

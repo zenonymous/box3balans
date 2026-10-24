@@ -1,5 +1,7 @@
 # Gegevens binnenhalen
 
+_English: [en/importeren.md](en/importeren.md)_
+
 Hoe je je bezit in Box3balans krijgt: waarden per jaar en bankexports, jaaroverzichten als pdf, CSV-exports van brokers en beurzen, koppelingen en wallets. Een kort overzicht staat in de [README](../README.md#gebruiken); wat we per aanbieder weten, in [aanbieders.md](aanbieders.md).
 
 ## Waarden per jaar en bankexports

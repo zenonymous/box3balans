@@ -1,5 +1,7 @@
 # Box 3: gebruikte regels en hun bronnen
 
+_English: [en/box3-sources.md](en/box3-sources.md)_
+
 Gecontroleerd op 8 oktober 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
 
 ## Forfaitair rendement (belastingjaren vanaf 2023)

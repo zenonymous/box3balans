@@ -1,5 +1,5 @@
-name: Fout melden
-description: Iets werkt niet zoals het zou moeten.
+name: Fout melden / Report a bug
+description: Iets werkt niet zoals het zou moeten. / Something doesn't work as it should.
 labels: [bug]
 body:
   - type: markdown
@@ -8,47 +8,49 @@ body:
         Bedankt voor het melden. **Deel geen persoonlijke financiële gegevens**: geen bedragen, rekeningnummers, adressen van wallets, API-sleutels of back-ups. Vervang ze door voorbeeldwaarden.
 
         Een beveiligingsprobleem? Meld dat privé met [Report a vulnerability](https://github.com/zenonymous/box3balans/security/advisories/new), niet hier (zie [SECURITY.md](https://github.com/zenonymous/box3balans/blob/main/SECURITY.md#een-kwetsbaarheid-melden)).
+
+        _English: thanks for reporting. **Don't share personal financial data**: no amounts, account numbers, wallet addresses, API keys or backups; replace them with sample values. A security problem? Report it privately with [Report a vulnerability](https://github.com/zenonymous/box3balans/security/advisories/new), not here. English is fine._
   - type: textarea
     id: wat
     attributes:
-      label: Wat ging er mis?
-      description: Wat deed je, wat verwachtte je, en wat gebeurde er?
+      label: Wat ging er mis? / What went wrong?
+      description: Wat deed je, wat verwachtte je, en wat gebeurde er? / What did you do, what did you expect, and what happened?
     validations:
       required: true
   - type: textarea
     id: stappen
     attributes:
-      label: Hoe kunnen we het nadoen?
+      label: Hoe kunnen we het nadoen? / How can we reproduce it?
       placeholder: |
-        1. Ga naar …
-        2. Klik op …
+        1. Ga naar … / Go to …
+        2. Klik op … / Click …
   - type: input
     id: versie
     attributes:
-      label: Versie
-      description: Staat linksonder in de app, of onder Settings → About.
+      label: Versie / Version
+      description: Staat linksonder in de app, of onder Instellingen → Over. / Bottom left in the app, or under Settings → About.
       placeholder: 1.0.0 (abc1234)
     validations:
       required: true
   - type: dropdown
     id: installatie
     attributes:
-      label: Installatie
+      label: Installatie / Installation
       options:
-        - Standaard (docker-compose.yml met PostgreSQL)
-        - Eén container (docker-compose.lite.yml)
-        - Zelf gebouwd (docker-compose.build.yml of deploy.sh)
-        - Ontwikkelomgeving (npm run dev)
+        - Standaard / Standard (docker-compose.yml met/with PostgreSQL)
+        - Eén container / One container (docker-compose.lite.yml)
+        - Zelf gebouwd / Built yourself (docker-compose.build.yml of/or deploy.sh)
+        - Ontwikkelomgeving / Development (npm run dev)
     validations:
       required: true
   - type: input
     id: systeem
     attributes:
-      label: Waar draait het op?
+      label: Waar draait het op? / What does it run on?
       placeholder: Synology DS920+ met DSM 7.2, Raspberry Pi 5, Docker Desktop op Windows …
   - type: textarea
     id: logs
     attributes:
-      label: Logregels
-      description: "De laatste regels van `docker compose logs app --tail 50`, zonder gevoelige gegevens."
+      label: Logregels / Log lines
+      description: "De laatste regels van `docker compose logs app --tail 50`, zonder gevoelige gegevens. / The last lines of `docker compose logs app --tail 50`, without sensitive data."
       render: text

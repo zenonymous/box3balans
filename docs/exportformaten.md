@@ -1,5 +1,7 @@
 # Exportformaten van brokers die Box3balans nog niet leest
 
+_English: [en/exportformaten.md](en/exportformaten.md)_
+
 Onderzocht op 13 oktober 2026.
 
 **Kort:** van de zeven aanbieders uit fase G zijn er twee nu te bouwen: **Lightyear** en **Scalable Capital**. Van beide zijn de kolomkoppen bekend uit meerdere onafhankelijke bronnen. **ING** heeft een CSV-export van transacties en van de portefeuille, maar de kolommen staan nergens openbaar: daarvoor is een voorbeeldbestand nodig. **Meesman** exporteert naar Excel, met onbekende kolommen. **ABN AMRO** heeft geen export van effectentransacties. Aankopen en uitkeringen staan alleen als regels op de gekoppelde tegenrekening, en die kun je wel als TAB-bestand downloaden. **Brand New Day** en **Peaks** geven alleen pdf's of overzichten in de app: geen werk voor een CSV-herkenner.
