@@ -966,6 +966,8 @@ export const NL: Record<string, string> = {
   "Purity / fineness": "Zuiverheid / gehalte",
   "e.g. 0.9999 or 0.9167 (22 ct)": "bijv. 0,9999 of 0,9167 (22 kt)",
   "Quantity (pieces)": "Aantal (stuks)",
+  "{n} piece": "{n} stuk",
+  "{n} pieces": "{n} stuks",
   "Storage location": "Opslaglocatie",
   "Total price paid (EUR)": "Totaal betaald (EUR)",
   "All pieces, incl. premium and shipping": "Alle stukken, incl. opslag en verzending",

@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { get, type AttributionNote, type Box3Overview, type Box3Year } from "../api";
-import { Alert, Badge, Button, ButtonLink, Card, PageHeader, Select, Spinner } from "../components/ui";
+import { Alert, Badge, Button, ButtonLink, Card, Empty, PageHeader, Select, Spinner } from "../components/ui";
 import { eur } from "../format";
 import { t, tj } from "../i18n";
 import { kindLabel, noteLabel, ownerLabel } from "../labels";
@@ -98,6 +98,22 @@ export function TaxReturnPage() {
   if (overview.isLoading || data.isLoading) return <Spinner />;
   if (data.error) return <Alert tone="danger">{data.error.message}</Alert>;
   const r = data.data;
+  // No year to fill in yet: say how to get one, like the Box 3 page, instead of an empty page.
+  if (year == null) {
+    return (
+      <>
+        <PageHeader title={t("For the tax return")} />
+        <Card>
+          <Empty title={t("Nothing to report yet")}>
+            {tj(
+              "Box 3 counts what you had on 1 January. Add your accounts under <0>Accounts</0>: with values per year, or with transactions (box 3 then starts the year after the first one).",
+              [<Link key="a" to="/accounts" className="underline" />],
+            )}
+          </Empty>
+        </Card>
+      </>
+    );
+  }
 
   return (
     <>

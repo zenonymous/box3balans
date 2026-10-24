@@ -646,8 +646,8 @@ export const NL: Record<string, string> = {
   "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
     "{n} ruilen tussen twee munten zijn overgeslagen: die hebben geen waarde in geld. Corrigeer die saldi daarna.",
   // domain/attention.ts
-  "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false from .env and restart.":
-    "Wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false uit .env en herstart.",
+  "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart.":
+    "Wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false uit .env, of zet BACKUP_PASSPHRASE erin, en herstart.",
   "Keep your backup passphrase": "Bewaar de wachtzin van je back-ups",
   "Backups are encrypted with a passphrase Box3balans made. Put it in your password manager (Settings → Backups shows it); without it, a backup can't be restored on another server. Dismiss this once it's there.":
     "Back-ups zijn versleuteld met een wachtzin die Box3balans maakte. Zet die in je wachtwoordmanager (Instellingen → Back-ups laat hem zien); zonder kun je een back-up niet op een andere server terugzetten. Verberg deze melding als hij erin staat.",

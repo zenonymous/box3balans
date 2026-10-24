@@ -502,7 +502,9 @@ export async function collectIssues(
       key: "backup-unencrypted",
       severity: "warning",
       title: tr("Backups aren't encrypted"),
-      detail: tr("Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false from .env and restart."),
+      detail: tr(
+        "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart.",
+      ),
       link: { to: "/settings", label: tr("Backups") },
       fingerprint: "unencrypted",
     });

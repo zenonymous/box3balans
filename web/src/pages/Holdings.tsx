@@ -1,11 +1,12 @@
 import { Fragment, useMemo, useState } from "react";
+import { Link } from "react-router";
 import type { Holding } from "../api";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Badge, Card, Delta, Empty, Input, PageHeader, Select, Spinner } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, eurPrice, num, pct, relativeTime } from "../format";
 import { usePortfolio } from "../queries";
 import { useStoredFlag } from "../storage";
-import { t, tn } from "../i18n";
+import { t, tj, tn } from "../i18n";
 
 type SortKey = "name" | "valueEur" | "unrealizedEur" | "unrealizedPct" | "changePct24h" | "weightPct";
 
@@ -94,7 +95,15 @@ export function HoldingsPage() {
       </div>
 
       <Card padded={false}>
-        {rows.length === 0 ? (
+        {rows.length === 0 && !portfolio.data?.holdings.length ? (
+          // Nothing recorded yet, rather than a filter that matches nothing.
+          <Empty title={t("Nothing here yet")}>
+            {tj(
+              "New here? <0>Get started</0>: your household, your accounts and a first box 3 estimate in a few steps.",
+              [<Link key="s" className="text-accent underline" to="/start" />],
+            )}
+          </Empty>
+        ) : rows.length === 0 ? (
           <Empty title={t("No holdings match")} />
         ) : (
           <>

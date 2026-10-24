@@ -28,7 +28,8 @@ export function usedTexts(): Map<string, string> {
     const rel = path.relative(SRC, file);
     for (const m of code.matchAll(new RegExp(String.raw`\b(?:t|tj)\(\s*${STR}`, "g"))) found.set(unquote(m[1]!), rel);
     for (const m of code.matchAll(
-      new RegExp(String.raw`\btn\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*${STR}\s*,\s*${STR}`, "g"),
+      // The count can be any expression (even with nested calls), so anything up to the first string.
+      new RegExp(String.raw`\btn\(\s*[^"]{1,300}?,\s*${STR}\s*,\s*${STR}`, "g"),
     )) {
       found.set(unquote(m[1]!), rel);
       found.set(unquote(m[2]!), rel);
