@@ -103,7 +103,11 @@ export function StartPage() {
               <span
                 className={cx(
                   "flex size-6 shrink-0 items-center justify-center rounded-full text-xs",
-                  i < index ? "bg-accent text-accent-ink" : s === step ? "border border-accent" : "border border-line",
+                  i < index
+                    ? "bg-accent-fill text-accent-ink"
+                    : s === step
+                      ? "border border-accent"
+                      : "border border-line",
                 )}
                 aria-hidden
               >
@@ -129,7 +133,7 @@ export function StartPage() {
         ) : (
           <Link
             to="/"
-            className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-ink hover:opacity-90"
+            className="rounded-lg bg-accent-fill px-3.5 py-2 text-sm font-medium text-accent-ink hover:opacity-90"
           >
             {t("Done: to the overview")}
           </Link>
@@ -609,7 +613,7 @@ function ResultStep({ year }: { year: number }) {
         <div className="mt-3 flex flex-wrap gap-2 text-sm">
           <Link
             to={`/box3?year=${year}`}
-            className="rounded-lg bg-accent px-3.5 py-2 font-medium text-accent-ink hover:opacity-90"
+            className="rounded-lg bg-accent-fill px-3.5 py-2 font-medium text-accent-ink hover:opacity-90"
           >
             {t("See the full calculation")}
           </Link>

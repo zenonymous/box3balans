@@ -143,14 +143,17 @@ export function NetworkPage() {
                       <td className="px-4 py-2 font-mono text-xs text-ink-2">{x.hosts.join(", ")}</td>
                       <td className="px-4 py-2">
                         {d.switchable.includes(x.id) ? (
-                          <input
-                            type="checkbox"
-                            className="size-4 accent-accent"
-                            aria-label={x.purpose}
-                            checked={!d.off.includes(x.id)}
-                            disabled={saving}
-                            onChange={(e) => toggle(x.id, e.target.checked)}
-                          />
+                          // The label's padding makes a 24 px target around the 16 px box.
+                          <label className="-m-1 inline-flex cursor-pointer p-1">
+                            <input
+                              type="checkbox"
+                              className="size-4 accent-accent"
+                              aria-label={x.purpose}
+                              checked={!d.off.includes(x.id)}
+                              disabled={saving}
+                              onChange={(e) => toggle(x.id, e.target.checked)}
+                            />
+                          </label>
                         ) : (
                           <Link to="/settings" className="text-xs text-accent underline">
                             {t("Settings → About")}

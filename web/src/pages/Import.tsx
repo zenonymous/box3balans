@@ -1158,7 +1158,7 @@ function ResultCard({
       <div className="mt-4 flex flex-wrap gap-2">
         <Link
           to="/transactions"
-          className="rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-ink hover:opacity-90"
+          className="rounded-lg bg-accent-fill px-3.5 py-2 text-sm font-medium text-accent-ink hover:opacity-90"
         >
           {t("View transactions")}
         </Link>

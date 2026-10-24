@@ -15,7 +15,9 @@
   --axis: #c3c2b7;
   --border: rgba(11, 11, 11, 0.1);
   --accent: #1f6bc4;
+  --accent-fill: #1f6bc4; /* filled buttons: white text on it 5.3:1 */
   --accent-ink: #ffffff;
+  --accent-text: #1a5aa6; /* small accent text on a tinted background: 5.4:1 */
   --gain: #006300;
   --loss: #d03b3b;
   --warn: #8a5c00;
@@ -44,6 +46,8 @@
     --axis: #383835;
     --border: rgba(255, 255, 255, 0.1);
     --accent: #3987e5;
+    --accent-fill: #2a6fc0; /* white on #3987e5 is only 3.6:1; this is 5.1:1 */
+    --accent-text: #6aa6ee;
     --gain: #0ca30c;
     --loss: #e66767;
     --warn: #fab219;
@@ -70,6 +74,8 @@
   --axis: #383835;
   --border: rgba(255, 255, 255, 0.1);
   --accent: #3987e5;
+  --accent-fill: #2a6fc0;
+  --accent-text: #6aa6ee;
   --gain: #0ca30c;
   --loss: #e66767;
   --warn: #fab219;
@@ -93,7 +99,9 @@
   --color-grid: var(--grid);
   --color-line: var(--border);
   --color-accent: var(--accent);
+  --color-accent-fill: var(--accent-fill);
   --color-accent-ink: var(--accent-ink);
+  --color-accent-text: var(--accent-text);
   --color-gain: var(--gain);
   --color-loss: var(--loss);
   --color-warn: var(--warn);
@@ -111,6 +119,12 @@ body {
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Tailwind 4 leaves buttons with the arrow cursor; links show a hand, so buttons should too. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
 }
 
 .tabular {

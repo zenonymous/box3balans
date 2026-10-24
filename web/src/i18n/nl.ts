@@ -720,7 +720,8 @@ export const NL: Record<string, string> = {
   "Remove your partner? Their accounts become yours.": "Je partner verwijderen? Diens rekeningen worden van jou.",
   "Remove {name}? Their accounts become yours.": "{name} verwijderen? Diens rekeningen worden van jou.",
   "Add a child": "Kind toevoegen",
-  "18 on {date}": "18 op {date}",
+  "Turns 18 on {date}": "Wordt 18 op {date}",
+  "{label} of {account}": "{label} van {account}",
   "Who has custody?": "Wie heeft het gezag?",
   // pages/Import.tsx
   Assets: "Beleggingen",

@@ -2,9 +2,9 @@ import { useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post } from "../api";
 import { Alert, Badge, Button, Card, Empty, PageHeader, Spinner, Tabs } from "../components/ui";
-import { TX_LABEL, date, relativeTime } from "../format";
+import { TX_LABEL, date, eur, num, relativeTime } from "../format";
 import { useInvalidateAll } from "../queries";
-import { t } from "../i18n";
+import { dateLocale, t } from "../i18n";
 
 export type Entity =
   | "transaction"
@@ -107,14 +107,46 @@ function fieldLabel(f: string): string {
   return FIELD_LABEL[f] ?? f.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
 }
 
+/** Amounts in euros, and other numbers, shown like everywhere else in the app (not "18000"). */
+const EUR_FIELDS = new Set([
+  "feeEur",
+  "purchasePriceEur",
+  "spotValueAtPurchaseEur",
+  "salePriceEur",
+  "valueEur",
+  "inEur",
+  "outEur",
+  "incomeEur",
+  "costsEur",
+]);
+const NUMBER_FIELDS = new Set([
+  "quantity",
+  "price",
+  "fxRate",
+  "taxWithheld",
+  "amount",
+  "grossWeightG",
+  "purity",
+  "jointSelfPct",
+  "terPct",
+]);
+const isNumber = (v: unknown) => typeof v === "number" || (typeof v === "string" && /^-?\d+(\.\d+)?$/.test(v));
+const isBlank = (v: unknown) => v == null || v === "";
+
+/** A field filled in as zero says nothing new (values per year save every field at once). */
+const worthShowing = (c: { from: unknown; to: unknown }) => !(isBlank(c.from) && isNumber(c.to) && Number(c.to) === 0);
+
 function value(field: string, v: unknown): string {
-  if (v == null || v === "") return "—";
+  if (isBlank(v)) return "—";
+  const base = field.replace(/^\d{4} /, "");
+  if (EUR_FIELDS.has(base) && isNumber(v)) return eur(v as string | number);
+  if (NUMBER_FIELDS.has(base) && isNumber(v)) return num(v as string | number);
   if (field === "transferGroup") return t("linked");
   if (field === "type" && typeof v === "string") return TX_LABEL[v] ?? v;
   if (typeof v === "boolean") return v ? t("yes") : t("no");
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}T/.test(v)) {
     const d = new Date(v);
-    return `${date(d)} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
+    return `${date(d)} ${d.toLocaleTimeString(dateLocale(), { hour: "2-digit", minute: "2-digit" })}`;
   }
   if (typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v)) return date(v);
   if (typeof v === "number" || typeof v === "bigint") return String(v);
@@ -187,7 +219,7 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
                         : e.via}
                 </span>
               )}
-              <span className="ml-auto text-xs text-muted" title={new Date(e.at).toLocaleString()}>
+              <span className="ml-auto text-xs text-muted" title={new Date(e.at).toLocaleString(dateLocale())}>
                 {relativeTime(e.at)}
               </span>
               {e.restorable && (
@@ -196,9 +228,9 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
                 </Button>
               )}
             </div>
-            {e.changes && (e.changes.fields.length > 0 || e.changes.flags.length > 0) && (
+            {e.changes && (e.changes.fields.some(worthShowing) || e.changes.flags.some((f) => FLAG_LABEL[f])) && (
               <ul className="mt-1 flex flex-col gap-0.5 text-xs text-ink-2">
-                {e.changes.fields.map((c) => (
+                {e.changes.fields.filter(worthShowing).map((c) => (
                   <li key={c.field}>
                     {fieldLabel(c.field)}: <span className="text-muted line-through">{value(c.field, c.from)}</span> →{" "}
                     <span className="text-ink">{value(c.field, c.to)}</span>

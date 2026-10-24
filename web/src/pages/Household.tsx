@@ -163,7 +163,7 @@ function ChildRow({ child }: { child: Person | null }) {
       </Field>
       <Field
         label={t("Date of birth")}
-        hint={child?.birthDate ? t("18 on {date}", { date: date(adultOn(child.birthDate)) }) : undefined}
+        hint={child?.birthDate ? t("Turns 18 on {date}", { date: date(adultOn(child.birthDate)) }) : undefined}
       >
         {(id) => (
           <DateInput id={id} value={f.birthDate} max={todayIso()} onChange={(v) => setF({ ...f, birthDate: v })} />

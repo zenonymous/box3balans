@@ -3,6 +3,7 @@ import {
   useId,
   useRef,
   useState,
+  type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
   type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
@@ -25,7 +26,7 @@ const buttonCls = ({ variant = "secondary", size = "md" }: ButtonLook, className
   cx(
     "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
     size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-2 text-sm",
-    variant === "primary" && "bg-accent text-accent-ink hover:opacity-90",
+    variant === "primary" && "bg-accent-fill text-accent-ink hover:opacity-90",
     variant === "secondary" && "border border-line bg-surface text-ink hover:bg-surface-2",
     variant === "ghost" && "text-ink-2 hover:bg-surface-2 hover:text-ink",
     variant === "danger" && "border border-line bg-surface text-loss hover:bg-danger-bg",
@@ -357,7 +358,7 @@ export function Badge({
         tone === "neutral" && "bg-surface-2 text-ink-2",
         tone === "warn" && "bg-warn-bg text-warn",
         tone === "danger" && "bg-danger-bg text-loss",
-        tone === "accent" && "bg-accent/15 text-accent",
+        tone === "accent" && "bg-accent/15 text-accent-text",
       )}
     >
       {children}
@@ -447,7 +448,7 @@ export function InfoTip({ text, label }: { text: string; label: string }) {
         onPointerLeave={(e) => e.pointerType === "mouse" && setOpen((o) => (o?.pinned ? o : null))}
         onFocus={(e) => e.currentTarget.matches(":focus-visible") && !open && show(false)}
         onBlur={hide}
-        className="inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted hover:text-ink"
+        className="relative inline-flex size-4 shrink-0 items-center justify-center rounded-full text-muted before:absolute before:-inset-1 before:content-[''] hover:text-ink"
       >
         <svg aria-hidden viewBox="0 0 16 16" className="size-3.5" fill="none" stroke="currentColor" strokeWidth="1.4">
           <circle cx="8" cy="8" r="6.5" />
@@ -495,17 +496,41 @@ export function Tabs<T extends string>({
   onChange: (v: T) => void;
   options: { value: T; label: string }[];
 }) {
+  // One Tab stop for the group; arrow keys, Home and End move between the options (ARIA tabs pattern).
+  const onKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const at = options.findIndex((o) => o.value === value);
+    const to =
+      e.key === "ArrowRight"
+        ? (at + 1) % options.length
+        : e.key === "ArrowLeft"
+          ? (at - 1 + options.length) % options.length
+          : e.key === "Home"
+            ? 0
+            : e.key === "End"
+              ? options.length - 1
+              : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    onChange(options[to]!.value);
+    (e.currentTarget.children[to] as HTMLElement | undefined)?.focus();
+  };
   return (
-    <div role="tablist" className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+    // Scrolls inside itself when the options don't fit, so a narrow screen doesn't scroll sideways.
+    <div
+      role="tablist"
+      onKeyDown={onKeyDown}
+      className="inline-flex max-w-full overflow-x-auto rounded-lg border border-line bg-surface p-0.5"
+    >
       {options.map((o) => (
         <button
           key={o.value}
           role="tab"
           type="button"
           aria-selected={value === o.value}
+          tabIndex={value === o.value ? 0 : -1}
           onClick={() => onChange(o.value)}
           className={cx(
-            "rounded-md px-2.5 py-1 text-xs font-medium",
+            "shrink-0 whitespace-nowrap rounded-md px-2.5 py-1 text-xs font-medium",
             value === o.value ? "bg-surface-2 text-ink" : "text-ink-2 hover:text-ink",
           )}
         >

@@ -66,7 +66,14 @@ export function PeildatumCard({ year, expanded }: { year: number; expanded?: boo
                 {i.text}
               </span>
               {i.link && (
-                <Link to={i.link.to} className="shrink-0 text-xs text-accent">
+                <Link
+                  to={i.link.to}
+                  // Several rows can have the same link text; the account tells them apart.
+                  aria-label={
+                    i.account ? t("{label} of {account}", { label: i.link.label, account: i.account }) : undefined
+                  }
+                  className="shrink-0 text-xs text-accent"
+                >
                   {i.link.label} →
                 </Link>
               )}
