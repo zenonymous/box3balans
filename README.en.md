@@ -81,9 +81,9 @@ You need a computer with Docker and Docker Compose v2 (`docker compose version` 
    PGID=1000   # your group ID
    ```
 
-   Backups are encrypted by themselves, with a passphrase Box3balans makes on first start. Put it in your password manager: _Settings → Backups_ shows it.
+   Backups are encrypted by themselves, with a passphrase Box3balans makes on first start. Put it in your password manager (_Settings → Backups_ shows it): without it you can't restore an encrypted backup.
 
-   Then run `docker compose up -d` again. Keep the passphrase in your password manager: without it you can't restore an encrypted backup.
+   Then run `docker compose up -d` again.
 
 A `.env` isn't required. On first start Box3balans creates a key for encrypting API keys and a database password itself, in the `app-data` volume.
 
@@ -294,7 +294,7 @@ The **Box 3** page estimates your box 3 using the deemed-return savings variant 
 - **Rounding:** as in the Belastingdienst's worked examples (whole euros, the share rounded down to two decimals). The five examples for 2025 are tests and come out exactly.
 - **Actual return (tegenbewijsregeling):** per year the actual return as the Belastingdienst asks for it (for 2024 and earlier with the _Opgaaf werkelijk rendement_ form, from 2025 in the tax return itself), per category: value on 1 January, money in and out, value on 31 December, change in value and income. Dividends count gross, costs can't be deducted, interest paid on debts can, and there's no tax-free part. It's compared with the tax under the deemed-return system, with whether the statement saves you money, and roughly how much. Fill in per year, under _Your situation_, the interest paid on debts and the return on assets the app doesn't track.
 - **From 2028 (preview):** the planned system based on actual return (bill 36.748, **not law yet**) applied to your past years: result after costs, the tax-free result, losses carried forward (and with the amendment, back), and the tax compared with the current system. Rate, tax-free result, loss threshold and carrying losses back can be adjusted, with settings for the bill as the House of Representatives adopted it and for the announced amendment.
-- **Sources:** the rules used, with links, are in [`docs/en/box3-sources.md`](docs/en/box3-sources.md). The figures themselves are in [`server/src/rules/box3.json`](server/src/rules/box3.json), with the date they were last checked; you also see that date and the source per year in the app. How they're updated every year: [`docs/en/belastingregels.md`](docs/en/belastingregels.md). The rates for 2027 aren't in yet: on 5 October 2026 they weren't final.
+- **Sources:** the rules used, with links, are in [`docs/en/box3-sources.md`](docs/en/box3-sources.md). The figures themselves are in [`server/src/rules/box3.json`](server/src/rules/box3.json), with the date they were last checked; you also see that date and the source per year in the app. How they're updated every year: [`docs/en/belastingregels.md`](docs/en/belastingregels.md). 2027 is included as a proposal, with the figures from the cabinet letter of 29 September 2026, and the app says so with the calculation; they'll be checked once the Belastingplan is adopted in December.
 - **Export:** CSV of all positions on the reference date, and _Print / PDF_ (a print view without the rest of the app).
 - **Dossier** (button on the Box 3 page): per year one document to print or keep as PDF, with the overview, the calculation, the actual return and per account where every amount comes from: a connection, a wallet, a CSV import, entered by hand or your bank's export, and for every price the date and the source (for example Bitvavo BTC-EUR). For your own records, and for when the Belastingdienst asks questions.
 
@@ -384,7 +384,7 @@ Making releases (for maintainers): see [docs/en/releasen.md](docs/en/releasen.md
 - Every addition, change and deletion is recorded in `audit_log`, with the situation before and after.
 - Responses have a strict Content-Security-Policy (scripts only from the site itself, can't be loaded in a frame), `nosniff`, `no-referrer` and a restrictive Permissions-Policy. With `COOKIE_SECURE=true` HSTS is added.
 - The app runs as a normal user, not as root. Backups are only readable by their owner, and backup names are checked so requests can't get outside the backup folder.
-- As long as there's no user yet, anyone who reaches the app can create one, including a website you visit on the same network (via DNS rebinding). So create your user right after installing.
+- A new installation only accepts its first user with the one-time setup code from the app's log. That way nobody else on your network can create it, not even a website you visit (via DNS rebinding).
 - We advise against putting Box3balans on the internet; use a VPN (see [Access away from home](#access-away-from-home-vpn)). If you do anyway, put it behind a reverse proxy with HTTPS and set `COOKIE_SECURE=true`.
 - Exchange API keys are stored encrypted (AES-256-GCM, HKDF of the app key) and never sent back or logged. If the app key changes, you have to enter them again.
 - Found a vulnerability? Report it privately: see [SECURITY.md](SECURITY.md#security-in-english).

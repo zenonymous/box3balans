@@ -87,9 +87,9 @@ Je hebt een computer nodig met Docker en Docker Compose v2 (`docker compose vers
    PGID=1000   # jouw groeps-id
    ```
 
-   Back-ups worden vanzelf versleuteld, met een wachtzin die Box3balans bij de eerste start maakt. Zet die in je wachtwoordmanager: _Instellingen → Back-ups_ laat hem zien.
+   Back-ups worden vanzelf versleuteld, met een wachtzin die Box3balans bij de eerste start maakt. Zet die in je wachtwoordmanager (_Instellingen → Back-ups_ laat hem zien): zonder kun je een versleutelde back-up niet terugzetten.
 
-   Voer daarna `docker compose up -d` opnieuw uit. Bewaar de wachtwoordzin in je wachtwoordmanager: zonder kun je een versleutelde back-up niet terugzetten.
+   Voer daarna `docker compose up -d` opnieuw uit.
 
 Een `.env` is niet verplicht. Bij de eerste start maakt Box3balans zelf een sleutel voor het versleutelen van API-sleutels en een databasewachtwoord aan, in het volume `app-data`.
 
@@ -300,7 +300,7 @@ De pagina **Box 3** schat je box 3 volgens de forfaitaire spaarvariant (belastin
 - **Afronding:** zoals in de rekenvoorbeelden van de Belastingdienst (hele euro's, het aandeel op twee decimalen naar beneden). De vijf voorbeelden voor 2025 zijn tests en komen precies uit.
 - **Werkelijk rendement (tegenbewijsregeling):** per jaar het werkelijke rendement zoals de Belastingdienst erom vraagt (over 2024 en eerder met het formulier _Opgaaf werkelijk rendement_, vanaf 2025 in de aangifte zelf), per categorie: waarde op 1 januari, geld erin en eruit, waarde op 31 december, waardeverandering en inkomsten. Dividenden tellen bruto, kosten mogen er niet af, betaalde rente op schulden wel, en er is geen heffingsvrij deel. Het wordt vergeleken met de belasting volgens het forfaitaire stelsel, met de vraag of de opgaaf je geld bespaart, en ongeveer hoeveel. Vul per jaar onder _Jouw situatie_ de betaalde rente op schulden en het rendement op bezittingen die de app niet bijhoudt in.
 - **Vanaf 2028 (vooruitblik):** het geplande stelsel op basis van werkelijk rendement (wetsvoorstel 36.748, **nog geen wet**) toegepast op je afgelopen jaren: resultaat na kosten, het heffingsvrije resultaat, verliezen die naar voren (en met de novelle naar achteren) worden verrekend, en de belasting vergeleken met het huidige stelsel. Tarief, heffingsvrij resultaat, verliesdrempel en verliesverrekening naar achteren zijn aan te passen, met instellingen voor het wetsvoorstel zoals de Tweede Kamer het aannam en voor de aangekondigde novelle.
-- **Bronnen:** de gebruikte regels, met links, staan in [`docs/box3-sources.md`](docs/box3-sources.md). De cijfers zelf staan in [`server/src/rules/box3.json`](server/src/rules/box3.json), met de datum waarop ze voor het laatst zijn gecontroleerd; die datum en de bron per jaar zie je ook in de app. Hoe ze jaarlijks worden bijgewerkt: [`docs/belastingregels.md`](docs/belastingregels.md). De tarieven voor 2027 zitten er nog niet in: op 5 oktober 2026 waren ze nog niet definitief.
+- **Bronnen:** de gebruikte regels, met links, staan in [`docs/box3-sources.md`](docs/box3-sources.md). De cijfers zelf staan in [`server/src/rules/box3.json`](server/src/rules/box3.json), met de datum waarop ze voor het laatst zijn gecontroleerd; die datum en de bron per jaar zie je ook in de app. Hoe ze jaarlijks worden bijgewerkt: [`docs/belastingregels.md`](docs/belastingregels.md). 2027 staat erin als voorstel, met de cijfers uit de kabinetsbrief van 29 september 2026, en de app zegt dat ook bij de berekening; zodra het Belastingplan in december is aangenomen, worden ze gecontroleerd.
 - **Export:** CSV van alle posities op de peildatum, en _Print / PDF_ (een printweergave zonder de rest van de app).
 - **Dossier** (knop op de pagina Box 3): per jaar één document om af te drukken of als PDF te bewaren, met het overzicht, de berekening, het werkelijk rendement en per rekening waar elk bedrag vandaan komt: een koppeling, een wallet, een CSV-import, met de hand ingevoerd of de export van je bank, en bij elke koers de datum en de bron (bijvoorbeeld Bitvavo BTC-EUR). Voor je eigen administratie, en voor als de Belastingdienst vragen stelt.
 
@@ -390,7 +390,7 @@ Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 - Elke toevoeging, wijziging en verwijdering wordt vastgelegd in `audit_log`, met de situatie ervoor en erna.
 - Antwoorden hebben een strikte Content-Security-Policy (alleen scripts van de eigen site, niet in een frame te laden), `nosniff`, `no-referrer` en een beperkende Permissions-Policy. Met `COOKIE_SECURE=true` komt er HSTS bij.
 - De app draait als gewone gebruiker, niet als root. Back-ups zijn alleen leesbaar voor de eigenaar, en back-upnamen worden gecontroleerd zodat verzoeken niet buiten de back-upmap kunnen komen.
-- Zolang er nog geen gebruiker is, kan iedereen die de app bereikt die aanmaken, ook een website die je op hetzelfde netwerk bezoekt (via DNS-rebinding). Maak je gebruiker dus meteen na het installeren aan.
+- Een nieuwe installatie neemt de eerste gebruiker alleen aan met de eenmalige setupcode uit het log van de app. Zo kan niemand anders op je netwerk hem aanmaken, ook geen website die je bezoekt (via DNS-rebinding).
 - Box3balans op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
 - API-sleutels van beurzen worden versleuteld opgeslagen (AES-256-GCM, HKDF van de app-sleutel) en nooit teruggestuurd of gelogd. Verandert de app-sleutel, dan moet je ze opnieuw invoeren.
 - Een kwetsbaarheid gevonden? Meld het privé: zie [SECURITY.md](SECURITY.md).
