@@ -132,8 +132,19 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   else if (appSecret && appSecret.length < 32) issues.push("  APP_SECRET: must be at least 32 characters");
   if (!parsed.success || issues.length) throw new Error(`Invalid configuration:\n${issues.join("\n")}`);
   const d = parsed.data;
-  const fromBackupFile =
-    !d.BACKUP_PASSPHRASE && d.BACKUP_ENCRYPT ? fromFile(undefined, d.BACKUP_PASSPHRASE_FILE) : undefined;
+  let fromBackupFile: string | undefined;
+  try {
+    fromBackupFile =
+      !d.BACKUP_PASSPHRASE && d.BACKUP_ENCRYPT ? fromFile(undefined, d.BACKUP_PASSPHRASE_FILE) : undefined;
+  } catch (e) {
+    // Usually the file's owner after a change of PUID/PGID. Starting anyway would make a new passphrase.
+    const code = (e as NodeJS.ErrnoException).code ?? String(e);
+    throw new Error(
+      `Invalid configuration:\n  BACKUP_PASSPHRASE_FILE: can't read ${d.BACKUP_PASSPHRASE_FILE} (${code}); ` +
+        "check its owner and permissions. Without it, encrypted backups can't be restored.",
+      { cause: e },
+    );
+  }
   return {
     ...d,
     APP_SECRET: appSecret!,

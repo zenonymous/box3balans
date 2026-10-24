@@ -39,6 +39,7 @@ if [ "$(id -u)" = "0" ]; then
   # The db container reads db-password as its own user, so the folder stays traversable.
   chmod 755 "$data"
   [ -f "$data/app-secret" ] && chown "$uid:$gid" "$data/app-secret"
+  [ -f "$data/backup-passphrase" ] && chown "$uid:$gid" "$data/backup-passphrase"
   [ -d "$data/pglite" ] && chown -R "$uid:$gid" "$data/pglite"
   [ -f "$data/pglite.lock" ] && chown "$uid:$gid" "$data/pglite.lock"
   chown -R "$uid:$gid" "$BACKUP_DIR"

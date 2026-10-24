@@ -22,6 +22,13 @@ export function newBackupPassphrase(): string {
 export function ensureBackupPassphrase(config: Config): string | null {
   if (config.BACKUP_PASSPHRASE || !config.BACKUP_ENCRYPT || !config.BACKUP_PASSPHRASE_FILE || config.DEMO) return null;
   const file = config.BACKUP_PASSPHRASE_FILE;
+  // A file that exists but held nothing readable is never replaced: a new passphrase would leave every
+  // backup made with the old one unrestorable.
+  if (fs.existsSync(file))
+    throw new Error(
+      `${file} is empty. Put the backup passphrase back in it (from your password manager), or set ` +
+        "BACKUP_PASSPHRASE; remove the file only if you have no encrypted backups you need.",
+    );
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const passphrase = newBackupPassphrase();
   // Written whole, then renamed, so a half-written passphrase can never be read.

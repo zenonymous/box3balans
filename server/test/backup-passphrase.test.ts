@@ -32,6 +32,22 @@ describe("backups encrypted by default", () => {
     expect(ensureBackupPassphrase(again)).toBeNull();
   });
 
+  it("never replaces a passphrase file that exists, even an empty one", () => {
+    // Writing a new passphrase over it would leave every earlier backup unrestorable.
+    const file = tempFile();
+    fs.writeFileSync(file, "  \n");
+    const config = loadConfig(env({ BACKUP_PASSPHRASE_FILE: file }));
+    expect(() => ensureBackupPassphrase(config)).toThrow(/is empty/);
+    expect(fs.readFileSync(file, "utf8")).toBe("  \n");
+  });
+
+  it("says plainly when the passphrase file can't be read", () => {
+    if (process.getuid?.() === 0) return; // root reads anything
+    const file = tempFile();
+    fs.writeFileSync(file, "K7QX2-MPF9R-AAAAA-BBBBB-CCCCC-DDDDD", { mode: 0o000 });
+    expect(() => loadConfig(env({ BACKUP_PASSPHRASE_FILE: file }))).toThrow(/BACKUP_PASSPHRASE_FILE: can't read/);
+  });
+
   it("uses your own BACKUP_PASSPHRASE, and stays unencrypted with BACKUP_ENCRYPT=false", () => {
     const file = tempFile();
     const own = loadConfig(env({ BACKUP_PASSPHRASE_FILE: file, BACKUP_PASSPHRASE: "my own long passphrase" }));
