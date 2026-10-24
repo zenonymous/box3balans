@@ -38,11 +38,13 @@ if [ "$(id -u)" = "0" ]; then
   chown "$uid:$gid" "$data"
   # The db container reads db-password as its own user, so the folder stays traversable.
   chmod 755 "$data"
-  [ -f "$data/app-secret" ] && chown "$uid:$gid" "$data/app-secret"
-  [ -f "$data/backup-passphrase" ] && chown "$uid:$gid" "$data/backup-passphrase"
-  [ -d "$data/pglite" ] && chown -R "$uid:$gid" "$data/pglite"
-  [ -f "$data/pglite.lock" ] && chown "$uid:$gid" "$data/pglite.lock"
-  chown -R "$uid:$gid" "$BACKUP_DIR"
+  # The app user owns /data, so never follow a symlink in it: that could hand any root-owned file to
+  # PUID. -h changes a link itself, and links are skipped outright.
+  for f in app-secret backup-passphrase pglite.lock; do
+    [ -f "$data/$f" ] && [ ! -L "$data/$f" ] && chown -h "$uid:$gid" "$data/$f"
+  done
+  [ -d "$data/pglite" ] && [ ! -L "$data/pglite" ] && chown -hR "$uid:$gid" "$data/pglite"
+  chown -hR "$uid:$gid" "$BACKUP_DIR"
   chmod 700 "$BACKUP_DIR"
   exec su-exec "$uid:$gid" "$@"
 fi
