@@ -2,7 +2,7 @@
 
 _Your box 3, in balance._ · [box3balans.nl](https://box3balans.nl) · _Nederlands: [README.md](README.md)_
 
-[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/zenonymous/box3balans/badge)](https://scorecard.dev/viewer/?uri=github.com/zenonymous/box3balans)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/zenonymous/box3balans/badge)](https://scorecard.dev/viewer/?uri=github.com/zenonymous/box3balans) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/15856/badge)](https://www.bestpractices.dev/projects/15856)
 
 Box3balans keeps track of your **box 3** (the Dutch tax on savings and investments) and everything in it: savings, **stocks and ETFs, crypto, gold and silver** (at home or in a vault), a second home, money lent to others and debts, all in **euros**. With an estimate of your tax, your actual return and an overview for the tax return. You run it yourself, on your NAS, a home server or your laptop. So your amounts and transactions stay with you: Box3balans sends nothing to its makers and collects no usage data. It only connects to price sources, to the exchanges, brokers and block explorers you link, and to GitHub if you turn on the check for new versions. Those hosts are on a fixed list; the app refuses everything else. A price source does see which assets you request (symbols and ISINs), and a block explorer the addresses of wallets you add, and so their balances. What exactly goes out (never amounts) is in [What Box3balans sends](docs/en/privacy.md), and _Settings → Network_ shows it.
 
