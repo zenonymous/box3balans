@@ -28,6 +28,12 @@ Maak in de app een gebruiker aan. Voorbeeldgegevens laad je met `SESSION=<waarde
 
 ## Voor je een pull request opent
 
+**Een pull request wordt geaccepteerd als:**
+
+1. de GitHub-workflow slaagt (opmaak, ESLint, typecontrole, tests, ShellCheck, actionlint en het Docker-image), en nieuwe of gewijzigde berekeningen een test met een uitgerekend voorbeeld hebben;
+2. hij de [afspraken](#afspraken) hieronder volgt, en past bij de bewuste keuzes in [docs/adr/](docs/adr/) (of er eerst een issue over was);
+3. er geen persoonlijke gegevens in staan, en je akkoord gaat met de [licentie](#licentie).
+
 `npm install` zet ook git-hooks klaar (Husky). Vóór elke commit worden de gewijzigde bestanden opgemaakt (Prettier) en gecontroleerd (ESLint, met type-informatie), en draait de typecontrole: samen een paar seconden. Vóór elke push draaien de tests, ongeveer een halve minuut. Moet het in een noodgeval toch, sla ze dan over met `--no-verify`; de GitHub-workflow controleert alles opnieuw.
 
 Alles zelf in één keer draaien:
