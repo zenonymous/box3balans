@@ -366,6 +366,10 @@ Sample data: create a user and then run `SESSION=<pd_session cookie> npx tsx ser
 
 Making releases (for maintainers): see [docs/en/releasen.md](docs/en/releasen.md).
 
+### Built with AI assistance
+
+Box3balans is made with the help of an AI coding assistant: Claude, by Anthropic. Most of the code, the tests and the documentation (including the English version) were written with Claude, directed and reviewed by the maintainer, who makes the decisions and is responsible for the result. Every commit Claude helped write says so in a `Co-Authored-By: Claude …` line, so it can be traced per change. The calculations are checked with tests, including the Belastingdienst's worked examples, and every change goes through the same checks (tests, ESLint, CodeQL). Contributions with AI help are welcome on the same terms; see [CONTRIBUTING.en.md](CONTRIBUTING.en.md#agreements).
+
 ### Technology and why
 
 - **Fastify + TypeScript** (server): fast, fits schemas well, little overhead. One language for server and web app.

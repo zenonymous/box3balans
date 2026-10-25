@@ -372,6 +372,10 @@ Voorbeeldgegevens: maak een gebruiker aan en voer dan `SESSION=<pd_session-cooki
 
 Uitgaven maken (voor beheerders): zie [docs/releasen.md](docs/releasen.md).
 
+### Gebouwd met AI-hulp
+
+Box3balans wordt gemaakt met hulp van een AI-codeerassistent: Claude, van Anthropic. Het grootste deel van de code, de tests en de documentatie (ook de Engelse versie) is met Claude geschreven, in opdracht van en nagekeken door de beheerder, die de keuzes maakt en verantwoordelijk is voor het resultaat. Elke commit waaraan Claude meeschreef, zegt dat in de regel `Co-Authored-By: Claude …`, zodat het per wijziging na te gaan is. De berekeningen worden gecontroleerd met tests, waaronder de rekenvoorbeelden van de Belastingdienst, en elke wijziging gaat door dezelfde controles (tests, ESLint, CodeQL). Bijdragen met AI-hulp zijn welkom onder dezelfde voorwaarden; zie [CONTRIBUTING.md](CONTRIBUTING.md#afspraken).
+
 ### Techniek en waarom
 
 - **Fastify + TypeScript** (server): snel, past goed bij schema's, weinig overhead. Eén taal voor server en web-app.

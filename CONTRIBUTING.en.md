@@ -53,6 +53,7 @@ Does the app change visibly? Then remake the screenshots in the README: start th
 
 - **Terms and decisions:** the words the app and the code use, with their meaning, are in [CONTEXT.md](CONTEXT.md) ([English](CONTEXT.en.md)). Choices made deliberately (and why) are in [docs/adr/](docs/en/adr/). If you want to deviate from them, start with an issue.
 - **Documentation in two languages:** every Markdown document has a Dutch and an English version (`README.md` and `README.en.md`, `docs/x.md` and `docs/en/x.md`). Change both; if you can only write one language, say so in the pull request and the other will be filled in. `test/docs-english.test.ts` checks that every Dutch document has an English one.
+- **AI help** is fine, as the maintainer uses it too (see the [README](README.en.md#built-with-ai-assistance)). Say so in the pull request, keep your assistant's `Co-Authored-By` line in the commit, and only submit what you understand and have tested yourself.
 - **Money and quantities** are calculated with `decimal.js` and stored as `NUMERIC` in the database, never as plain numbers with rounding errors.
 - **Tests don't use the internet.** All external APIs get fake responses via `fakeFetch` in `server/test/helpers.ts`; a test that goes out anyway fails. Note: `fakeFetch` picks the **longest** matching URL, so give your own fake response the full host and path if a default response matches it too.
 - **Calculations get a test with a worked example**, with a comment explaining how you arrive at the expected number.
