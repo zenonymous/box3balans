@@ -203,7 +203,7 @@ Zonder die sleutel lukt het terugzetten ook, maar moet je de API-sleutels opnieu
   Dit gebruikt `BACKUP_PASSPHRASE` uit `.env`; voor een andere: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
 
 - Een versleutelde back-up buiten de app lezen: `docker compose exec app node dist/cli.js decrypt /backups/<bestand>.enc` zet het gewone `.json.gz` ernaast.
-- `docker compose exec app node dist/cli.js list` toont de back-ups met grootte en datum.
+- `docker compose exec app node dist/cli.js list` toont de back-ups met grootte en datum. Bij `restore` en `decrypt` mag je zo'n naam ook zonder `/backups/` ervoor gebruiken.
 
 **Extra vangnet (optioneel).** Een ruwe databasedump; terugzetten daarvan vraagt dezelfde PostgreSQL-versie:
 

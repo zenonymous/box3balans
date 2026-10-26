@@ -196,6 +196,17 @@ export function backupPath(dir: string, name: string): string {
   return path.join(dir, name);
 }
 
+/**
+ * The backup a CLI command means: a path as given, or a name as `cli.js list` prints it, in the backup
+ * folder. A bare name must look like one this app makes, so it can't point anywhere else.
+ */
+export function resolveBackupFile(arg: string | undefined, dir: string): string {
+  if (!arg) throw new Error("Backup file not found: (none given)");
+  if (fs.existsSync(arg)) return arg;
+  if (NAME_RE.test(arg) && fs.existsSync(path.join(dir, arg))) return path.join(dir, arg);
+  throw new Error(`Backup file not found: ${arg} (also looked in ${dir})`);
+}
+
 const stamp = (d: Date) => d.toISOString().replace(/[-:]/g, "").replace("T", "-").slice(0, 15);
 
 /** Writes a backup; encrypted with `passphrase` when given (see crypto.ts). */

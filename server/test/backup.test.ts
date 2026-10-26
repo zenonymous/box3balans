@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { getTableName, is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
@@ -10,6 +11,7 @@ import {
   listBackups,
   pruneBackups,
   readBackupFile,
+  resolveBackupFile,
   restoreBackup,
   schemaVersion,
   writeBackupFile,
@@ -360,5 +362,19 @@ describe("CSV export", () => {
     expect(lines[0]).toMatch(/^Date,Type,Account,Asset,Symbol,ISIN,Quantity/);
     expect(lines).toHaveLength(4);
     expect(lines[1]).toContain("buy,Broker,Bitcoin,BTC");
+  });
+});
+
+describe("the CLI finds a backup by its name", () => {
+  it("takes a path as given, or a name as `list` prints it from the backup folder", () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pd-cli-"));
+    const name = "box3balans-20261024-104548-manual.json.gz.enc";
+    fs.writeFileSync(path.join(dir, name), "x");
+    expect(resolveBackupFile(path.join(dir, name), dir)).toBe(path.join(dir, name));
+    expect(resolveBackupFile(name, dir)).toBe(path.join(dir, name));
+    expect(() => resolveBackupFile("box3balans-20990101-000000-auto.json.gz", dir)).toThrow(/not found/);
+    expect(() => resolveBackupFile(undefined, dir)).toThrow(/none given/);
+    // A bare name only ever means a file in the backup folder.
+    expect(() => resolveBackupFile("../secret.json.gz", dir)).toThrow(/not found/);
   });
 });

@@ -197,7 +197,7 @@ Restoring also works without that key, but then you have to enter the API keys a
   This uses `BACKUP_PASSPHRASE` from `.env`; for another one: `docker compose exec -e BACKUP_PASSPHRASE='…' app node dist/cli.js restore …`.
 
 - Reading an encrypted backup outside the app: `docker compose exec app node dist/cli.js decrypt /backups/<file>.enc` puts the plain `.json.gz` next to it.
-- `docker compose exec app node dist/cli.js list` shows the backups with size and date.
+- `docker compose exec app node dist/cli.js list` shows the backups with size and date. `restore` and `decrypt` also accept such a name without `/backups/` in front.
 
 **Extra safety net (optional).** A raw database dump; restoring it needs the same PostgreSQL version:
 
