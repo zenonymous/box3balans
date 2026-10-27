@@ -35,7 +35,8 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck
       - run: npx prettier --check .
-      - run: npm test
+      # The tests, with how much of the code they run (at least 80% of the statements together).
+      - run: npm run coverage
       - run: npm run build
 
   dates:

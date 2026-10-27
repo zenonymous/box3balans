@@ -4,3 +4,5 @@ node_modules
 .data
 server/drizzle
 package-lock.json
+web/src/test/demo.fixture.json
+coverage

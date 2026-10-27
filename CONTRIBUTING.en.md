@@ -42,6 +42,7 @@ Running everything yourself in one go:
 npm run lint
 npm run typecheck
 npm test
+npm run coverage          # the tests with how much code they reach; at least 80% together
 npx prettier --check .    # or: npm run format
 ```
 
@@ -58,7 +59,7 @@ Does the app change visibly? Then remake the screenshots in the README: start th
 - **Tests don't use the internet.** All external APIs get fake responses via `fakeFetch` in `server/test/helpers.ts`; a test that goes out anyway fails. Note: `fakeFetch` picks the **longest** matching URL, so give your own fake response the full host and path if a default response matches it too.
 - **Calculations get a test with a worked example**, with a comment explaining how you arrive at the expected number.
 - **Tests work on any day of the year.** Calculate dates in a test from today (`daysAgo(100)`), and pick them so they don't fall on a month or year boundary. `scripts/test-dates.sh` runs the server tests as if it were a few tricky moments (New Year, the first and last day of a month, daylight saving time, a leap day), in UTC and in Dutch time. Run it after a change that calculates with dates.
-- **Page tests** (`web/src/pages/*.dom.test.tsx`, with Testing Library and happy-dom) check what a page says for a fixed server response: the demo household's responses are in `web/src/test/*.fixture.json` (refetch them from `web/dist-demo/data/nl/` after `npm run build:online-demo`). Calculations belong on the server, not in the page.
+- **Page tests** (`web/src/pages/*.dom.test.tsx`, with Testing Library and happy-dom) check what a page says for a fixed server response, and what it sends when you fill something in. The demo household's responses are in `web/src/test/demo.fixture.json`; refresh them with `npm run build:online-demo && npm run fixtures:demo`. Calculations belong on the server, not in the page.
 - **Look at the pages after a change to the interface.** `npm run check:pages` opens every page with the demo (`npm run demo`) on a phone and a computer screen, light and dark, and reports console errors, a page that scrolls sideways and text that falls outside its card or is cut off. With paths after it (`npm run check:pages -- / /holdings`), only those pages.
 - **Tax rules get a source** in `docs/box3-sources.md`: what the rule is, where it's written, and from when it applies. The figures themselves are in `server/src/rules/box3.json`; a new year goes in once the Belastingplan (tax plan) is adopted, with `"final": false` until the percentages for bank balances and debts are final (see [docs/en/belastingregels.md](docs/en/belastingregels.md)).
 - **Templates for annual statements** are in `server/src/import/yearStatement.ts` (`TEMPLATES`), each with a test on a text sample with made-up data. A template recognises the document by fixed texts and says per value which label the amount follows.
