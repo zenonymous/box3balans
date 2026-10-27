@@ -2,6 +2,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { del, get, pollUntil, post, put, type ChainInfo, type WalletAddress, type WalletSyncResult } from "../api";
 import { Mismatches } from "../components/Mismatches";
+import { SyncCounts } from "../components/SyncCounts";
 import { Alert, Badge, Button, Card, Empty, Field, Input, Modal, PageHeader, Select, Spinner } from "../components/ui";
 import { relativeTime } from "../format";
 import { useAccounts, useInvalidateAll } from "../queries";
@@ -197,25 +198,7 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
         <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={group.rows[0]!.lastSyncAt ?? undefined}>{relativeTime(group.rows[0]!.lastSyncAt)}</dd>
-        {r && !r.error && (
-          <>
-            <dt className="text-ink-2">{t("Imported")}</dt>
-            <dd>
-              {t("{n} new", { n: r.inserted })}{" "}
-              <span className="text-muted">{t("of {total}", { total: r.fetched })}</span>
-            </dd>
-            <dt className="text-ink-2">{t("Transfers linked")}</dt>
-            <dd>{r.transfersMatched}</dd>
-            {!!r.revalued && (
-              <>
-                <dt className="text-ink-2">{t("Valued after all")}</dt>
-                <dd title={t("Rewards and deposits that were booked at €0 because no price was known yet")}>
-                  {r.revalued}
-                </dd>
-              </>
-            )}
-          </>
-        )}
+        {r && !r.error && <SyncCounts r={r} />}
       </dl>
 
       <div className="mt-3 flex flex-col gap-2">

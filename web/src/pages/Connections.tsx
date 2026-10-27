@@ -17,6 +17,7 @@ import {
 } from "../components/ui";
 import { relativeTime } from "../format";
 import { Mismatches } from "../components/Mismatches";
+import { SyncCounts } from "../components/SyncCounts";
 import { useAccounts, useInvalidateAll } from "../queries";
 import { t, tj, tn } from "../i18n";
 
@@ -162,37 +163,7 @@ function ConnectionCard({
         <dd className="font-mono text-xs leading-5">{i.keyHint ?? "—"}</dd>
         <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={i.lastSyncAt ?? undefined}>{relativeTime(i.lastSyncAt)}</dd>
-        {r && !r.error && (
-          <>
-            <dt className="text-ink-2">{t("Imported")}</dt>
-            <dd>
-              {t("{n} new", { n: r.inserted })}{" "}
-              <span className="text-muted">{t("of {total}", { total: r.fetched })}</span>
-            </dd>
-            <dt className="text-ink-2">{t("Transfers linked")}</dt>
-            <dd>{r.transfersMatched}</dd>
-            {!!r.revalued && (
-              <>
-                <dt className="text-ink-2">{t("Valued after all")}</dt>
-                <dd title={t("Rewards and deposits that were booked at €0 because no price was known yet")}>
-                  {r.revalued}
-                </dd>
-              </>
-            )}
-            {!!r.swaps && (
-              <>
-                <dt className="text-ink-2">{t("Coin swaps booked")}</dt>
-                <dd
-                  title={t(
-                    "A coin the exchange swapped for another, booked as a sale and a purchase at the same value",
-                  )}
-                >
-                  {r.swaps}
-                </dd>
-              </>
-            )}
-          </>
-        )}
+        {r && !r.error && <SyncCounts r={r} />}
       </dl>
 
       <div className="mt-3 flex flex-col gap-2">
