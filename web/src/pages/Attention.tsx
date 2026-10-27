@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { post } from "../api";
 import { Button, Card, Empty, PageHeader, Spinner, cx } from "../components/ui";
 import { useAttention, type Issue } from "../queries";
-import { t, tn } from "../i18n";
+import { t } from "../i18n";
 
 const SEVERITY: Record<Issue["severity"], { label: string; icon: string; tone: string }> = {
   problem: { label: t("Problems"), icon: "⛔", tone: "text-loss" },
@@ -88,26 +88,5 @@ export function AttentionPage() {
         </div>
       )}
     </>
-  );
-}
-
-/** Sidebar / top-of-page link shown while problems or warnings are open. */
-export function AttentionBadge({ className }: { className?: string }) {
-  const attention = useAttention();
-  const open = (attention.data ?? []).filter((i) => !i.dismissed && i.severity !== "info");
-  if (!open.length) return null;
-  const problem = open.some((i) => i.severity === "problem");
-  return (
-    <Link
-      to="/attention"
-      className={cx(
-        "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium",
-        problem ? "bg-danger-bg text-loss" : "bg-warn-bg text-warn",
-        className,
-      )}
-    >
-      <span aria-hidden>{problem ? "⛔" : "⚠"}</span>
-      {tn(open.length, "{n} needs attention", "{n} need attention")}
-    </Link>
   );
 }

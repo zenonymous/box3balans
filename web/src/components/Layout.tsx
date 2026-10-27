@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { get, type User } from "../api";
-import { AttentionBadge } from "../pages/Attention";
+import { AttentionBadge } from "./AttentionBadge";
 import { Alert, Spinner, cx } from "./ui";
 import { t, tj } from "../i18n";
 import { MOBILE_BAR, NAV_GROUPS, PAGES, isCurrent, type Page } from "../nav";
