@@ -198,7 +198,7 @@ function WalletGroup({ group, chain }: { group: Group; chain?: ChainInfo }) {
       <dl className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-4">
         <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={group.rows[0]!.lastSyncAt ?? undefined}>{relativeTime(group.rows[0]!.lastSyncAt)}</dd>
-        {r && !r.error && <SyncCounts r={r} />}
+        {r && !r.error && <SyncCounts result={r} />}
       </dl>
 
       <div className="mt-3 flex flex-col gap-2">

@@ -6,10 +6,10 @@ import { SyncCounts } from "./SyncCounts";
 /** The counts of a connection's or wallet's last sync, shared by both pages. */
 afterEach(cleanup);
 
-const show = (r: Parameters<typeof SyncCounts>[0]["r"]) =>
+const show = (r: Parameters<typeof SyncCounts>[0]["result"]) =>
   render(
     <dl>
-      <SyncCounts r={r} />
+      <SyncCounts result={r} />
     </dl>,
   );
 

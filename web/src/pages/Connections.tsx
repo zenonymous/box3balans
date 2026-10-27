@@ -163,7 +163,7 @@ function ConnectionCard({
         <dd className="font-mono text-xs leading-5">{i.keyHint ?? "—"}</dd>
         <dt className="text-ink-2">{t("Last sync")}</dt>
         <dd title={i.lastSyncAt ?? undefined}>{relativeTime(i.lastSyncAt)}</dd>
-        {r && !r.error && <SyncCounts r={r} />}
+        {r && !r.error && <SyncCounts result={r} />}
       </dl>
 
       <div className="mt-3 flex flex-col gap-2">

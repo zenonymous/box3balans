@@ -75,16 +75,22 @@ interface SyncLike {
   enabled: boolean;
 }
 
+/** What collectIssues needs besides the database and config. */
+interface AttentionDeps {
+  staleAfterMs: number;
+  backfill: BackfillResult | null;
+}
+
 /** An issue as a check reports it: dismissible unless it's a problem, or the check says otherwise. */
-type Found = Omit<Issue, "dismissible"> & { dismissible?: boolean };
+type CheckIssue = Omit<Issue, "dismissible"> & { dismissible?: boolean };
 
 type Account = typeof accounts.$inferSelect;
 
 /** What the checks share, loaded once. */
-interface Context {
+interface CheckContext {
   db: DB;
   config: Config;
-  deps: { staleAfterMs: number; backfill: BackfillResult | null };
+  deps: AttentionDeps;
   accountRows: Account[];
   accountName: Map<number, string>;
 }
@@ -93,7 +99,7 @@ interface Context {
 export async function collectIssues(
   db: DB,
   config: Config,
-  deps: { staleAfterMs: number; backfill: BackfillResult | null },
+  deps: AttentionDeps,
   opts: { includeDismissed?: boolean } = {},
 ): Promise<Issue[]> {
   const [accountRows, conns, addrs, statusRow] = await Promise.all([
@@ -102,10 +108,16 @@ export async function collectIssues(
     db.select().from(walletAddresses),
     db.select().from(settings).where(eq(settings.key, REFRESH_STATUS_KEY)),
   ]);
-  const ctx: Context = { db, config, deps, accountRows, accountName: new Map(accountRows.map((a) => [a.id, a.name])) };
+  const ctx: CheckContext = {
+    db,
+    config,
+    deps,
+    accountRows,
+    accountName: new Map(accountRows.map((a) => [a.id, a.name])),
+  };
 
   // One after the other, in this order: issues of the same severity keep it.
-  const found: Found[] = [
+  const found: CheckIssue[] = [
     ...syncIssues(ctx, conns, addrs),
     ...(await peildatumIssues(db)),
     ...(await statementIssues(ctx)),
@@ -127,11 +139,11 @@ export async function collectIssues(
 // ---- Syncs: exchange connections and wallets ----
 
 function syncIssues(
-  { config, accountName }: Context,
+  { config, accountName }: CheckContext,
   conns: (typeof integrations.$inferSelect)[],
   addrs: (typeof walletAddresses.$inferSelect)[],
-): Found[] {
-  const out: Found[] = [];
+): CheckIssue[] {
+  const out: CheckIssue[] = [];
   const syncInterval = config.SYNC_INTERVAL_HOURS * HOUR;
   const checkSync = (kind: "connection" | "wallet", id: string, name: string, s: SyncLike, to: string) => {
     if (!s.enabled) return;
@@ -213,7 +225,7 @@ function syncIssues(
 // ---- Box 3 and broker statements ----
 
 /** From mid-December to the end of May: what the peildatum still needs. */
-async function peildatumIssues(db: DB): Promise<Found[]> {
+async function peildatumIssues(db: DB): Promise<CheckIssue[]> {
   const peilYear = currentPeildatumYear(localToday());
   if (!peilYear) return [];
   const c = await peildatumChecklist(db, peilYear);
@@ -242,8 +254,8 @@ async function peildatumIssues(db: DB): Promise<Found[]> {
 }
 
 /** A broker's statement of positions (DEGIRO's portfolio export) that the transactions don't match. */
-async function statementIssues({ db, accountName }: Context): Promise<Found[]> {
-  const out: Found[] = [];
+async function statementIssues({ db, accountName }: CheckContext): Promise<CheckIssue[]> {
+  const out: CheckIssue[] = [];
   for (const c of await storedChecks(db)) {
     if (!c.differences) continue;
     const name = accountName.get(c.accountId) ?? tr("account #{id}", { id: c.accountId });
@@ -269,8 +281,8 @@ async function statementIssues({ db, accountName }: Context): Promise<Found[]> {
 
 // ---- Prices ----
 
-async function priceIssues({ db, deps }: Context, refresh: RefreshResult | undefined): Promise<Found[]> {
-  const out: Found[] = [];
+async function priceIssues({ db, deps }: CheckContext, refresh: RefreshResult | undefined): Promise<CheckIssue[]> {
+  const out: CheckIssue[] = [];
   if (refresh?.failed.length) {
     out.push({
       key: "price-failed",
@@ -340,7 +352,7 @@ const loadAssets = (db: DB) =>
     .from(assets);
 type AssetRow = Awaited<ReturnType<typeof loadAssets>>[number];
 
-async function dataIssues(ctx: Context): Promise<Found[]> {
+async function dataIssues(ctx: CheckContext): Promise<CheckIssue[]> {
   const ledger = await loadLedger(ctx.db);
   const assetRows = await loadAssets(ctx.db);
   const assetById = new Map(assetRows.map((a) => [a.id, a]));
@@ -353,13 +365,13 @@ async function dataIssues(ctx: Context): Promise<Found[]> {
 }
 
 function negativeBalanceIssues(
-  { accountName }: Context,
+  { accountName }: CheckContext,
   ledger: LedgerResult,
   assetById: Map<number, AssetRow>,
-): Found[] {
+): CheckIssue[] {
   return ledger.positions
     .filter((p) => p.quantity.lt("-0.00000001"))
-    .map((p): Found => {
+    .map((p): CheckIssue => {
       const a = assetById.get(p.assetId);
       const acc = accountName.get(p.accountId) ?? `#${p.accountId}`;
       return {
@@ -389,10 +401,10 @@ function negativeBalanceIssues(
  * totals, so their €0 doesn't matter.
  */
 async function unvaluedIssues(
-  { db }: Context,
+  { db }: CheckContext,
   assetRows: AssetRow[],
   assetById: Map<number, AssetRow>,
-): Promise<Found[]> {
+): Promise<CheckIssue[]> {
   const nonCash = assetRows.filter((a) => a.assetClass !== "cash" && !a.hidden).map((a) => a.id);
   if (!nonCash.length) return [];
   const unpriced = await db
@@ -446,7 +458,7 @@ async function unvaluedIssues(
  * Accounts kept as values per year need their 1 January value each year (from the bank's year
  * statement or the WOZ assessment).
  */
-async function yearlyValueIssues({ db, accountRows }: Context): Promise<Found[]> {
+async function yearlyValueIssues({ db, accountRows }: CheckContext): Promise<CheckIssue[]> {
   const yearlyAccounts = accountRows.filter((a) => a.tracking === "yearly" && !a.archived);
   if (!yearlyAccounts.length) return [];
   const thisYear = Number(localToday().slice(0, 4));
@@ -483,10 +495,10 @@ async function yearlyValueIssues({ db, accountRows }: Context): Promise<Found[]>
 
 /** Crypto that left an exchange without arriving anywhere known: a disposal, unless it went to a wallet of yours. */
 async function unlinkedWithdrawalIssues(
-  { db, accountRows }: Context,
+  { db, accountRows }: CheckContext,
   assetRows: AssetRow[],
   assetById: Map<number, AssetRow>,
-): Promise<Found[]> {
+): Promise<CheckIssue[]> {
   const exchangeIds = accountRows.filter((a) => a.kind === "exchange").map((a) => a.id);
   const crypto = assetRows.filter((a) => a.assetClass === "crypto").map((a) => a.id);
   if (!exchangeIds.length || !crypto.length) return [];
@@ -525,7 +537,7 @@ async function unlinkedWithdrawalIssues(
 // ---- The app itself ----
 
 /** A new version (only when the update check is on). */
-async function updateIssues(db: DB): Promise<Found[]> {
+async function updateIssues(db: DB): Promise<CheckIssue[]> {
   const update = await getUpdateStatus(db);
   if (!(update.enabled && update.newer && update.latest)) return [];
   return [
@@ -546,9 +558,9 @@ async function updateIssues(db: DB): Promise<Found[]> {
  * The box 3 figures ship with the app; a version that hasn't been updated for over a year may
  * miss a year's rates or changes to them.
  */
-function rulesIssues(): Found[] {
+function rulesIssues(): CheckIssue[] {
   const rulesAge = (Date.now() - Date.parse(`${RULES.checkedAt}T00:00:00Z`)) / (24 * HOUR);
-  if (rulesAge <= 400) return [];
+  if (!(rulesAge > 400)) return [];
   return [
     {
       key: "rules-old",
@@ -565,8 +577,8 @@ function rulesIssues(): Found[] {
 
 // ---- Backups ----
 
-async function backupIssues({ db, config }: Context): Promise<Found[]> {
-  const out: Found[] = [];
+async function backupIssues({ db, config }: CheckContext): Promise<CheckIssue[]> {
+  const out: CheckIssue[] = [];
   const backupInterval = config.BACKUP_INTERVAL_HOURS * HOUR;
   const status = await getBackupStatus(db);
   if (status.lastErrorAt && (!status.lastSuccessAt || status.lastErrorAt > status.lastSuccessAt)) {

@@ -353,5 +353,3 @@ function AccountModal({
     </Modal>
   );
 }
-
-// ---- Values per year ----

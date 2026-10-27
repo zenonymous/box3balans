@@ -1,13 +1,14 @@
+import type { SyncResult } from "../api";
 import { t } from "../i18n";
 
 /**
  * What the last sync of a connection or a wallet did, as terms of the <dl> it sits in. Coin swaps
- * only come from exchanges.
+ * only come from exchanges: a wallet's sync result never has them.
  */
 export function SyncCounts({
-  r,
+  result: r,
 }: {
-  r: { fetched: number; inserted: number; transfersMatched: number; revalued?: number; swaps?: number };
+  result: Pick<SyncResult, "fetched" | "inserted" | "transfersMatched" | "revalued" | "swaps">;
 }) {
   return (
     <>
