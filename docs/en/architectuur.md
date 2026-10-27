@@ -61,6 +61,7 @@ flowchart LR
 - **Pages** (`pages/`): one per screen, with TanStack Query for the API's data. The pages show what the server calculated; they don't calculate themselves.
 - **Components** (`components/`, `charts/`): the shared building blocks (`ui.tsx`), the layout with navigation, and the charts (Recharts).
 - **`App.tsx`** handles signing in and the first installation; **`main.tsx`** mounts the app.
+- **`api.ts`** fetches from the API and has the types of its answers. Where the server has the same type, `web/contract/api.ts` checks the copy against it: `npm run typecheck` fails when a field the web expects is gone, renamed or of another type.
 - **Texts** are in English in the code and translated with `i18n/nl.ts`.
 - **PDFs** are read in the browser (`pdfText.ts`, pdf.js); only the text goes to the server ([ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)).
 - **The online demo** is the same app, built with `--mode online-demo`: `staticDemo.ts` answers the requests from a recording instead of a server ([ADR 0010](adr/0010-online-demo-zonder-server.md)).

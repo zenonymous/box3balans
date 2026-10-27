@@ -1,0 +1,10 @@
+{
+  // Only for api.ts here: it reads the server's types too, so it also needs Node's.
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  },
+  "include": ["api.ts", "../src/env.d.ts"]
+}

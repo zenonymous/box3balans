@@ -61,6 +61,7 @@ flowchart LR
 - **Pagina's** (`pages/`): één per scherm, met TanStack Query voor de gegevens van de API. De pagina's tonen wat de server uitrekende; ze rekenen zelf niet.
 - **Onderdelen** (`components/`, `charts/`): de gedeelde bouwstenen (`ui.tsx`), de layout met navigatie, en de grafieken (Recharts).
 - **`App.tsx`** regelt inloggen en de eerste installatie; **`main.tsx`** zet de app neer.
+- **`api.ts`** haalt op bij de API en heeft de types van de antwoorden. Waar de server hetzelfde type heeft, controleert `web/contract/api.ts` de kopie daartegen: `npm run typecheck` faalt als een veld dat de web-app verwacht weg is, anders heet of een ander type heeft.
 - **Teksten** staan in het Engels in de code en worden vertaald met `i18n/nl.ts`.
 - **Pdf's** worden in de browser gelezen (`pdfText.ts`, pdf.js); alleen de tekst gaat naar de server ([ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)).
 - **De online demo** is dezelfde app, gebouwd met `--mode online-demo`: `staticDemo.ts` beantwoordt de vragen uit een opname in plaats van een server ([ADR 0010](adr/0010-online-demo-zonder-server.md)).

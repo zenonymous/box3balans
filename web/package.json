@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p contract",
     "preview": "vite preview",
     "preview:online-demo": "vite preview --mode online-demo --port 4173 --strictPort",
     "test": "vitest run"
