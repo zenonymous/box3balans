@@ -39,6 +39,24 @@ import { t, tj, tn } from "../i18n";
 const PAGE = 50;
 const ENTRY_TYPES: TxType[] = ["buy", "sell", "deposit", "withdrawal", "dividend", "reward", "fee", "split"];
 
+/**
+ * What each type of transaction has besides a quantity: a price (and so a value in euros), a
+ * currency, a fee, and a cash side that can be booked against the account's cash balance. The
+ * server's settlesInCash (server/src/domain/ledger.ts) has the same cash rule.
+ */
+const TX_FIELDS: Record<TxType, { price: boolean; currency: boolean; fee: boolean; settles: boolean }> = {
+  buy: { price: true, currency: true, fee: true, settles: true },
+  sell: { price: true, currency: true, fee: true, settles: true },
+  deposit: { price: true, currency: true, fee: false, settles: false },
+  reward: { price: true, currency: true, fee: false, settles: false },
+  dividend: { price: false, currency: true, fee: true, settles: true },
+  withdrawal: { price: false, currency: false, fee: true, settles: false },
+  transfer_in: { price: false, currency: false, fee: false, settles: false },
+  transfer_out: { price: false, currency: false, fee: false, settles: false },
+  fee: { price: false, currency: false, fee: false, settles: false },
+  split: { price: false, currency: false, fee: false, settles: false },
+};
+
 export function TransactionsPage() {
   const accounts = useAccounts();
   const assets = useAssets();
@@ -234,7 +252,7 @@ function describe(x: Transaction): string {
 function eurValue(x: Transaction): string {
   const fx = Number(x.fxRate);
   if (x.type === "dividend") return eur((Number(x.amount) - Number(x.taxWithheld)) * fx);
-  if (["buy", "sell", "deposit", "reward"].includes(x.type) && Number(x.price)) {
+  if (TX_FIELDS[x.type].price && Number(x.price)) {
     const v = Number(x.quantity) * Number(x.price) * fx;
     return eur(x.type === "buy" ? -(v + Number(x.feeEur)) : x.type === "sell" ? v - Number(x.feeEur) : v, {
       sign: x.type === "buy" || x.type === "sell",
@@ -331,10 +349,7 @@ export function TxModal({
   });
 
   const kind = f.type;
-  const usesPrice = ["buy", "sell", "deposit", "reward"].includes(kind);
-  const usesCurrency = usesPrice || kind === "dividend";
-  const usesFee = ["buy", "sell", "dividend", "withdrawal"].includes(kind);
-  const settles = ["buy", "sell", "dividend"].includes(kind);
+  const { price: usesPrice, currency: usesCurrency, fee: usesFee, settles } = TX_FIELDS[kind];
   const qtyLabel =
     kind === "split"
       ? t("Split ratio (new shares per old share)")

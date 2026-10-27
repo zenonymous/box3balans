@@ -4,6 +4,7 @@ import { and, desc, eq, gte, ilike, lte, or, sql, type SQL } from "drizzle-orm";
 import { z } from "zod";
 import type { DB } from "../db/client.js";
 import { accounts, assets, syncIgnored, transactions } from "../db/schema.js";
+import { settlesInCash, type TxType } from "../domain/ledger.js";
 import { audit } from "../lib/audit.js";
 import { D, str } from "../lib/decimal.js";
 import { HttpError, notFound } from "../lib/errors.js";
@@ -101,16 +102,14 @@ async function resolveFx(fx: FxService, currency: string, at: Date, given?: stri
   }
 }
 
-const SETTLES = new Set(["buy", "sell", "dividend"]);
-
 /** Cash asset for `currency` (created if needed) when the transaction should settle in cash. */
 async function settleAsset(
   db: DB,
-  type: string,
+  type: TxType,
   currency: string,
   settle: boolean | undefined,
 ): Promise<number | null> {
-  if (!settle || !SETTLES.has(type)) return null;
+  if (!settle || !settlesInCash(type)) return null;
   return (await new AssetResolver(db).resolve({ kind: "fiat", currency })).id;
 }
 

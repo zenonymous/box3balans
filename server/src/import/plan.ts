@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, eq, inArray } from "drizzle-orm";
 import type { DB } from "../db/client.js";
+import { settlesInCash } from "../domain/ledger.js";
 import { accounts, assets, imports, syncIgnored, transactions } from "../db/schema.js";
 import { D, type Decimal, ZERO, str } from "../lib/decimal.js";
 import type { FetchFn } from "../lib/http.js";
@@ -737,7 +738,7 @@ export async function commitImport(
       }
       const fx = await fxOn(r.currency, r.at);
       const settle =
-        m.settleCash && (r.type === "buy" || r.type === "sell" || r.type === "dividend")
+        m.settleCash && settlesInCash(r.type)
           ? (await resolver.resolve({ kind: "fiat", currency: r.currency })).id
           : null;
       if (r.type === "dividend") {

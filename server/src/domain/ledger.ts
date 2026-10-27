@@ -3,6 +3,21 @@ import { D, Decimal, ZERO } from "../lib/decimal.js";
 export type TxType =
   "buy" | "sell" | "deposit" | "withdrawal" | "transfer_in" | "transfer_out" | "dividend" | "reward" | "fee" | "split";
 
+/** Types whose cash side can be booked against the account's cash balance (settleCash). */
+const SETTLES_IN_CASH: Record<TxType, boolean> = {
+  buy: true,
+  sell: true,
+  dividend: true,
+  deposit: false,
+  withdrawal: false,
+  transfer_in: false,
+  transfer_out: false,
+  reward: false,
+  fee: false,
+  split: false,
+};
+export const settlesInCash = (type: TxType): boolean => SETTLES_IN_CASH[type];
+
 export type CostMethod = "average" | "fifo";
 
 export interface LedgerTx {
