@@ -373,6 +373,8 @@ Box3balans is made with the help of an AI coding assistant: Claude, by Anthropic
 
 ### Technology and why
 
+How the parts fit together: [docs/en/architectuur.md](docs/en/architectuur.md).
+
 - **Fastify + TypeScript** (server): fast, fits schemas well, little overhead. One language for server and web app.
 - **PostgreSQL + Drizzle ORM**: `NUMERIC` columns for exact amounts and quantities (decimal.js in the code, never plain numbers), typed queries and generated SQL migrations. PGlite runs the same migrations in tests, during development and in the single-container variant.
 - **React + Vite + Tailwind + TanStack Query + Recharts** (web): a responsive app with a light and dark theme, served by the same container.
@@ -380,6 +382,8 @@ Box3balans is made with the help of an AI coding assistant: Claude, by Anthropic
 - **One app container** with a built-in scheduler. For one user at home, a separate worker or queue would only add parts.
 
 ### Security
+
+Why Box3balans keeps its security promises (threats, trust boundaries, countermeasures and residual risks): [docs/en/beveiligingsonderbouwing.md](docs/en/beveiligingsonderbouwing.md).
 
 - Passwords are hashed with argon2id. Sessions are random 256-bit tokens, stored hashed, in `HttpOnly; SameSite=Strict` cookies.
 - **Two-step verification** (_Settings_): after the password, a code from an authenticator app (TOTP, such as Aegis, 2FAS or Google Authenticator). Every code works once. You get ten recovery codes for when you lose your phone; they're shown only once and stored as an HMAC with the app key, so a copy of the database or a backup isn't enough to guess them. The secret is stored encrypted, just like API keys. After five wrong codes in a row the app checks no codes for your account for fifteen minutes, and after every following series twice as long (up to a day), from whatever IP address the attempts come. Turning it off needs your password and a code. Locked out: `docker compose exec app node dist/cli.js disable-2fa` turns it off (in the single-container variant: see [In one container](#in-one-container)).

@@ -379,6 +379,8 @@ Box3balans wordt gemaakt met hulp van een AI-codeerassistent: Claude, van Anthro
 
 ### Techniek en waarom
 
+Hoe de onderdelen samenhangen: [docs/architectuur.md](docs/architectuur.md).
+
 - **Fastify + TypeScript** (server): snel, past goed bij schema's, weinig overhead. Eén taal voor server en web-app.
 - **PostgreSQL + Drizzle ORM**: `NUMERIC`-kolommen voor exacte bedragen en hoeveelheden (decimal.js in de code, nooit gewone getallen), getypte queries en gegenereerde SQL-migraties. PGlite draait dezelfde migraties in tests, bij het ontwikkelen en in de variant met één container.
 - **React + Vite + Tailwind + TanStack Query + Recharts** (web): een responsieve app met een lichte en donkere weergave, geserveerd door dezelfde container.
@@ -386,6 +388,8 @@ Box3balans wordt gemaakt met hulp van een AI-codeerassistent: Claude, van Anthro
 - **Eén app-container** met een ingebouwde planner. Voor één gebruiker thuis zouden een aparte worker of wachtrij alleen maar onderdelen toevoegen.
 
 ### Beveiliging
+
+Waarom Box3balans zijn beveiligingsbeloften waarmaakt (dreigingen, vertrouwensgrenzen, tegenmaatregelen en restrisico's): [docs/beveiligingsonderbouwing.md](docs/beveiligingsonderbouwing.md).
 
 - Wachtwoorden worden gehasht met argon2id. Sessies zijn willekeurige tokens van 256 bits, gehasht opgeslagen, in `HttpOnly; SameSite=Strict`-cookies.
 - **Tweestapsverificatie** (_Instellingen_): na het wachtwoord een code uit een authenticator-app (TOTP, zoals Aegis, 2FAS of Google Authenticator). Elke code werkt één keer. Je krijgt tien herstelcodes voor als je je telefoon kwijt bent; die worden maar één keer getoond en zijn opgeslagen als HMAC met de app-sleutel, dus een kopie van de database of een back-up is niet genoeg om ze te raden. Het geheim staat versleuteld opgeslagen, net als API-sleutels. Na vijf verkeerde codes op rij controleert de app een kwartier lang geen codes voor je account, en na elke volgende reeks twee keer zo lang (tot een dag), vanaf welk IP-adres er ook geprobeerd wordt. Uitzetten vraagt je wachtwoord en een code. Kom je er niet meer in: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: zie [In één container](#in-één-container)).
