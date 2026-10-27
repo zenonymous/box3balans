@@ -31,7 +31,7 @@ import { date, eur, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
 import { KIND_ORDER, kindHint, kindLabel, ownerLabel } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll } from "../queries";
-import { YearsModal } from "./Accounts";
+import { YearsModal } from "./AccountYears";
 import { HouseholdEditor } from "./Household";
 
 const STEPS = ["household", "accounts", "values", "result"] as const;
