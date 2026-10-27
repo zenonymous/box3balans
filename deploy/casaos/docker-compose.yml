@@ -27,12 +27,12 @@ services:
       envs:
         - container: TIME_ZONE
           description:
-            en_us: Time zone for days and peildata
-            nl_nl: Tijdzone voor dagen en peildata
+            en_us: Time zone for days and the 1 January valuation date
+            nl_nl: Tijdzone voor dagen en de peildatum (1 januari)
         - container: BACKUP_PASSPHRASE
           description:
-            en_us: Encrypts the automatic backups (recommended; keep it in your password manager)
-            nl_nl: Versleutelt de automatische back-ups (aangeraden; bewaar hem in je wachtwoordmanager)
+            en_us: Your own passphrase for the backups. Leave empty and Box3balans makes one (Settings → Backups shows it); keep it in your password manager
+            nl_nl: Je eigen wachtzin voor de back-ups. Leeg laten mag, dan maakt Box3balans er een (Instellingen → Back-ups laat hem zien); bewaar hem in je wachtwoordmanager
       ports:
         - container: "8080"
           description:

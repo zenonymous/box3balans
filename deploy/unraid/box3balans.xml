@@ -13,7 +13,7 @@
   <Privileged>false</Privileged>
   <Support>https://github.com/zenonymous/box3balans/discussions/categories/q-a</Support>
   <Project>https://github.com/zenonymous/box3balans</Project>
-  <Overview>Self-hosted overview of your investments, crypto and precious metals, with the Dutch box 3 wealth tax: what you had on 1 January, the tax under the current system, the actual return, and a yearly dossier of where every amount comes from. Connects to Bitvavo, Kraken, Coinbase and Interactive Brokers (read-only keys), reads wallets on Bitcoin, Ethereum, Solana, Cardano and other chains, and imports exports from DEGIRO, Trade Republic and others. The interface is in Dutch, with English available. Open source (AGPL-3.0); your data stays on your server. To create your account, use the setup code from the container log (first start).</Overview>
+  <Overview>Self-hosted overview of your investments, crypto and precious metals, with the Dutch box 3 wealth tax: what you had on 1 January, the tax under the current system, the actual return, and a yearly dossier of where every amount comes from. Connects to Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers (read-only keys), reads wallets on Bitcoin, Ethereum, Solana, Cardano and other chains, and imports exports from DEGIRO, Trade Republic and others. The interface is in Dutch, with English available. Open source (AGPL-3.0); your data stays on your server. To create your account, use the setup code from the container log (first start).</Overview>
   <Category>Productivity: Tools:</Category>
   <WebUI>http://[IP]:[PORT:8080]/</WebUI>
   <TemplateURL>https://raw.githubusercontent.com/zenonymous/box3balans/main/deploy/unraid/box3balans.xml</TemplateURL>
@@ -26,9 +26,9 @@
   <DonateLink/>
   <Requires/>
   <Config Name="Web UI" Target="8080" Default="8080" Mode="tcp" Description="Port of the web interface. Don't open it to the internet: use a VPN such as WireGuard or Tailscale to reach it from outside." Type="Port" Display="always" Required="true" Mask="false">8080</Config>
-  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/box3balans" Mode="rw" Description="The database and the encryption key created on first start (keep a copy of app-secret in your password manager)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/box3balans</Config>
+  <Config Name="Data" Target="/data" Default="/mnt/user/appdata/box3balans" Mode="rw" Description="The database and the encryption key created on first start (keep a copy of app-secret, and the backup passphrase from Settings → Backups, in your password manager)." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/box3balans</Config>
   <Config Name="Backups" Target="/backups" Default="/mnt/user/appdata/box3balans-backups" Mode="rw" Description="Automatic backups, for your own backup tool to copy off-site." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/box3balans-backups</Config>
-  <Config Name="Time zone" Target="TIME_ZONE" Default="Europe/Amsterdam" Mode="" Description="Time zone for days and peildata." Type="Variable" Display="always" Required="true" Mask="false">Europe/Amsterdam</Config>
+  <Config Name="Time zone" Target="TIME_ZONE" Default="Europe/Amsterdam" Mode="" Description="Time zone for days and the 1 January valuation date." Type="Variable" Display="always" Required="true" Mask="false">Europe/Amsterdam</Config>
   <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User the app runs as and who owns its files (Unraid: 99, nobody)." Type="Variable" Display="advanced" Required="true" Mask="false">99</Config>
   <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group the app runs as (Unraid: 100, users)." Type="Variable" Display="advanced" Required="true" Mask="false">100</Config>
   <Config Name="Backup passphrase" Target="BACKUP_PASSPHRASE" Default="" Mode="" Description="Your own passphrase for the backups. Leave empty and Box3balans makes one (Settings → Backups shows it); keep it in your password manager." Type="Variable" Display="always" Required="false" Mask="true"/>
