@@ -212,6 +212,14 @@
 
       <a href="demo/" aria-label="Probeer de demo">
         <picture>
+          <!-- On a phone the desktop screenshot is too small to read: the overview at phone width instead. -->
+          <source
+            srcset="img/overzicht-mobiel-dark.webp"
+            media="(max-width: 600px) and (prefers-color-scheme: dark)"
+            width="780"
+            height="1440"
+          />
+          <source srcset="img/overzicht-mobiel-light.webp" media="(max-width: 600px)" width="780" height="1440" />
           <source srcset="img/overzicht-dark.webp" media="(prefers-color-scheme: dark)" />
           <img
             class="shot"
