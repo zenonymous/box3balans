@@ -267,6 +267,8 @@ export function Modal({
   wide?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // The visible title is the dialog's name for screen readers.
+  const titleId = useId();
   useEffect(() => {
     const d = ref.current;
     if (!d) return;
@@ -282,6 +284,7 @@ export function Modal({
   return (
     <dialog
       ref={ref}
+      aria-labelledby={titleId}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()}
       className={cx(
@@ -292,7 +295,9 @@ export function Modal({
       {open && (
         <div className="flex max-h-[90dvh] flex-col">
           <header className="flex items-center justify-between border-b border-line px-5 py-3">
-            <h2 className="text-base font-semibold">{title}</h2>
+            <h2 id={titleId} className="text-base font-semibold">
+              {title}
+            </h2>
             <button
               type="button"
               onClick={onClose}
