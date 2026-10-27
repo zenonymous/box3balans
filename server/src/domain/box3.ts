@@ -4,6 +4,7 @@ import type { DB } from "../db/client.js";
 import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
+import type { AssetClassKey } from "./portfolio.js";
 import { localDay, localToday } from "../lib/time.js";
 import { type AttributionNote, attribute, loadHousehold } from "./household.js";
 import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
@@ -290,7 +291,8 @@ export interface Box3Row {
   assetId: number;
   symbol: string;
   name: string;
-  assetClass: string;
+  // An account kept as values per year has no asset; its row gets the class of its kind, or "debt".
+  assetClass: AssetClassKey | "debt";
   physical: boolean;
   quantity: string;
   unit: string;
@@ -301,7 +303,7 @@ export interface Box3Row {
   countedEur: string;
   category: Category | "debt";
   missingPrice: boolean;
-  owner: string;
+  owner: (typeof accounts.$inferSelect)["owner"];
   ownerChildId: number | null;
   countedPct: string;
   note?: AttributionNote;

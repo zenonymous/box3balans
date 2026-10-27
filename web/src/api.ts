@@ -646,7 +646,8 @@ export interface Box3Row {
   assetId: number;
   symbol: string;
   name: string;
-  assetClass: AssetClass;
+  // An account kept as values per year has no asset; its row gets the class of its kind, or "debt".
+  assetClass: AssetClass | "debt";
   physical: boolean;
   quantity: string;
   unit: string;
