@@ -19,6 +19,7 @@ import { REFRESH_STATUS_KEY, type RefreshResult } from "../prices/service.js";
 import type { BackfillResult } from "../jobs/backfill.js";
 import { buildPortfolio } from "./portfolio.js";
 import { loadLedger } from "./portfolio.js";
+import type { LedgerResult } from "./ledger.js";
 import { tr, trn } from "../i18n/index.js";
 import { RULES } from "../rules/index.js";
 import { getUpdateStatus } from "./updates.js";
@@ -74,6 +75,20 @@ interface SyncLike {
   enabled: boolean;
 }
 
+/** An issue as a check reports it: dismissible unless it's a problem, or the check says otherwise. */
+type Found = Omit<Issue, "dismissible"> & { dismissible?: boolean };
+
+type Account = typeof accounts.$inferSelect;
+
+/** What the checks share, loaded once. */
+interface Context {
+  db: DB;
+  config: Config;
+  deps: { staleAfterMs: number; backfill: BackfillResult | null };
+  accountRows: Account[];
+  accountName: Map<number, string>;
+}
+
 /** Everything that needs a look, most serious first. Dismissed issues are left out. */
 export async function collectIssues(
   db: DB,
@@ -81,25 +96,48 @@ export async function collectIssues(
   deps: { staleAfterMs: number; backfill: BackfillResult | null },
   opts: { includeDismissed?: boolean } = {},
 ): Promise<Issue[]> {
-  const issues: Issue[] = [];
-  const add = (i: Omit<Issue, "dismissible"> & { dismissible?: boolean }) =>
-    issues.push({ dismissible: i.severity !== "problem", ...i });
-
   const [accountRows, conns, addrs, statusRow] = await Promise.all([
     db.select().from(accounts),
     db.select().from(integrations),
     db.select().from(walletAddresses),
     db.select().from(settings).where(eq(settings.key, REFRESH_STATUS_KEY)),
   ]);
-  const accountName = new Map(accountRows.map((a) => [a.id, a.name]));
+  const ctx: Context = { db, config, deps, accountRows, accountName: new Map(accountRows.map((a) => [a.id, a.name])) };
 
-  // ---- Syncs: exchange connections and wallets ----
+  // One after the other, in this order: issues of the same severity keep it.
+  const found: Found[] = [
+    ...syncIssues(ctx, conns, addrs),
+    ...(await peildatumIssues(db)),
+    ...(await statementIssues(ctx)),
+    ...(await priceIssues(ctx, statusRow[0]?.value as RefreshResult | undefined)),
+    ...(await dataIssues(ctx)),
+    ...(await updateIssues(db)),
+    ...rulesIssues(),
+    ...(await backupIssues(ctx)),
+  ];
+
+  const rank: Record<Severity, number> = { problem: 0, warning: 1, info: 2 };
+  const dismissed = opts.includeDismissed ? {} : await getDismissed(db);
+  return found
+    .map((i): Issue => ({ dismissible: i.severity !== "problem", ...i }))
+    .filter((i) => !(i.dismissible && dismissed[i.key] === i.fingerprint))
+    .sort((a, b) => rank[a.severity] - rank[b.severity]);
+}
+
+// ---- Syncs: exchange connections and wallets ----
+
+function syncIssues(
+  { config, accountName }: Context,
+  conns: (typeof integrations.$inferSelect)[],
+  addrs: (typeof walletAddresses.$inferSelect)[],
+): Found[] {
+  const out: Found[] = [];
   const syncInterval = config.SYNC_INTERVAL_HOURS * HOUR;
   const checkSync = (kind: "connection" | "wallet", id: string, name: string, s: SyncLike, to: string) => {
     if (!s.enabled) return;
     const r = s.lastResult ?? {};
     if (s.lastStatus === "error") {
-      add({
+      out.push({
         key: `${kind}-error:${id}`,
         severity: "problem",
         title: tr("{name}: the last sync failed", { name }),
@@ -110,7 +148,7 @@ export async function collectIssues(
     }
     const mismatches = (r.mismatches as { symbol: string; difference: string }[] | undefined) ?? [];
     if (mismatches.length) {
-      add({
+      out.push({
         key: `${kind}-mismatch:${id}`,
         severity: "warning",
         title: trn(mismatches.length, "{name}: {n} balance difference", "{name}: {n} balance differences", { name }),
@@ -134,7 +172,7 @@ export async function collectIssues(
       });
     }
     if (r.partial) {
-      add({
+      out.push({
         key: `${kind}-partial:${id}`,
         severity: "info",
         title: tr("{name}: history still importing", { name }),
@@ -148,7 +186,7 @@ export async function collectIssues(
       s.lastSyncAt &&
       Date.now() - s.lastSyncAt.getTime() > Math.max(2 * syncInterval, 12 * HOUR)
     ) {
-      add({
+      out.push({
         key: `${kind}-stale:${id}`,
         severity: "warning",
         title: tr("{name} hasn't synced for {ago}", { name, ago: ago(s.lastSyncAt.toISOString()) }),
@@ -169,37 +207,48 @@ export async function collectIssues(
     seenWallets.add(id);
     checkSync("wallet", id, `${accountName.get(a.accountId) ?? tr("Wallet")} (${a.chain})`, a, "/wallets");
   }
-  // From mid-December to the end of May: what the peildatum still needs.
+  return out;
+}
+
+// ---- Box 3 and broker statements ----
+
+/** From mid-December to the end of May: what the peildatum still needs. */
+async function peildatumIssues(db: DB): Promise<Found[]> {
   const peilYear = currentPeildatumYear(localToday());
-  if (peilYear) {
-    const c = await peildatumChecklist(db, peilYear);
-    const open = c.items.filter((i) => i.status === "todo");
-    if (open.length)
-      add({
-        key: `peildatum:${peilYear}`,
-        severity: "info",
-        title: trn(
-          open.length,
-          "1 January {year}: {n} thing left for box 3",
-          "1 January {year}: {n} things left for box 3",
-          {
-            year: peilYear,
-          },
-        ),
-        detail: list(
-          open.map((i) => (i.account ? `${i.account}: ${i.text}` : i.text)),
-          3,
-        ),
-        link: { to: `/box3?checklist=${peilYear}`, label: tr("Review") },
-        fingerprint: open.map((i) => i.key).join(","),
-      });
-  }
-  // A broker's statement of positions (DEGIRO's portfolio export) that the transactions don't match.
+  if (!peilYear) return [];
+  const c = await peildatumChecklist(db, peilYear);
+  const open = c.items.filter((i) => i.status === "todo");
+  if (!open.length) return [];
+  return [
+    {
+      key: `peildatum:${peilYear}`,
+      severity: "info",
+      title: trn(
+        open.length,
+        "1 January {year}: {n} thing left for box 3",
+        "1 January {year}: {n} things left for box 3",
+        {
+          year: peilYear,
+        },
+      ),
+      detail: list(
+        open.map((i) => (i.account ? `${i.account}: ${i.text}` : i.text)),
+        3,
+      ),
+      link: { to: `/box3?checklist=${peilYear}`, label: tr("Review") },
+      fingerprint: open.map((i) => i.key).join(","),
+    },
+  ];
+}
+
+/** A broker's statement of positions (DEGIRO's portfolio export) that the transactions don't match. */
+async function statementIssues({ db, accountName }: Context): Promise<Found[]> {
+  const out: Found[] = [];
   for (const c of await storedChecks(db)) {
     if (!c.differences) continue;
     const name = accountName.get(c.accountId) ?? tr("account #{id}", { id: c.accountId });
     const off = c.rows.filter((r) => !D(r.difference).isZero());
-    add({
+    out.push({
       key: `statement-mismatch:${c.accountId}:${c.day}`,
       severity: "warning",
       title: trn(
@@ -215,11 +264,15 @@ export async function collectIssues(
       fingerprint: off.map((r) => `${r.assetId ?? r.isin}:${r.difference}`).join(","),
     });
   }
+  return out;
+}
 
-  // ---- Prices ----
-  const refresh = statusRow[0]?.value as RefreshResult | undefined;
+// ---- Prices ----
+
+async function priceIssues({ db, deps }: Context, refresh: RefreshResult | undefined): Promise<Found[]> {
+  const out: Found[] = [];
   if (refresh?.failed.length) {
-    add({
+    out.push({
       key: "price-failed",
       severity: "warning",
       title: trn(
@@ -237,7 +290,7 @@ export async function collectIssues(
   }
   const { summary, holdings } = await buildPortfolio(db, { staleAfterMs: deps.staleAfterMs });
   if (summary.missingPrices.length) {
-    add({
+    out.push({
       key: "price-missing",
       severity: "warning",
       title: trn(summary.missingPrices.length, "No price for {n} holding", "No price for {n} holdings"),
@@ -248,7 +301,7 @@ export async function collectIssues(
   }
   const stale = holdings.filter((h) => h.priceStale && h.priceFetchedAt).map((h) => h.symbol);
   if (stale.length) {
-    add({
+    out.push({
       key: "price-stale",
       severity: "warning",
       title: trn(stale.length, "Stale price for {n} holding", "Stale price for {n} holdings"),
@@ -258,7 +311,7 @@ export async function collectIssues(
     });
   }
   if (deps.backfill?.failed.length) {
-    add({
+    out.push({
       key: "history-failed",
       severity: "info",
       title: trn(
@@ -276,160 +329,207 @@ export async function collectIssues(
         .join(","),
     });
   }
+  return out;
+}
 
-  // ---- Data that looks wrong ----
-  const ledger = await loadLedger(db);
-  const assetRows = await db
+// ---- Data that looks wrong ----
+
+const loadAssets = (db: DB) =>
+  db
     .select({ id: assets.id, symbol: assets.symbol, assetClass: assets.assetClass, hidden: assets.hidden })
     .from(assets);
+type AssetRow = Awaited<ReturnType<typeof loadAssets>>[number];
+
+async function dataIssues(ctx: Context): Promise<Found[]> {
+  const ledger = await loadLedger(ctx.db);
+  const assetRows = await loadAssets(ctx.db);
   const assetById = new Map(assetRows.map((a) => [a.id, a]));
-  const negative = ledger.positions.filter((p) => p.quantity.lt("-0.00000001"));
-  for (const p of negative) {
-    const a = assetById.get(p.assetId);
-    const acc = accountName.get(p.accountId) ?? `#${p.accountId}`;
-    add({
-      key: `negative:${p.accountId}:${p.assetId}`,
-      severity: "problem",
-      title: tr("Negative balance: {quantity} {symbol} in {account}", {
-        quantity: p.quantity.toSignificantDigits(8).toFixed(),
-        symbol: a?.symbol ?? "?",
-        account: acc,
-      }),
-      detail:
-        a?.assetClass === "cash"
-          ? tr(
-              "Buys are paid from cash that was never deposited. Add the deposits, or stop booking cash for these trades.",
-            )
-          : tr(
-              "More was sold, sent or spent than was bought or received. Some history is missing (an earlier buy or deposit).",
-            ),
-      link: { to: `/transactions?accountId=${p.accountId}&assetId=${p.assetId}`, label: tr("Transactions") },
-      fingerprint: p.quantity.toFixed(),
-    });
-  }
+  return [
+    ...negativeBalanceIssues(ctx, ledger, assetById),
+    ...(await unvaluedIssues(ctx, assetRows, assetById)),
+    ...(await yearlyValueIssues(ctx)),
+    ...(await unlinkedWithdrawalIssues(ctx, assetRows, assetById)),
+  ];
+}
 
-  // Hidden assets (spam, worthless leftovers) are out of the totals, so their €0 doesn't matter.
-  const nonCash = assetRows.filter((a) => a.assetClass !== "cash" && !a.hidden).map((a) => a.id);
-  if (nonCash.length) {
-    const unpriced = await db
-      .select({ id: transactions.id, assetId: transactions.assetId, type: transactions.type })
-      .from(transactions)
-      .where(
-        and(
-          inArray(transactions.type, ["deposit", "reward"]),
-          eq(transactions.price, "0"),
-          inArray(transactions.assetId, nonCash),
-        ),
-      );
-    // A €0 you kept when editing the row is a choice (the revaluation after a sync leaves it too).
-    const edited = new Set(
-      unpriced.length
-        ? (
-            await db
-              .select({ id: auditLog.entityId })
-              .from(auditLog)
-              .where(
-                and(
-                  eq(auditLog.entity, "transaction"),
-                  eq(auditLog.action, "update"),
-                  inArray(
-                    auditLog.entityId,
-                    unpriced.map((z) => z.id),
-                  ),
-                ),
+function negativeBalanceIssues(
+  { accountName }: Context,
+  ledger: LedgerResult,
+  assetById: Map<number, AssetRow>,
+): Found[] {
+  return ledger.positions
+    .filter((p) => p.quantity.lt("-0.00000001"))
+    .map((p): Found => {
+      const a = assetById.get(p.assetId);
+      const acc = accountName.get(p.accountId) ?? `#${p.accountId}`;
+      return {
+        key: `negative:${p.accountId}:${p.assetId}`,
+        severity: "problem",
+        title: tr("Negative balance: {quantity} {symbol} in {account}", {
+          quantity: p.quantity.toSignificantDigits(8).toFixed(),
+          symbol: a?.symbol ?? "?",
+          account: acc,
+        }),
+        detail:
+          a?.assetClass === "cash"
+            ? tr(
+                "Buys are paid from cash that was never deposited. Add the deposits, or stop booking cash for these trades.",
               )
-          ).map((r) => r.id)
-        : [],
-    );
-    const zero = unpriced.filter((z) => !edited.has(z.id));
-    if (zero.length) {
-      add({
-        key: "zero-cost",
-        severity: "info",
-        title: trn(zero.length, "{n} deposit or reward without a value", "{n} deposits or rewards without a value"),
-        detail: tr(
-          "{list}: booked at €0 because no price was known for that day, which overstates gains when sold. Edit them to enter the value.",
-          { list: list([...new Set(zero.map((z) => assetById.get(z.assetId)?.symbol ?? "?"))]) },
-        ),
-        link: { to: "/transactions?type=deposit", label: tr("Transactions") },
-        fingerprint: String(zero.length),
-      });
-    }
-  }
-
-  // Accounts kept as values per year need their 1 January value each year (from the bank's year
-  // statement or the WOZ assessment).
-  const yearlyAccounts = accountRows.filter((a) => a.tracking === "yearly" && !a.archived);
-  if (yearlyAccounts.length) {
-    const thisYear = Number(localToday().slice(0, 4));
-    const rows = await db
-      .select({ accountId: accountYears.accountId, year: accountYears.year, valueEur: accountYears.valueEur })
-      .from(accountYears);
-    const missing = yearlyAccounts.filter((a) => {
-      const own = rows.filter((r) => r.accountId === a.id);
-      return own.length > 0 && !own.some((r) => r.year === thisYear && r.valueEur != null);
+            : tr(
+                "More was sold, sent or spent than was bought or received. Some history is missing (an earlier buy or deposit).",
+              ),
+        link: { to: `/transactions?accountId=${p.accountId}&assetId=${p.assetId}`, label: tr("Transactions") },
+        fingerprint: p.quantity.toFixed(),
+      };
     });
-    if (missing.length) {
-      add({
-        key: `yearly-missing:${thisYear}`,
-        severity: "warning",
-        title: trn(
-          missing.length,
-          "{n} account without a value on 1 January {year}",
-          "{n} accounts without a value on 1 January {year}",
-          { year: thisYear },
-        ),
-        detail: tr(
-          "{list}. Box 3 counts what you had on 1 January: take it from the year statement (jaaroverzicht) or, for a home, the WOZ assessment.",
-          { list: list(missing.map((a) => a.name)) },
-        ),
-        link: { to: "/accounts", label: tr("Accounts") },
-        fingerprint: missing
-          .map((a) => a.id)
-          .sort()
-          .join(","),
-      });
-    }
-  }
+}
 
+/**
+ * Deposits and rewards booked at €0. Hidden assets (spam, worthless leftovers) are out of the
+ * totals, so their €0 doesn't matter.
+ */
+async function unvaluedIssues(
+  { db }: Context,
+  assetRows: AssetRow[],
+  assetById: Map<number, AssetRow>,
+): Promise<Found[]> {
+  const nonCash = assetRows.filter((a) => a.assetClass !== "cash" && !a.hidden).map((a) => a.id);
+  if (!nonCash.length) return [];
+  const unpriced = await db
+    .select({ id: transactions.id, assetId: transactions.assetId, type: transactions.type })
+    .from(transactions)
+    .where(
+      and(
+        inArray(transactions.type, ["deposit", "reward"]),
+        eq(transactions.price, "0"),
+        inArray(transactions.assetId, nonCash),
+      ),
+    );
+  // A €0 you kept when editing the row is a choice (the revaluation after a sync leaves it too).
+  const edited = new Set(
+    unpriced.length
+      ? (
+          await db
+            .select({ id: auditLog.entityId })
+            .from(auditLog)
+            .where(
+              and(
+                eq(auditLog.entity, "transaction"),
+                eq(auditLog.action, "update"),
+                inArray(
+                  auditLog.entityId,
+                  unpriced.map((z) => z.id),
+                ),
+              ),
+            )
+        ).map((r) => r.id)
+      : [],
+  );
+  const zero = unpriced.filter((z) => !edited.has(z.id));
+  if (!zero.length) return [];
+  return [
+    {
+      key: "zero-cost",
+      severity: "info",
+      title: trn(zero.length, "{n} deposit or reward without a value", "{n} deposits or rewards without a value"),
+      detail: tr(
+        "{list}: booked at €0 because no price was known for that day, which overstates gains when sold. Edit them to enter the value.",
+        { list: list([...new Set(zero.map((z) => assetById.get(z.assetId)?.symbol ?? "?"))]) },
+      ),
+      link: { to: "/transactions?type=deposit", label: tr("Transactions") },
+      fingerprint: String(zero.length),
+    },
+  ];
+}
+
+/**
+ * Accounts kept as values per year need their 1 January value each year (from the bank's year
+ * statement or the WOZ assessment).
+ */
+async function yearlyValueIssues({ db, accountRows }: Context): Promise<Found[]> {
+  const yearlyAccounts = accountRows.filter((a) => a.tracking === "yearly" && !a.archived);
+  if (!yearlyAccounts.length) return [];
+  const thisYear = Number(localToday().slice(0, 4));
+  const rows = await db
+    .select({ accountId: accountYears.accountId, year: accountYears.year, valueEur: accountYears.valueEur })
+    .from(accountYears);
+  const missing = yearlyAccounts.filter((a) => {
+    const own = rows.filter((r) => r.accountId === a.id);
+    return own.length > 0 && !own.some((r) => r.year === thisYear && r.valueEur != null);
+  });
+  if (!missing.length) return [];
+  return [
+    {
+      key: `yearly-missing:${thisYear}`,
+      severity: "warning",
+      title: trn(
+        missing.length,
+        "{n} account without a value on 1 January {year}",
+        "{n} accounts without a value on 1 January {year}",
+        { year: thisYear },
+      ),
+      detail: tr(
+        "{list}. Box 3 counts what you had on 1 January: take it from the year statement (jaaroverzicht) or, for a home, the WOZ assessment.",
+        { list: list(missing.map((a) => a.name)) },
+      ),
+      link: { to: "/accounts", label: tr("Accounts") },
+      fingerprint: missing
+        .map((a) => a.id)
+        .sort()
+        .join(","),
+    },
+  ];
+}
+
+/** Crypto that left an exchange without arriving anywhere known: a disposal, unless it went to a wallet of yours. */
+async function unlinkedWithdrawalIssues(
+  { db, accountRows }: Context,
+  assetRows: AssetRow[],
+  assetById: Map<number, AssetRow>,
+): Promise<Found[]> {
   const exchangeIds = accountRows.filter((a) => a.kind === "exchange").map((a) => a.id);
   const crypto = assetRows.filter((a) => a.assetClass === "crypto").map((a) => a.id);
-  if (exchangeIds.length && crypto.length) {
-    const unlinked = await db
-      .select({ id: transactions.id, assetId: transactions.assetId })
-      .from(transactions)
-      .where(
-        and(
-          eq(transactions.type, "withdrawal"),
-          isNull(transactions.transferGroup),
-          inArray(transactions.accountId, exchangeIds),
-          inArray(transactions.assetId, crypto),
-          lt(transactions.occurredAt, new Date(Date.now() - UNLINKED_AFTER_MS)),
-        ),
-      );
-    if (unlinked.length) {
-      add({
-        key: "unlinked-withdrawals",
-        severity: "info",
-        title: trn(
-          unlinked.length,
-          "{n} crypto withdrawal from exchanges not linked to a deposit",
-          "{n} crypto withdrawals from exchanges not linked to a deposit",
-        ),
-        detail: tr(
-          "{list}. If they went to a wallet of yours, track that wallet so the purchase cost moves along; otherwise they count as disposals.",
-          { list: list([...new Set(unlinked.map((u) => assetById.get(u.assetId)?.symbol ?? "?"))]) },
-        ),
-        link: { to: "/wallets", label: tr("Wallets") },
-        fingerprint: String(unlinked.length),
-      });
-    }
-  }
+  if (!exchangeIds.length || !crypto.length) return [];
+  const unlinked = await db
+    .select({ id: transactions.id, assetId: transactions.assetId })
+    .from(transactions)
+    .where(
+      and(
+        eq(transactions.type, "withdrawal"),
+        isNull(transactions.transferGroup),
+        inArray(transactions.accountId, exchangeIds),
+        inArray(transactions.assetId, crypto),
+        lt(transactions.occurredAt, new Date(Date.now() - UNLINKED_AFTER_MS)),
+      ),
+    );
+  if (!unlinked.length) return [];
+  return [
+    {
+      key: "unlinked-withdrawals",
+      severity: "info",
+      title: trn(
+        unlinked.length,
+        "{n} crypto withdrawal from exchanges not linked to a deposit",
+        "{n} crypto withdrawals from exchanges not linked to a deposit",
+      ),
+      detail: tr(
+        "{list}. If they went to a wallet of yours, track that wallet so the purchase cost moves along; otherwise they count as disposals.",
+        { list: list([...new Set(unlinked.map((u) => assetById.get(u.assetId)?.symbol ?? "?"))]) },
+      ),
+      link: { to: "/wallets", label: tr("Wallets") },
+      fingerprint: String(unlinked.length),
+    },
+  ];
+}
 
-  // ---- New version (only when the update check is on) ----
+// ---- The app itself ----
+
+/** A new version (only when the update check is on). */
+async function updateIssues(db: DB): Promise<Found[]> {
   const update = await getUpdateStatus(db);
-  if (update.enabled && update.newer && update.latest) {
-    add({
+  if (!(update.enabled && update.newer && update.latest)) return [];
+  return [
+    {
       key: "update",
       severity: "info",
       title: tr("Box3balans {version} is available", { version: update.latest.version }),
@@ -438,15 +538,19 @@ export async function collectIssues(
       }),
       link: { to: "/settings", label: tr("About") },
       fingerprint: update.latest.version,
-    });
-  }
+    },
+  ];
+}
 
-  // ---- Tax rules ----
-  // The box 3 figures ship with the app; a version that hasn't been updated for over a year may
-  // miss a year's rates or changes to them.
+/**
+ * The box 3 figures ship with the app; a version that hasn't been updated for over a year may
+ * miss a year's rates or changes to them.
+ */
+function rulesIssues(): Found[] {
   const rulesAge = (Date.now() - Date.parse(`${RULES.checkedAt}T00:00:00Z`)) / (24 * HOUR);
-  if (rulesAge > 400) {
-    add({
+  if (rulesAge <= 400) return [];
+  return [
+    {
       key: "rules-old",
       severity: "info",
       title: tr("The box 3 rules in this version are from {date}", { date: RULES.checkedAt }),
@@ -455,14 +559,18 @@ export async function collectIssues(
       ),
       link: { to: "/box3", label: tr("Box 3") },
       fingerprint: RULES.checkedAt,
-    });
-  }
+    },
+  ];
+}
 
-  // ---- Backups ----
+// ---- Backups ----
+
+async function backupIssues({ db, config }: Context): Promise<Found[]> {
+  const out: Found[] = [];
   const backupInterval = config.BACKUP_INTERVAL_HOURS * HOUR;
   const status = await getBackupStatus(db);
   if (status.lastErrorAt && (!status.lastSuccessAt || status.lastErrorAt > status.lastSuccessAt)) {
-    add({
+    out.push({
       key: "backup-failed",
       severity: "problem",
       title: tr("The last automatic backup failed"),
@@ -479,7 +587,7 @@ export async function collectIssues(
   }
   const latestAuto = backups.find((b) => isAutomatic(b.name));
   if (backupInterval > 0 && latestAuto && Date.now() - Date.parse(latestAuto.createdAt) > 2 * backupInterval + HOUR) {
-    add({
+    out.push({
       key: "backup-overdue",
       severity: "problem",
       title: tr("No automatic backup since {ago}", { ago: ago(latestAuto.createdAt) }),
@@ -488,7 +596,7 @@ export async function collectIssues(
     });
   }
   if (backupInterval === 0 && !backups.length && !config.DEMO) {
-    add({
+    out.push({
       key: "backup-none",
       severity: "warning",
       title: tr("No backups"),
@@ -498,7 +606,7 @@ export async function collectIssues(
     });
   }
   if (!config.BACKUP_PASSPHRASE && !config.DEMO) {
-    add({
+    out.push({
       key: "backup-unencrypted",
       severity: "warning",
       title: tr("Backups aren't encrypted"),
@@ -511,7 +619,7 @@ export async function collectIssues(
   }
   // A passphrase Box3balans made: until it's in a password manager, losing the server loses the backups.
   if (config.BACKUP_PASSPHRASE_SOURCE === "file" && !config.DEMO) {
-    add({
+    out.push({
       key: "backup-passphrase",
       severity: "info",
       title: tr("Keep your backup passphrase"),
@@ -522,10 +630,5 @@ export async function collectIssues(
       fingerprint: "file",
     });
   }
-
-  const rank: Record<Severity, number> = { problem: 0, warning: 1, info: 2 };
-  const dismissed = opts.includeDismissed ? {} : await getDismissed(db);
-  return issues
-    .filter((i) => !(i.dismissible && dismissed[i.key] === i.fingerprint))
-    .sort((a, b) => rank[a.severity] - rank[b.severity]);
+  return out;
 }
