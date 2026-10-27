@@ -11,6 +11,8 @@ import { loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
 import { tr } from "../i18n/index.js";
 import { RULES } from "../rules/index.js";
 
+type Account = typeof accounts.$inferSelect;
+
 /**
  * Dutch box 3 ("sparen en beleggen"), forfaitaire spaarvariant (tax years 2023 onwards):
  * wealth on 1 January is split into bank balances, other assets and debts, each with its own
@@ -303,7 +305,7 @@ export interface Box3Row {
   countedEur: string;
   category: Category | "debt";
   missingPrice: boolean;
-  owner: (typeof accounts.$inferSelect)["owner"];
+  owner: Account["owner"];
   ownerChildId: number | null;
   countedPct: string;
   note?: AttributionNote;

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { downsample, computeHistory } from "../domain/history.js";
-import { computeYears, loadEvents } from "../domain/performance.js";
+import { type IncomeRow, computeYears, loadEvents } from "../domain/performance.js";
 import { buildPortfolio } from "../domain/portfolio.js";
 import { getCostMethod, getLanguage, setCostMethod, setLanguage } from "../domain/settings.js";
 import { computeCosts } from "../domain/costs.js";
@@ -9,6 +9,76 @@ import { D, type Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { staleAfterMs } from "../jobs/scheduler.js";
 
 const RANGE_DAYS: Record<string, number | null> = { "1M": 31, "3M": 92, "1Y": 366, "5Y": 1827, ALL: null };
+
+/**
+ * GET /api/income's answer: the income events, and their totals per year, month and asset. Named
+ * so web/contract/api.ts can check the web's type.
+ */
+export function incomeAnswer(income: IncomeRow[]) {
+  const byYear = new Map<number, { dividends: Decimal; rewards: Decimal; interest: Decimal; tax: Decimal }>();
+  const byMonth = new Map<string, { dividends: Decimal; rewards: Decimal; interest: Decimal }>();
+  const byAsset = new Map<
+    number,
+    { symbol: string; name: string; gross: Decimal; tax: Decimal; net: Decimal; count: number }
+  >();
+  const key = (k: string) => (k === "dividend" ? "dividends" : k === "interest" ? "interest" : "rewards");
+  for (const e of income) {
+    const y = Number(e.date.slice(0, 4));
+    const yr = byYear.get(y) ?? { dividends: ZERO, rewards: ZERO, interest: ZERO, tax: ZERO };
+    yr[key(e.kind)] = yr[key(e.kind)].plus(D(e.netEur));
+    yr.tax = yr.tax.plus(D(e.taxEur));
+    byYear.set(y, yr);
+    const m = e.date.slice(0, 7);
+    const mo = byMonth.get(m) ?? { dividends: ZERO, rewards: ZERO, interest: ZERO };
+    mo[key(e.kind)] = mo[key(e.kind)].plus(D(e.netEur));
+    byMonth.set(m, mo);
+    const a = byAsset.get(e.assetId) ?? {
+      symbol: e.symbol,
+      name: e.name,
+      gross: ZERO,
+      tax: ZERO,
+      net: ZERO,
+      count: 0,
+    };
+    a.gross = a.gross.plus(D(e.grossEur));
+    a.tax = a.tax.plus(D(e.taxEur));
+    a.net = a.net.plus(D(e.netEur));
+    a.count++;
+    byAsset.set(e.assetId, a);
+  }
+  return {
+    events: income,
+    byYear: [...byYear]
+      .sort(([a], [b]) => b - a)
+      .map(([y, v]) => ({
+        year: y,
+        dividendsEur: money2(v.dividends),
+        rewardsEur: money2(v.rewards),
+        interestEur: money2(v.interest),
+        totalEur: money2(v.dividends.plus(v.rewards).plus(v.interest)),
+        taxWithheldEur: money2(v.tax),
+      })),
+    byMonth: [...byMonth]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([month, v]) => ({
+        month,
+        dividendsEur: money2(v.dividends),
+        rewardsEur: money2(v.rewards),
+        interestEur: money2(v.interest),
+      })),
+    byAsset: [...byAsset]
+      .map(([assetId, v]) => ({
+        assetId,
+        symbol: v.symbol,
+        name: v.name,
+        count: v.count,
+        grossEur: money2(v.gross),
+        taxEur: money2(v.tax),
+        netEur: money2(v.net),
+      }))
+      .sort((a, b) => D(b.netEur).cmp(D(a.netEur))),
+  };
+}
 
 export async function analyticsRoutes(app: FastifyInstance) {
   const { db, config, backfill } = app.deps;
@@ -94,69 +164,7 @@ export async function analyticsRoutes(app: FastifyInstance) {
 
   app.get("/income", async () => {
     const { income } = await loadEvents(db, await getCostMethod(db));
-    const byYear = new Map<number, { dividends: Decimal; rewards: Decimal; interest: Decimal; tax: Decimal }>();
-    const byMonth = new Map<string, { dividends: Decimal; rewards: Decimal; interest: Decimal }>();
-    const byAsset = new Map<
-      number,
-      { symbol: string; name: string; gross: Decimal; tax: Decimal; net: Decimal; count: number }
-    >();
-    const key = (k: string) => (k === "dividend" ? "dividends" : k === "interest" ? "interest" : "rewards");
-    for (const e of income) {
-      const y = Number(e.date.slice(0, 4));
-      const yr = byYear.get(y) ?? { dividends: ZERO, rewards: ZERO, interest: ZERO, tax: ZERO };
-      yr[key(e.kind)] = yr[key(e.kind)].plus(D(e.netEur));
-      yr.tax = yr.tax.plus(D(e.taxEur));
-      byYear.set(y, yr);
-      const m = e.date.slice(0, 7);
-      const mo = byMonth.get(m) ?? { dividends: ZERO, rewards: ZERO, interest: ZERO };
-      mo[key(e.kind)] = mo[key(e.kind)].plus(D(e.netEur));
-      byMonth.set(m, mo);
-      const a = byAsset.get(e.assetId) ?? {
-        symbol: e.symbol,
-        name: e.name,
-        gross: ZERO,
-        tax: ZERO,
-        net: ZERO,
-        count: 0,
-      };
-      a.gross = a.gross.plus(D(e.grossEur));
-      a.tax = a.tax.plus(D(e.taxEur));
-      a.net = a.net.plus(D(e.netEur));
-      a.count++;
-      byAsset.set(e.assetId, a);
-    }
-    return {
-      events: income,
-      byYear: [...byYear]
-        .sort(([a], [b]) => b - a)
-        .map(([y, v]) => ({
-          year: y,
-          dividendsEur: money2(v.dividends),
-          rewardsEur: money2(v.rewards),
-          interestEur: money2(v.interest),
-          totalEur: money2(v.dividends.plus(v.rewards).plus(v.interest)),
-          taxWithheldEur: money2(v.tax),
-        })),
-      byMonth: [...byMonth]
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([month, v]) => ({
-          month,
-          dividendsEur: money2(v.dividends),
-          rewardsEur: money2(v.rewards),
-          interestEur: money2(v.interest),
-        })),
-      byAsset: [...byAsset]
-        .map(([assetId, v]) => ({
-          assetId,
-          symbol: v.symbol,
-          name: v.name,
-          count: v.count,
-          grossEur: money2(v.gross),
-          taxEur: money2(v.tax),
-          netEur: money2(v.net),
-        }))
-        .sort((a, b) => D(b.netEur).cmp(D(a.netEur))),
-    };
+    return incomeAnswer(income);
   });
 
   // Manually (re)load price history, e.g. after fixing a ticker.

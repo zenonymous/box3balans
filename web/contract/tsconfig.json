@@ -1,5 +1,7 @@
 {
-  // Only for api.ts here: it reads the server's types too, so it also needs Node's.
+  // Only for api.ts here. It reads the server's source too, compiled with the web's settings plus
+  // Node's types; the server's packages (fastify, drizzle-orm, …) come from the workspace root,
+  // where npm installs them for both workspaces.
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "types": ["vite/client", "node"],

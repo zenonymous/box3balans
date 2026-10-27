@@ -5,12 +5,13 @@ import { accounts } from "../db/schema.js";
 import {
   DEFAULT_RATES,
   availableYears,
+  type Box3Year,
   computeBox3Year,
   configSchema,
   loadConfig,
   saveConfig,
 } from "../domain/box3.js";
-import { actualReturn } from "../domain/box3Actual.js";
+import { type ActualReturn, actualReturn } from "../domain/box3Actual.js";
 import { buildDossier } from "../domain/dossier.js";
 import { peildatumChecklist } from "../domain/peildatum.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
@@ -20,6 +21,20 @@ import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
+
+/**
+ * GET /api/box3/:year's answer: the year with its actual return and, for the tegenbewijsregeling,
+ * how that compares with the deemed-return tax. Named so web/contract/api.ts can check the web's type.
+ */
+export function yearAnswer(result: Box3Year, actual: ActualReturn) {
+  return {
+    ...result,
+    actualReturn: {
+      ...actual,
+      comparison: compareWithDeemed(actual, result.calculation, result.rates?.taxRatePct ?? null),
+    },
+  };
+}
 
 export async function box3Routes(app: FastifyInstance) {
   const { db } = app.deps;
@@ -59,14 +74,7 @@ export async function box3Routes(app: FastifyInstance) {
       computeBox3Year(db, year, config, data),
       actualReturn(db, year, config, data),
     ]);
-    // Tegenbewijsregeling: the actual return of the calendar year against the deemed-return tax.
-    return {
-      ...result,
-      actualReturn: {
-        ...actual,
-        comparison: compareWithDeemed(actual, result.calculation, result.rates?.taxRatePct ?? null),
-      },
-    };
+    return yearAnswer(result, actual);
   });
 
   // What the year's peildatum needs; also for next year's, to prepare in December.
