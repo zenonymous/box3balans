@@ -47,6 +47,65 @@ describe("Assets page", () => {
   });
 });
 
+describe("Assets page: cash and your own assets", () => {
+  const open = async () => {
+    fireEvent.click(await screen.findByRole("button", { name: /Belegging toevoegen/ }));
+    return screen.findByRole("dialog");
+  };
+
+  it("adds a currency as cash, valued at the ECB rate, without a purchase after", async () => {
+    const api = showPage("/assets", "assets", <AssetsPage />, {
+      "POST /api/assets": (b: unknown) => ({ id: 51, hidden: false, unit: "pcs", ...(b as object) }),
+    });
+    const dialog = await open();
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Contant" }));
+    fireEvent.change(within(dialog).getByLabelText("Valuta"), { target: { value: "chf" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Valuta toevoegen" }));
+    await waitFor(() => expect(sent(api, "POST", "/api/assets")).toHaveLength(1));
+    expect(sent(api, "POST", "/api/assets")[0]).toEqual({
+      assetClass: "cash",
+      name: "Contant CHF",
+      symbol: "CHF",
+      priceSource: "fx",
+      currency: "CHF",
+    });
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+  });
+
+  it("adds an asset with a price you set yourself, then offers to record the purchase", async () => {
+    const api = showPage("/assets", "assets", <AssetsPage />, {
+      "POST /api/assets": (b: unknown) => ({ id: 52, hidden: false, unit: "pcs", ...(b as object) }),
+    });
+    const dialog = await open();
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Handmatig" }));
+    fireEvent.change(within(dialog).getByLabelText("Naam"), { target: { value: "Aandelen Familie BV" } });
+    fireEvent.change(within(dialog).getByLabelText("Symbool"), { target: { value: "FAMBV" } });
+    fireEvent.change(within(dialog).getByLabelText("Soort"), { target: { value: "stock" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Belegging toevoegen" }));
+    await waitFor(() => expect(sent(api, "POST", "/api/assets")).toHaveLength(1));
+    expect(sent(api, "POST", "/api/assets")[0]).toEqual({
+      name: "Aandelen Familie BV",
+      symbol: "FAMBV",
+      assetClass: "stock",
+      currency: "EUR",
+      isin: null,
+      priceSource: "manual",
+    });
+    // The purchase form for the new asset.
+    expect(await screen.findByRole("dialog", { name: /Aandelen Familie BV/ })).toBeTruthy();
+  });
+
+  it("says why the server refused the asset, and keeps the form", async () => {
+    showPage("/assets", "assets", <AssetsPage />, {
+      "POST /api/assets": () => Response.json({ error: "Dat bestaat al" }, { status: 409 }),
+    });
+    const dialog = await open();
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Contant" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Valuta toevoegen" }));
+    expect(await within(dialog).findByText("Dat bestaat al")).toBeTruthy();
+  });
+});
+
 describe("Metals page", () => {
   it("adds coins with weight, purity and what you paid", async () => {
     const api = showPage("/metals", "metals", <MetalsPage />);
@@ -67,5 +126,36 @@ describe("Metals page", () => {
       quantity: 2,
       purchasePriceEur: "5400",
     });
+  });
+
+  it("marks a coin as sold with the date and the proceeds", async () => {
+    const api = showPage("/metals", "metals", <MetalsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Krugerrand 1 oz/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("checkbox", { name: "Verkocht" }));
+    fireEvent.change(within(dialog).getByLabelText("Verkoopdatum"), { target: { value: "15-10-2026" } });
+    fireEvent.change(within(dialog).getByLabelText("Verkoopopbrengst (EUR)"), { target: { value: "3.950,50" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Opslaan" }));
+    await waitFor(() => expect(sent(api, "PUT", "/api/metals/items/1")).toHaveLength(1));
+    expect(sent(api, "PUT", "/api/metals/items/1")[0]).toMatchObject({
+      product: "Krugerrand 1 oz",
+      soldDate: "2026-10-15",
+      salePriceEur: "3950.50",
+    });
+  });
+
+  it("deletes a coin only after you confirm", async () => {
+    vi.stubGlobal("confirm", () => false);
+    const api = showPage("/metals", "metals", <MetalsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /Maple Leaf 1 oz/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("button", { name: "Verwijderen" }));
+    expect(api.requests.some((r) => r.method === "DELETE")).toBe(false);
+
+    vi.stubGlobal("confirm", () => true);
+    fireEvent.click(within(dialog).getByRole("button", { name: "Verwijderen" }));
+    await waitFor(() =>
+      expect(api.requests.some((r) => r.method === "DELETE" && r.url === "/api/metals/items/3")).toBe(true),
+    );
   });
 });

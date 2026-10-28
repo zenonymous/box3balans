@@ -25,6 +25,24 @@ describe("Settings page", () => {
     await waitFor(() => expect(sent(api, "PUT", "/api/settings")).toEqual([{ costMethod: "fifo" }]));
   });
 
+  it("keeps the theme and number format you choose in this browser, and signs out", async () => {
+    const api = showPage("/settings", "settings", <SettingsPage />);
+    const appearance = await card("Weergave");
+    fireEvent.click(within(appearance).getByRole("tab", { name: "Donker" }));
+    expect(document.documentElement.dataset.theme).toBe("dark");
+    expect(localStorage.getItem("theme")).toBe("dark");
+    fireEvent.click(within(appearance).getByRole("tab", { name: "Systeem" }));
+    expect(document.documentElement.dataset.theme).toBeUndefined();
+    expect(localStorage.getItem("theme")).toBeNull();
+
+    fireEvent.change(within(appearance).getByLabelText("Getalnotatie"), { target: { value: "en-IE" } });
+    expect(localStorage.getItem("numberLocale")).toBe("en-IE");
+    localStorage.removeItem("numberLocale");
+
+    fireEvent.click(screen.getByRole("button", { name: "Uitloggen" }));
+    await waitFor(() => expect(sent(api, "POST", "/api/auth/logout")).toHaveLength(1));
+  });
+
   it("only sends a new password when both entries match", async () => {
     const api = showPage("/settings", "settings", <SettingsPage />);
     const form = await card("Wachtwoord wijzigen");

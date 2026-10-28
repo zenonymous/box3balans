@@ -95,12 +95,13 @@ const plan = {
   warnings: [],
 };
 
-function show() {
+function show(routes: Record<string, unknown> = {}) {
   const api = fakeApi({
     ...fixture,
     "/api/imports": [],
     "POST /api/import/upload": { uploadId: "u-1", fileName: "export.csv", format: null, mapping, preset: null },
     "POST /api/import/preview": plan,
+    ...routes,
   });
   render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -155,5 +156,106 @@ describe("CSV import page", () => {
       accountId: number;
     };
     expect(last).toMatchObject({ uploadId: "u-1", accountId: 1 });
+  });
+
+  it("imports the new lines and says what it added", async () => {
+    const api = show({
+      "POST /api/import/commit": {
+        importId: 3,
+        inserted: 1,
+        skipped: 0,
+        newAssets: ["IWDA"],
+        warnings: [],
+        transfersMatched: 0,
+      },
+    });
+    await chooseFile();
+    fireEvent.click(await screen.findByRole("button", { name: "1 transactie importeren" }));
+    expect(await screen.findByText(/1 transactie toegevoegd aan/)).toBeTruthy();
+    expect(screen.getByText(/Nieuwe beleggingen: IWDA/)).toBeTruthy();
+    expect(api.requests.find((r) => r.url === "/api/import/commit")?.body).toMatchObject({
+      uploadId: "u-1",
+      accountId: 1,
+      include: [],
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Nog een bestand importeren" }));
+    expect(await screen.findByLabelText("Importeren in rekening")).toBeTruthy();
+  });
+
+  it("reads a DEGIRO portfolio as a statement: in the DEGIRO account, for the day you give", async () => {
+    const check = {
+      accountId: 1,
+      source: "Portfolio.csv",
+      day: "2025-12-31",
+      differences: 0,
+      rows: [
+        {
+          assetId: 90,
+          name: "iShares Core MSCI World",
+          isin: "IE00B4L5Y983",
+          reported: "10",
+          computed: "10",
+          difference: "0",
+          price: "100",
+          currency: "EUR",
+        },
+      ],
+    };
+    const api = show({
+      "POST /api/import/upload": {
+        uploadId: "u-2",
+        fileName: "Portfolio.csv",
+        statement: {
+          label: "DEGIRO-portefeuille",
+          positions: 1,
+          currencies: ["EUR"],
+          day: null,
+          source: "degiro-portfolio",
+        },
+      },
+      "POST /api/import/statement": check,
+      "/api/import/statement/1": check,
+    });
+    // No account chosen: the statement goes to the only DEGIRO account.
+    await waitFor(() =>
+      expect(within(screen.getByLabelText("Importeren in rekening")).getAllByRole("option").length).toBeGreaterThan(1),
+    );
+    const input = document.querySelector<HTMLInputElement>('input[type="file"]')!;
+    fireEvent.change(input, { target: { files: [new File(["Product,Symbool/ISIN"], "Portfolio.csv")] } });
+    expect(await screen.findByText("2 · Herkend: DEGIRO-portefeuille")).toBeTruthy();
+    expect(screen.getByLabelText<HTMLSelectElement>("Importeren in rekening").value).toBe("1");
+
+    fireEvent.click(screen.getByRole("button", { name: "Vergelijken met de transacties" }));
+    expect(await screen.findByText(/DEGIRO: alles klopt met het overzicht van/)).toBeTruthy();
+    expect(api.requests.find((r) => r.url === "/api/import/statement")?.body).toMatchObject({
+      uploadId: "u-2",
+      accountId: 1,
+      day: expect.stringMatching(/^\d{4}-12-31$/),
+    });
+  });
+
+  it("undoes an earlier import after you confirm", async () => {
+    const api = show({
+      "/api/imports": [
+        {
+          id: 3,
+          accountName: "DEGIRO",
+          fileName: "Account.csv",
+          rows: 40,
+          inserted: 38,
+          remaining: 36,
+          createdAt: "2026-10-20T10:00:00Z",
+        },
+      ],
+      "DELETE /api/imports/3": {},
+    });
+    const earlier = (await screen.findByText("Account.csv")).closest("li")!;
+    expect(within(earlier).getByText(/38 geïmporteerd, 36 nog aanwezig/)).toBeTruthy();
+    fireEvent.click(within(earlier).getByRole("button", { name: "Terugdraaien" }));
+    const dialog = await screen.findByRole("dialog", { name: "Deze import terugdraaien?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "36 transacties verwijderen" }));
+    await waitFor(() =>
+      expect(api.requests.some((r) => r.method === "DELETE" && r.url === "/api/imports/3")).toBe(true),
+    );
   });
 });

@@ -82,6 +82,57 @@ describe("editing accounts", () => {
   });
 });
 
+describe("a year statement of several accounts", () => {
+  it("shows the debt's lines, keeps one amount per year and column, and counts a negative balance as owed", async () => {
+    const line = (group: string, year: number, field: string, amount: string, sure: boolean) => ({
+      year,
+      field,
+      amount,
+      page: 2,
+      line: `${group} ${amount}`,
+      sure,
+      group,
+    });
+    showPage("/accounts", "accounts", <AccountsPage />, {
+      "POST /api/accounts/12/year-statement": {
+        template: "ING jaaroverzicht",
+        year: 2025,
+        found: [
+          line("Betaalrekening NL01", 2026, "valueEur", "1500.00", true),
+          line("Creditcard 1234", 2026, "valueEur", "-800.00", true),
+          line("Creditcard 1234", 2026, "valueEur", "-750.00", false),
+          line("Creditcard 1234", 2025, "incomeEur", "-35.00", false),
+        ],
+      },
+    });
+    const row = (await screen.findByText("Studieschuld")).closest("li")!;
+    fireEvent.click(within(row).getByRole("button", { name: /Waarden per jaar/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(await within(dialog).findByRole("button", { name: /Jaaroverzicht \(pdf\) inlezen/ }));
+    fireEvent.change(dialog.querySelector('input[type="file"]')!, {
+      target: { files: [new File(["%PDF"], "ing-2025.pdf", { type: "application/pdf" })] },
+    });
+    expect(await within(dialog).findByText("Herkend: ING jaaroverzicht.")).toBeTruthy();
+    // A debt: the credit card's lines, its negative balance as what's owed.
+    const which = within(dialog).getByLabelText<HTMLSelectElement>("Welke rekening in het overzicht?");
+    expect(which.value).toBe("Creditcard 1234");
+    // The amounts come with a non-breaking space after the euro sign.
+    const use = (label: string) =>
+      within(dialog).getByRole<HTMLInputElement>("checkbox", { name: new RegExp(`^€\\s${label}$`) });
+    expect(use("800,00 gebruiken voor 2026").checked).toBe(true);
+    expect(within(dialog).queryByRole("checkbox", { name: /1\.500,00 gebruiken voor 2026/ })).toBeNull();
+
+    // Ticking the other 2026 balance unticks the first.
+    fireEvent.click(use("750,00 gebruiken voor 2026"));
+    fireEvent.click(use("35,00 gebruiken voor 2025"));
+    expect(use("800,00 gebruiken voor 2026").checked).toBe(false);
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "In de tabel zetten" }));
+    expect((await within(dialog).findByLabelText<HTMLInputElement>("Schuld op 1 januari 2026")).value).toBe("750");
+    expect(within(dialog).getByLabelText<HTMLInputElement>("Betaalde rente 2025").value).toBe("35");
+  });
+});
+
 describe("editing transactions", () => {
   it("changes a dividend, and deletes it after you confirm", async () => {
     vi.stubGlobal("confirm", () => true);
