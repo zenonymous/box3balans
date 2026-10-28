@@ -26,15 +26,15 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@vitest/coverage-v8": "^5.0.4",
+    "@vitest/coverage-v8": "^5.0.5",
     "eslint": "^10.13.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.13.0",
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10",
-    "puppeteer-core": "^25.14.0",
-    "typescript-eslint": "^8.71.2"
+    "puppeteer-core": "^25.16.0",
+    "typescript-eslint": "^8.72.0"
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
