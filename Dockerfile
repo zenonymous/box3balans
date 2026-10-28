@@ -4,7 +4,7 @@
 # Runs on the build machine's own platform: the output is plain JavaScript, so building it once
 # serves every target platform (and avoids emulating ARM for the heavy part). The base image is pinned
 # to an exact build (its digest, for amd64 and arm64); Dependabot proposes a new one weekly.
-FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5 AS build
+FROM --platform=$BUILDPLATFORM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/
@@ -17,7 +17,7 @@ COPY web web
 RUN npm run build
 
 # ---- Runtime: production dependencies + build output only ----
-FROM node:26-alpine@sha256:6f08a523443ddedf52941874c203475b0ad503e859ad70cb26ab8be9a517dbd5
+FROM node:26-alpine@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797
 # su-exec: the entrypoint drops from root to the app user after preparing its folders.
 RUN apk add --no-cache su-exec
 WORKDIR /app
