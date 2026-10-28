@@ -37,6 +37,10 @@ export function yearlyValue(
   return v;
 }
 
+/** Tax withheld abroad on a year's income (interest at a foreign bank); zero when none was entered. */
+export const taxWithheldAbroad = (row: Pick<AccountYear, "details"> | undefined) =>
+  D(row?.details?.taxWithheldEur || 0);
+
 /**
  * The kind of holding a yearly account stands for, so it lands in the same box 3 category and
  * breakdown as tracked holdings would: a bank account is cash, a broker account investments, an

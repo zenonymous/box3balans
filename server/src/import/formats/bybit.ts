@@ -9,7 +9,6 @@ import {
   converted,
   hasColumns,
   isFiatCode,
-  isNegative,
   looseNum,
   norm,
   skip,
@@ -59,6 +58,7 @@ export const bybitUta: BrokerFormat = {
       fees: Map<string, Decimal>;
     };
     const groups = new Map<string, Group>();
+    let futures = 0;
     for (const r of table.slice(1)) {
       if (!r.some((x) => x.trim())) continue;
       const date = utc(get(r, c.at));
@@ -71,9 +71,10 @@ export const bybitUta: BrokerFormat = {
         continue;
       }
       if (type === "transfer in" || type === "transfer out") skip(out.skipped, MOVES());
-      else if ((type === "trade" && action) || type === "settlement" || type === "liquidation" || type === "delivery")
+      else if ((type === "trade" && action) || type === "settlement" || type === "liquidation" || type === "delivery") {
+        futures++;
         skip(out.skipped, tr("Futures and margin (no ownership of the coins)"));
-      else if (type === "trade" || type === "") {
+      } else if (type === "trade" || type === "") {
         const contract = get(r, c.contract);
         const key = `${date}|${type}|${contract}`;
         const g = groups.get(key) ?? {
@@ -108,13 +109,21 @@ export const bybitUta: BrokerFormat = {
       }
     }
     tradeWarnings(out, swaps, unclear);
+    if (futures)
+      out.warnings.push(
+        trn(
+          futures,
+          "{n} line of futures was left out: its profit, loss and fees change the balance of the coin it settles in (often USDT), so check that balance against Bybit.",
+          "{n} lines of futures were left out: their profit, loss and fees change the balance of the coin they settle in (often USDT), so check that balance against Bybit.",
+        ),
+      );
     out.rows.sort((a, b) => a.date.localeCompare(b.date));
     return out;
   },
 };
 
 // Moves between Bybit's accounts and into or out of Earn and Launchpad: still yours.
-const INTERNAL = /transfer|subscription|redemption|refund|freeze/;
+const INTERNAL = /transfer|subscription|redemption|freeze/;
 // Income: Earn interest, Launchpool yield, promotions.
 const REWARD = /interest|yield|airdrop|bonus|reward|cashback|distribution|commission/;
 
@@ -171,28 +180,33 @@ export const bybitFunding: BrokerFormat = {
       else skip(out.skipped, tr("Other kinds: {kind}", { kind: rawWhat || "—" }));
     }
 
-    // The two halves of a conversion, in time order: one coin out and one in, up to a second apart.
+    // The two halves of a conversion: one coin out and one in, up to a second apart. Legs closer
+    // than that to each other are one moment; with more than two in it, they can't be paired for sure.
     legs.sort((a, b) => a.date.localeCompare(b.date));
+    const moments: (typeof legs)[] = [];
+    for (const l of legs) {
+      const last = moments.at(-1);
+      if (last && Date.parse(l.date) - Date.parse(last.at(-1)!.date) <= 1000) last.push(l);
+      else moments.push([l]);
+    }
     let swaps = 0;
-    for (let i = 0; i < legs.length; i++) {
-      const a = legs[i]!;
-      const b = legs[i + 1];
-      if (!b || Date.parse(b.date) - Date.parse(a.date) > 1000 || isNegative(a.qty) === isNegative(b.qty)) {
-        skip(out.skipped, tr("Balance conversions without their other half"));
+    let unclear = 0;
+    for (const m of moments) {
+      if (m.length > 2) {
+        unclear++;
         continue;
       }
-      i++;
       const net = new Map<string, Decimal>();
-      for (const l of [a, b]) net.set(l.coin, (net.get(l.coin) ?? ZERO).plus(l.qty));
-      const trade = coinTrade(a.date, net, new Map(), a.what, "Bybit fee");
+      for (const l of m) net.set(l.coin, (net.get(l.coin) ?? ZERO).plus(l.qty));
+      const trade = m.length === 2 ? coinTrade(m[0]!.date, net, new Map(), m[0]!.what, "Bybit fee") : null;
       if (!trade) {
-        for (let k = 0; k < 2; k++) skip(out.skipped, tr("Balance conversions without their other half"));
+        for (let k = 0; k < m.length; k++) skip(out.skipped, tr("Balance conversions without their other half"));
         continue;
       }
       out.rows.push(...trade.rows);
       if (trade.swap) swaps++;
     }
-    tradeWarnings(out, swaps, 0);
+    tradeWarnings(out, swaps, unclear);
     if (byCard) {
       out.mapping = { ...out.mapping, marketTrades: true };
       out.warnings.push(

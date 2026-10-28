@@ -72,6 +72,19 @@ describe("Accounts page", () => {
     expect(rows.find((r) => r.year === 2024)?.details).toEqual({});
   });
 
+  it("says when the tax withheld abroad isn't a number, and saves nothing", async () => {
+    const accounts = demo["/api/accounts"].map((a) => (a.name === "ASN Sparen" ? { ...a, foreign: true } : a));
+    const api = showPage("/accounts", "accounts", <AccountsPage />, { "GET /api/accounts": accounts });
+    fireEvent.click(within(await rowOf("ASN Sparen")).getByRole("button", { name: /Waarden per jaar/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText("Ingehouden in het buitenland 2025"), {
+      target: { value: "5O" },
+    });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Opslaan" }));
+    expect(await within(dialog).findByText("Ingehouden in het buitenland 2025: “5O” is geen getal")).toBeTruthy();
+    expect(sent(api, "PUT", "/api/accounts/7/years")).toHaveLength(0);
+  });
+
   it("puts what a bank export found in the table, only the years you keep ticked", async () => {
     const bankImport = {
       format: "csv",

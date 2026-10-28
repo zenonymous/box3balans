@@ -45,6 +45,9 @@ const money = z
   .transform((v) => String(v).trim().replace(",", "."))
   .refine((v) => /^-?\d+(\.\d+)?$/.test(v), { error: () => tr("Must be a number") });
 
+/** A checked money string as a decimal; null when it's missing or not a number. */
+const decimal = (v: string | undefined) => (v != null && /^-?\d+(\.\d+)?$/.test(v) ? D(v) : null);
+
 const yearRow = z
   .object({
     year: z.number().int().min(1990).max(2100),
@@ -67,14 +70,23 @@ const yearRow = z
       })
       .default({}),
   })
-  .refine((r) => D(r.details.taxWithheldEur ?? 0).isZero() || !!r.details.taxCountry, {
+  // An amount that isn't a number already failed its own check above: these skip it.
+  .refine((r) => !decimal(r.details.taxWithheldEur)?.gt(0) || !!r.details.taxCountry, {
     path: ["details", "taxCountry"],
     error: () => tr("Choose the country that withheld the tax"),
   })
-  .refine((r) => D(r.details.taxWithheldEur ?? 0).gte(0) && D(r.details.taxWithheldEur ?? 0).lte(r.incomeEur), {
+  .refine((r) => !decimal(r.details.taxWithheldEur)?.lt(0), {
     path: ["details", "taxWithheldEur"],
-    error: () => tr("The tax withheld can't be more than the income"),
-  });
+    error: () => tr("The tax withheld can't be negative"),
+  })
+  .refine(
+    (r) => {
+      const tax = decimal(r.details.taxWithheldEur);
+      const income = decimal(r.incomeEur);
+      return !tax?.gt(0) || !income || tax.lte(income);
+    },
+    { path: ["details", "taxWithheldEur"], error: () => tr("The tax withheld can't be more than the income") },
+  );
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 
@@ -197,6 +209,9 @@ export async function accountRoutes(app: FastifyInstance) {
       throw new HttpError(400, tr("This account is kept with transactions, not values per year"));
     if (new Set(rows.map((r) => r.year)).size !== rows.length)
       throw new HttpError(400, tr("Each year can appear only once"));
+    // Tax withheld abroad is offset on interest received: not on rent, nor on a debt's interest paid.
+    if ((acc.kind === "debt" || acc.kind === "property") && rows.some((r) => decimal(r.details.taxWithheldEur)?.gt(0)))
+      throw new HttpError(400, tr("Only interest received can have tax withheld abroad"));
     const before = await db.select().from(accountYears).where(eq(accountYears.accountId, id));
     await db.transaction(async (trx) => {
       await trx.delete(accountYears).where(eq(accountYears.accountId, id));

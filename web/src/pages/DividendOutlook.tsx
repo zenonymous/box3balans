@@ -176,7 +176,7 @@ export function DividendForecastCard() {
   );
 }
 
-const country = (code: string) => (code === "??" ? t("Unknown (no ISIN)") : countryName(code));
+const countryLabel = (code: string) => (code === "??" ? t("Unknown (no ISIN)") : countryName(code));
 
 function note(r: WithholdingRow): string {
   if (!r.taxEur) return t("Nothing withheld.");
@@ -246,7 +246,7 @@ export function WithholdingCard() {
             {rows.map((r) => (
               <tr key={r.country} className="align-top">
                 <td className="px-3 py-2">
-                  {country(r.country)} <span className="text-xs text-muted">{r.payments}×</span>
+                  {countryLabel(r.country)} <span className="text-xs text-muted">{r.payments}×</span>
                   <div className="text-xs text-ink-2">{note(r)}</div>
                 </td>
                 <td className="px-3 py-2 text-right">{eur(r.grossEur)}</td>

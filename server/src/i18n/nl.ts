@@ -163,6 +163,9 @@ export const NL: Record<string, string> = {
   "Must be a number": "Moet een getal zijn",
   "Choose the country that withheld the tax": "Kies het land dat de belasting heeft ingehouden",
   "The tax withheld can't be more than the income": "De ingehouden belasting kan niet meer zijn dan de inkomsten",
+  "The tax withheld can't be negative": "De ingehouden belasting kan niet negatief zijn",
+  "Only interest received can have tax withheld abroad":
+    "Alleen op ontvangen rente kan in het buitenland belasting zijn ingehouden",
   "This account has transactions; add a new account for values per year instead":
     "Deze rekening heeft transacties; voeg in plaats daarvan een nieuwe rekening toe voor waarden per jaar",
   "Choose which child the account belongs to": "Kies van welk kind de rekening is",
@@ -510,6 +513,10 @@ export const NL: Record<string, string> = {
   "Bybit Unified Trading Account (asset changes)": "Bybit Unified Trading Account (saldowijzigingen)",
   "Bybit Funding account (asset changes)": "Bybit Funding-rekening (saldowijzigingen)",
   "Moves within Bybit (between its accounts, Earn)": "Verplaatsingen binnen Bybit (tussen de rekeningen, Earn)",
+  "{n} line of futures was left out: its profit, loss and fees change the balance of the coin it settles in (often USDT), so check that balance against Bybit.":
+    "{n} regel van futures is weggelaten: de winst, het verlies en de kosten veranderen het saldo van de munt waarin hij wordt afgerekend (vaak USDT), dus controleer dat saldo met Bybit.",
+  "{n} lines of futures were left out: their profit, loss and fees change the balance of the coin they settle in (often USDT), so check that balance against Bybit.":
+    "{n} regels van futures zijn weggelaten: de winst, het verlies en de kosten veranderen het saldo van de munt waarin ze worden afgerekend (vaak USDT), dus controleer dat saldo met Bybit.",
   "{n} purchase by card is booked at that day's market price (the export has no price for it).":
     "{n} aankoop met de kaart is geboekt tegen de marktprijs van die dag (de export noemt geen prijs).",
   "{n} purchases by card are booked at that day's market price (the export has no price for them).":

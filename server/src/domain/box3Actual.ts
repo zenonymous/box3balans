@@ -7,7 +7,7 @@ import { fromLocal, localDay, localToday } from "../lib/time.js";
 import { type Box3Config, type Category, categoryOf } from "./box3.js";
 import { attribute, loadHousehold } from "./household.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
-import { incomeStaysInAccount, loadYearly, yearlyClass, yearlyValue } from "./yearly.js";
+import { incomeStaysInAccount, loadYearly, taxWithheldAbroad, yearlyClass, yearlyValue } from "./yearly.js";
 import { tr } from "../i18n/index.js";
 
 /** Where an amount of the actual return sits, as the Opgaaf werkelijk rendement groups it. */
@@ -284,9 +284,8 @@ export async function actualReturn(
       continue;
     }
     const start = yearlyValue(acc.kind, row);
-    // The running year: its end value is the latest known one.
-    const end = yearlyValue(acc.kind, byYear?.get(year + 1)) ?? (complete ? null : start);
-    if (start == null || end == null) {
+    const next = yearlyValue(acc.kind, byYear?.get(year + 1));
+    if (start == null || (next == null && complete)) {
       warnings.push(
         tr("{name}: no value on 1 January {day}, so its return for {year} is left out.", {
           name: acc.name,
@@ -299,24 +298,15 @@ export async function actualReturn(
     const cls = yearlyClass(acc.kind);
     const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year);
     const income = D(row.incomeEur);
-    const tax = D(row.details?.taxWithheldEur || 0);
-    addTo(
-      cat,
-      cls,
-      w,
-      // Income credited to the account is already in its end value: book what was credited (after
-      // tax withheld abroad) as coming in too, as for a reward, so the value change shows the price
-      // movement and the income shows once, gross.
-      {
-        start,
-        end,
-        in: D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income.minus(tax) : ZERO),
-        out: D(row.outEur),
-        direct: income,
-      },
-      D(row.costsEur),
-      tax,
-    );
+    const tax = taxWithheldAbroad(row);
+    // Income credited to the account (what's left after tax withheld abroad) is in its end value:
+    // book it as coming in too, as for a reward, so the value change shows the price movement and
+    // the income shows once, gross.
+    const inEur = D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income.minus(tax) : ZERO);
+    const outEur = D(row.outEur);
+    // The running year has no end value yet: the start with what came in and went out since.
+    const end = next ?? start.plus(inEur).minus(outEur);
+    addTo(cat, cls, w, { start, end, in: inEur, out: outEur, direct: income }, D(row.costsEur), tax);
   }
 
   const input = config.years[String(year)];

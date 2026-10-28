@@ -27,8 +27,8 @@ const abroad = {
               name: "Deposito Portugal",
               foreign: true,
               incomeEur: 500,
-              taxWithheldEur: 50,
-              taxCountry: "PT",
+              interestTaxEur: 50,
+              interestTaxCountry: "PT",
             },
           ],
         }

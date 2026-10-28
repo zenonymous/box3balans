@@ -579,7 +579,7 @@ describe("broker exports", () => {
   });
 
   it("Bybit Unified Trading Account: spot trades per second with the fee from the coin received; moves and futures left out", () => {
-    const { id, rows, skipped } = read(
+    const { id, rows, skipped, notes } = read(
       lines(
         // The export starts with a line about the account; the header row comes second.
         "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
@@ -594,8 +594,10 @@ describe("broker exports", () => {
         // Part of the BTC sold: the fee in euros, off what arrived.
         "100000001,BTC,BTCEUR,TRADE,SELL,0.005,0,70000,0,0,-0.005,-0.005,0.00499,--,2025-04-01 08:30:00",
         "100000001,EUR,BTCEUR,TRADE,SELL,0.005,0,70000,0,0.35,350,349.65,749.65,--,2025-04-01 08:30:00",
-        // Into Easy Earn from this account (one line), and a perpetual.
+        // Into Easy Earn from this account (one line), small balances converted into MNT by Bybit, and a perpetual.
         "100000001,USDC,,--,--,0,0,0,0,0,-100,-100,100,--,2025-04-02 00:00:00",
+        "100000001,SHIB,,--,--,0,0,0,0,0,-1000,-1000,0,--,2025-04-02 03:00:00",
+        "100000001,MNT,,--,--,0,0,0,0,0,0.5,0.5,0.5,--,2025-04-02 03:00:00",
         "100000001,USDT,BTCUSDT,TRADE,BUY,0.001,0.001,80000,0,0.044,0,-0.044,0,OPEN,2025-04-03 12:00:00",
       ),
     );
@@ -622,11 +624,17 @@ describe("broker exports", () => {
         currency: "EUR",
         fee: "0.35",
       }),
+      // Coin for coin, at that day's close.
+      expect.objectContaining({ date: "2025-04-02T03:00:00Z", type: "sell", symbol: "SHIB", quantity: "1000" }),
+      expect.objectContaining({ date: "2025-04-02T03:00:00Z", type: "buy", symbol: "MNT", quantity: "0.5" }),
     ]);
     expect(skipped).toEqual({
       "Moves within Bybit (between its accounts, Earn)": 2,
       "Futures and margin (no ownership of the coins)": 1,
     });
+    expect(notes.join(" ")).toMatch(/1 trade between two coins is booked as a sale and a purchase/);
+    // Their profit, loss and fees changed the USDT balance.
+    expect(notes.join(" ")).toMatch(/1 line of futures was left out/);
   });
 
   it("Bybit Funding account: deposits, withdrawals, Convert and card payments paired, interest; euros and moves left out", () => {
@@ -634,7 +642,14 @@ describe("broker exports", () => {
       lines(
         "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
         "Uid,Date & Time(UTC),Coin,QTY,Type,Account Balance,Description",
-        // Newest first, as an export may list them. A conversion cut off by the end of the period.
+        // Newest first, as an export may list them. Two conversions within a second: can't be split for sure.
+        "100000001,2025-03-15 10:00:01,BTC,0.0005,Convert,0.0015,Convert",
+        "100000001,2025-03-15 10:00:01,USDC,-30,Convert,13.0123,Convert",
+        "100000001,2025-03-15 10:00:01,USDC,29.9,Convert,43.0123,Convert",
+        "100000001,2025-03-15 10:00:00,EUR,-30,Convert,0,Convert",
+        // A card payment refunded in a coin.
+        "100000001,2025-03-14 12:00:00,USDC,5,Bybit Card,48.0123,Refund",
+        // A conversion cut off by the end of the period.
         "100000001,2025-03-13 10:00:00,USDC,-5,Convert,43.0123,Convert",
         "100000001,2025-03-12 00:00:00,USDC,2.0000000000E-8,Earn,48.0123,Easy Earn | Flexible Interest Distribution",
         "100000001,2025-03-11 18:00:02,EUR,-20,Bybit Card,0,Purchase",
@@ -690,8 +705,10 @@ describe("broker exports", () => {
       "Euro deposits and withdrawals": 3,
       "Moves within Bybit (between its accounts, Earn)": 2,
       "Balance conversions without their other half": 1,
+      "Other kinds: Refund": 1,
       "Other kinds: Something New": 1,
     });
+    expect(notes.join(" ")).toMatch(/1 moment with more than one trade at once was left out/);
     expect(notes.join(" ")).toMatch(/1 purchase by card is booked at that day's market price/);
   });
 

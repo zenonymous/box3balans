@@ -7,7 +7,7 @@ import { type ActualReturn, actualReturn } from "./box3Actual.js";
 import type { AttributionNote } from "./household.js";
 import { loadEvents } from "./performance.js";
 import { getCostMethod } from "./settings.js";
-import { loadYearly } from "./yearly.js";
+import { loadYearly, taxWithheldAbroad } from "./yearly.js";
 
 /** The parts of box 3 in the order the income tax return asks for them. */
 export const RETURN_SECTIONS = [
@@ -42,9 +42,16 @@ export interface ReturnLine {
   /** Dividends during the year (gross) and the tax withheld on them. */
   dividendEur?: number;
   dividendTaxEur?: number;
-  /** Kept as values per year: tax withheld abroad on its income, and the country that withheld it. */
-  taxWithheldEur?: number;
-  taxCountry?: string;
+  /** Kept as values per year: tax withheld abroad on its interest, and the country that withheld it. */
+  interestTaxEur?: number;
+  interestTaxCountry?: string;
+}
+
+/** Tax withheld in one country, with the gross amount it was withheld on. */
+export interface TaxByCountry {
+  country: string;
+  grossEur: number;
+  taxEur: number;
 }
 
 export interface TaxReturnOverview {
@@ -58,10 +65,10 @@ export interface TaxReturnOverview {
   dividendTax: {
     dutchEur: number;
     dutchGrossEur: number;
-    foreign: { country: string; grossEur: number; taxEur: number }[];
+    foreign: TaxByCountry[];
   };
-  /** Tax withheld abroad on interest (accounts kept as values per year), per country, with the gross interest. */
-  interestTax: { country: string; grossEur: number; taxEur: number }[];
+  /** Tax withheld abroad on interest (accounts kept as values per year), per country. */
+  interestTax: TaxByCountry[];
   /** From 2025 the actual return goes in the return itself; before, on a separate form. */
   actualReturnIn: "return" | "form";
   actualReturn: ActualReturn;
@@ -71,6 +78,19 @@ export interface TaxReturnOverview {
 }
 
 const euros = (d: Decimal | string, up = false) => (up ? D(d).ceil() : D(d).floor()).toNumber();
+const cents = (d: Decimal) => d.toDecimalPlaces(2).toNumber();
+
+type Sums = Map<string, { gross: Decimal; tax: Decimal }>;
+const addTax = (sums: Sums, country: string, gross: Decimal.Value, tax: Decimal.Value) => {
+  const c = sums.get(country) ?? { gross: D(0), tax: D(0) };
+  sums.set(country, { gross: c.gross.plus(gross), tax: c.tax.plus(tax) });
+};
+/** The countries that withheld tax, most tax first. */
+const perCountry = (sums: Sums): TaxByCountry[] =>
+  [...sums]
+    .filter(([, v]) => v.tax.gt(0))
+    .map(([country, v]) => ({ country, grossEur: cents(v.gross), taxEur: cents(v.tax) }))
+    .sort((a, b) => b.taxEur - a.taxEur);
 
 /** Which part of the return a box 3 row goes in. */
 function sectionOf(row: Box3Year["rows"][number]): ReturnSection | null {
@@ -109,14 +129,12 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
   // Dividends during the year, per account and per country of the security.
   const { income } = await loadEvents(db, method);
   const dividends = new Map<number, { gross: Decimal; tax: Decimal }>();
-  const byCountry = new Map<string, { gross: Decimal; tax: Decimal }>();
+  const byCountry: Sums = new Map();
   for (const e of income) {
     if (e.kind !== "dividend" || e.date.slice(0, 4) !== String(year)) continue;
     const d = dividends.get(e.accountId) ?? { gross: D(0), tax: D(0) };
     dividends.set(e.accountId, { gross: d.gross.plus(e.grossEur), tax: d.tax.plus(e.taxEur) });
-    const country = isin.get(e.assetId)?.slice(0, 2) ?? "??";
-    const c = byCountry.get(country) ?? { gross: D(0), tax: D(0) };
-    byCountry.set(country, { gross: c.gross.plus(e.grossEur), tax: c.tax.plus(e.taxEur) });
+    addTax(byCountry, isin.get(e.assetId)?.slice(0, 2) ?? "??", e.grossEur, e.taxEur);
   }
 
   const lines = new Map<string, ReturnLine & { section: ReturnSection; value: Decimal; counted: Decimal }>();
@@ -149,6 +167,8 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
     lines.set(key, line);
   }
 
+  // Interest taxed abroad, per country, as the return offsets it (not on green investments or debts).
+  const interestByCountry: Sums = new Map();
   const sections = RETURN_SECTIONS.map((key) => {
     const list = [...lines.values()]
       .filter((l) => l.section === key)
@@ -156,7 +176,9 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
         const up = key === "debts";
         const y = yearly.get(l.accountId)?.get(year);
         const div = dividends.get(l.accountId);
-        const tax = D(y?.details?.taxWithheldEur || 0);
+        const tax = taxWithheldAbroad(y);
+        const interestTax = y && tax.gt(0) && key !== "debts" && key !== "green";
+        if (interestTax) addTax(interestByCountry, y.details.taxCountry ?? "??", y.incomeEur, tax);
         return {
           ...l,
           valueEur: euros(value, up),
@@ -164,29 +186,18 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
           incomeEur: y && Number(y.incomeEur) ? euros(y.incomeEur) : undefined,
           // From transactions; for an investment account kept as values per year, its income.
           dividendEur: div
-            ? D(div.gross).toDecimalPlaces(2).toNumber()
+            ? cents(div.gross)
             : key === "investments" && y && Number(y.incomeEur)
-              ? D(y.incomeEur).toDecimalPlaces(2).toNumber()
+              ? cents(D(y.incomeEur))
               : undefined,
-          dividendTaxEur: div && div.tax.gt(0) ? div.tax.toDecimalPlaces(2).toNumber() : undefined,
-          taxWithheldEur: tax.gt(0) ? tax.toDecimalPlaces(2).toNumber() : undefined,
-          taxCountry: tax.gt(0) ? y?.details?.taxCountry : undefined,
+          dividendTaxEur: div && div.tax.gt(0) ? cents(div.tax) : undefined,
+          interestTaxEur: interestTax ? cents(tax) : undefined,
+          interestTaxCountry: interestTax ? y.details.taxCountry : undefined,
         };
       })
       .sort((a, b) => b.countedEur - a.countedEur);
     return { key, lines: list, totalEur: list.reduce((s, l) => s + l.countedEur, 0) };
   });
-
-  // Interest taxed abroad, per country: the gross interest and the tax, as the return offsets it.
-  const interestByCountry = new Map<string, { gross: Decimal; tax: Decimal }>();
-  for (const l of lines.values()) {
-    const y = yearly.get(l.accountId)?.get(year);
-    const tax = D(y?.details?.taxWithheldEur || 0);
-    if (!y || tax.lte(0)) continue;
-    const country = y.details.taxCountry ?? "??";
-    const c = interestByCountry.get(country) ?? { gross: D(0), tax: D(0) };
-    interestByCountry.set(country, { gross: c.gross.plus(y.incomeEur), tax: c.tax.plus(tax) });
-  }
 
   const dutch = byCountry.get("NL");
   return {
@@ -200,24 +211,11 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
       debtsEur: euros(box3.extra.debtsEur, true),
     },
     dividendTax: {
-      dutchEur: dutch ? dutch.tax.toDecimalPlaces(2).toNumber() : 0,
-      dutchGrossEur: dutch ? dutch.gross.toDecimalPlaces(2).toNumber() : 0,
-      foreign: [...byCountry]
-        .filter(([c, v]) => c !== "NL" && v.tax.gt(0))
-        .map(([country, v]) => ({
-          country,
-          grossEur: v.gross.toDecimalPlaces(2).toNumber(),
-          taxEur: v.tax.toDecimalPlaces(2).toNumber(),
-        }))
-        .sort((a, b) => b.taxEur - a.taxEur),
+      dutchEur: dutch ? cents(dutch.tax) : 0,
+      dutchGrossEur: dutch ? cents(dutch.gross) : 0,
+      foreign: perCountry(new Map([...byCountry].filter(([c]) => c !== "NL"))),
     },
-    interestTax: [...interestByCountry]
-      .map(([country, v]) => ({
-        country,
-        grossEur: v.gross.toDecimalPlaces(2).toNumber(),
-        taxEur: v.tax.toDecimalPlaces(2).toNumber(),
-      }))
-      .sort((a, b) => b.taxEur - a.taxEur),
+    interestTax: perCountry(interestByCountry),
     actualReturnIn: year >= 2025 ? "return" : "form",
     actualReturn: actual,
     calculation: box3.calculation,

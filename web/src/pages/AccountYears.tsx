@@ -53,6 +53,19 @@ const toDraft = (r: AccountYear): Draft => ({
   taxCountry: r.details?.taxCountry ?? "",
   source: r.details?.source,
 });
+const blankDraft = (year: number): Draft => ({
+  year,
+  valueEur: "",
+  inEur: "",
+  outEur: "",
+  incomeEur: "",
+  costsEur: "",
+  rented: false,
+  rentEur: "",
+  relatedBelowMarket: false,
+  taxWithheldEur: "",
+  taxCountry: "",
+});
 const zeroBlank = (v: string) => (Number(v) === 0 ? "" : toInputNumber(String(Number(v))));
 
 /** A year's values from a bank export or year statement; what's left out stays as it is. */
@@ -145,19 +158,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
     const have = new Set(draft.map((r) => r.year));
     let y = thisYear;
     while (have.has(y)) y--;
-    const blank: Draft = {
-      year: y,
-      valueEur: "",
-      inEur: "",
-      outEur: "",
-      incomeEur: "",
-      costsEur: "",
-      rented: false,
-      rentEur: "",
-      relatedBelowMarket: false,
-      taxWithheldEur: "",
-      taxCountry: "",
-    };
+    const blank = blankDraft(y);
     const prev = draft.find((r) => r.year === y - 1 || r.year === y + 1);
     if (prev)
       Object.assign(blank, {
@@ -189,7 +190,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                 relatedBelowMarket: r.rented && r.relatedBelowMarket ? true : undefined,
               }
             : {}),
-          ...(parsed(r.taxWithheldEur)
+          ...(r.taxWithheldEur.trim()
             ? {
                 taxWithheldEur: num(r.taxWithheldEur, `${t("Tax withheld abroad")} ${r.year}`),
                 taxCountry: r.taxCountry || undefined,
@@ -214,21 +215,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
     const byYear = new Map(draft.map((r) => [r.year, r]));
     for (const p of picked) {
       const existing = byYear.get(p.year);
-      const r: Draft = existing
-        ? { ...existing }
-        : {
-            year: p.year,
-            valueEur: "",
-            inEur: "",
-            outEur: "",
-            incomeEur: "",
-            costsEur: "",
-            rented: false,
-            rentEur: "",
-            relatedBelowMarket: false,
-            taxWithheldEur: "",
-            taxCountry: "",
-          };
+      const r: Draft = existing ? { ...existing } : blankDraft(p.year);
       if (p.valueEur != null) r.valueEur = toInputNumber(String(Number(p.valueEur)));
       if (p.inEur != null) r.inEur = zeroBlank(p.inEur);
       if (p.outEur != null) r.outEur = zeroBlank(p.outEur);

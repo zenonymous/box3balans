@@ -65,7 +65,10 @@ export function coinTrade(
   return { rows, swap };
 }
 
-/** Says how many coin-for-coin trades were valued at the day's close, and how many were left out. */
+/**
+ * Says how many coin-for-coin trades were valued at the day's close (and has the import price
+ * them so), and how many were left out.
+ */
 export function tradeWarnings(out: Converted, swaps: number, unclear: number) {
   if (swaps) {
     out.mapping = { ...out.mapping, marketTrades: true };

@@ -25,8 +25,15 @@ interface ReturnLine {
   incomeEur?: number;
   dividendEur?: number;
   dividendTaxEur?: number;
-  taxWithheldEur?: number;
-  taxCountry?: string;
+  interestTaxEur?: number;
+  interestTaxCountry?: string;
+}
+
+/** Tax withheld in one country, with the gross amount it was withheld on. */
+interface TaxByCountry {
+  country: string;
+  grossEur: number;
+  taxEur: number;
 }
 
 interface TaxReturn {
@@ -38,9 +45,9 @@ interface TaxReturn {
   dividendTax: {
     dutchEur: number;
     dutchGrossEur: number;
-    foreign: { country: string; grossEur: number; taxEur: number }[];
+    foreign: TaxByCountry[];
   };
-  interestTax: { country: string; grossEur: number; taxEur: number }[];
+  interestTax: TaxByCountry[];
   actualReturnIn: "return" | "form";
   warnings: string[];
 }
@@ -168,7 +175,7 @@ export function TaxReturnPage() {
 
           {r.sections
             .filter((s) => s.lines.length > 0)
-            .map((s) => ({ ...s, abroad: s.lines.some((l) => l.taxWithheldEur != null) }))
+            .map((s) => ({ ...s, abroad: s.lines.some((l) => l.interestTaxEur != null) }))
             .map((s) => (
               <Card
                 key={s.key}
@@ -229,8 +236,10 @@ export function TaxReturnPage() {
                           )}
                           {s.abroad && (
                             <td className="px-4 py-2 text-right text-ink-2">
-                              {l.taxWithheldEur != null ? eur(l.taxWithheldEur) : "—"}
-                              {l.taxCountry && <div className="text-xs text-muted">{countryName(l.taxCountry)}</div>}
+                              {l.interestTaxEur != null ? eur(l.interestTaxEur) : "—"}
+                              {l.interestTaxCountry && (
+                                <div className="text-xs text-muted">{countryName(l.interestTaxCountry)}</div>
+                              )}
                             </td>
                           )}
                           {s.key === "investments" && (
@@ -351,7 +360,7 @@ export function TaxReturnPage() {
 }
 
 /** Tax withheld per country, with the gross amount it was withheld on. */
-function ByCountry({ rows }: { rows: { country: string; grossEur: number; taxEur: number }[] }) {
+function ByCountry({ rows }: { rows: TaxByCountry[] }) {
   return (
     <ul className="tabular divide-y divide-line rounded-lg border border-line">
       {rows.map((f) => (

@@ -242,11 +242,38 @@ describe("household and values per year in box 3", () => {
       name: "Deposit PT",
       foreign: true,
       incomeEur: 500,
-      taxWithheldEur: 50,
-      taxCountry: "PT",
+      interestTaxEur: 50,
+      interestTaxCountry: "PT",
     });
     expect(r.interestTax).toEqual([{ country: "PT", grossEur: 500, taxEur: 50 }]);
     expect(r.dividendTax.foreign).toEqual([]);
+  });
+
+  it("counts this year's interest so far, gross, while 1 January next year isn't known yet", async () => {
+    t = await createTestApp();
+    const year = new Date().getFullYear();
+    const a = await ok("POST", "/api/accounts", {
+      name: "Deposit PT",
+      kind: "bank",
+      tracking: "yearly",
+      foreign: true,
+    });
+    // 20,000 on 1 January, 1,000 put in since, 500 interest of which 50 withheld: no end value yet.
+    await ok("PUT", `/api/accounts/${a.id}/years`, {
+      rows: [
+        {
+          year,
+          valueEur: "20000",
+          inEur: "1000",
+          incomeEur: "500",
+          details: { taxWithheldEur: "50", taxCountry: "PT" },
+        },
+      ],
+    });
+    const r = (await ok("GET", `/api/box3/${year}`)).actualReturn;
+    expect(r.complete).toBe(false);
+    // The end so far is 20,000 + 1,000 + 450 credited: the return is the 500 interest.
+    expect(r.parts.bank).toMatchObject({ endEur: 21450, inEur: 1450, directEur: 500, returnEur: 500 });
   });
 
   it("refuses tax withheld abroad without a country, or above the income", async () => {
@@ -259,6 +286,28 @@ describe("household and values per year in box 3", () => {
     expect((await put({ taxWithheldEur: "501", taxCountry: "PT" })).statusCode).toBe(400);
     expect((await put({ taxWithheldEur: "50", taxCountry: "Portugal" })).statusCode).toBe(400);
     expect((await put({ taxWithheldEur: "0" })).statusCode).toBe(200);
+    const negative = await put({ taxWithheldEur: "-5", taxCountry: "PT" });
+    expect(negative.statusCode).toBe(400);
+    expect(negative.body).toMatch(/can't be negative/);
+    // Only interest received can have tax withheld: not a debt's interest paid.
+    const debt = await ok("POST", "/api/accounts", { name: "Loan", kind: "debt", tracking: "yearly" });
+    const onDebt = await t.api("PUT", `/api/accounts/${debt.id}/years`, {
+      rows: [{ year: 2024, valueEur: "1000", incomeEur: "50", details: { taxWithheldEur: "5", taxCountry: "PT" } }],
+    });
+    expect(onDebt.statusCode).toBe(400);
+    // Negative interest without tax withheld is fine.
+    expect(
+      (await t.api("PUT", `/api/accounts/${a.id}/years`, { rows: [{ year: 2024, valueEur: "1", incomeEur: "-3" }] }))
+        .statusCode,
+    ).toBe(200);
+    // Something that isn't a number is reported as such, not as a server error.
+    for (const bad of [{ taxWithheldEur: "x5", taxCountry: "PT" }, {}]) {
+      const res = await t.api("PUT", `/api/accounts/${a.id}/years`, {
+        rows: [{ year: 2024, valueEur: "20000", incomeEur: Object.keys(bad).length ? "500" : "abc", details: bad }],
+      });
+      expect(res.statusCode, res.body).toBe(400);
+      expect(res.body).toMatch(/Must be a number/);
+    }
   });
 
   it("previews a bank export and keeps everything in backups", async () => {
