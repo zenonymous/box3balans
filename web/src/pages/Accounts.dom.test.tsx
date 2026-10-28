@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import demo from "../test/demo.fixture.json";
 import { showPage } from "../test/pages";
 import { AccountsPage } from "./Accounts";
 
@@ -45,6 +46,30 @@ describe("Accounts page", () => {
     const { rows } = sent(api, "PUT", "/api/accounts/7/years")[0] as { rows: { year: number; valueEur: string }[] };
     expect(rows.find((r) => r.year === 2026)?.valueEur).toBe("40123.45");
     expect(rows.length).toBeGreaterThan(1); // the other years go along unchanged
+  });
+
+  it("asks for tax withheld abroad only on an account abroad, with the country", async () => {
+    // Without "abroad", no such column.
+    showPage("/accounts", "accounts", <AccountsPage />);
+    fireEvent.click(within(await rowOf("ASN Sparen")).getByRole("button", { name: /Waarden per jaar/ }));
+    let dialog = await screen.findByRole("dialog");
+    await within(dialog).findByLabelText("Ontvangen rente 2025");
+    expect(within(dialog).queryByLabelText("Ingehouden in het buitenland 2025")).toBeNull();
+    cleanup();
+
+    const accounts = demo["/api/accounts"].map((a) => (a.name === "ASN Sparen" ? { ...a, foreign: true } : a));
+    const api = showPage("/accounts", "accounts", <AccountsPage />, { "GET /api/accounts": accounts });
+    fireEvent.click(within(await rowOf("ASN Sparen")).getByRole("button", { name: /Waarden per jaar/ }));
+    dialog = await screen.findByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText("Ingehouden in het buitenland 2025"), {
+      target: { value: "59" },
+    });
+    fireEvent.change(within(dialog).getByLabelText("Land dat het inhield 2025"), { target: { value: "PT" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Opslaan" }));
+    await waitFor(() => expect(sent(api, "PUT", "/api/accounts/7/years")).toHaveLength(1));
+    const { rows } = sent(api, "PUT", "/api/accounts/7/years")[0] as { rows: { year: number; details: object }[] };
+    expect(rows.find((r) => r.year === 2025)?.details).toEqual({ taxWithheldEur: "59", taxCountry: "PT" });
+    expect(rows.find((r) => r.year === 2024)?.details).toEqual({});
   });
 
   it("puts what a bank export found in the table, only the years you keep ticked", async () => {

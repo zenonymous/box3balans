@@ -181,12 +181,12 @@ Work S, prio 1.
 **Routes:**
 
 - **Annual statement:** a _Financieel Jaaroverzicht_ as a PDF attached to a message in your Raisin account ([Raisin](https://www.raisin.com/nl-nl/sparen/financieel-jaaroverzicht/)). What exactly is in it (balance per account on 1 January, withholding tax) the page doesn't say.
-- **Withholding tax:** foreign withholding tax on interest can be set off in box 3 ([Raisin, tax](https://www.raisin.com/nl-nl/belasting/)). Box3balans already knows tax withheld for dividend; not for interest on an account with _values per year_.
+- **Withholding tax:** foreign withholding tax on interest can be set off in box 3, up to the treaty rate; anything withheld above that you reclaim in the country itself ([Raisin, tax](https://www.raisin.com/nl-nl/belasting/)). The tax return asks, per account abroad, for the gross interest and the withholding tax (same page).
 - **CSV or API:** not found.
 
 **Advice:** (d), one account per partner bank with the abroad tick box; later a PDF template. Work S, prio 2.
 
-**Open question:** should _values per year_ be able to record withholding tax on interest?
+**Status (October 2026):** _values per year_ records, for an account abroad, the withholding tax on the interest, with the country ([#36](https://github.com/zenonymous/box3balans/issues/36)). The actual return counts the interest gross, and _For the tax return_ shows the tax with the account and per country. A PDF template for the _Financieel Jaaroverzicht_ waits for the text of a real statement.
 
 #### bunq (Stocks and API)
 

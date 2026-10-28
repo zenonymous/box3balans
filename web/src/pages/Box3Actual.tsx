@@ -186,8 +186,8 @@ export function ActualReturnCard({ y }: { y: Box3Year }) {
         )}
         <p className="text-xs text-muted">
           {t(
-            "As the rules prescribe: costs aren't deducted ({costs} of fees are counted back in), dividends count before the {tax} tax withheld, there is no tax-free allowance, and a negative total is taxed as €0 without carrying over.",
-            { costs: eur(a.costsEur), tax: eur(a.dividendTaxEur) },
+            "As the rules prescribe: costs aren't deducted ({costs} of fees are counted back in), dividends and interest count before the {tax} tax withheld, there is no tax-free allowance, and a negative total is taxed as €0 without carrying over.",
+            { costs: eur(a.costsEur), tax: eur(a.taxWithheldEur) },
           )}
           {a.leftOut.length > 0 &&
             ` ${t("Left out: {list}.", {

@@ -251,7 +251,7 @@ Everything is optional. Only put what you want to change in `.env` next to `dock
 
 ### Values per year and bank exports
 
-For an account with **values per year** (_Accounts → Values per year_) you fill in, per year, the value on 1 January, with the money in and out, the income and the costs. For a bank account, _Read a bank export_ takes that from your bank's export (CAMT.053, MT940 or CSV, also from Revolut and Wise in foreign currencies). In January, _Needs attention_ reminds you to fill in the values on 1 January of the new year.
+For an account with **values per year** (_Accounts → Values per year_) you fill in, per year, the value on 1 January, with the money in and out, the income and the costs; for an account abroad also the tax withheld there on the interest. For a bank account, _Read a bank export_ takes that from your bank's export (CAMT.053, MT940 or CSV, also from Revolut and Wise in foreign currencies). In January, _Needs attention_ reminds you to fill in the values on 1 January of the new year.
 
 Which file to choose per bank, and how to track providers without a usable export (Brand New Day, crowdfunding, managed investing, capital insurance, green funds, bank savings): see [Bringing data in](docs/en/importeren.md#values-per-year-and-bank-exports).
 

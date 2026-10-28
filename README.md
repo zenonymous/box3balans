@@ -257,7 +257,7 @@ Alles is optioneel. Zet alleen wat je wilt veranderen in `.env` naast `docker-co
 
 ### Waarden per jaar en bankexports
 
-Voor een rekening met **waarden per jaar** (_Rekeningen → Waarden per jaar_) vul je per jaar de waarde op 1 januari in, met het geld erin en eruit, de inkomsten en de kosten. Bij een bankrekening haalt _Bankexport inlezen_ dat uit de export van je bank (CAMT.053, MT940 of CSV, ook van Revolut en Wise in vreemde valuta). In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
+Voor een rekening met **waarden per jaar** (_Rekeningen → Waarden per jaar_) vul je per jaar de waarde op 1 januari in, met het geld erin en eruit, de inkomsten en de kosten; bij een rekening in het buitenland ook de belasting die daar op de rente is ingehouden. Bij een bankrekening haalt _Bankexport inlezen_ dat uit de export van je bank (CAMT.053, MT940 of CSV, ook van Revolut en Wise in vreemde valuta). In januari herinnert _Aandacht nodig_ je eraan de waarden op 1 januari van het nieuwe jaar in te vullen.
 
 Welk bestand je per bank kiest, en hoe je aanbieders zonder bruikbare export bijhoudt (Brand New Day, crowdfunding, beheerd beleggen, kapitaalverzekeringen, groene fondsen, banksparen): zie [Gegevens binnenhalen](docs/importeren.md#waarden-per-jaar-en-bankexports).
 

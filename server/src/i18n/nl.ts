@@ -161,6 +161,8 @@ export const NL: Record<string, string> = {
   "Must be YYYY-MM-DD": "Moet JJJJ-MM-DD zijn",
   // routes/accounts.ts
   "Must be a number": "Moet een getal zijn",
+  "Choose the country that withheld the tax": "Kies het land dat de belasting heeft ingehouden",
+  "The tax withheld can't be more than the income": "De ingehouden belasting kan niet meer zijn dan de inkomsten",
   "This account has transactions; add a new account for values per year instead":
     "Deze rekening heeft transacties; voeg in plaats daarvan een nieuwe rekening toe voor waarden per jaar",
   "Choose which child the account belongs to": "Kies van welk kind de rekening is",

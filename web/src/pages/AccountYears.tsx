@@ -15,7 +15,7 @@ import { Alert, AmountInput, Badge, Button, Field, Modal, Select, Spinner } from
 import { readText } from "../files";
 import { type PdfPage, readPdf } from "../pdfText";
 import { type Contribution, ShareFormat } from "../components/ShareFormat";
-import { eur, eurPrice, toApiNumber, toInputNumber } from "../format";
+import { countryName, eur, eurPrice, toApiNumber, toInputNumber } from "../format";
 import { t, tn } from "../i18n";
 import { useInvalidateAll } from "../queries";
 
@@ -34,6 +34,8 @@ interface Draft {
   rented: boolean;
   rentEur: string;
   relatedBelowMarket: boolean;
+  taxWithheldEur: string;
+  taxCountry: string;
   source?: string;
 }
 
@@ -47,6 +49,8 @@ const toDraft = (r: AccountYear): Draft => ({
   rented: !!r.details?.rented,
   rentEur: toInputNumber(r.details?.rentEur ?? ""),
   relatedBelowMarket: !!r.details?.relatedBelowMarket,
+  taxWithheldEur: zeroBlank(r.details?.taxWithheldEur ?? "0"),
+  taxCountry: r.details?.taxCountry ?? "",
   source: r.details?.source,
 });
 const zeroBlank = (v: string) => (Number(v) === 0 ? "" : toInputNumber(String(Number(v))));
@@ -74,6 +78,13 @@ const parsed = (v: string) => {
     return 0;
   }
 };
+
+/**
+ * Countries whose banks can withhold tax on interest: the EU and EEA (without the Netherlands),
+ * Switzerland, the United Kingdom and the United States.
+ */
+const TAX_COUNTRIES =
+  "AT BE BG CH CY CZ DE DK EE ES FI FR GB GR HR HU IE IS IT LI LT LU LV MT NO PL PT RO SE SI SK US".split(" ");
 
 /** Labels that fit the kind of account: interest on savings, rent on a home, interest paid on a debt. */
 function columns(kind: AccountKind) {
@@ -124,6 +135,10 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
   const thisYear = new Date().getFullYear();
 
   const draft = rows ?? (years.data ?? []).map(toDraft).sort((a, b) => b.year - a.year);
+  // Interest from a bank abroad (or money lent abroad) can have tax withheld there.
+  const withheld =
+    (account.foreign && (account.kind === "bank" || account.kind === "receivable")) ||
+    draft.some((r) => r.taxWithheldEur !== "");
   const set = (year: number, patch: Partial<Draft>) =>
     setRows(draft.map((r) => (r.year === year ? { ...r, ...patch } : r)));
   const addYear = () => {
@@ -140,10 +155,17 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
       rented: false,
       rentEur: "",
       relatedBelowMarket: false,
+      taxWithheldEur: "",
+      taxCountry: "",
     };
     const prev = draft.find((r) => r.year === y - 1 || r.year === y + 1);
     if (prev)
-      Object.assign(blank, { rented: prev.rented, rentEur: prev.rentEur, relatedBelowMarket: prev.relatedBelowMarket });
+      Object.assign(blank, {
+        rented: prev.rented,
+        rentEur: prev.rentEur,
+        relatedBelowMarket: prev.relatedBelowMarket,
+        taxCountry: prev.taxCountry,
+      });
     setRows([...draft, blank].sort((a, b) => b.year - a.year));
   };
 
@@ -165,6 +187,12 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                 rented: r.rented,
                 rentEur: r.rented ? num(r.rentEur, `${t("Yearly rent")} ${r.year}`) : undefined,
                 relatedBelowMarket: r.rented && r.relatedBelowMarket ? true : undefined,
+              }
+            : {}),
+          ...(parsed(r.taxWithheldEur)
+            ? {
+                taxWithheldEur: num(r.taxWithheldEur, `${t("Tax withheld abroad")} ${r.year}`),
+                taxCountry: r.taxCountry || undefined,
               }
             : {}),
           ...(r.source ? { source: r.source } : {}),
@@ -198,6 +226,8 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
             rented: false,
             rentEur: "",
             relatedBelowMarket: false,
+            taxWithheldEur: "",
+            taxCountry: "",
           };
       if (p.valueEur != null) r.valueEur = toInputNumber(String(Number(p.valueEur)));
       if (p.inEur != null) r.inEur = zeroBlank(p.inEur);
@@ -255,6 +285,7 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                   {cols.in && <th className="px-1 py-1 text-left font-medium">{cols.in}</th>}
                   {cols.out && <th className="px-1 py-1 text-left font-medium">{cols.out}</th>}
                   {cols.income && <th className="px-1 py-1 text-left font-medium">{cols.income}</th>}
+                  {withheld && <th className="px-1 py-1 text-left font-medium">{t("Tax withheld abroad")}</th>}
                   {cols.costs && <th className="px-1 py-1 text-left font-medium">{cols.costs}</th>}
                   <th />
                 </tr>
@@ -331,10 +362,14 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                         )}
                       </td>
                     )}
-                    {(["inEur", "outEur", "incomeEur", "costsEur"] as const).map((k) => {
-                      const label = { inEur: cols.in, outEur: cols.out, incomeEur: cols.income, costsEur: cols.costs }[
-                        k
-                      ];
+                    {(["inEur", "outEur", "incomeEur", "taxWithheldEur", "costsEur"] as const).map((k) => {
+                      const label = {
+                        inEur: cols.in,
+                        outEur: cols.out,
+                        incomeEur: cols.income,
+                        taxWithheldEur: withheld ? t("Tax withheld abroad") : null,
+                        costsEur: cols.costs,
+                      }[k];
                       if (!label) return null;
                       return (
                         <td key={k} className="px-1 py-1">
@@ -345,6 +380,23 @@ export function YearsModal({ account, onClose }: { account: Account; onClose: ()
                             placeholder="0"
                             onChange={(e) => set(r.year, { [k]: e.target.value })}
                           />
+                          {k === "taxWithheldEur" && parsed(r.taxWithheldEur) > 0 && (
+                            <Select
+                              aria-label={`${t("Country that withheld it")} ${r.year}`}
+                              className="mt-1 w-28 py-1 text-xs"
+                              value={r.taxCountry}
+                              onChange={(e) => set(r.year, { taxCountry: e.target.value })}
+                            >
+                              <option value="">{t("country")}</option>
+                              {TAX_COUNTRIES.map((c) => ({ c, name: countryName(c) }))
+                                .sort((x, y) => x.name.localeCompare(y.name))
+                                .map(({ c, name }) => (
+                                  <option key={c} value={c}>
+                                    {name}
+                                  </option>
+                                ))}
+                            </Select>
+                          )}
                         </td>
                       );
                     })}

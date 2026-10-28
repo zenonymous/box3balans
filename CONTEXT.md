@@ -74,6 +74,9 @@ Het percentage van de WOZ-waarde waartegen een verhuurde woning in box 3 telt, a
 **Buitenland** (foreign):
 Bezit in het buitenland telt gewoon mee, maar de aangifte vraagt er apart naar.
 
+**Ingehouden belasting** (tax withheld):
+Belasting die al van dividend of rente is afgehouden: Nederlandse dividendbelasting, of bronbelasting in het buitenland. Dividend en rente tellen bruto; de aangifte verrekent de belasting, buitenlandse tot het verdragstarief.
+
 **Dossier** (dossier):
 Het afdrukbare overzicht van een belastingjaar: box 3, het werkelijk rendement, de waarden op de peildatum en waar elk bedrag vandaan komt.
 

@@ -525,8 +525,8 @@ export const NL: Record<string, string> = {
     "Het forfaitair rendement is lager (of gelijk): geen reden voor een Opgaaf werkelijk rendement over {year}.",
   "Add the box 3 rates for {year} to compare with the deemed return.":
     "Voeg de box 3-tarieven voor {year} toe om te vergelijken met het forfaitair rendement.",
-  "As the rules prescribe: costs aren't deducted ({costs} of fees are counted back in), dividends count before the {tax} tax withheld, there is no tax-free allowance, and a negative total is taxed as €0 without carrying over.":
-    "Zoals de regels voorschrijven: kosten gaan er niet af ({costs} aan kosten is teruggeteld), dividend telt vóór de {tax} ingehouden belasting, er is geen heffingsvrij vermogen, en een negatief totaal wordt belast als € 0 zonder verrekening met andere jaren.",
+  "As the rules prescribe: costs aren't deducted ({costs} of fees are counted back in), dividends and interest count before the {tax} tax withheld, there is no tax-free allowance, and a negative total is taxed as €0 without carrying over.":
+    "Zoals de regels voorschrijven: kosten gaan er niet af ({costs} aan kosten is teruggeteld), dividend en rente tellen vóór de {tax} ingehouden belasting, er is geen heffingsvrij vermogen, en een negatief totaal wordt belast als € 0 zonder verrekening met andere jaren.",
   "Left out: {list}.": "Niet meegeteld: {list}.",
   "green investments": "groene beleggingen",
   "accounts outside box 3": "rekeningen buiten box 3",
@@ -1560,13 +1560,18 @@ export const NL: Record<string, string> = {
   Counts: "Telt mee",
   "Dividend (gross)": "Dividend (bruto)",
   "Entered on the Box 3 page": "Ingevuld op de pagina Box 3",
-  "Dividend tax withheld in {year}": "Ingehouden dividendbelasting in {year}",
-  "No dividend tax was withheld that year.": "Er is dat jaar geen dividendbelasting ingehouden.",
+  "Tax withheld in {year}": "Ingehouden belasting in {year}",
+  "No tax was withheld that year.": "Er is dat jaar geen belasting ingehouden.",
   "Dutch dividend tax: <0>{tax}</0> on {gross} of dividends. The return asks for it under taxes already paid; it is offset in full.":
     "Nederlandse dividendbelasting: <0>{tax}</0> over {gross} aan dividend. De aangifte vraagt ernaar bij de al betaalde belastingen; je verrekent het volledig.",
   "Foreign tax withheld, per country of the security. The return offsets it up to the treaty rate (usually 15%) to avoid double taxation; more must be reclaimed from that country.":
     "Ingehouden buitenlandse belasting, per land van het effect. De aangifte verrekent die tot het verdragstarief (meestal 15%) ter voorkoming van dubbele belasting; meer moet je bij dat land terugvragen.",
   "on {gross}": "over {gross}",
+  "Tax withheld abroad on interest, per country of the bank. The return asks for it with each account abroad and offsets it up to the treaty rate to avoid double taxation; more must be reclaimed from that country.":
+    "In het buitenland ingehouden belasting op rente, per land van de bank. De aangifte vraagt ernaar bij elke buitenlandse rekening en verrekent die tot het verdragstarief ter voorkoming van dubbele belasting; meer moet je bij dat land terugvragen.",
+  "Tax withheld abroad": "Ingehouden in het buitenland",
+  "Country that withheld it": "Land dat het inhield",
+  country: "land",
   "From {year}, the return itself asks whether you want to give your actual return; the Belastingdienst then uses whichever is lower. The figures below are what it asks for per part.":
     "Vanaf {year} vraagt de aangifte zelf of je je werkelijk rendement wilt opgeven; de Belastingdienst gebruikt dan het laagste van de twee. Hieronder staat per onderdeel wat er wordt gevraagd.",
   "For {year} you give your actual return on the separate form <0>Opgaaf werkelijk rendement</0> in Mijn Belastingdienst, after your assessment.":

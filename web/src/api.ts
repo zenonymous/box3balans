@@ -122,7 +122,14 @@ export interface AccountYear {
   outEur: string;
   incomeEur: string;
   costsEur: string;
-  details: { rented?: boolean; rentEur?: string; relatedBelowMarket?: boolean; source?: string };
+  details: {
+    rented?: boolean;
+    rentEur?: string;
+    relatedBelowMarket?: boolean;
+    taxWithheldEur?: string;
+    taxCountry?: string;
+    source?: string;
+  };
 }
 
 export interface BankYear {
@@ -744,7 +751,7 @@ export interface ActualReturn {
   endDay: string;
   parts: Record<"bank" | "investments" | "crypto" | "metals" | "cash" | "other", ReturnPart>;
   costsEur: number;
-  dividendTaxEur: number;
+  taxWithheldEur: number;
   leftOut: { category: "exempt" | "excluded"; returnEur: number }[];
   extraReturnEur: number;
   debtInterestEur: number;

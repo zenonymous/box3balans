@@ -85,6 +85,23 @@ async function household() {
   return { kim, lot };
 }
 
+/**
+ * A deposit at a Portuguese bank (through a platform such as Raisin), kept as values per year:
+ * 20,000 on 1 January 2024 and 500 interest in 2024, of which Portugal withheld 10% (50). The 450
+ * left was credited, so 1 January 2025 shows 20,450.
+ */
+async function savingsAbroad() {
+  t = await createTestApp();
+  const a = await ok("POST", "/api/accounts", { name: "Deposit PT", kind: "bank", tracking: "yearly", foreign: true });
+  await ok("PUT", `/api/accounts/${a.id}/years`, {
+    rows: [
+      { year: 2024, valueEur: "20000", incomeEur: "500", details: { taxWithheldEur: "50", taxCountry: "PT" } },
+      { year: 2025, valueEur: "20450" },
+    ],
+  });
+  return a;
+}
+
 describe("household and values per year in box 3", () => {
   it("counts each account for its owner, with a fiscal partner", async () => {
     await household();
@@ -201,6 +218,47 @@ describe("household and values per year in box 3", () => {
     const accounts = await ok("GET", "/api/accounts");
     expect(accounts.find((x: any) => x.name === "Kim's savings")).toMatchObject({ owner: "self", ownerChildId: null });
     expect((await t.api("POST", "/api/household", { name: "Again", role: "partner" })).statusCode).toBe(409);
+  });
+
+  it("counts interest before the tax withheld abroad", async () => {
+    await savingsAbroad();
+    // 500 interest, of which 50 withheld: 450 reached the account. The return counts the 500.
+    const a = (await ok("GET", "/api/box3/2024")).actualReturn;
+    expect(a.parts.bank).toMatchObject({
+      startEur: 20000,
+      endEur: 20450,
+      inEur: 450,
+      valueChangeEur: 0,
+      directEur: 500,
+      returnEur: 500,
+    });
+    expect(a.taxWithheldEur).toBe(50);
+    expect(a.totalEur).toBe(500);
+
+    // The return asks per foreign account for the gross interest and the tax withheld, and offsets
+    // that tax per country.
+    const r = await ok("GET", "/api/box3/2024/return");
+    expect(r.sections.find((x: any) => x.key === "bank").lines[0]).toMatchObject({
+      name: "Deposit PT",
+      foreign: true,
+      incomeEur: 500,
+      taxWithheldEur: 50,
+      taxCountry: "PT",
+    });
+    expect(r.interestTax).toEqual([{ country: "PT", grossEur: 500, taxEur: 50 }]);
+    expect(r.dividendTax.foreign).toEqual([]);
+  });
+
+  it("refuses tax withheld abroad without a country, or above the income", async () => {
+    const a = await savingsAbroad();
+    const put = (details: object) =>
+      t.api("PUT", `/api/accounts/${a.id}/years`, {
+        rows: [{ year: 2024, valueEur: "20000", incomeEur: "500", details }],
+      });
+    expect((await put({ taxWithheldEur: "50" })).statusCode).toBe(400);
+    expect((await put({ taxWithheldEur: "501", taxCountry: "PT" })).statusCode).toBe(400);
+    expect((await put({ taxWithheldEur: "50", taxCountry: "Portugal" })).statusCode).toBe(400);
+    expect((await put({ taxWithheldEur: "0" })).statusCode).toBe(200);
   });
 
   it("previews a bank export and keeps everything in backups", async () => {

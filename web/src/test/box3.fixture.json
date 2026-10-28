@@ -741,7 +741,7 @@
         }
       },
       "costsEur": 1,
-      "dividendTaxEur": 1.38,
+      "taxWithheldEur": 1.38,
       "leftOut": [],
       "extraReturnEur": 0,
       "debtInterestEur": 400,

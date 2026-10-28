@@ -4,7 +4,7 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import { get } from "../api";
 import { downloadCsv } from "../csv";
 import { Button, Card, Empty, Select, Spinner } from "../components/ui";
-import { date, eur, getLocale, pct } from "../format";
+import { countryName, date, eur, getLocale, pct } from "../format";
 import { dateLocale, t } from "../i18n";
 
 interface Forecast {
@@ -176,14 +176,7 @@ export function DividendForecastCard() {
   );
 }
 
-const countryName = (code: string) => {
-  if (code === "??") return t("Unknown (no ISIN)");
-  try {
-    return new Intl.DisplayNames([dateLocale()], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
-};
+const country = (code: string) => (code === "??" ? t("Unknown (no ISIN)") : countryName(code));
 
 function note(r: WithholdingRow): string {
   if (!r.taxEur) return t("Nothing withheld.");
@@ -253,7 +246,7 @@ export function WithholdingCard() {
             {rows.map((r) => (
               <tr key={r.country} className="align-top">
                 <td className="px-3 py-2">
-                  {countryName(r.country)} <span className="text-xs text-muted">{r.payments}×</span>
+                  {country(r.country)} <span className="text-xs text-muted">{r.payments}×</span>
                   <div className="text-xs text-ink-2">{note(r)}</div>
                 </td>
                 <td className="px-3 py-2 text-right">{eur(r.grossEur)}</td>

@@ -170,6 +170,10 @@ export interface AccountYearDetails {
   rentEur?: string;
   // Let to a related party (a child, your own BV) at a rent well below the usual: counts at 100%.
   relatedBelowMarket?: boolean;
+  // Tax withheld abroad on the year's income (interest at a foreign bank), and the country (ISO
+  // 3166 alpha-2) that withheld it. `incomeEur` stays gross; the return offsets this tax.
+  taxWithheldEur?: string;
+  taxCountry?: string;
   // Where the values came from, e.g. "bank export kluis-2024.csv".
   source?: string;
 }

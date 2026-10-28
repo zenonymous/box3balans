@@ -2,7 +2,7 @@ import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { get, type AttributionNote, type Box3Overview, type Box3Year } from "../api";
 import { Alert, Badge, Button, ButtonLink, Card, Empty, PageHeader, Select, Spinner } from "../components/ui";
-import { eur } from "../format";
+import { countryName, eur } from "../format";
 import { t, tj } from "../i18n";
 import { kindLabel, noteLabel, ownerLabel } from "../labels";
 import { useHousehold } from "../queries";
@@ -25,6 +25,8 @@ interface ReturnLine {
   incomeEur?: number;
   dividendEur?: number;
   dividendTaxEur?: number;
+  taxWithheldEur?: number;
+  taxCountry?: string;
 }
 
 interface TaxReturn {
@@ -38,6 +40,7 @@ interface TaxReturn {
     dutchGrossEur: number;
     foreign: { country: string; grossEur: number; taxEur: number }[];
   };
+  interestTax: { country: string; grossEur: number; taxEur: number }[];
   actualReturnIn: "return" | "form";
   warnings: string[];
 }
@@ -77,7 +80,7 @@ const whole = (v: number) => eur(v, { decimals: 0 });
 
 /**
  * Box 3 of one year as the income tax return asks for it, section by section, per account and
- * owner, in whole euros. Next to it the dividend tax withheld and the actual return.
+ * owner, in whole euros. Next to it the tax withheld and the actual return.
  */
 export function TaxReturnPage() {
   const [search, setSearch] = useSearchParams();
@@ -165,6 +168,7 @@ export function TaxReturnPage() {
 
           {r.sections
             .filter((s) => s.lines.length > 0)
+            .map((s) => ({ ...s, abroad: s.lines.some((l) => l.taxWithheldEur != null) }))
             .map((s) => (
               <Card
                 key={s.key}
@@ -186,6 +190,7 @@ export function TaxReturnPage() {
                         <th className="px-4 py-2 text-right font-medium">{t("On 1 January")}</th>
                         <th className="px-4 py-2 text-right font-medium">{t("Counts")}</th>
                         {INCOME[s.key] && <th className="px-4 py-2 text-right font-medium">{INCOME[s.key]}</th>}
+                        {s.abroad && <th className="px-4 py-2 text-right font-medium">{t("Tax withheld abroad")}</th>}
                         {s.key === "investments" && (
                           <>
                             <th className="px-4 py-2 text-right font-medium">{t("Dividend (gross)")}</th>
@@ -220,6 +225,12 @@ export function TaxReturnPage() {
                           {INCOME[s.key] && (
                             <td className="px-4 py-2 text-right text-ink-2">
                               {l.incomeEur != null ? whole(l.incomeEur) : "—"}
+                            </td>
+                          )}
+                          {s.abroad && (
+                            <td className="px-4 py-2 text-right text-ink-2">
+                              {l.taxWithheldEur != null ? eur(l.taxWithheldEur) : "—"}
+                              {l.taxCountry && <div className="text-xs text-muted">{countryName(l.taxCountry)}</div>}
                             </td>
                           )}
                           {s.key === "investments" && (
@@ -265,9 +276,9 @@ export function TaxReturnPage() {
             </Card>
           )}
 
-          <Card title={t("Dividend tax withheld in {year}", { year: r.year })}>
-            {r.dividendTax.dutchEur === 0 && r.dividendTax.foreign.length === 0 ? (
-              <p className="text-sm text-ink-2">{t("No dividend tax was withheld that year.")}</p>
+          <Card title={t("Tax withheld in {year}", { year: r.year })}>
+            {r.dividendTax.dutchEur === 0 && r.dividendTax.foreign.length === 0 && r.interestTax.length === 0 ? (
+              <p className="text-sm text-ink-2">{t("No tax was withheld that year.")}</p>
             ) : (
               <div className="flex flex-col gap-3 text-sm">
                 {r.dividendTax.dutchEur > 0 && (
@@ -286,17 +297,17 @@ export function TaxReturnPage() {
                         "Foreign tax withheld, per country of the security. The return offsets it up to the treaty rate (usually 15%) to avoid double taxation; more must be reclaimed from that country.",
                       )}
                     </p>
-                    <ul className="tabular divide-y divide-line rounded-lg border border-line">
-                      {r.dividendTax.foreign.map((f) => (
-                        <li key={f.country} className="flex justify-between gap-3 px-3 py-1.5">
-                          <span>
-                            {regionName(f.country)}{" "}
-                            <span className="text-xs text-muted">{t("on {gross}", { gross: eur(f.grossEur) })}</span>
-                          </span>
-                          <span>{eur(f.taxEur)}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    <ByCountry rows={r.dividendTax.foreign} />
+                  </>
+                )}
+                {r.interestTax.length > 0 && (
+                  <>
+                    <p className="text-ink-2">
+                      {t(
+                        "Tax withheld abroad on interest, per country of the bank. The return asks for it with each account abroad and offsets it up to the treaty rate to avoid double taxation; more must be reclaimed from that country.",
+                      )}
+                    </p>
+                    <ByCountry rows={r.interestTax} />
                   </>
                 )}
               </div>
@@ -339,10 +350,19 @@ export function TaxReturnPage() {
   );
 }
 
-function regionName(code: string): string {
-  try {
-    return new Intl.DisplayNames([document.documentElement.lang || "nl"], { type: "region" }).of(code) ?? code;
-  } catch {
-    return code;
-  }
+/** Tax withheld per country, with the gross amount it was withheld on. */
+function ByCountry({ rows }: { rows: { country: string; grossEur: number; taxEur: number }[] }) {
+  return (
+    <ul className="tabular divide-y divide-line rounded-lg border border-line">
+      {rows.map((f) => (
+        <li key={f.country} className="flex justify-between gap-3 px-3 py-1.5">
+          <span>
+            {countryName(f.country)}{" "}
+            <span className="text-xs text-muted">{t("on {gross}", { gross: eur(f.grossEur) })}</span>
+          </span>
+          <span>{eur(f.taxEur)}</span>
+        </li>
+      ))}
+    </ul>
+  );
 }

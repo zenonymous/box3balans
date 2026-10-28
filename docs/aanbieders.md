@@ -181,12 +181,12 @@ Werk S, prio 1.
 **Routes:**
 
 - **Jaaroverzicht:** een _Financieel Jaaroverzicht_ als pdf in de bijlage van een bericht in je Raisin-account ([Raisin](https://www.raisin.com/nl-nl/sparen/financieel-jaaroverzicht/)). Wat er precies in staat (saldo per rekening op 1 januari, bronbelasting), zegt de pagina niet.
-- **Bronbelasting:** buitenlandse bronbelasting op rente is te verrekenen in box 3 ([Raisin, belasting](https://www.raisin.com/nl-nl/belasting/)). Box3balans kent ingehouden belasting al bij dividend; bij rente op een rekening met _waarden per jaar_ niet.
+- **Bronbelasting:** buitenlandse bronbelasting op rente is te verrekenen in box 3, tot het verdragstarief; wat meer is ingehouden, vraag je terug in het land zelf ([Raisin, belasting](https://www.raisin.com/nl-nl/belasting/)). De aangifte vraagt per buitenlandse rekening naar de bruto rente en de ingehouden bronbelasting (zelfde pagina).
 - **CSV of API:** niet gevonden.
 
 **Advies:** (d), per partnerbank één rekening met het vinkje buitenland; later een pdf-sjabloon. Werk S, prio 2.
 
-**Open vraag:** moet _waarden per jaar_ ingehouden bronbelasting op rente kunnen vastleggen?
+**Stand (oktober 2026):** _waarden per jaar_ legt bij een rekening in het buitenland de ingehouden bronbelasting op de rente vast, met het land ([#36](https://github.com/zenonymous/box3balans/issues/36)). Het werkelijk rendement telt de rente bruto, en _Voor de aangifte_ toont de belasting bij de rekening en per land. Een pdf-sjabloon voor het _Financieel Jaaroverzicht_ wacht op de tekst van een echt overzicht.
 
 #### bunq (Stocks en API)
 

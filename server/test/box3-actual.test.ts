@@ -128,7 +128,7 @@ describe("actual box 3 return (tegenbewijsregeling)", () => {
   it("adds direct and indirect return per category, without deducting costs", async () => {
     await scenario(90_000);
     const y = json(await t.api("GET", "/api/box3/2024")).actualReturn;
-    expect(y).toMatchObject({ year: 2024, complete: true, debtInterestEur: 50, dividendTaxEur: 4.5, costsEur: 63 });
+    expect(y).toMatchObject({ year: 2024, complete: true, debtInterestEur: 50, taxWithheldEur: 4.5, costsEur: 63 });
     expect(y.parts.bank).toMatchObject({
       startEur: 10998,
       endEur: 12370.5,

@@ -74,6 +74,9 @@ The percentage of the WOZ value (municipal property valuation) at which a let ho
 **Buitenland** — abroad (foreign):
 Assets abroad simply count, but the tax return asks about them separately.
 
+**Ingehouden belasting** — tax withheld (tax withheld):
+Tax already taken off dividend or interest: Dutch dividend tax, or withholding tax abroad. Dividend and interest count gross; the tax return offsets the tax, foreign tax up to the treaty rate.
+
 **Dossier** (dossier):
 The printable overview of a tax year: box 3, the actual return, the values on the reference date and where every amount comes from.
 

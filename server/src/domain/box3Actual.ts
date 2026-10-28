@@ -29,9 +29,10 @@ export interface ActualReturn {
   complete: boolean;
   endDay: string;
   parts: Record<Kind, ReturnPart>;
-  // Inside the totals: costs that may not be deducted (fees), and dividend tax (dividends count gross).
+  // Inside the totals: costs that may not be deducted (fees), and tax withheld on dividends and on
+  // interest abroad (both count gross).
   costsEur: number;
-  dividendTaxEur: number;
+  taxWithheldEur: number;
   // Accounts left out: green investments (exempt) and accounts outside box 3.
   leftOut: { category: "exempt" | "excluded"; returnEur: number }[];
   extraReturnEur: number; // on assets the app doesn't track, entered for the year
@@ -229,7 +230,7 @@ export async function actualReturn(
   ) as Record<Kind, ReturnType<typeof emptyPart>>;
   const leftOut = new Map<"exempt" | "excluded", Decimal>();
   let inScopeCosts = ZERO;
-  let dividendTax = ZERO;
+  let taxWithheld = ZERO;
   const addTo = (
     cat: Category,
     assetClass: string,
@@ -244,7 +245,7 @@ export async function actualReturn(
       return;
     }
     inScopeCosts = inScopeCosts.plus(costs.mul(w));
-    dividendTax = dividendTax.plus(tax.mul(w));
+    taxWithheld = taxWithheld.plus(tax.mul(w));
     const part = parts[kindOf(cat, assetClass)];
     part.start = part.start.plus(p.start.mul(w));
     part.end = part.end.plus(p.end.mul(w));
@@ -298,21 +299,23 @@ export async function actualReturn(
     const cls = yearlyClass(acc.kind);
     const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year);
     const income = D(row.incomeEur);
+    const tax = D(row.details?.taxWithheldEur || 0);
     addTo(
       cat,
       cls,
       w,
-      // Income credited to the account is already in its end value: book it as coming in too (as
-      // for a reward), so the value change shows the price movement and the income shows once.
+      // Income credited to the account is already in its end value: book what was credited (after
+      // tax withheld abroad) as coming in too, as for a reward, so the value change shows the price
+      // movement and the income shows once, gross.
       {
         start,
         end,
-        in: D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income : ZERO),
+        in: D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income.minus(tax) : ZERO),
         out: D(row.outEur),
         direct: income,
       },
       D(row.costsEur),
-      ZERO,
+      tax,
     );
   }
 
@@ -341,7 +344,7 @@ export async function actualReturn(
     endDay,
     parts: outParts,
     costsEur: num(inScopeCosts),
-    dividendTaxEur: num(dividendTax),
+    taxWithheldEur: num(taxWithheld),
     leftOut: [...leftOut.entries()].map(([category, v]) => ({ category, returnEur: num(v) })),
     extraReturnEur: num(extraReturn),
     debtInterestEur: num(debtInterest),

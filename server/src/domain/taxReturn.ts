@@ -42,6 +42,9 @@ export interface ReturnLine {
   /** Dividends during the year (gross) and the tax withheld on them. */
   dividendEur?: number;
   dividendTaxEur?: number;
+  /** Kept as values per year: tax withheld abroad on its income, and the country that withheld it. */
+  taxWithheldEur?: number;
+  taxCountry?: string;
 }
 
 export interface TaxReturnOverview {
@@ -57,6 +60,8 @@ export interface TaxReturnOverview {
     dutchGrossEur: number;
     foreign: { country: string; grossEur: number; taxEur: number }[];
   };
+  /** Tax withheld abroad on interest (accounts kept as values per year), per country, with the gross interest. */
+  interestTax: { country: string; grossEur: number; taxEur: number }[];
   /** From 2025 the actual return goes in the return itself; before, on a separate form. */
   actualReturnIn: "return" | "form";
   actualReturn: ActualReturn;
@@ -151,6 +156,7 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
         const up = key === "debts";
         const y = yearly.get(l.accountId)?.get(year);
         const div = dividends.get(l.accountId);
+        const tax = D(y?.details?.taxWithheldEur || 0);
         return {
           ...l,
           valueEur: euros(value, up),
@@ -163,11 +169,24 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
               ? D(y.incomeEur).toDecimalPlaces(2).toNumber()
               : undefined,
           dividendTaxEur: div && div.tax.gt(0) ? div.tax.toDecimalPlaces(2).toNumber() : undefined,
+          taxWithheldEur: tax.gt(0) ? tax.toDecimalPlaces(2).toNumber() : undefined,
+          taxCountry: tax.gt(0) ? y?.details?.taxCountry : undefined,
         };
       })
       .sort((a, b) => b.countedEur - a.countedEur);
     return { key, lines: list, totalEur: list.reduce((s, l) => s + l.countedEur, 0) };
   });
+
+  // Interest taxed abroad, per country: the gross interest and the tax, as the return offsets it.
+  const interestByCountry = new Map<string, { gross: Decimal; tax: Decimal }>();
+  for (const l of lines.values()) {
+    const y = yearly.get(l.accountId)?.get(year);
+    const tax = D(y?.details?.taxWithheldEur || 0);
+    if (!y || tax.lte(0)) continue;
+    const country = y.details.taxCountry ?? "??";
+    const c = interestByCountry.get(country) ?? { gross: D(0), tax: D(0) };
+    interestByCountry.set(country, { gross: c.gross.plus(y.incomeEur), tax: c.tax.plus(tax) });
+  }
 
   const dutch = byCountry.get("NL");
   return {
@@ -192,6 +211,13 @@ export async function taxReturnOverview(db: DB, year: number, config: Box3Config
         }))
         .sort((a, b) => b.taxEur - a.taxEur),
     },
+    interestTax: [...interestByCountry]
+      .map(([country, v]) => ({
+        country,
+        grossEur: v.gross.toDecimalPlaces(2).toNumber(),
+        taxEur: v.tax.toDecimalPlaces(2).toNumber(),
+      }))
+      .sort((a, b) => b.taxEur - a.taxEur),
     actualReturnIn: year >= 2025 ? "return" : "form",
     actualReturn: actual,
     calculation: box3.calculation,

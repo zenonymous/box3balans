@@ -9,7 +9,7 @@ import { pdfContribution, personalNames } from "../import/contribute.js";
 import { APP_VERSION } from "../lib/version.js";
 import { audit } from "../lib/audit.js";
 import { HttpError, notFound } from "../lib/errors.js";
-import type { Decimal } from "../lib/decimal.js";
+import { D, type Decimal } from "../lib/decimal.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
 
@@ -45,22 +45,36 @@ const money = z
   .transform((v) => String(v).trim().replace(",", "."))
   .refine((v) => /^-?\d+(\.\d+)?$/.test(v), { error: () => tr("Must be a number") });
 
-const yearRow = z.object({
-  year: z.number().int().min(1990).max(2100),
-  valueEur: money.nullable(),
-  inEur: money.default("0"),
-  outEur: money.default("0"),
-  incomeEur: money.default("0"),
-  costsEur: money.default("0"),
-  details: z
-    .object({
-      rented: z.boolean().optional(),
-      rentEur: money.optional(),
-      relatedBelowMarket: z.boolean().optional(),
-      source: z.string().max(200).optional(),
-    })
-    .default({}),
-});
+const yearRow = z
+  .object({
+    year: z.number().int().min(1990).max(2100),
+    valueEur: money.nullable(),
+    inEur: money.default("0"),
+    outEur: money.default("0"),
+    incomeEur: money.default("0"),
+    costsEur: money.default("0"),
+    details: z
+      .object({
+        rented: z.boolean().optional(),
+        rentEur: money.optional(),
+        relatedBelowMarket: z.boolean().optional(),
+        taxWithheldEur: money.optional(),
+        taxCountry: z
+          .string()
+          .regex(/^[A-Z]{2}$/)
+          .optional(),
+        source: z.string().max(200).optional(),
+      })
+      .default({}),
+  })
+  .refine((r) => D(r.details.taxWithheldEur ?? 0).isZero() || !!r.details.taxCountry, {
+    path: ["details", "taxCountry"],
+    error: () => tr("Choose the country that withheld the tax"),
+  })
+  .refine((r) => D(r.details.taxWithheldEur ?? 0).gte(0) && D(r.details.taxWithheldEur ?? 0).lte(r.incomeEur), {
+    path: ["details", "taxWithheldEur"],
+    error: () => tr("The tax withheld can't be more than the income"),
+  });
 
 const idParam = z.object({ id: z.coerce.number().int().positive() });
 

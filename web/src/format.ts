@@ -76,6 +76,15 @@ export function date(v: string | Date | null | undefined): string {
   return new Intl.DateTimeFormat(dateLocale(), { year: "numeric", month: "short", day: "numeric" }).format(d);
 }
 
+/** A country's name from its ISO 3166 code, in the app's language. */
+export function countryName(code: string): string {
+  try {
+    return new Intl.DisplayNames([dateLocale()], { type: "region" }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
 export function relativeTime(v: string | null | undefined): string {
   if (!v) return t("never");
   const s = Math.round((Date.now() - new Date(v).getTime()) / 1000);
