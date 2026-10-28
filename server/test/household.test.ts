@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { createBackup, restoreBackup } from "../src/backup/backup.js";
+import { localToday } from "../src/lib/time.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
 let t: TestApp;
@@ -251,7 +252,8 @@ describe("household and values per year in box 3", () => {
 
   it("counts this year's interest so far, gross, while 1 January next year isn't known yet", async () => {
     t = await createTestApp();
-    const year = new Date().getFullYear();
+    // This year as the app counts it (Dutch time), not the computer's clock.
+    const year = Number(localToday().slice(0, 4));
     const a = await ok("POST", "/api/accounts", {
       name: "Deposit PT",
       kind: "bank",
