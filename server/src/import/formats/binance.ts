@@ -1,8 +1,8 @@
-import { msg, tr, trn } from "../../i18n/index.js";
+import { msg, tr } from "../../i18n/index.js";
 import { type Decimal, ZERO } from "../../lib/decimal.js";
+import { coinTrade, tradeWarnings } from "./coin-trades.js";
 import {
   type BrokerFormat,
-  type TemplateRow,
   abs,
   coinAsset,
   column,
@@ -40,8 +40,6 @@ const REWARD =
 // Moves between Binance's own wallets (Earn, staking, savings, funding): still yours.
 const INTERNAL =
   /transfer|subscription|redemption|purchase|savings principal|launchpad subscribe|eth 2 0 staking|staking purchase/;
-// Stablecoins counted as one dollar each, so trades against them have a value.
-const DOLLAR_STABLECOINS = new Set(["USDT", "USDC", "BUSD", "FDUSD", "TUSD", "USDP", "DAI"]);
 
 /**
  * Binance's Transaction History (Orders → Transaction History → Export, CSV): one row per balance
@@ -114,74 +112,14 @@ export const binance: BrokerFormat = {
         const target = FEE_OPS.has(r.op) ? fees : net;
         target.set(r.coin, (target.get(r.coin) ?? ZERO).plus(r.change ?? 0));
       }
-      const got = [...net].filter(([, v]) => v.gt(0));
-      const gave = [...net].filter(([, v]) => v.lt(0));
-      if (got.length !== 1 || gave.length !== 1) {
-        unclear++;
-        continue;
+      const trade = coinTrade(date, net, fees, group[0]!.rawOp, "Binance fee");
+      if (!trade) unclear++;
+      else {
+        out.rows.push(...trade.rows);
+        if (trade.swap) swaps++;
       }
-      const [inCoin, inQty] = got[0]!;
-      const [outCoin, outQty] = gave[0]!;
-      const fmt = (v: Decimal) => v.abs().toFixed();
-      const feeIn = (coin: string) => {
-        const f = fees.get(coin);
-        return f ? fmt(f) : undefined;
-      };
-      const row = (
-        type: "buy" | "sell",
-        coin: string,
-        qty: Decimal,
-        total: Decimal,
-        currency: string,
-      ): TemplateRow => ({
-        date,
-        type,
-        ...coinAsset(coin),
-        quantity: fmt(qty),
-        total: fmt(total),
-        currency,
-        fee: feeIn(currency),
-        notes: group[0]!.rawOp,
-      });
-      if (isFiatCode(outCoin)) out.rows.push(row("buy", inCoin, inQty, outQty, outCoin));
-      else if (isFiatCode(inCoin)) out.rows.push(row("sell", outCoin, outQty, inQty, inCoin));
-      else if (DOLLAR_STABLECOINS.has(outCoin) || DOLLAR_STABLECOINS.has(inCoin)) {
-        // At a dollar per stablecoin.
-        const dollars = DOLLAR_STABLECOINS.has(outCoin) ? outQty.abs() : inQty;
-        out.rows.push(
-          { ...row("sell", outCoin, outQty, dollars, "USD"), fee: undefined },
-          { ...row("buy", inCoin, inQty, dollars, "USD"), fee: undefined },
-        );
-      } else {
-        // Coin for coin: a sale and a purchase, each valued at that day's close when imported.
-        swaps++;
-        out.rows.push(
-          { date, type: "sell", ...coinAsset(outCoin), quantity: fmt(outQty), currency: "EUR", notes: group[0]!.rawOp },
-          { date, type: "buy", ...coinAsset(inCoin), quantity: fmt(inQty), currency: "EUR", notes: group[0]!.rawOp },
-        );
-        out.mapping = { ...out.mapping, marketTrades: true };
-      }
-      // A fee in a coin of its own (BNB, or the coin itself) is its own line.
-      for (const [coin, f] of fees)
-        if (!isFiatCode(coin))
-          out.rows.push({ date, type: "fee", ...coinAsset(coin), quantity: fmt(f), notes: "Binance fee" });
     }
-    if (swaps)
-      out.warnings.push(
-        trn(
-          swaps,
-          "{n} trade between two coins is booked as a sale and a purchase, each at that day's market price (the export has no value in money for it).",
-          "{n} trades between two coins are booked as a sale and a purchase, each at that day's market price (the export has no value in money for them).",
-        ),
-      );
-    if (unclear)
-      out.warnings.push(
-        trn(
-          unclear,
-          "{n} moment with more than one trade at once was left out: it can't be split for sure.",
-          "{n} moments with more than one trade at once were left out: they can't be split for sure.",
-        ),
-      );
+    tradeWarnings(out, swaps, unclear);
     out.rows.sort((a, b) => a.date.localeCompare(b.date));
     return out;
   },

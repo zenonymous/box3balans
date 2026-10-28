@@ -274,7 +274,7 @@ Je ziet precies wat erin staat. Daarna deel je het zelf met het formulier [_Form
 
 ### CSV-import
 
-_Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of spreadsheet. Ruim twintig exports worden vanzelf herkend, onder meer van DEGIRO, Bitvavo, Coinbase, Kraken, Bitstamp, Crypto.com, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear, Scalable Capital, eToro, XTB, Revolut en Schwab Equity Awards, en het rekeningoverzicht van Goldrepublic (pdf); met de export van CoinTracking of Delta haal je je hele geschiedenis in één keer binnen. Voor andere bestanden kies je zelf de kolommen. Er wordt niets opgeslagen voordat je alles hebt gezien, en een import kun je terugdraaien.
+_Transacties → CSV importeren_ leest exports van vrijwel elke broker, beurs of spreadsheet. Ruim twintig exports worden vanzelf herkend, onder meer van DEGIRO, Bitvavo, Coinbase, Kraken, Bitstamp, Bybit, Crypto.com, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear, Scalable Capital, eToro, XTB, Revolut en Schwab Equity Awards, en het rekeningoverzicht van Goldrepublic (pdf); met de export van CoinTracking of Delta haal je je hele geschiedenis in één keer binnen. Voor andere bestanden kies je zelf de kolommen. Er wordt niets opgeslagen voordat je alles hebt gezien, en een import kun je terugdraaien.
 
 De lijst met herkende exports, welk bestand je per aanbieder kiest en hoe de import werkt: zie [Gegevens binnenhalen](docs/importeren.md#csv-import).
 

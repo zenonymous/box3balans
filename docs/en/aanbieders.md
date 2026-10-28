@@ -467,10 +467,12 @@ General: the Belastingdienst lets you use the price on 1 January of the platform
 **Routes:**
 
 - **API:** keys can be _Read-Only_ ([rotki, Bybit](https://rotki.com/integrations/bybit), [docs.rotki.com](https://docs.rotki.com/usage-guides/integrations/exchange-keys)). rotki uses `account/transaction-log`, `account/wallet-balance` and `order/history` from API v5 ([rotki, bybit.py](https://github.com/rotki/rotki/blob/develop/rotkehlchen/exchanges/bybit.py), [Bybit v5](https://bybit-exchange.github.io/docs/v5/guide)). Deposits and withdrawals per 30 days per request (rotki).
-- **CSV:** deposits and withdrawals with `Date & Time(UTC), Coin, QTY, Type, Account Balance, Description` ([BittyTax](https://github.com/BittyTax/BittyTax/blob/master/src/bittytax/conv/parsers/bybit.py)).
+- **CSV:** _Account → Data Export → Transaction Log_ gives an _Asset Change Details_ file per account: the Unified Trading Account (spot trading, columns `Uid, Currency, Contract, Type, Direction, Quantity, Position, Filled Price, Funding, Fee Paid, Cash Flow, Change, Wallet Balance, Action, Time(UTC)`) and the Funding account (deposits, withdrawals, Convert, Earn, the Bybit Card: `Uid, Date & Time(UTC), Coin, QTY, Type, Account Balance, Description`), with a line about the account above the header row ([Bybit, Data Export](https://www.bybit.com/en/help-center/article/How-to-Self-Export-Account-Data); the layout from [GiacenzeCrypto](https://github.com/Lucapasselli/GiacenzeCrypto/tree/main/config/import) and [everytrade](https://github.com/everytrade-io/everytrade-plugins), which both read Bybit EU's exports). In a spot trade the two sides share the second, and the fee comes off the coin that comes in (`Change` is without the fee, `Fee Paid` apart).
 - According to CoinLedger, keys without an IP restriction expire after three months ([CoinLedger](https://help.coinledger.io/en/articles/6588913-bybit-api-import-guide), second-hand). That clashes with a sync that runs for years.
 
 **Advice:** (a) on request. Work M, prio 3.
+
+**Status (October 2026):** the recogniser for both files is built ([#51](https://github.com/zenonymous/box3balans/issues/51)), on the layout from GiacenzeCrypto and everytrade, not yet tested with a real export. Spot trading, Convert, paying with the Bybit Card from a coin, deposits, withdrawals and interest from Earn; moves between the accounts, futures and euros not.
 
 #### Binance
 
@@ -866,6 +868,8 @@ Open-source projects (code and test files read, nothing copied):
 - ledger-autosync, **GPL-3.0**: https://github.com/egh/ledger-autosync/blob/master/examples/plugins/wise.py
 - Export-To-Ghostfolio, **Apache-2.0**: https://github.com/dickwolff/Export-To-Ghostfolio (`samples/` and `src/converters/` for Crypto.com, eToro, Schwab, XTB)
 - BittyTax, **AGPL-3.0**: https://github.com/BittyTax/BittyTax/tree/master/src/bittytax/conv/parsers (Binance, Bitpanda, Bitstamp, Bybit, Crypto.com, PayPal)
+- GiacenzeCrypto, **MIT**: https://github.com/Lucapasselli/GiacenzeCrypto/tree/main/config/import (Bybit and Bybit EU, Asset Change Details)
+- everytrade-plugins, **GPL with an exception**: https://github.com/everytrade-io/everytrade-plugins (`BybitEuFundBeanV1.java`, `BybitEuUtaBeanV1.java`)
 - rotki, **AGPL-3.0**: https://github.com/rotki/rotki/tree/develop/rotkehlchen/exchanges and https://github.com/rotki/rotki/tree/develop/rotkehlchen/data_import/importers
 - Portfolio Performance, **EPL-1.0**: https://github.com/portfolio-performance/portfolio/tree/master/name.abuchen.portfolio/src/name/abuchen/portfolio/datatransfer/pdf
 

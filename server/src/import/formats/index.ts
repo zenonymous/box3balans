@@ -4,6 +4,7 @@ import { binance } from "./binance.js";
 import { bitstamp } from "./bitstamp.js";
 import { bitvavo } from "./bitvavo.js";
 import { bux } from "./bux.js";
+import { bybitFunding, bybitUta } from "./bybit.js";
 import { coinbase } from "./coinbase.js";
 import { coinTracking } from "./cointracking.js";
 import { cryptoCom } from "./crypto-com.js";
@@ -35,6 +36,8 @@ export const FORMATS: BrokerFormat[] = [
   revolutCrypto,
   bitstamp,
   binance,
+  bybitUta,
+  bybitFunding,
   rabobank,
   tradeRepublic,
   trading212,

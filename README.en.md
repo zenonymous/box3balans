@@ -268,7 +268,7 @@ You see exactly what's in it. Then you share it yourself with the [_Share a form
 
 ### CSV import
 
-_Transactions → Import CSV_ reads exports from almost any broker, exchange or spreadsheet. Over twenty exports are recognised by themselves, among others from DEGIRO, Bitvavo, Coinbase, Kraken, Bitstamp, Crypto.com, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear, Scalable Capital, eToro, XTB, Revolut and Schwab Equity Awards, and Goldrepublic's account statement (PDF); with CoinTracking's or Delta's export you bring in your whole history in one go. For other files you choose the columns yourself. Nothing is saved before you've seen everything, and you can undo an import.
+_Transactions → Import CSV_ reads exports from almost any broker, exchange or spreadsheet. Over twenty exports are recognised by themselves, among others from DEGIRO, Bitvavo, Coinbase, Kraken, Bitstamp, Bybit, Crypto.com, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear, Scalable Capital, eToro, XTB, Revolut and Schwab Equity Awards, and Goldrepublic's account statement (PDF); with CoinTracking's or Delta's export you bring in your whole history in one go. For other files you choose the columns yourself. Nothing is saved before you've seen everything, and you can undo an import.
 
 The list of recognised exports, which file to choose per provider and how the import works: see [Bringing data in](docs/en/importeren.md#csv-import).
 

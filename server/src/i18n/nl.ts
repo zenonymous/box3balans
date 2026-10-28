@@ -506,6 +506,14 @@ export const NL: Record<string, string> = {
   "Futures and margin (no ownership of the coins)": "Futures en margin (geen bezit van de munten)",
   "Small balances converted to BNB": "Kleine saldi omgezet in BNB",
   "Moves within Binance (Earn, staking, savings)": "Verplaatsingen binnen Binance (Earn, staking, sparen)",
+  // import/formats/bybit.ts
+  "Bybit Unified Trading Account (asset changes)": "Bybit Unified Trading Account (saldowijzigingen)",
+  "Bybit Funding account (asset changes)": "Bybit Funding-rekening (saldowijzigingen)",
+  "Moves within Bybit (between its accounts, Earn)": "Verplaatsingen binnen Bybit (tussen de rekeningen, Earn)",
+  "{n} purchase by card is booked at that day's market price (the export has no price for it).":
+    "{n} aankoop met de kaart is geboekt tegen de marktprijs van die dag (de export noemt geen prijs).",
+  "{n} purchases by card are booked at that day's market price (the export has no price for them).":
+    "{n} aankopen met de kaart zijn geboekt tegen de marktprijs van die dag (de export noemt geen prijs).",
   "{n} moment with more than one trade at once was left out: it can't be split for sure.":
     "{n} moment met meer dan één transactie tegelijk is overgeslagen: dat is niet met zekerheid te splitsen.",
   "{n} moments with more than one trade at once were left out: they can't be split for sure.":

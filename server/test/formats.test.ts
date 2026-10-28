@@ -578,6 +578,123 @@ describe("broker exports", () => {
     expect(notes.join(" ")).toMatch(/1 trade between two coins is booked as a sale and a purchase/);
   });
 
+  it("Bybit Unified Trading Account: spot trades per second with the fee from the coin received; moves and futures left out", () => {
+    const { id, rows, skipped } = read(
+      lines(
+        // The export starts with a line about the account; the header row comes second.
+        "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
+        "Uid,Currency,Contract,Type,Direction,Quantity,Position,Filled Price,Funding,Fee Paid,Cash Flow,Change,Wallet Balance,Action,Time(UTC)",
+        "100000001,USDC,,TRANSFER_IN,--,0,0,0,0,0,500,500,500,--,2025-03-01 09:00:00",
+        // BTC for euros: Change is what arrived, the fee (in BTC) already off.
+        "100000001,BTC,BTCEUR,TRADE,BUY,0.01,0,60000,0,0.00001,0.01,0.00999,0.00999,--,2025-03-03 10:00:00",
+        "100000001,EUR,BTCEUR,TRADE,BUY,0.01,0,60000,0,0,-600,-600,400,--,2025-03-03 10:00:00",
+        // ETH for USDC: a dollar per USDC.
+        "100000001,ETH,ETHUSDC,TRADE,BUY,0.1,0,3000,0,0.0001,0.1,0.0999,0.0999,--,2025-03-04 11:00:00",
+        "100000001,USDC,ETHUSDC,TRADE,BUY,0.1,0,3000,0,0,-300,-300,200,--,2025-03-04 11:00:00",
+        // Part of the BTC sold: the fee in euros, off what arrived.
+        "100000001,BTC,BTCEUR,TRADE,SELL,0.005,0,70000,0,0,-0.005,-0.005,0.00499,--,2025-04-01 08:30:00",
+        "100000001,EUR,BTCEUR,TRADE,SELL,0.005,0,70000,0,0.35,350,349.65,749.65,--,2025-04-01 08:30:00",
+        // Into Easy Earn from this account (one line), and a perpetual.
+        "100000001,USDC,,--,--,0,0,0,0,0,-100,-100,100,--,2025-04-02 00:00:00",
+        "100000001,USDT,BTCUSDT,TRADE,BUY,0.001,0.001,80000,0,0.044,0,-0.044,0,OPEN,2025-04-03 12:00:00",
+      ),
+    );
+    expect(id).toBe("bybit-uta");
+    expect(rows).toEqual([
+      expect.objectContaining({
+        date: "2025-03-03T10:00:00Z",
+        type: "buy",
+        symbol: "BTC",
+        quantity: "0.01",
+        total: "600",
+        currency: "EUR",
+      }),
+      expect.objectContaining({ date: "2025-03-03T10:00:00Z", type: "fee", symbol: "BTC", quantity: "0.00001" }),
+      expect.objectContaining({ type: "sell", symbol: "USDC", quantity: "300", total: "300", currency: "USD" }),
+      expect.objectContaining({ type: "buy", symbol: "ETH", quantity: "0.1", total: "300", currency: "USD" }),
+      expect.objectContaining({ type: "fee", symbol: "ETH", quantity: "0.0001" }),
+      expect.objectContaining({
+        date: "2025-04-01T08:30:00Z",
+        type: "sell",
+        symbol: "BTC",
+        quantity: "0.005",
+        total: "350",
+        currency: "EUR",
+        fee: "0.35",
+      }),
+    ]);
+    expect(skipped).toEqual({
+      "Moves within Bybit (between its accounts, Earn)": 2,
+      "Futures and margin (no ownership of the coins)": 1,
+    });
+  });
+
+  it("Bybit Funding account: deposits, withdrawals, Convert and card payments paired, interest; euros and moves left out", () => {
+    const { id, rows, skipped, notes } = read(
+      lines(
+        "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
+        "Uid,Date & Time(UTC),Coin,QTY,Type,Account Balance,Description",
+        // Newest first, as an export may list them. A conversion cut off by the end of the period.
+        "100000001,2025-03-13 10:00:00,USDC,-5,Convert,43.0123,Convert",
+        "100000001,2025-03-12 00:00:00,USDC,2.0000000000E-8,Earn,48.0123,Easy Earn | Flexible Interest Distribution",
+        "100000001,2025-03-11 18:00:02,EUR,-20,Bybit Card,0,Purchase",
+        "100000001,2025-03-11 18:00:01,EUR,20,Bybit Card,20,Coin Purchase",
+        "100000001,2025-03-11 18:00:00,USDC,-20.1,Bybit Card,48.0123,Purchase",
+        "100000001,2025-03-10 09:00:00,ETH,0.2,Withdraw,0.5,Withdrawal Canceled",
+        "100000001,2025-03-10 08:30:00,EUR,30,Fiat,30,Withdrawal Canceled",
+        "100000001,2025-03-10 08:00:00,ETH,-0.2,Withdraw,0.3,Withdrawal",
+        "100000001,2025-03-09 00:00:00,MNT,5,Airdrop,5,Airdrop Bonus",
+        "100000001,2025-03-08 00:00:00,USDC,-50,Earn,49.5,Easy Earn | Flexible Subscription",
+        "100000001,2025-03-07 00:00:00,USDC,0.0123,Earn,99.5123,Easy Earn | Flexible Interest Distribution",
+        "100000001,2025-03-06 14:00:00,BTC,0.001,Fiat,0.001,Buy Crypto with Card",
+        // Euros for USDC: the two halves a second apart.
+        "100000001,2025-03-05 10:00:01,USDC,99.5,Convert,99.5,Convert",
+        "100000001,2025-03-05 10:00:00,EUR,-100,Convert,0,Convert",
+        "100000001,2025-03-02 12:00:00,ETH,0.5,Deposit,0.5,Deposit",
+        "100000001,2025-02-28 09:05:00,EUR,-900,Transfer out,100,Transfer to Unified Trading Account",
+        "100000001,2025-02-28 09:00:00,EUR,1000,Fiat,1000,Deposit",
+        "100000001,2025-02-27 09:00:00,USDT,1,Other,1,Something New",
+      ),
+    );
+    expect(id).toBe("bybit-funding");
+    expect(rows).toEqual([
+      expect.objectContaining({ date: "2025-03-02T12:00:00Z", type: "deposit", symbol: "ETH", quantity: "0.5" }),
+      expect.objectContaining({
+        date: "2025-03-05T10:00:00Z",
+        type: "buy",
+        symbol: "USDC",
+        quantity: "99.5",
+        total: "100",
+        currency: "EUR",
+      }),
+      // Bought by card: no price in the export, so the day's market price.
+      expect.objectContaining({ date: "2025-03-06T14:00:00Z", type: "buy", symbol: "BTC", quantity: "0.001" }),
+      expect.objectContaining({ type: "reward", symbol: "USDC", quantity: "0.0123" }),
+      expect.objectContaining({ type: "reward", symbol: "MNT", quantity: "5" }),
+      expect.objectContaining({ type: "withdrawal", symbol: "ETH", quantity: "0.2" }),
+      // The canceled withdrawal came back.
+      expect.objectContaining({ date: "2025-03-10T09:00:00Z", type: "deposit", symbol: "ETH", quantity: "0.2" }),
+      // Paid by card with USDC: sold for the euros the card spent.
+      expect.objectContaining({
+        date: "2025-03-11T18:00:00Z",
+        type: "sell",
+        symbol: "USDC",
+        quantity: "20.1",
+        total: "20",
+        currency: "EUR",
+      }),
+      expect.objectContaining({ date: "2025-03-12T00:00:00Z", type: "reward", symbol: "USDC", quantity: "0.00000002" }),
+    ]);
+    expect(rows[2]!.total).toBeUndefined();
+    expect(skipped).toEqual({
+      "Euro deposits and withdrawals": 3,
+      "Moves within Bybit (between its accounts, Earn)": 2,
+      "Balance conversions without their other half": 1,
+      "Other kinds: Something New": 1,
+    });
+    expect(notes.join(" ")).toMatch(/1 purchase by card is booked at that day's market price/);
+  });
+
   it("Kraken ledgers: trades paired by reference, staking rewards, euro cash", () => {
     const { id, rows, r } = read(
       lines(
@@ -1180,7 +1297,7 @@ describe("importing a recognised export", () => {
     expect(plan.rows[1]).toMatchObject({ type: "reward", quantity: "0.00001" });
   });
 
-  it("previews CoinTracking, Delta, XTB, Schwab Equity Awards and Binance exports without errors", async () => {
+  it("previews CoinTracking, Delta, XTB, Schwab Equity Awards, Binance and Bybit exports without errors", async () => {
     t = await createTestApp();
     const acc = (await t.api("POST", "/api/accounts", { name: "Crypto (from a tracker)", kind: "exchange" })).json();
     const files = {
@@ -1209,6 +1326,18 @@ describe("importing a recognised export", () => {
         '"User_ID","UTC_Time","Account","Operation","Coin","Change","Remark"',
         '"1","2022-02-01 12:00:00","Spot","Transaction Buy","BTC","0.01000000",""',
         '"1","2022-02-01 12:00:00","Spot","Transaction Spend","USDT","-400.00000000",""',
+      ),
+      "bybit-uta": lines(
+        "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
+        "Uid,Currency,Contract,Type,Direction,Quantity,Position,Filled Price,Funding,Fee Paid,Cash Flow,Change,Wallet Balance,Action,Time(UTC)",
+        "100000001,BTC,BTCEUR,TRADE,BUY,0.01,0,60000,0,0.00001,0.01,0.00999,0.00999,--,2025-03-03 10:00:00",
+        "100000001,EUR,BTCEUR,TRADE,BUY,0.01,0,60000,0,0,-600,-600,400,--,2025-03-03 10:00:00",
+      ),
+      "bybit-funding": lines(
+        "UID:100000001,Company Name:Bybit EU GmbH,Country:Austria",
+        "Uid,Date & Time(UTC),Coin,QTY,Type,Account Balance,Description",
+        "100000001,2025-03-02 12:00:00,ETH,0.5,Deposit,0.5,Deposit",
+        "100000001,2025-03-07 00:00:00,ETH,0.0001,Earn,0.5001,Easy Earn | Flexible Interest Distribution",
       ),
     };
     for (const [id, content] of Object.entries(files)) {
