@@ -34,6 +34,7 @@ export interface PropertyYear {
   wozEur: number; // the value on 1 January, without the leegwaarderatio
   yearShare: number; // the part of the year this return covers: less than 1 in the running year
   rentEur: number;
+  costsEur: number; // inside the year's costs
   rented: boolean; // let with rent protection, so all year
   // Next 1 January − this one − in + out, without the leegwaarderatio; in a home's first year
   // here only in + out, as the bill starts from the WOZ value a year later (see below).
@@ -344,12 +345,15 @@ export async function actualReturn(
       // The planned system values a home at its WOZ value, whether it's let or not.
       const woz = D(row.valueEur);
       const nextWoz = byYear?.get(year + 1)?.valueEur;
-      const wozEnd = endOf(woz, nextWoz != null ? D(nextWoz) : null);
-      // Sold: held this year and worth nothing on the next 1 January. A home that leaves box 3
-      // counts as sold just before it does (art. 5.31).
-      const sold =
-        (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || inEur.gt(0))) ||
-        !inBox3(categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year + 1));
+      // A home that leaves box 3 counts as sold just before it does, at its value then (art. 5.31):
+      // the WOZ value with that waardepeildatum is the one of the year after, if it's filled in.
+      const leaves = !inBox3(
+        categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year + 1),
+      );
+      const exitWoz = leaves ? (byYear?.get(year + 2)?.valueEur ?? nextWoz) : nextWoz;
+      const wozEnd = endOf(woz, exitWoz != null ? D(exitWoz) : null);
+      // Sold: held this year and worth nothing on the next 1 January.
+      const sold = leaves || (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || inEur.gt(0)));
       // For a home held on 1 January 2028 the bill starts from the WOZ value with waardepeildatum
       // 1 January 2028: the WOZ value of 2029 (art. 10a.31). Here, for a home held from its first
       // year, that's the next year's value, so that year's change in WOZ value doesn't count.
@@ -360,6 +364,7 @@ export async function actualReturn(
         wozEur: num(woz.mul(w)),
         yearShare,
         rentEur: num(income.mul(w)),
+        costsEur: num(D(row.costsEur).mul(w)),
         rented: !!row.details?.rented,
         gainEur: num(valueChange({ start: from, end: wozEnd, in: inEur, out: outEur }).mul(w)),
         sold,

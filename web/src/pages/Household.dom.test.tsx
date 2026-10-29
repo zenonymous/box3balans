@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import demo from "../test/demo.fixture.json";
 import { showPage } from "../test/pages";
 import { Box3Page } from "./Box3";
 import { HouseholdPage } from "./Household";
@@ -74,12 +73,9 @@ describe("Box 3 page", () => {
     expect(api.missed).toEqual([]);
   });
 
-  it("says how much of the homes' value change waits for their sale, and takes another vastgoedbijtelling", async () => {
-    const future = demo["/api/box3/future?preset=bill"];
-    const rows = future.rows.map((r, i) => (i === 0 ? { ...r, propertyGainPendingEur: 12000 } : r));
-    const api = showPage("/box3?year=2025", "box3", <Box3Page />, {
-      "GET /api/box3/future": { ...future, rows },
-    });
+  it("says how much of the homes' gain waits for their sale, and takes another vastgoedbijtelling", async () => {
+    // The demo's holiday home rose from 298,000 to 310,000 since its second year.
+    const api = showPage("/box3?year=2025", "box3", <Box3Page />);
     expect(await screen.findByText(/Winst op woningen tot nu toe, belast bij verkoop: €\s\+12\.000,00\./)).toBeTruthy();
     const pct = screen.getByLabelText(/Vastgoedbijtelling/);
     expect(pct.getAttribute("placeholder")).toBe("3.35");

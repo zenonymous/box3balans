@@ -83,7 +83,7 @@ Stand op 8 oktober 2026:
 Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstelling van de vooruitblik in de app):
 
 - **Vermogensaanwasbelasting als hoofdregel:** elk jaar het directe rendement plus de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Onroerend goed en aandelen in startende ondernemingen worden belast bij verkoop (vermogenswinstbelasting).
-- **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je op 1 januari 2028 al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
+- **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je op 1 januari 2028 al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel (Meijburg & Co, mei 2025) noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
 - **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
 - **Tarief:** 36%.
 - **Heffingsvrij resultaat:** € 1.800 per belastingplichtige.
@@ -96,17 +96,18 @@ Niet beschreven in de bronnen, en aangenomen door de app:
 
 - De winst op een woning telt vanaf de WOZ-waarde van het jaar na het eerste dat je invulde. Voor wat je op 1 januari 2028 al had, neemt het wetsvoorstel de WOZ-waarde met waardepeildatum 1 januari 2028, en dat is de WOZ-waarde van 2029. Voor een woning die je in die jaren kocht, telt de aankoopprijs.
 - Bij een woning vul je bij _Gekocht of verbeterd_ de aankoopprijs met de kosten van de aankoop in, en wat je aan verbeteringen uitgaf; bij _Verkocht voor_ de verkoopprijs min de kosten van de verkoop (art. 5.22 en 5.23). De woning is verkocht in het jaar waarna haar waarde op 1 januari 0 is.
-- Een woning die box 3 verlaat, bijvoorbeeld omdat ze je eigen woning wordt, telt als verkocht aan het eind van het jaar ervoor, tegen haar waarde op de 1 januari daarna (art. 5.31). Een verandering in het deel dat je van een woning hebt, telt niet als verkoop.
+- Een woning die box 3 verlaat, bijvoorbeeld omdat ze je eigen woning wordt, telt als verkocht aan het eind van het jaar ervoor, tegen haar waarde op dat moment (art. 5.31): de WOZ-waarde met die waardepeildatum, dus die van het jaar daarna als je die invulde. Een verandering in het deel dat je van een woning hebt, telt niet als verkoop.
 - Een woning die verhuurd is met huurbescherming, is het hele jaar verhuurd. Andere huur telt alleen als die hoger is dan de vastgoedbijtelling, ook als de woning zonder huurbescherming het hele jaar verhuurd was.
 - De vastgoedbijtelling telt over het hele jaar, ook in het jaar van verkoop: de app kent de datum van verkoop niet. In het jaar van aankoop is de waarde op 1 januari 0, dus telt ze dan niet. In het lopende jaar telt het deel van het jaar dat voorbij is.
-- De kosten van een woning, zoals onderhoud, gaan elk jaar af, ook als de vastgoedbijtelling telt, zoals samenvattingen van het wetsvoorstel het beschrijven. Artikel 5.38 noemt alleen kosten voor de huur.
+- De kosten van een woning, zoals onderhoud, gaan alleen af als de huur telt: artikel 5.38 laat alleen kosten voor de huur toe. Volgens de samenvatting van Meijburg & Co mag onderhoud ook af van de vastgoedbijtelling; de app volgt de wettekst.
 - Een verlies van minstens de drempel schuift volledig door.
 - Doorgeschoven verliezen worden verrekend met het resultaat dat overblijft na het heffingsvrije resultaat.
 
 Bronnen:
 
 - Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
-- Wetsvoorstel zoals de Tweede Kamer het aannam (Kamerstukken I 36.748, A), artikelen 5.15, 5.19, 5.20 en 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
+- Wetsvoorstel zoals de Tweede Kamer het aannam (Kamerstukken I 36.748, A), artikelen 5.15, 5.19, 5.20, 5.22, 5.23, 5.31, 5.38 en 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
+- Meijburg & Co, samenvatting van het wetsvoorstel (mei 2025): https://www.meijburg.nl/sites/default/files/2025-05/Definitieve%20wetsvoorstel%20Wet%20werkelijk%20rendement%20box%203%20gepubliceerd%20mei%202025_2.pdf
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - SRA, _Wet werkelijk rendement box 3 (voorlopig) nog niet aangenomen_: https://www.sra.nl/nieuwsoverzicht/2026/wet-werkelijk-rendement-box-3-voorlopig-nog-niet-aangenomen
 - SRA, overzicht van het wetsvoorstel (tarief, € 1.800, € 500, aftrekbare kosten): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027

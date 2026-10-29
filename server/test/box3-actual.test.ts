@@ -239,12 +239,13 @@ describe("2028 system preview", () => {
   });
   const home = (
     accountId: number,
-    h: { woz: number; share?: number; rent?: number; rented?: boolean; gain: number; sold?: boolean },
+    h: { woz: number; share?: number; rent?: number; costs?: number; rented?: boolean; gain: number; sold?: boolean },
   ) => ({
     accountId,
     wozEur: h.woz,
     yearShare: h.share ?? 1,
     rentEur: h.rent ?? 0,
+    costsEur: h.costs ?? 0,
     rented: h.rented ?? false,
     gainEur: h.gain,
     sold: h.sold ?? false,
@@ -272,6 +273,26 @@ describe("2028 system preview", () => {
       // 1,000 + 3.35% × 215,000 = 7,202.50, + the 10,000 + 5,000 + 15,000 gained since the first
       // value: 38,202.50; 36,402.50 at 36%.
       [2026, 38_202.5, 13_104.9, 0],
+    ]);
+  });
+
+  it("deducts a home's costs from its rent, not from the vastgoedbijtelling", () => {
+    const rows = simulateFuture(
+      [
+        // Not let: 1,000 interest + its value change; 1,500 maintenance among the year's costs.
+        year(2024, 11_000, { costsEur: 1_500, property: [home(1, { woz: 200_000, costs: 1_500, gain: 10_000 })] }),
+        // Let all year: 6,000 rent + its value change, 1,500 costs.
+        year(2025, 16_000, {
+          costsEur: 1_500,
+          property: [home(2, { woz: 300_000, rent: 6_000, rented: true, costs: 1_500, gain: 10_000 })],
+        }),
+      ],
+      FUTURE_PRESETS.bill!,
+    );
+    // 1,000 + 3.35% × 200,000 = 7,700, the costs not deducted; then 6,000 rent − 1,500 = 4,500.
+    expect(rows.map((r) => [r.year, r.resultEur])).toEqual([
+      [2024, 7700],
+      [2025, 4500],
     ]);
   });
 

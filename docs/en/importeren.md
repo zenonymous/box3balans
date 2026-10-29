@@ -15,7 +15,7 @@ For an account with **values per year** (_Accounts → Values per year_) you fil
 
 For an **account abroad** (tick _Held abroad_ on the account) you fill in the interest gross, before tax. If the country withheld tax on the interest, fill it in under _Tax withheld abroad_, with the country that withheld it. The actual return counts the interest gross, and _For the tax return_ shows the tax withheld with the account and per country: the return asks for it with each account abroad and offsets it up to the treaty rate to avoid double taxation.
 
-For a **home** you fill in the WOZ value that applies to that year (the one with valuation date 1 January of the year before). If you let it with rent protection, tick _Let_ and fill in the annual rent: it then counts for part of the WOZ value (the vacant-value ratio, 73% to 100%, depending on the rent as a percentage of the WOZ value). The home you live in doesn't belong in box 3 (that's box 1).
+For a **home** you fill in the WOZ value that applies to that year (the one with valuation date 1 January of the year before). If you let it with rent protection, tick _Let_ and fill in the annual rent: it then counts for part of the WOZ value (the vacant-value ratio, 73% to 100%, depending on the rent as a percentage of the WOZ value). The home you live in doesn't belong in box 3 (that's box 1). If you buy a home, fill in 0 as its value for the year of purchase, and the purchase price with the costs of buying under _Bought or improved_; improvements go there too. If you sell it, fill in the sale price minus the costs of selling under _Sold for_, and 0 as the value for the year after. That way the actual return is right in the years you buy and sell.
 
 **Providers without a usable export** are tracked like this:
 

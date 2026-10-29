@@ -164,6 +164,9 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
  */
 function taxedOfHome(h: PropertyYear, gain: Decimal, propertyPct: number) {
   const bijtelling = D(h.wozEur).mul(propertyPct).div(100).mul(h.yearShare);
-  const yearly = h.rented ? D(h.rentEur) : Decimal.max(h.rentEur, bijtelling);
+  const rentCounts = h.rented || D(h.rentEur).gt(bijtelling);
+  // Only costs for the rent are deductible (art. 5.38). The home's costs are among the year's,
+  // deducted from the result as a whole: with the vastgoedbijtelling they're added back.
+  const yearly = rentCounts ? D(h.rentEur) : bijtelling.plus(h.costsEur);
   return h.sold ? yearly.plus(gain) : yearly;
 }

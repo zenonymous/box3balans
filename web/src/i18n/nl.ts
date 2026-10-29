@@ -157,8 +157,8 @@ export const NL: Record<string, string> = {
     "Deze rekening heeft geschiedenis, dus hij kan worden gearchiveerd maar niet verwijderd.",
   "Owed on 1 January": "Schuld op 1 januari",
   "WOZ value": "WOZ-waarde",
-  "The WOZ value for that year: the one with waardepeildatum 1 January of the year before.":
-    "De WOZ-waarde voor dat jaar: die met waardepeildatum 1 januari van het jaar ervoor.",
+  "The WOZ value for that year: the one with waardepeildatum 1 January of the year before. 0 for the year you bought it.":
+    "De WOZ-waarde voor dat jaar: die met waardepeildatum 1 januari van het jaar ervoor. 0 voor het jaar waarin je hem kocht.",
   "From the year statement (jaaroverzicht) or the balance at the end of 31 December.":
     "Uit het jaaroverzicht of het saldo aan het eind van 31 december.",
   "Lent more": "Meer uitgeleend",

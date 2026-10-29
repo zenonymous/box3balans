@@ -377,6 +377,7 @@ describe("homes in the 2028 preview", () => {
       { year: 2023, valueEur: "200000" },
       { year: 2024, valueEur: "210000" },
       { year: 2025, valueEur: "225000" },
+      { year: 2026, valueEur: "240000" },
     ]);
     // Bought for 150,000 and sold for 160,000 in 2024.
     await yearly("Flip", [
@@ -391,8 +392,9 @@ describe("homes in the 2028 preview", () => {
     const row = (year: number) => r.rows.find((x: any) => x.year === year);
     // 2023: 3.35% of 200,000 = 6,700; the gain starts from the WOZ value of 2024.
     expect(row(2023)).toMatchObject({ resultEur: 6700, propertyGainPendingEur: 0 });
-    // 2024: 3.35% of 210,000 = 7,035, + the second home's 225,000 − 210,000 = 15,000 as it leaves
-    // box 3, + the flip's 160,000 − 150,000 = 10,000: 32,035.
-    expect(row(2024)).toMatchObject({ resultEur: 32_035, propertyGainPendingEur: 0 });
+    // 2024: 3.35% of 210,000 = 7,035, + the second home's gain as it leaves box 3 at the end of the
+    // year, to its WOZ value with waardepeildatum 1 January 2025 (the one of 2026): 240,000 −
+    // 210,000 = 30,000, + the flip's 160,000 − 150,000 = 10,000: 47,035.
+    expect(row(2024)).toMatchObject({ resultEur: 47_035, propertyGainPendingEur: 0 });
   });
 });
