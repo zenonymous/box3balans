@@ -74,10 +74,13 @@ export interface ActualReturn {
 const num = (d: Decimal) => d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 const emptyPart = () => ({ start: ZERO, end: ZERO, in: ZERO, out: ZERO, direct: ZERO });
 type Part = ReturnType<typeof emptyPart>;
+// A part with the costs spent on it and the tax withheld on its income: what Totals adds up.
+type Counted = Part & { costs: Decimal; taxWithheld: Decimal };
 // What a value did over the year, apart from what came in and went out.
 const valueChange = (p: { start: Decimal; end: Decimal; in: Decimal; out: Decimal }) =>
   p.end.minus(p.start).minus(p.in).plus(p.out);
-const inBox3 = (c: Category) => c !== "exempt" && c !== "excluded";
+// Green investments (exempt) and accounts outside box 3: left out of the return.
+const outsideBox3 = (c: Category): c is "exempt" | "excluded" => c === "exempt" || c === "excluded";
 
 type Account = typeof accounts.$inferSelect;
 type Asset = typeof assets.$inferSelect;
@@ -87,8 +90,8 @@ type MetalItem = typeof metalItems.$inferSelect;
 /**
  * The actual box 3 return of one calendar year, per the tegenbewijsregeling: direct return plus all
  * value changes (realised or not) of everything held during the year, without deducting costs,
- * minus interest paid on debts. Computed per position (account × asset): a buy paid from the
- * account's cash moves value between positions, so it's neither return nor cost.
+ * minus interest paid on debts. Computed per holding (account × asset): a buy paid from the
+ * account's cash moves value between holdings, so it's neither return nor cost.
  */
 export async function actualReturn(
   db: DB,
@@ -122,17 +125,10 @@ export async function actualReturn(
     return a.self.plus(a.partner);
   };
 
-  const closeOn = await closingPrices(db, [...new Set(txs.map((t) => t.assetId))], year, period.endDay);
-  const ledger = ledgerPositions({ year, endDay: period.endDay, startRows, endRows, txs, assetRows, items, closeOn });
+  const closeOn = await closingPrices(db, [...new Set(txs.map((t) => t.assetId))], period);
+  const ledger = ledgerHoldings({ period, startRows, endRows, txs, assetById, items, closeOn });
   const totals = new Totals();
-  for (const p of ledger.positions) {
-    const acc = accountById.get(p.accountId);
-    const a = assetById.get(p.assetId);
-    if (!acc || !a || acc.tracking === "yearly") continue;
-    const cat = categoryOf(config, { accountId: p.accountId, accountKind: acc.kind, assetClass: a.assetClass }, year);
-    totals.add(cat, a.assetClass, weight(p.accountId), p, ledger.costs.get(p) ?? ZERO, ledger.tax.get(p) ?? ZERO);
-  }
-
+  addLedgerHoldings({ holdings: ledger.holdings, accountById, assetById, config, year, weight, totals });
   const warnings: string[] = [];
   // Interest counts in the year it accrues, but a transaction counts in the year of its date.
   if (ledger.januaryInterest.gt(0))
@@ -142,7 +138,7 @@ export async function actualReturn(
         { amount: num(ledger.januaryInterest).toFixed(2), year, previous: year - 1 },
       ),
     );
-  const perYear = yearlyAccounts({ accountRows, yearly, year, config, period, weight, totals, warnings });
+  const perYear = addYearlyAccounts({ accountRows, yearly, config, period, weight, totals, warnings });
 
   const input = config.years[String(year)];
   const debtInterest = D(input?.debtInterestEur ?? 0).plus(perYear.debtInterest);
@@ -153,7 +149,7 @@ export async function actualReturn(
     complete: period.complete,
     endDay: period.endDay,
     parts,
-    costsEur: num(totals.costs),
+    costsEur: num(totals.inScopeCosts),
     taxWithheldEur: num(totals.taxWithheld),
     leftOut: [...totals.leftOut.entries()].map(([category, v]) => ({ category, returnEur: num(v) })),
     extraReturnEur: num(extraReturn),
@@ -171,6 +167,7 @@ function periodOf(year: number) {
   const endDay = complete ? `${year}-12-31` : today;
   const day = (d: string) => Date.parse(`${d}T00:00:00Z`);
   return {
+    year,
     complete,
     endDay,
     startDay: `${year - 1}-12-31`,
@@ -188,7 +185,7 @@ function periodOf(year: number) {
 type Period = ReturnType<typeof periodOf>;
 
 /** Market values for assets moving in or out without a price (deposits, transfers, fees). */
-async function closingPrices(db: DB, assetIds: number[], year: number, endDay: string) {
+async function closingPrices(db: DB, assetIds: number[], period: Period) {
   const closes = new Map<number, { day: string; eur: Decimal }[]>();
   if (assetIds.length) {
     const rows = await db
@@ -197,8 +194,8 @@ async function closingPrices(db: DB, assetIds: number[], year: number, endDay: s
       .where(
         and(
           inArray(priceHistory.assetId, assetIds),
-          gte(priceHistory.day, `${year - 1}-12-20`),
-          lte(priceHistory.day, endDay),
+          gte(priceHistory.day, `${period.year - 1}-12-20`),
+          lte(priceHistory.day, period.endDay),
         ),
       )
       .orderBy(asc(priceHistory.day));
@@ -215,43 +212,38 @@ async function closingPrices(db: DB, assetIds: number[], year: number, endDay: s
   };
 }
 
-type Pos = Part & { accountId: number; assetId: number; physical: boolean };
+type Holding = Counted & { accountId: number; assetId: number; physical: boolean };
 
 /**
- * Each position's value at the start and end of the year, what came in and went out during it, its
+ * Each holding's value at the start and end of the year, what came in and went out during it, its
  * income, the fees spent on it and the tax withheld on its dividends.
  */
-function ledgerPositions(args: {
-  year: number;
-  endDay: string;
+function ledgerHoldings(args: {
+  period: Period;
   startRows: HoldingOn[];
   endRows: HoldingOn[];
   txs: Tx[];
-  assetRows: Asset[];
+  assetById: Map<number, Asset>;
   items: MetalItem[];
   closeOn: (assetId: number, day: string) => Decimal | null;
 }) {
-  const { year, endDay, closeOn } = args;
-  const assetById = new Map(args.assetRows.map((a) => [a.id, a]));
-  const positions = new Map<string, Pos>();
-  const pos = (accountId: number, assetId: number, physical = false) => {
+  const { period, assetById, closeOn } = args;
+  const { year, endDay } = period;
+  const holdings = new Map<string, Holding>();
+  const holding = (accountId: number, assetId: number, physical = false) => {
     const k = `${accountId}|${assetId}|${physical ? "p" : "l"}`;
-    let p = positions.get(k);
-    if (!p) {
-      p = { ...emptyPart(), accountId, assetId, physical };
-      positions.set(k, p);
+    let h = holdings.get(k);
+    if (!h) {
+      h = { ...emptyPart(), costs: ZERO, taxWithheld: ZERO, accountId, assetId, physical };
+      holdings.set(k, h);
     }
-    return p;
+    return h;
   };
-  for (const h of args.startRows) pos(h.accountId, h.assetId, h.physical).start = h.valueEur;
-  for (const h of args.endRows) pos(h.accountId, h.assetId, h.physical).end = h.valueEur;
+  for (const r of args.startRows) holding(r.accountId, r.assetId, r.physical).start = r.valueEur;
+  for (const r of args.endRows) holding(r.accountId, r.assetId, r.physical).end = r.valueEur;
 
-  const costs = new Map<Pos, Decimal>();
-  const tax = new Map<Pos, Decimal>();
   // Interest on cash booked in the first week of January: often December's (see the warning).
   let januaryInterest = ZERO;
-  const addCost = (p: Pos, v: Decimal) => costs.set(p, (costs.get(p) ?? ZERO).plus(v));
-
   for (const t of args.txs) {
     const a = assetById.get(t.assetId);
     if (!a || a.hidden) continue;
@@ -267,33 +259,33 @@ function ledgerPositions(args: {
           const c = closeOn(t.assetId, day);
           return c ? q.mul(c) : gross;
         })();
-    const p = pos(t.accountId, t.assetId);
-    const cash = t.settleAssetId ? pos(t.accountId, t.settleAssetId) : null;
+    const h = holding(t.accountId, t.assetId);
+    const cash = t.settleAssetId ? holding(t.accountId, t.settleAssetId) : null;
     switch (t.type) {
       case "buy":
-        p.in = p.in.plus(gross);
+        h.in = h.in.plus(gross);
         if (cash) cash.out = cash.out.plus(gross).plus(fee);
-        if (fee.gt(0)) addCost(p, fee);
+        if (fee.gt(0)) h.costs = h.costs.plus(fee);
         break;
       case "sell":
-        p.out = p.out.plus(gross);
+        h.out = h.out.plus(gross);
         if (cash) cash.in = cash.in.plus(gross).minus(fee);
-        if (fee.gt(0)) addCost(p, fee);
+        if (fee.gt(0)) h.costs = h.costs.plus(fee);
         break;
       case "deposit":
       case "transfer_in":
-        p.in = p.in.plus(market);
+        h.in = h.in.plus(market);
         break;
       case "withdrawal":
       case "transfer_out":
-        p.out = p.out.plus(market);
-        if (fee.gt(0)) addCost(p, fee);
+        h.out = h.out.plus(market);
+        if (fee.gt(0)) h.costs = h.costs.plus(fee);
         break;
       case "dividend": {
         const g = D(t.amount).mul(fx);
         const withheld = D(t.taxWithheld).mul(fx);
-        p.direct = p.direct.plus(g);
-        tax.set(p, (tax.get(p) ?? ZERO).plus(withheld));
+        h.direct = h.direct.plus(g);
+        h.taxWithheld = h.taxWithheld.plus(withheld);
         if (cash) cash.in = cash.in.plus(g.minus(withheld));
         break;
       }
@@ -301,33 +293,58 @@ function ledgerPositions(args: {
         // Interest on cash counts at its amount; staking rewards at the value they were booked at.
         const v = isCash ? q.mul(fx) : gross;
         if (isCash && day <= `${year}-01-07`) januaryInterest = januaryInterest.plus(v);
-        p.direct = p.direct.plus(v);
-        p.in = p.in.plus(v);
+        h.direct = h.direct.plus(v);
+        h.in = h.in.plus(v);
         break;
       }
       case "fee":
-        // Units given up as a fee left the position; costs aren't deducted, so it's an outflow.
-        p.out = p.out.plus(market);
-        addCost(p, market);
+        // Units given up as a fee left the holding; costs aren't deducted, so it's an outflow.
+        h.out = h.out.plus(market);
+        h.costs = h.costs.plus(market);
         break;
     }
   }
 
   // Physical metal: bought or sold during the year.
-  const metalAsset = new Map(args.assetRows.filter((a) => a.priceSource === "metal").map((a) => [a.priceRef, a.id]));
+  const metalAsset = new Map(
+    [...assetById.values()].filter((a) => a.priceSource === "metal").map((a) => [a.priceRef, a.id]),
+  );
   for (const it of args.items) {
     const id = metalAsset.get(METAL_CODES[it.metal]);
     if (!id) continue;
     if (it.purchaseDate >= `${year}-01-01` && it.purchaseDate <= endDay) {
-      const p = pos(it.accountId, id, true);
-      p.in = p.in.plus(it.purchasePriceEur);
+      const h = holding(it.accountId, id, true);
+      h.in = h.in.plus(it.purchasePriceEur);
     }
     if (it.soldDate && it.salePriceEur && it.soldDate >= `${year}-01-01` && it.soldDate <= endDay) {
-      const p = pos(it.accountId, id, true);
-      p.out = p.out.plus(it.salePriceEur);
+      const h = holding(it.accountId, id, true);
+      h.out = h.out.plus(it.salePriceEur);
     }
   }
-  return { positions: [...positions.values()], costs, tax, januaryInterest };
+  return { holdings: [...holdings.values()], januaryInterest };
+}
+
+/** Adds the holdings of accounts with transactions to the totals, each in its category. */
+function addLedgerHoldings(args: {
+  holdings: Holding[];
+  accountById: Map<number, Account>;
+  assetById: Map<number, Asset>;
+  config: Box3Config;
+  year: number;
+  weight: (accountId: number) => Decimal;
+  totals: Totals;
+}) {
+  for (const h of args.holdings) {
+    const acc = args.accountById.get(h.accountId);
+    const a = args.assetById.get(h.assetId);
+    if (!acc || !a || acc.tracking === "yearly") continue;
+    const cat = categoryOf(
+      args.config,
+      { accountId: h.accountId, accountKind: acc.kind, assetClass: a.assetClass },
+      args.year,
+    );
+    args.totals.add(cat, a.assetClass, args.weight(h.accountId), h);
+  }
 }
 
 const KINDS: Kind[] = ["bank", "investments", "crypto", "metals", "cash", "other"];
@@ -350,29 +367,30 @@ const kindOf = (cat: Category, assetClass: string): Kind =>
 class Totals {
   readonly parts = Object.fromEntries(KINDS.map((k) => [k, emptyPart()])) as Record<Kind, Part>;
   readonly leftOut = new Map<"exempt" | "excluded", Decimal>();
-  costs = ZERO;
+  // Of what counts in box 3 only.
+  inScopeCosts = ZERO;
   taxWithheld = ZERO;
 
-  /** Adds the household's share (`w`) of a position or an account kept as values per year. */
-  add(cat: Category, assetClass: string, w: Decimal, p: Part, costs: Decimal, tax: Decimal) {
-    if (cat === "exempt" || cat === "excluded") {
-      const ret = valueChange(p).plus(p.direct).mul(w);
+  /** Adds the household's share (`w`) of a holding or an account kept as values per year. */
+  add(cat: Category, assetClass: string, w: Decimal, c: Counted) {
+    if (outsideBox3(cat)) {
+      const ret = valueChange(c).plus(c.direct).mul(w);
       this.leftOut.set(cat, (this.leftOut.get(cat) ?? ZERO).plus(ret));
       return;
     }
-    this.costs = this.costs.plus(costs.mul(w));
-    this.taxWithheld = this.taxWithheld.plus(tax.mul(w));
+    this.inScopeCosts = this.inScopeCosts.plus(c.costs.mul(w));
+    this.taxWithheld = this.taxWithheld.plus(c.taxWithheld.mul(w));
     const part = this.parts[kindOf(cat, assetClass)];
-    part.start = part.start.plus(p.start.mul(w));
-    part.end = part.end.plus(p.end.mul(w));
-    part.in = part.in.plus(p.in.mul(w));
-    part.out = part.out.plus(p.out.mul(w));
-    part.direct = part.direct.plus(p.direct.mul(w));
+    part.start = part.start.plus(c.start.mul(w));
+    part.end = part.end.plus(c.end.mul(w));
+    part.in = part.in.plus(c.in.mul(w));
+    part.out = part.out.plus(c.out.mul(w));
+    part.direct = part.direct.plus(c.direct.mul(w));
   }
 
-  /** Each part's figures, and the total with `rest` (extra return minus debt interest). */
-  summary(rest: Decimal) {
-    let total = rest;
+  /** Each part's figures, and the total with `otherReturn` (extra return minus debt interest). */
+  summary(otherReturn: Decimal) {
+    let total = otherReturn;
     const parts = {} as Record<Kind, ReturnPart>;
     for (const k of KINDS) {
       const p = this.parts[k];
@@ -393,20 +411,21 @@ class Totals {
 }
 
 /**
- * Accounts kept as values per year: from this 1 January to the next, plus what came in, went out
- * and was received. A debt only adds the interest paid (repaying it isn't a return).
+ * Adds the accounts kept as values per year to the totals: from this 1 January to the next, plus
+ * what came in, went out and was received; and a warning for each that misses a value. Returns the
+ * interest paid on debts (repaying one isn't a return) and the homes' figures for the 2028 preview.
  */
-function yearlyAccounts(args: {
+function addYearlyAccounts(args: {
   accountRows: Account[];
   yearly: Map<number, Map<number, AccountYear>>;
-  year: number;
   config: Box3Config;
   period: Period;
   weight: (accountId: number) => Decimal;
   totals: Totals;
   warnings: string[];
 }) {
-  const { year, config, period, totals, warnings } = args;
+  const { config, period, totals, warnings } = args;
+  const { year } = period;
   let debtInterest = ZERO;
   const property: PropertyYear[] = [];
   for (const acc of args.accountRows) {
@@ -440,59 +459,67 @@ function yearlyAccounts(args: {
     // the income shows once, gross.
     const inEur = D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income.minus(tax) : ZERO);
     const outEur = D(row.outEur);
-    const flows = { start, end: endOr(start, next, inEur, outEur), in: inEur, out: outEur, direct: income };
-    totals.add(cat, cls, w, flows, D(row.costsEur), tax);
-    if (acc.kind === "property" && inBox3(cat))
-      property.push(homeYear({ acc, byYear, year, config, flows, w, yearShare: period.yearShare }));
+    const figures = {
+      start,
+      end: endValue(start, next, inEur, outEur),
+      in: inEur,
+      out: outEur,
+      direct: income,
+      costs: D(row.costsEur),
+      taxWithheld: tax,
+    };
+    totals.add(cat, cls, w, figures);
+    if (acc.kind === "property" && !outsideBox3(cat))
+      property.push(propertyYear({ acc, cls, row, byYear, config, figures, w, yearShare: period.yearShare }));
   }
   return { debtInterest, property };
 }
 
 // The value on the next 1 January; the running year has none yet: the start with what came in and
 // went out since.
-const endOr = (start: Decimal, next: Decimal | null, inEur: Decimal, outEur: Decimal) =>
+const endValue = (start: Decimal, next: Decimal | null, inEur: Decimal, outEur: Decimal) =>
   next ?? start.plus(inEur).minus(outEur);
 
-/** A home's year as the planned system (from 2028) sees it: see PropertyYear. */
-function homeYear(args: {
+/** A home or other real estate's year as the planned system (from 2028) sees it: see PropertyYear. */
+function propertyYear(args: {
   acc: Account;
+  cls: ReturnType<typeof yearlyClass>;
+  row: AccountYear;
   byYear: Map<number, AccountYear>;
-  year: number;
   config: Box3Config;
-  flows: Part; // as in the actual return, with the leegwaarderatio
+  figures: Counted; // as in the actual return, with the leegwaarderatio
   w: Decimal;
   yearShare: number;
 }): PropertyYear {
-  const { acc, byYear, year, flows, w } = args;
-  const row = byYear.get(year)!;
+  const { acc, row, byYear, figures, w } = args;
+  const year = row.year;
   // The planned system values a home at its WOZ value, whether it's let or not.
   const woz = D(row.valueEur);
   const nextWoz = byYear.get(year + 1)?.valueEur;
   // A home that leaves box 3 counts as sold just before it does, at its value then (art. 5.31):
   // the WOZ value with that waardepeildatum is the one of the year after, if it's filled in.
-  const cls = yearlyClass(acc.kind);
-  const leaves = !inBox3(
-    categoryOf(args.config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year + 1),
+  const leaves = outsideBox3(
+    categoryOf(args.config, { accountId: acc.id, accountKind: acc.kind, assetClass: args.cls }, year + 1),
   );
   // A 0 there means it was sold since, as your own home say: then the next year's value.
   const later = leaves ? byYear.get(year + 2)?.valueEur : null;
   const exitWoz = later != null && D(later).gt(0) ? later : nextWoz;
-  const wozEnd = endOr(woz, exitWoz != null ? D(exitWoz) : null, flows.in, flows.out);
+  const wozEnd = endValue(woz, exitWoz != null ? D(exitWoz) : null, figures.in, figures.out);
   // Sold: held this year and worth nothing on the next 1 January.
-  const sold = leaves || (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || flows.in.gt(0)));
+  const sold = leaves || (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || figures.in.gt(0)));
   // For a home held on 1 January 2028 the bill starts from the WOZ value with waardepeildatum
   // 1 January 2028: the WOZ value of 2029 (art. 10a.31). Here, for a home held from its first
   // year, that's the next year's value, so that year's change in WOZ value doesn't count.
   const from = !byYear.has(year - 1) && woz.gt(0) && !sold ? wozEnd : woz;
   return {
     accountId: acc.id,
-    returnEur: num(valueChange(flows).plus(flows.direct).mul(w)),
+    returnEur: num(valueChange(figures).plus(figures.direct).mul(w)),
     wozEur: num(woz.mul(w)),
     yearShare: args.yearShare,
-    rentEur: num(flows.direct.mul(w)),
-    costsEur: num(D(row.costsEur).mul(w)),
+    rentEur: num(figures.direct.mul(w)),
+    costsEur: num(figures.costs.mul(w)),
     rented: !!row.details?.rented,
-    gainEur: num(valueChange({ start: from, end: wozEnd, in: flows.in, out: flows.out }).mul(w)),
+    gainEur: num(valueChange({ start: from, end: wozEnd, in: figures.in, out: figures.out }).mul(w)),
     sold,
   };
 }
