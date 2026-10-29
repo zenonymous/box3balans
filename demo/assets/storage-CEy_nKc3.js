@@ -1,0 +1,1 @@
+import{h as e,v as t}from"./api-BKTLdL20.js";var n=t(e(),1);function r(e,t){let[r,i]=(0,n.useState)(()=>{try{let n=localStorage.getItem(e);return n==null?t:n===`true`}catch{return t}});return[r,t=>{i(t);try{localStorage.setItem(e,String(t))}catch{}}]}export{r as t};
