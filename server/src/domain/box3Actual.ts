@@ -350,7 +350,9 @@ export async function actualReturn(
       const leaves = !inBox3(
         categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year + 1),
       );
-      const exitWoz = leaves ? (byYear?.get(year + 2)?.valueEur ?? nextWoz) : nextWoz;
+      // A 0 there means it was sold since, as your own home say: then the next year's value.
+      const later = leaves ? byYear?.get(year + 2)?.valueEur : null;
+      const exitWoz = later != null && D(later).gt(0) ? later : nextWoz;
       const wozEnd = endOf(woz, exitWoz != null ? D(exitWoz) : null);
       // Sold: held this year and worth nothing on the next 1 January.
       const sold = leaves || (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || inEur.gt(0)));
