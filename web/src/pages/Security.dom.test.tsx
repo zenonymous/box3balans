@@ -8,6 +8,7 @@ import { SettingsPage } from "./Settings";
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
+  vi.restoreAllMocks();
 });
 
 const sent = (api: ReturnType<typeof showPage>, method: string, url: string) =>
@@ -32,6 +33,28 @@ describe("Settings: security", () => {
     await waitFor(() => expect(sent(api, "POST", "/api/auth/2fa/enable")).toEqual([{ code: "123456" }]));
     expect(await screen.findByText("aaaa-bbbb")).toBeTruthy();
     expect(screen.getByText("cccc-dddd")).toBeTruthy();
+  });
+
+  it("lets you copy or download the recovery codes before they're gone", async () => {
+    const writeText = vi.fn((_text: string) => Promise.resolve());
+    vi.stubGlobal("navigator", { ...navigator, clipboard: { writeText } });
+    vi.stubGlobal("isSecureContext", true);
+    const saved: Blob[] = [];
+    vi.spyOn(URL, "createObjectURL").mockImplementation((b) => (saved.push(b as Blob), "blob:codes"));
+    vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+    showPage("/settings", "settings", <SettingsPage />, {
+      "GET /api/auth/2fa": { enabled: false, recoveryCodesLeft: 0 },
+      "POST /api/auth/2fa/setup": { secret: "ABCDEFGHIJKLMNOP", qrSvg: "<svg/>" },
+      "POST /api/auth/2fa/enable": { recoveryCodes: ["aaaa-bbbb", "cccc-dddd"] },
+    });
+    fireEvent.click(await screen.findByRole("button", { name: "Instellen" }));
+    fireEvent.change(await screen.findByLabelText("Code uit je authenticator-app"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "Aanzetten" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Kopiëren" }));
+    await waitFor(() => expect(writeText).toHaveBeenCalledWith("aaaa-bbbb\ncccc-dddd"));
+    expect(await screen.findByRole("button", { name: "Gekopieerd" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Downloaden/ }));
+    expect(await saved[0]!.text()).toBe("aaaa-bbbb\ncccc-dddd\n");
   });
 
   it("shows the backup passphrase only after your password", async () => {

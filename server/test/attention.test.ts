@@ -39,6 +39,19 @@ describe("needs attention", () => {
     expect((await byKey("backup-unencrypted"))[0].dismissed).toBe(true);
   });
 
+  it("says how to encrypt backups for the way they ended up unencrypted", async () => {
+    // A source install without a passphrase file: nothing to remove, a file to set.
+    await setup();
+    const [noFile] = await byKey("backup-unencrypted");
+    expect(noFile.detail).toMatch(/BACKUP_PASSPHRASE_FILE/);
+    expect(noFile.detail).not.toMatch(/BACKUP_ENCRYPT=false/);
+    await t.close();
+    // Turned off on purpose.
+    await setup({ BACKUP_ENCRYPT: "false" });
+    const [off] = await byKey("backup-unencrypted");
+    expect(off.detail).toMatch(/Remove BACKUP_ENCRYPT=false/);
+  });
+
   it("is quiet about backups once they're encrypted", async () => {
     await setup({ BACKUP_PASSPHRASE: "a long enough passphrase" });
     expect(await byKey("backup")).toEqual([]);

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Link, useSearchParams } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -228,7 +228,7 @@ function AccountsStep() {
         {accounts.isLoading ? (
           <Spinner />
         ) : list.length === 0 ? (
-          <p className="p-4 text-sm text-muted">{t("No accounts yet. Add your first one on the left.")}</p>
+          <p className="p-4 text-sm text-muted">{t("No accounts yet. Add your first one with the form.")}</p>
         ) : (
           <ul className="divide-y divide-line">
             {list.map((a) => (
@@ -486,8 +486,15 @@ function ValueRow({
         ? (y: number) => t("WOZ value {year}", { year: y })
         : (y: number) => t("1 January {year}", { year: y });
 
-  const save = async (y: number) => {
+  // A save reads the account's values per year and puts them all back: one at a time, or a second
+  // save started before the first one is done would put back the old value of the first field.
+  const queue = useRef(Promise.resolve());
+  const save = (y: number) => {
     const value = draft[y];
+    queue.current = queue.current.then(() => saveValue(y, value));
+    return queue.current;
+  };
+  const saveValue = async (y: number, value: string | undefined) => {
     if (value == null) return;
     if (value === stored(y)) {
       // Back to what's stored: nothing to save, and an earlier error no longer applies.

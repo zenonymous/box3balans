@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { downloadHref, get, put, post } from "../api";
+import { canCopy, downloadFile } from "../download";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Button, ButtonLink, Card, Field, Input, PageHeader, Select, Tabs, cx } from "../components/ui";
 import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../format";
@@ -322,6 +323,7 @@ function TwoFactorCard() {
   });
   const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
+  const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"off" | "renew" | null>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -374,8 +376,31 @@ function TwoFactorCard() {
                 <li key={c}>{c}</li>
               ))}
             </ul>
-            <div>
-              <Button variant="primary" onClick={() => setCodes(null)}>
+            <div className="flex flex-wrap gap-2">
+              {canCopy() && (
+                <Button
+                  onClick={() => void navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true))}
+                >
+                  {copied ? t("Copied") : t("Copy")}
+                </Button>
+              )}
+              <Button
+                onClick={() =>
+                  downloadFile(
+                    "box3balans-recovery-codes.txt",
+                    new Blob([codes.join("\n") + "\n"], { type: "text/plain;charset=utf-8" }),
+                  )
+                }
+              >
+                ↓ {t("Download")}
+              </Button>
+              <Button
+                variant="primary"
+                onClick={() => {
+                  setCodes(null);
+                  setCopied(false);
+                }}
+              >
                 {t("I've saved them")}
               </Button>
             </div>

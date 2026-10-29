@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { cleanup, screen } from "@testing-library/react";
+import { cleanup, screen, within } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { showPage } from "../test/pages";
@@ -73,5 +73,24 @@ describe("every page with the demo household", () => {
     expect(await screen.findByRole("heading", { level: 1, name: title })).toBeTruthy();
     expect((await screen.findAllByText(data, { exact: false })).length).toBeGreaterThan(0);
     expect(api.missed).toEqual([]);
+  });
+});
+
+describe("pages with nothing to show yet", () => {
+  it("Resultaat and Inkomsten link to where you add what they show", async () => {
+    showPage("/performance", "performance", <PerformancePage />, {
+      "GET /api/performance": { costMethod: "average", years: [], allTime: null, byAsset: [], realized: [] },
+    });
+    const page = async () => within(await screen.findByRole("main"));
+    expect((await (await page()).findByRole("link", { name: "transacties" })).getAttribute("href")).toBe(
+      "/transactions",
+    );
+    cleanup();
+    showPage("/income", "income", <IncomePage />, {
+      "GET /api/income": { events: [], byYear: [], byMonth: [], byAsset: [] },
+    });
+    const income = await page();
+    expect((await income.findByRole("link", { name: "Transacties" })).getAttribute("href")).toBe("/transactions");
+    expect(income.getByRole("link", { name: "Koppelingen" }).getAttribute("href")).toBe("/connections");
   });
 });

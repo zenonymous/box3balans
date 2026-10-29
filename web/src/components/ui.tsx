@@ -1,9 +1,12 @@
 import {
+  cloneElement,
+  isValidElement,
   useEffect,
   useId,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ReactElement,
   type ReactNode,
   type AnchorHTMLAttributes,
   type ButtonHTMLAttributes,
@@ -101,14 +104,28 @@ export function Field({
   className?: string;
 }) {
   const id = useId();
+  const noteId = `${id}-note`;
+  const note = error ?? hint;
+  // The hint or error is read out with the control that got the id (WCAG 1.3.1).
+  const child = children(id);
+  const control =
+    note && isValidElement<{ id?: string; "aria-describedby"?: string }>(child) && child.props.id === id
+      ? cloneElement(child as ReactElement<Record<string, unknown>>, {
+          "aria-describedby": [child.props["aria-describedby"], noteId].filter(Boolean).join(" "),
+          ...(error ? { "aria-invalid": true } : {}),
+        })
+      : child;
   return (
     <div className={cx("flex flex-col gap-1", className)}>
       <label htmlFor={id} className="text-xs font-medium text-ink-2">
         {label}
       </label>
-      {children(id)}
-      {hint && !error && <p className="text-xs text-muted">{hint}</p>}
-      {error && <p className="text-xs text-loss">{error}</p>}
+      {control}
+      {note && (
+        <p id={noteId} className={cx("text-xs", error ? "text-loss" : "text-muted")}>
+          {note}
+        </p>
+      )}
     </div>
   );
 }
@@ -134,7 +151,7 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement> & { val
         {...props}
         inputMode="decimal"
         autoComplete="off"
-        aria-invalid={parsed.value === null || undefined}
+        aria-invalid={parsed.value === null || props["aria-invalid"] || undefined}
         className={cx(inputCls, parsed.value === null && "border-loss", props.className)}
       />
       {parsed.value === null && <span className="text-xs text-loss">{t("Not a number")}</span>}

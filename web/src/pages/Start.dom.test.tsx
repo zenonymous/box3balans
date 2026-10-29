@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import demo from "../test/demo.fixture.json";
 import { showPage } from "../test/pages";
 import { StartPage } from "./Start";
 
@@ -50,5 +51,30 @@ describe("Start wizard", () => {
     // 4. The estimate, as the server worked it out.
     fireEvent.click(screen.getByRole("button", { name: /Volgende: Jouw box 3/ }));
     expect(await screen.findByText("Geschatte box 3-belasting 2025")).toBeTruthy();
+  });
+
+  it("keeps both values when you leave two fields in quick succession", async () => {
+    // Like the server: a PUT replaces the account's values per year.
+    type Row = { year: number; valueEur: string | null };
+    let stored = (demo["/api/accounts/7/years"] as Row[]).map((r) => ({ ...r }));
+    showPage("/start?step=values&year=2025", "start", <StartPage />, {
+      "GET /api/accounts/7/years": () => stored,
+      "PUT /api/accounts/7/years": (body: unknown) => (stored = (body as { rows: Row[] }).rows),
+    });
+    const asn = (await screen.findByText("ASN Sparen")).closest("li")!;
+    const first = await within(asn).findByLabelText("1 januari 2025");
+    await waitFor(() => expect((first as HTMLInputElement).disabled).toBe(false));
+    const second = within(asn).getByLabelText("1 januari 2026");
+    fireEvent.change(first, { target: { value: "30.000" } });
+    fireEvent.blur(first);
+    fireEvent.change(second, { target: { value: "31.000" } });
+    fireEvent.blur(second);
+    await waitFor(() => expect(within(asn).getByText(/Opgeslagen/)).toBeTruthy());
+    await waitFor(() =>
+      expect(Object.fromEntries(stored.map((r) => [r.year, r.valueEur]))).toMatchObject({
+        2025: "30000",
+        2026: "31000",
+      }),
+    );
   });
 });

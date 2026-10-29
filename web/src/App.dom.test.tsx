@@ -37,6 +37,9 @@ describe("first start and signing in", () => {
       "POST /api/auth/setup": signedIn,
     });
     expect(await screen.findByRole("heading", { name: "Welkom: maak je account aan" })).toBeTruthy();
+    // Where to find the setup code is read out with the field.
+    const described = screen.getByLabelText("Setupcode").getAttribute("aria-describedby");
+    expect(document.getElementById(described ?? "")?.textContent).toMatch(/^Box3balans zette hem bij het starten/);
     fill("Gebruikersnaam", "sanne");
     fill("Wachtwoord", "correct horse battery");
     fill("Herhaal wachtwoord", "correct horse batery");
@@ -56,6 +59,33 @@ describe("first start and signing in", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Overzicht" })).toBeTruthy();
   });
 
+  it("says what the server found wrong, without its field names, and announces it", async () => {
+    let answer!: (r: Response) => void;
+    show({
+      "GET /api/auth/state": { needsSetup: true, needsSetupCode: true, user: null, language: "nl" },
+      "POST /api/auth/setup": () => new Promise<Response>((r) => (answer = r)),
+    });
+    await screen.findByLabelText("Gebruikersnaam");
+    fill("Gebruikersnaam", "sanne");
+    fill("Wachtwoord", "correct horse battery");
+    fill("Herhaal wachtwoord", "correct horse battery");
+    fill("Setupcode", "K7QX2-MPF9R");
+    fireEvent.click(screen.getByRole("button", { name: "Account aanmaken" }));
+    // While it waits, the button still says what it does.
+    expect(await screen.findByRole("button", { name: "Account aanmaken…" })).toBeTruthy();
+    answer(
+      Response.json(
+        {
+          error: "Ongeldige invoer",
+          issues: [{ path: ["username"], message: "De gebruikersnaam mag hoogstens 64 tekens hebben" }],
+        },
+        { status: 400 },
+      ),
+    );
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toMatch(/^\W*De gebruikersnaam mag hoogstens 64 tekens hebben$/);
+  });
+
   it("asks for the authenticator code when the account has two-step verification", async () => {
     let attempts = 0;
     const api = show({
@@ -70,6 +100,8 @@ describe("first start and signing in", () => {
     fill("Wachtwoord", "correct horse battery");
     fireEvent.click(screen.getByRole("button", { name: "Inloggen" }));
     const code = await screen.findByLabelText("Code uit je authenticator-app");
+    // A recovery code has letters too: no number keypad on a phone.
+    expect(code.getAttribute("inputmode")).not.toBe("numeric");
     fireEvent.change(code, { target: { value: "123456" } });
     fireEvent.click(screen.getByRole("button", { name: "Inloggen" }));
     expect(await screen.findByRole("heading", { level: 1, name: "Overzicht" })).toBeTruthy();

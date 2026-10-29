@@ -123,6 +123,8 @@ export const NL: Record<string, string> = {
   Username: "Gebruikersnaam",
   Password: "Wachtwoord",
   "Confirm password": "Herhaal wachtwoord",
+  "Creating account…": "Account aanmaken…",
+  "Signing in…": "Inloggen…",
   "Create account": "Account aanmaken",
   // pages/Accounts.tsx
   "Every place you keep something: banks, brokers, exchanges, wallets, vaults, your home safe, and also a second home, money lent or a debt.":
@@ -404,7 +406,7 @@ export const NL: Record<string, string> = {
   "Estimated box 3 tax {year}": "Geschatte box 3-belasting {year}",
   "provisional rates": "voorlopige tarieven",
   "with fiscal partner": "met fiscale partner",
-  "on your own": "alleen",
+  "on your own": "zonder fiscale partner",
   "Other assets, by kind": "Overige bezittingen, naar soort",
   "Investments (shares, ETFs, funds)": "Beleggingen (aandelen, ETF's, fondsen)",
   "Cash outside banks (e.g. on exchanges)": "Geld buiten banken (bijv. op exchanges)",
@@ -892,8 +894,8 @@ export const NL: Record<string, string> = {
   "Staking and rewards": "Staking en beloningen",
   Reward: "Beloning",
   "No income yet": "Nog geen inkomsten",
-  "Dividends, staking rewards and interest show up here once recorded or synced.":
-    "Dividend, stakingbeloningen en rente verschijnen hier zodra ze vastgelegd of gesynchroniseerd zijn.",
+  "Dividends, staking rewards and interest show up here once recorded under <0>Transactions</0> or synced through <1>Connections</1>.":
+    "Dividend, stakingbeloningen en rente verschijnen hier zodra ze zijn vastgelegd onder <0>Transacties</0> of gesynchroniseerd via <1>Koppelingen</1>.",
   "Dividends (after withholding tax), staking rewards and interest, valued in EUR when received.":
     "Dividend (na bronbelasting), stakingbeloningen en rente, gewaardeerd in EUR bij ontvangst.",
   "Net income": "Netto-inkomsten",
@@ -1036,7 +1038,7 @@ export const NL: Record<string, string> = {
   "All years": "Alle jaren",
   "Results in euros": "Resultaat in euro's",
   "Returns %": "Rendement %",
-  "Add transactions to see results per year.": "Voeg transacties toe om het resultaat per jaar te zien.",
+  "Add <0>transactions</0> to see results per year.": "Voeg <0>transacties</0> toe om het resultaat per jaar te zien.",
   "Investment result = realized gains + income + change in open gains. Deposits and withdrawals are not results. Cost basis: <0>{method}</0>.":
     "Beleggingsresultaat = gerealiseerde winst + inkomsten + verandering in ongerealiseerde winst. Stortingen en opnames zijn geen resultaat. Aankoopwaarde: <0>{method}</0>.",
   "average cost": "gemiddelde aankoopprijs",
@@ -1435,7 +1437,7 @@ export const NL: Record<string, string> = {
   "Add an account": "Rekening toevoegen",
   "Add every place you have money or assets: bank accounts, brokers, crypto, a second home, money lent, and debts. Details can follow later.":
     "Voeg elke plek toe waar je geld of bezit hebt: bankrekeningen, brokers, crypto, een tweede woning, uitgeleend geld en schulden. Details kunnen later.",
-  "No accounts yet. Add your first one on the left.": "Nog geen rekeningen. Voeg je eerste links toe.",
+  "No accounts yet. Add your first one with the form.": "Nog geen rekeningen. Voeg je eerste toe met het formulier.",
   "values per year": "waarden per jaar",
   transactions: "transacties",
   "Change or remove accounts under <0>Accounts</0>.": "Wijzig of verwijder rekeningen onder <0>Rekeningen</0>.",

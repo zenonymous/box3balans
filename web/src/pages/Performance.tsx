@@ -57,7 +57,11 @@ export function PerformancePage() {
       <>
         <PageHeader title={t("Performance")} />
         <Card>
-          <Empty title={t("No history yet")}>{t("Add transactions to see results per year.")}</Empty>
+          <Empty title={t("No history yet")}>
+            {tj("Add <0>transactions</0> to see results per year.", [
+              <Link key="t" className="text-accent underline" to="/transactions" />,
+            ])}
+          </Empty>
         </Card>
       </>
     );

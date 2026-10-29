@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { get, type IncomeResponse } from "../api";
 import { downloadCsv } from "../csv";
 import { Alert, Button, Card, Empty, PageHeader, Select, Spinner, Stat, Swatch } from "../components/ui";
 import { date, eur, getLocale } from "../format";
 import { DividendForecastCard, WithholdingCard } from "./DividendOutlook";
-import { dateLocale, t } from "../i18n";
+import { dateLocale, t, tj } from "../i18n";
 
 // Categorical slots in fixed order: colour follows the income kind.
 const KINDS = [
@@ -66,7 +67,13 @@ export function IncomePage() {
         <PageHeader title={t("Income")} />
         <Card>
           <Empty title={t("No income yet")}>
-            {t("Dividends, staking rewards and interest show up here once recorded or synced.")}
+            {tj(
+              "Dividends, staking rewards and interest show up here once recorded under <0>Transactions</0> or synced through <1>Connections</1>.",
+              [
+                <Link key="t" className="text-accent underline" to="/transactions" />,
+                <Link key="c" className="text-accent underline" to="/connections" />,
+              ],
+            )}
           </Empty>
         </Card>
         <div className="mt-4">

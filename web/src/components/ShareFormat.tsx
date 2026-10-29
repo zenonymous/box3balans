@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "../api";
+import { canCopy, downloadFile } from "../download";
 import { t, tn } from "../i18n";
 import { Alert, Badge, Button, ButtonLink, Card, Field, Input } from "./ui";
 
@@ -97,16 +98,7 @@ export function ShareFormat({
   };
 
   const json = made ? JSON.stringify(made.file, null, 2) + "\n" : "";
-  const download = () => {
-    const url = URL.createObjectURL(new Blob([json], { type: "application/json" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = made!.fileName;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  };
-  // The clipboard only works over HTTPS or on localhost; elsewhere the button isn't shown.
-  const canCopy = typeof navigator !== "undefined" && !!navigator.clipboard && window.isSecureContext;
+  const download = () => downloadFile(made!.fileName, new Blob([json], { type: "application/json" }));
   const copy = async () => {
     await navigator.clipboard.writeText(json);
     setCopied(true);
@@ -251,7 +243,7 @@ export function ShareFormat({
                 <Button variant="primary" onClick={download} disabled={busy}>
                   ↓ {t("Download the file")}
                 </Button>
-                {canCopy && (
+                {canCopy() && (
                   <Button onClick={() => void copy()} disabled={busy}>
                     {copied ? t("Copied") : t("Copy")}
                   </Button>

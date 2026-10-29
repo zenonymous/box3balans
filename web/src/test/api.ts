@@ -54,7 +54,8 @@ export function fakeDemoApi(demo: Record<string, unknown>, routes: Record<string
       missed.push(`${method} ${full}`);
       return Response.json({ error: "not found" }, { status: 404 });
     }
-    const out = typeof answer === "function" ? (answer as (b: unknown) => unknown)(body) : answer;
+    // A function may answer later (a promise), so a test can look at the page while it waits.
+    const out: unknown = typeof answer === "function" ? await (answer as (b: unknown) => unknown)(body) : answer;
     // A test can answer with a Response of its own, for example an error status.
     return out instanceof Response ? out : Response.json(out);
   });

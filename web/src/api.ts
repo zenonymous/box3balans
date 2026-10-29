@@ -32,7 +32,8 @@ export async function api<T = unknown>(method: string, url: string, body?: unkno
   if (!res.ok) {
     if (res.status === 401 && !url.startsWith("/api/auth/")) onUnauthorized();
     const issues = data?.issues as ApiError["issues"];
-    const detail = issues?.length ? issues.map((i) => `${i.path.join(".") || "input"}: ${i.message}`).join("; ") : "";
+    // The server's messages are whole sentences in the user's language: without the field path.
+    const detail = issues?.length ? [...new Set(issues.map((i) => i.message))].join(" ") : "";
     throw new ApiError(res.status, detail || data?.error || res.statusText, issues, data ?? undefined);
   }
   return data as T;

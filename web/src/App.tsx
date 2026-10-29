@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, get, post, setUnauthorizedHandler, type User } from "./api";
 import { Layout } from "./components/Layout";
 import { switchSession } from "./queries";
-import { Button, Field, Input, Spinner } from "./components/ui";
+import { Alert, Button, Field, Input, Spinner } from "./components/ui";
 import { followLanguage, t, type Lang } from "./i18n";
 
 // Pages load on demand, so the first paint (and the login screen) skips the charting library.
@@ -103,6 +103,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    // The button stays enabled while busy, so it keeps the focus: a second press is ignored here.
+    if (busy) return;
     setError(undefined);
     if (setup && password !== confirm) return setError(t("Passwords do not match"));
     setBusy(true);
@@ -209,7 +211,6 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
               {(id) => (
                 <Input
                   id={id}
-                  inputMode="numeric"
                   autoComplete="one-time-code"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
@@ -219,9 +220,9 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
               )}
             </Field>
           )}
-          {error && <p className="text-sm text-loss">{error}</p>}
-          <Button type="submit" variant="primary" disabled={busy}>
-            {busy ? "…" : setup ? t("Create account") : t("Sign in")}
+          {error && <Alert tone="danger">{error}</Alert>}
+          <Button type="submit" variant="primary" aria-disabled={busy}>
+            {setup ? (busy ? t("Creating account…") : t("Create account")) : busy ? t("Signing in…") : t("Sign in")}
           </Button>
         </div>
       </form>

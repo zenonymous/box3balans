@@ -663,6 +663,8 @@ export const NL: Record<string, string> = {
   "{n} trades between two coins were left out: they have no value in money. Correct those balances afterwards.":
     "{n} ruilen tussen twee munten zijn overgeslagen: die hebben geen waarde in geld. Corrigeer die saldi daarna.",
   // domain/attention.ts
+  "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE_FILE (Box3balans then makes a passphrase and keeps it there) or BACKUP_PASSPHRASE in .env, and restart.":
+    "Wie een kopie heeft, kan al je gegevens lezen. Zet BACKUP_PASSPHRASE_FILE (Box3balans maakt dan zelf een wachtzin en bewaart die daar) of BACKUP_PASSPHRASE in .env, en herstart.",
   "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart.":
     "Wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false uit .env, of zet BACKUP_PASSPHRASE erin, en herstart.",
   "Keep your backup passphrase": "Bewaar de wachtzin van je back-ups",
