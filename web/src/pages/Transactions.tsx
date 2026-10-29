@@ -3,6 +3,7 @@ import { Link, useSearchParams } from "react-router";
 import { useQuery } from "@tanstack/react-query";
 import { del, get, post, put, type Asset, type Transaction, type TxType } from "../api";
 import {
+  type Described,
   Alert,
   AmountInput,
   Badge,
@@ -266,14 +267,15 @@ function AssetSelect({
   value,
   onChange,
   id,
-}: {
+  ...described
+}: Described & {
   assets: Asset[];
   value: string;
   onChange: (v: string) => void;
   id: string;
 }) {
   return (
-    <Select id={id} value={value} onChange={(e) => onChange(e.target.value)} required>
+    <Select id={id} {...described} value={value} onChange={(e) => onChange(e.target.value)} required>
       <option value="">{t("Choose asset…")}</option>
       {CLASS_ORDER.map((c) => {
         const list = assets.filter((a) => a.assetClass === c && (!a.hidden || String(a.id) === value));

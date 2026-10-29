@@ -77,4 +77,24 @@ describe("Start wizard", () => {
       }),
     );
   });
+
+  it("puts a value back when you change it and change it back before the first save is done", async () => {
+    type Row = { year: number; valueEur: string | null };
+    let stored = (demo["/api/accounts/7/years"] as Row[]).map((r) => ({ ...r }));
+    const was = stored.find((r) => r.year === 2025)!.valueEur;
+    showPage("/start?step=values&year=2025", "start", <StartPage />, {
+      "GET /api/accounts/7/years": () => stored,
+      "PUT /api/accounts/7/years": (body: unknown) => (stored = (body as { rows: Row[] }).rows),
+    });
+    const asn = (await screen.findByText("ASN Sparen")).closest("li")!;
+    const field = await within(asn).findByLabelText("1 januari 2025");
+    await waitFor(() => expect((field as HTMLInputElement).disabled).toBe(false));
+    const shown = (field as HTMLInputElement).value;
+    fireEvent.change(field, { target: { value: "30.000" } });
+    fireEvent.blur(field);
+    fireEvent.change(field, { target: { value: shown } });
+    fireEvent.blur(field);
+    await waitFor(() => expect(within(asn).getByText(/Opgeslagen/)).toBeTruthy());
+    await waitFor(() => expect(Number(stored.find((r) => r.year === 2025)!.valueEur)).toBe(Number(was)));
+  });
 });

@@ -32,8 +32,9 @@ export async function api<T = unknown>(method: string, url: string, body?: unkno
   if (!res.ok) {
     if (res.status === 401 && !url.startsWith("/api/auth/")) onUnauthorized();
     const issues = data?.issues as ApiError["issues"];
-    // The server's messages are whole sentences in the user's language: without the field path.
-    const detail = issues?.length ? [...new Set(issues.map((i) => i.message))].join(" ") : "";
+    // The path (rows.0.details.taxCountry) means nothing to the user: the message alone. The server
+    // gives fields a user may get wrong a message of their own, so it says which field.
+    const detail = issues?.length ? [...new Set(issues.map((i) => i.message))].join("; ") : "";
     throw new ApiError(res.status, detail || data?.error || res.statusText, issues, data ?? undefined);
   }
   return data as T;

@@ -7,6 +7,3 @@ export function downloadFile(fileName: string, blob: Blob) {
   a.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
-
-// The clipboard only works over HTTPS or on localhost; elsewhere a copy button isn't shown.
-export const canCopy = () => typeof navigator !== "undefined" && !!navigator.clipboard && window.isSecureContext;

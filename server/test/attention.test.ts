@@ -49,7 +49,7 @@ describe("needs attention", () => {
     // Turned off on purpose.
     await setup({ BACKUP_ENCRYPT: "false" });
     const [off] = await byKey("backup-unencrypted");
-    expect(off.detail).toMatch(/Remove BACKUP_ENCRYPT=false/);
+    expect(off.detail).toMatch(/remove BACKUP_ENCRYPT=false/);
   });
 
   it("is quiet about backups once they're encrypted", async () => {

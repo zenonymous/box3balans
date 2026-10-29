@@ -5,6 +5,7 @@ import { ApiError, del, downloadHref, get, post, type StatementCheck, type TxTyp
 import { StatementCheckCard, statementKey } from "../components/StatementCheck";
 import { type Contribution, ShareFormat } from "../components/ShareFormat";
 import {
+  type Described,
   Alert,
   Badge,
   Button,
@@ -548,7 +549,8 @@ function ColumnSelect({
   headers,
   sample,
   onChange,
-}: {
+  ...described
+}: Described & {
   id: string;
   value: number | null;
   headers: string[];
@@ -558,6 +560,7 @@ function ColumnSelect({
   return (
     <Select
       id={id}
+      {...described}
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
     >

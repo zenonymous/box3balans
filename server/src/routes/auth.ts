@@ -25,7 +25,11 @@ import {
 } from "../auth/twoFactor.js";
 
 const credentials = z.object({
-  username: z.string().trim().min(1).max(64),
+  username: z
+    .string()
+    .trim()
+    .min(1, { error: () => tr("Fill in a username") })
+    .max(64, { error: () => tr("A username can have at most 64 characters") }),
   password: z.string().min(1).max(256),
 });
 

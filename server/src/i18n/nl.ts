@@ -219,6 +219,8 @@ export const NL: Record<string, string> = {
   "This cash balance is used to settle trades; hide it instead":
     "Dit saldo wordt gebruikt om transacties te verrekenen; verberg het in plaats daarvan",
   // routes/auth.ts
+  "Fill in a username": "Vul een gebruikersnaam in",
+  "A username can have at most 64 characters": "Een gebruikersnaam heeft hoogstens 64 tekens",
   "Password must be at least 12 characters": "Het wachtwoord moet minstens 12 tekens hebben",
   "Already set up": "Al ingesteld",
   "Invalid username or password": "Onjuiste gebruikersnaam of wachtwoord",
@@ -665,8 +667,8 @@ export const NL: Record<string, string> = {
   // domain/attention.ts
   "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE_FILE (Box3balans then makes a passphrase and keeps it there) or BACKUP_PASSPHRASE in .env, and restart.":
     "Wie een kopie heeft, kan al je gegevens lezen. Zet BACKUP_PASSPHRASE_FILE (Box3balans maakt dan zelf een wachtzin en bewaart die daar) of BACKUP_PASSPHRASE in .env, en herstart.",
-  "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart.":
-    "Wie een kopie heeft, kan al je gegevens lezen. Haal BACKUP_ENCRYPT=false uit .env, of zet BACKUP_PASSPHRASE erin, en herstart.",
+  "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env, or remove BACKUP_ENCRYPT=false (without Docker, set BACKUP_PASSPHRASE_FILE too), and restart.":
+    "Wie een kopie heeft, kan al je gegevens lezen. Zet BACKUP_PASSPHRASE in .env, of haal BACKUP_ENCRYPT=false eruit (zonder Docker: zet ook BACKUP_PASSPHRASE_FILE), en herstart.",
   "Keep your backup passphrase": "Bewaar de wachtzin van je back-ups",
   "Backups are encrypted with a passphrase Box3balans made. Put it in your password manager (Settings → Backups shows it); without it, a backup can't be restored on another server. Dismiss this once it's there.":
     "Back-ups zijn versleuteld met een wachtzin die Box3balans maakte. Zet die in je wachtwoordmanager (Instellingen → Back-ups laat hem zien); zonder kun je een back-up niet op een andere server terugzetten. Verberg deze melding als hij erin staat.",

@@ -2,9 +2,21 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { downloadHref, get, put, post } from "../api";
-import { canCopy, downloadFile } from "../download";
+import { downloadFile } from "../download";
 import { RefreshButton } from "../components/RefreshButton";
-import { Alert, Button, ButtonLink, Card, Field, Input, PageHeader, Select, Tabs, cx } from "../components/ui";
+import {
+  Alert,
+  Button,
+  ButtonLink,
+  Card,
+  CopyButton,
+  Field,
+  Input,
+  PageHeader,
+  Select,
+  Tabs,
+  cx,
+} from "../components/ui";
 import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../format";
 import { switchSession, usePriceStatus } from "../queries";
 import { followLanguage, getLang, t, tj, tn, type Lang } from "../i18n";
@@ -323,7 +335,6 @@ function TwoFactorCard() {
   });
   const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
-  const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"off" | "renew" | null>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -350,7 +361,8 @@ function TwoFactorCard() {
       {(id) => (
         <Input
           id={id}
-          inputMode="numeric"
+          // Turning it on takes a code from the app; turning it off or renewing also a recovery code.
+          inputMode={setup ? "numeric" : undefined}
           autoComplete="one-time-code"
           value={code}
           onChange={(e) => setCode(e.target.value)}
@@ -360,6 +372,24 @@ function TwoFactorCard() {
       )}
     </Field>
   );
+
+  // One per line, as they're shown: to paste into a password manager or keep as a file.
+  const codesText = codes?.join("\n") ?? "";
+  const downloadCodes = () =>
+    downloadFile(
+      t("box3balans-recovery-codes.txt"),
+      new Blob(
+        [
+          t(
+            "Recovery codes for Box3balans (two-step verification). Each works once, instead of a code from your authenticator app.",
+          ) +
+            "\n\n" +
+            codesText +
+            "\n",
+        ],
+        { type: "text/plain;charset=utf-8" },
+      ),
+    );
 
   return (
     <Card title={t("Two-step verification")}>
@@ -377,30 +407,9 @@ function TwoFactorCard() {
               ))}
             </ul>
             <div className="flex flex-wrap gap-2">
-              {canCopy() && (
-                <Button
-                  onClick={() => void navigator.clipboard.writeText(codes.join("\n")).then(() => setCopied(true))}
-                >
-                  {copied ? t("Copied") : t("Copy")}
-                </Button>
-              )}
-              <Button
-                onClick={() =>
-                  downloadFile(
-                    "box3balans-recovery-codes.txt",
-                    new Blob([codes.join("\n") + "\n"], { type: "text/plain;charset=utf-8" }),
-                  )
-                }
-              >
-                ↓ {t("Download")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  setCodes(null);
-                  setCopied(false);
-                }}
-              >
+              <CopyButton text={codesText} />
+              <Button onClick={downloadCodes}>↓ {t("Download (.txt)")}</Button>
+              <Button variant="primary" onClick={() => setCodes(null)}>
                 {t("I've saved them")}
               </Button>
             </div>

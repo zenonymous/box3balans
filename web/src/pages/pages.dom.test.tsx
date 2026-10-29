@@ -76,21 +76,33 @@ describe("every page with the demo household", () => {
   });
 });
 
+const EMPTY: [string, string, ReactElement, string, unknown, [string, string][]][] = [
+  // path, route, page, its API, an empty answer, links it offers: [name, to]
+  [
+    "/performance",
+    "performance",
+    <PerformancePage />,
+    "GET /api/performance",
+    { costMethod: "average", years: [], allTime: null, byAsset: [], realized: [] },
+    [["transacties", "/transactions"]],
+  ],
+  [
+    "/income",
+    "income",
+    <IncomePage />,
+    "GET /api/income",
+    { events: [], byYear: [], byMonth: [], byAsset: [] },
+    [
+      ["Transacties", "/transactions"],
+      ["Koppelingen", "/connections"],
+    ],
+  ],
+];
+
 describe("pages with nothing to show yet", () => {
-  it("Resultaat and Inkomsten link to where you add what they show", async () => {
-    showPage("/performance", "performance", <PerformancePage />, {
-      "GET /api/performance": { costMethod: "average", years: [], allTime: null, byAsset: [], realized: [] },
-    });
-    const page = async () => within(await screen.findByRole("main"));
-    expect((await (await page()).findByRole("link", { name: "transacties" })).getAttribute("href")).toBe(
-      "/transactions",
-    );
-    cleanup();
-    showPage("/income", "income", <IncomePage />, {
-      "GET /api/income": { events: [], byYear: [], byMonth: [], byAsset: [] },
-    });
-    const income = await page();
-    expect((await income.findByRole("link", { name: "Transacties" })).getAttribute("href")).toBe("/transactions");
-    expect(income.getByRole("link", { name: "Koppelingen" }).getAttribute("href")).toBe("/connections");
+  it.each(EMPTY)("%s links to where you add what it shows", async (path, route, page, api, answer, links) => {
+    showPage(path, route, page, { [api]: answer });
+    const content = within(await screen.findByRole("main"));
+    for (const [name, to] of links) expect((await content.findByRole("link", { name })).getAttribute("href")).toBe(to);
   });
 });

@@ -1250,6 +1250,10 @@ export const NL: Record<string, string> = {
   Made: "Gemaakt",
   Size: "Grootte",
   Encrypted: "Versleuteld",
+  "Download (.txt)": "Downloaden (.txt)",
+  "box3balans-recovery-codes.txt": "box3balans-herstelcodes.txt",
+  "Recovery codes for Box3balans (two-step verification). Each works once, instead of a code from your authenticator app.":
+    "Herstelcodes voor Box3balans (tweestapsverificatie). Elke code werkt één keer, in plaats van een code uit je authenticator-app.",
   Download: "Downloaden",
   "Restore…": "Terugzetten…",
   "No backups yet.": "Nog geen back-ups.",

@@ -77,13 +77,17 @@ describe("first start and signing in", () => {
       Response.json(
         {
           error: "Ongeldige invoer",
-          issues: [{ path: ["username"], message: "De gebruikersnaam mag hoogstens 64 tekens hebben" }],
+          issues: [{ path: ["username"], message: "Een gebruikersnaam heeft hoogstens 64 tekens" }],
         },
         { status: 400 },
       ),
     );
     const alert = await screen.findByRole("alert");
-    expect(alert.textContent).toMatch(/^\W*De gebruikersnaam mag hoogstens 64 tekens hebben$/);
+    expect(alert.textContent).toMatch(/^\W*Een gebruikersnaam heeft hoogstens 64 tekens$/);
+    // The field it's about is marked and gets the focus.
+    const username = screen.getByLabelText("Gebruikersnaam");
+    expect(username.getAttribute("aria-invalid")).toBe("true");
+    expect(document.activeElement).toBe(username);
   });
 
   it("asks for the authenticator code when the account has two-step verification", async () => {

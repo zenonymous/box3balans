@@ -54,7 +54,9 @@ describe("Settings: security", () => {
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("aaaa-bbbb\ncccc-dddd"));
     expect(await screen.findByRole("button", { name: "Gekopieerd" })).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Downloaden/ }));
-    expect(await saved[0]!.text()).toBe("aaaa-bbbb\ncccc-dddd\n");
+    const file = await saved[0]!.text();
+    expect(file).toMatch(/^Herstelcodes voor Box3balans/);
+    expect(file).toMatch(/\n\naaaa-bbbb\ncccc-dddd\n$/);
   });
 
   it("shows the backup passphrase only after your password", async () => {

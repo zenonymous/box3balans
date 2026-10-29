@@ -1,4 +1,6 @@
 import {
+  Children,
+  Fragment,
   cloneElement,
   isValidElement,
   useEffect,
@@ -6,6 +8,7 @@ import {
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
+  type ComponentProps,
   type ReactElement,
   type ReactNode,
   type AnchorHTMLAttributes,
@@ -36,8 +39,50 @@ const buttonCls = ({ variant = "secondary", size = "md" }: ButtonLook, className
     className,
   );
 
-export function Button({ variant, size, className, ...props }: ButtonHTMLAttributes<HTMLButtonElement> & ButtonLook) {
-  return <button type="button" {...props} className={buttonCls({ variant, size }, className)} />;
+export function Button({
+  variant,
+  size,
+  className,
+  busy,
+  onClick,
+  ...props
+}: ButtonHTMLAttributes<HTMLButtonElement> & ButtonLook & { busy?: boolean }) {
+  return (
+    <button
+      type="button"
+      {...props}
+      // Busy, unlike disabled, keeps the focus on the button (and a screen reader with it); a press
+      // in the meantime does nothing, not even submit its form.
+      aria-disabled={busy || props["aria-disabled"]}
+      aria-busy={busy || undefined}
+      onClick={busy ? (e) => e.preventDefault() : onClick}
+      className={buttonCls({ variant, size }, cx(busy && "opacity-50", className))}
+    />
+  );
+}
+
+// The clipboard only works over HTTPS or on localhost; elsewhere a copy button isn't shown.
+const canCopy = () => typeof navigator !== "undefined" && !!navigator.clipboard && window.isSecureContext;
+
+/** Copies `text` to the clipboard, and says so until the text changes. */
+export function CopyButton({ text, disabled, ...look }: { text: string; disabled?: boolean } & ButtonLook) {
+  const [copied, setCopied] = useState<string | null>(null);
+  if (!canCopy()) return null;
+  return (
+    <Button
+      {...look}
+      disabled={disabled}
+      onClick={() =>
+        // Refused (no permission): it just doesn't say "Copied".
+        void navigator.clipboard.writeText(text).then(
+          () => setCopied(text),
+          () => setCopied(null),
+        )
+      }
+    >
+      {copied === text ? t("Copied") : t("Copy")}
+    </Button>
+  );
 }
 
 /** A link that looks like a Button: `to` for a page in the app, `href` for a file to download. */
@@ -90,6 +135,9 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   );
 }
 
+/** What Field passes to the control with its id: its hint or error, and whether it's wrong. */
+export type Described = { "aria-describedby"?: string; "aria-invalid"?: boolean | "true" | "false" };
+
 export function Field({
   label,
   hint,
@@ -106,15 +154,24 @@ export function Field({
   const id = useId();
   const noteId = `${id}-note`;
   const note = error ?? hint;
-  // The hint or error is read out with the control that got the id (WCAG 1.3.1).
-  const child = children(id);
-  const control =
-    note && isValidElement<{ id?: string; "aria-describedby"?: string }>(child) && child.props.id === id
-      ? cloneElement(child as ReactElement<Record<string, unknown>>, {
-          "aria-describedby": [child.props["aria-describedby"], noteId].filter(Boolean).join(" "),
-          ...(error ? { "aria-invalid": true } : {}),
-        })
-      : child;
+  // The hint or error is read out with the control that got the id (WCAG 1.3.1): the element
+  // returned, or one directly inside a fragment returned. A control wrapped deeper gets nothing.
+  const describe = (node: ReactNode): ReactNode => {
+    if (!note || !isValidElement<Described & { id?: string; children?: ReactNode }>(node)) return node;
+    if (node.props.id === id)
+      return cloneElement(node as ReactElement<Described>, {
+        "aria-describedby": [node.props["aria-describedby"], noteId].filter(Boolean).join(" "),
+        ...(error ? { "aria-invalid": true } : {}),
+      });
+    if (node.type === Fragment)
+      return cloneElement(
+        node as ReactElement<{ children?: ReactNode }>,
+        {},
+        Children.map(node.props.children, describe),
+      );
+    return node;
+  };
+  const control = describe(children(id));
   return (
     <div className={cx("flex flex-col gap-1", className)}>
       <label htmlFor={id} className="text-xs font-medium text-ink-2">
@@ -133,7 +190,8 @@ export function Field({
 const inputCls =
   "w-full rounded-lg border border-line bg-surface px-3 py-2 text-ink placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/25 disabled:opacity-60";
 
-export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
+// Takes a ref too (React 19 passes it as a prop), for a form that moves the focus to a field.
+export function Input(props: ComponentProps<"input">) {
   return <input {...props} className={cx(inputCls, props.className)} />;
 }
 
@@ -152,9 +210,18 @@ export function AmountInput(props: InputHTMLAttributes<HTMLInputElement> & { val
         inputMode="decimal"
         autoComplete="off"
         aria-invalid={parsed.value === null || props["aria-invalid"] || undefined}
+        aria-describedby={
+          [props["aria-describedby"], parsed.value === null && props.id && `${props.id}-nan`]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
         className={cx(inputCls, parsed.value === null && "border-loss", props.className)}
       />
-      {parsed.value === null && <span className="text-xs text-loss">{t("Not a number")}</span>}
+      {parsed.value === null && (
+        <span id={props.id && `${props.id}-nan`} className="text-xs text-loss">
+          {t("Not a number")}
+        </span>
+      )}
       {showReading && (
         <span className={cx("tabular text-xs", parsed.ambiguous ? "text-warn" : "text-muted")}>
           = {unambiguous(parsed.value!)}
@@ -177,13 +244,14 @@ export function DateInput({
   onChange,
   max,
   required,
+  ...described
 }: {
   id?: string;
   value: string;
   onChange: (iso: string) => void;
   max?: string;
   required?: boolean;
-}) {
+} & Described) {
   const [text, setText] = useState(() => dateInputText(value));
   const [seen, setSeen] = useState(value);
   // A new value from outside (a reset, another field) replaces what was typed.
@@ -219,7 +287,12 @@ export function DateInput({
           inputMode="numeric"
           autoComplete="off"
           required={required}
-          aria-invalid={!!problem || undefined}
+          aria-invalid={!!problem || described["aria-invalid"] || undefined}
+          aria-describedby={
+            [described["aria-describedby"], problem && text !== "" && id && `${id}-problem`]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
           className={cx(inputCls, "w-full pr-9", problem && "border-loss")}
         />
         <button
@@ -252,7 +325,11 @@ export function DateInput({
           className="pointer-events-none absolute bottom-0 left-0 h-0 w-full opacity-0"
         />
       </div>
-      {problem && text !== "" && <span className="text-xs text-loss">{problem}</span>}
+      {problem && text !== "" && (
+        <span id={id && `${id}-problem`} className="text-xs text-loss">
+          {problem}
+        </span>
+      )}
       {!problem && parsed && text !== dateInputText(parsed) && (
         <span className="tabular text-xs text-muted">= {date(parsed)}</span>
       )}

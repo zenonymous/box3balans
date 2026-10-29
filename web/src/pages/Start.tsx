@@ -491,16 +491,11 @@ function ValueRow({
   const queue = useRef(Promise.resolve());
   const save = (y: number) => {
     const value = draft[y];
-    queue.current = queue.current.then(() => saveValue(y, value));
+    queue.current = queue.current.then(() => saveNow(y, value));
     return queue.current;
   };
-  const saveValue = async (y: number, value: string | undefined) => {
+  const saveNow = async (y: number, value: string | undefined) => {
     if (value == null) return;
-    if (value === stored(y)) {
-      // Back to what's stored: nothing to save, and an earlier error no longer applies.
-      setError(undefined);
-      return;
-    }
     setState("saving");
     setError(undefined);
     try {
@@ -508,6 +503,19 @@ function ValueRow({
       const rows = current.filter((r) => r.year !== y);
       const old = current.find((r) => r.year === y);
       const valueEur = value.trim() ? toApiNumber(value, label(y)) : null;
+      // Compared with what the server has now, not with what this page loaded: the field may have
+      // been changed and changed back while an earlier save was still on its way.
+      const unchanged =
+        valueEur == null ? old?.valueEur == null : old?.valueEur != null && Number(old.valueEur) === Number(valueEur);
+      if (unchanged) {
+        setDraft((d) => {
+          const rest = { ...d };
+          delete rest[y];
+          return rest;
+        });
+        setState("saved");
+        return;
+      }
       if (valueEur != null || old) {
         const blank = {
           accountId: account.id,

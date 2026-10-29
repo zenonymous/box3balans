@@ -622,13 +622,13 @@ async function backupIssues({ db, config }: CheckContext): Promise<CheckIssue[]>
       key: "backup-unencrypted",
       severity: "warning",
       title: tr("Backups aren't encrypted"),
-      // Turned off on purpose, or (a source install) no file for Box3balans to keep a passphrase in.
+      // No file for Box3balans to keep a passphrase in (a source install), or turned off on purpose.
       detail: config.BACKUP_ENCRYPT
         ? tr(
             "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE_FILE (Box3balans then makes a passphrase and keeps it there) or BACKUP_PASSPHRASE in .env, and restart.",
           )
         : tr(
-            "Anyone with a copy can read all your data. Remove BACKUP_ENCRYPT=false, or set BACKUP_PASSPHRASE, in .env and restart.",
+            "Anyone with a copy can read all your data. Set BACKUP_PASSPHRASE in .env, or remove BACKUP_ENCRYPT=false (without Docker, set BACKUP_PASSPHRASE_FILE too), and restart.",
           ),
       link: { to: "/settings", label: tr("Backups") },
       fingerprint: "unencrypted",

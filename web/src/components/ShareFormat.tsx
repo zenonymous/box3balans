@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { get } from "../api";
-import { canCopy, downloadFile } from "../download";
+import { downloadFile } from "../download";
 import { t, tn } from "../i18n";
-import { Alert, Badge, Button, ButtonLink, Card, Field, Input } from "./ui";
+import { Alert, Badge, Button, ButtonLink, Card, CopyButton, Field, Input } from "./ui";
 
 // ---- Types mirroring server/src/import/contribute.ts ----
 
@@ -69,7 +69,6 @@ export function ShareFormat({
   const [made, setMade] = useState<Contribution | null>(null);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
-  const [copied, setCopied] = useState(false);
   const version = useQuery({
     queryKey: ["version"],
     queryFn: () => get<{ version: string; source: string }>("/api/version"),
@@ -81,7 +80,6 @@ export function ShareFormat({
   const run = async (nextReplace = replace) => {
     setBusy(true);
     setError(undefined);
-    setCopied(false);
     try {
       setMade(await make({ provider: provider.trim(), hint: hint.trim(), replace: nextReplace }));
       setReplace(nextReplace);
@@ -99,10 +97,6 @@ export function ShareFormat({
 
   const json = made ? JSON.stringify(made.file, null, 2) + "\n" : "";
   const download = () => downloadFile(made!.fileName, new Blob([json], { type: "application/json" }));
-  const copy = async () => {
-    await navigator.clipboard.writeText(json);
-    setCopied(true);
-  };
 
   const title = kind === "csv" ? t("Help others read this file") : t("Help others read this statement");
   if (!open)
@@ -243,11 +237,7 @@ export function ShareFormat({
                 <Button variant="primary" onClick={download} disabled={busy}>
                   ↓ {t("Download the file")}
                 </Button>
-                {canCopy() && (
-                  <Button onClick={() => void copy()} disabled={busy}>
-                    {copied ? t("Copied") : t("Copy")}
-                  </Button>
-                )}
+                <CopyButton text={json} disabled={busy} />
                 <ButtonLink href={`${source}/issues/new?template=formaat-delen.yml`} target="_blank" rel="noreferrer">
                   {t("Open the form on GitHub")} ↗
                 </ButtonLink>

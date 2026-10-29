@@ -1,4 +1,4 @@
-import { lazy, useEffect, useState, type FormEvent } from "react";
+import { lazy, useEffect, useRef, useState, type FormEvent } from "react";
 import { Navigate, Route, Routes } from "react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ApiError, get, post, setUnauthorizedHandler, type User } from "./api";
@@ -100,13 +100,41 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
   const [needsCode, setNeedsCode] = useState(false);
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  // The field an error is about: marked invalid, and it gets the focus.
+  type FieldName = "username" | "password" | "confirm" | "setupCode" | "code";
+  const [invalid, setInvalid] = useState<FieldName | null>(null);
+  const fields = {
+    username: useRef<HTMLInputElement>(null),
+    password: useRef<HTMLInputElement>(null),
+    confirm: useRef<HTMLInputElement>(null),
+    setupCode: useRef<HTMLInputElement>(null),
+    code: useRef<HTMLInputElement>(null),
+  };
+  const fail = (message: string, field: FieldName | null) => {
+    setError(message);
+    setInvalid(field);
+    if (field) fields[field].current?.focus();
+  };
+  // From the server's answer: a field it names, a wrong setup code, or a wrong password.
+  const fieldOf = (err: unknown): FieldName | null => {
+    if (!(err instanceof ApiError)) return null;
+    const named = err.issues?.[0]?.path[0];
+    if (named === "username" || named === "password" || named === "setupCode") return named;
+    if (setup && err.status === 403) return "setupCode";
+    if (!setup && err.status === 401) return "password";
+    return null;
+  };
+
+  const action = setup
+    ? { idle: t("Create account"), busy: t("Creating account…") }
+    : { idle: t("Sign in"), busy: t("Signing in…") };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    // The button stays enabled while busy, so it keeps the focus: a second press is ignored here.
     if (busy) return;
     setError(undefined);
-    if (setup && password !== confirm) return setError(t("Passwords do not match"));
+    setInvalid(null);
+    if (setup && password !== confirm) return fail(t("Passwords do not match"), "confirm");
     setBusy(true);
     try {
       const { user } = await post<{ user: User }>(setup ? "/api/auth/setup" : "/api/auth/login", {
@@ -119,12 +147,12 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
     } catch (err) {
       if (err instanceof ApiError && err.data?.needsCode) {
         // The first time it's a question, not an error.
-        if (needsCode) setError(err.message);
+        if (needsCode) fail(err.message, "code");
         setNeedsCode(true);
         setCode("");
         return;
       }
-      setError((err as Error).message);
+      fail((err as Error).message, fieldOf(err));
     } finally {
       setBusy(false);
     }
@@ -132,7 +160,7 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
 
   return (
     <main className="flex min-h-dvh items-center justify-center p-4">
-      <form onSubmit={submit} className="w-full max-w-sm rounded-xl border border-line bg-surface p-6">
+      <form onSubmit={submit} aria-busy={busy} className="w-full max-w-sm rounded-xl border border-line bg-surface p-6">
         <div className="mb-6 flex flex-col items-center text-center">
           <img src={`${import.meta.env.BASE_URL}favicon.svg`} alt="" className="size-14" />
           <div className="mt-3 text-xl font-semibold tracking-tight">Box3balans</div>
@@ -150,6 +178,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
               <Input
                 id={id}
                 autoComplete="username"
+                ref={fields.username}
+                aria-invalid={invalid === "username" || undefined}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -163,6 +193,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
                 id={id}
                 type="password"
                 autoComplete={setup ? "new-password" : "current-password"}
+                ref={fields.password}
+                aria-invalid={invalid === "password" || undefined}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -177,6 +209,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
                   id={id}
                   type="password"
                   autoComplete="new-password"
+                  ref={fields.confirm}
+                  aria-invalid={invalid === "confirm" || undefined}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   required
@@ -196,6 +230,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
                   id={id}
                   autoComplete="off"
                   spellCheck={false}
+                  ref={fields.setupCode}
+                  aria-invalid={invalid === "setupCode" || undefined}
                   value={setupCode}
                   onChange={(e) => setSetupCode(e.target.value)}
                   required
@@ -212,6 +248,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
                 <Input
                   id={id}
                   autoComplete="one-time-code"
+                  ref={fields.code}
+                  aria-invalid={invalid === "code" || undefined}
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
                   required
@@ -221,8 +259,8 @@ export function Login({ setup, needsCode: needsSetupCode }: { setup: boolean; ne
             </Field>
           )}
           {error && <Alert tone="danger">{error}</Alert>}
-          <Button type="submit" variant="primary" aria-disabled={busy}>
-            {setup ? (busy ? t("Creating account…") : t("Create account")) : busy ? t("Signing in…") : t("Sign in")}
+          <Button type="submit" variant="primary" busy={busy}>
+            {busy ? action.busy : action.idle}
           </Button>
         </div>
       </form>
