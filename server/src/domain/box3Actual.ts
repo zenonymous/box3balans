@@ -32,10 +32,13 @@ export interface PropertyYear {
   accountId: number;
   returnEur: number; // what it adds to this actual return: value change and rent
   wozEur: number; // the value on 1 January, without the leegwaarderatio
+  yearShare: number; // the part of the year this return covers: less than 1 in the running year
   rentEur: number;
-  let: boolean; // let with rent protection, so all year
-  gainEur: number; // next 1 January − this one − in + out, without the leegwaarderatio
-  sold: boolean; // worth nothing on the next 1 January
+  rented: boolean; // let with rent protection, so all year
+  // Next 1 January − this one − in + out, without the leegwaarderatio; in a home's first year
+  // here only in + out, as the bill starts from the WOZ value a year later (see below).
+  gainEur: number;
+  sold: boolean; // worth nothing on the next 1 January, or out of box 3 from then
 }
 
 export interface ActualReturn {
@@ -62,6 +65,9 @@ export interface ActualReturn {
 // To cents with halves away from zero, in decimals (Math.round on floats rounds 1.005 to 1.00).
 const num = (d: Decimal) => d.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 const emptyPart = () => ({ start: ZERO, end: ZERO, in: ZERO, out: ZERO, direct: ZERO });
+// What a value did over the year, apart from what came in and went out.
+const valueChange = (p: { start: Decimal; end: Decimal; in: Decimal; out: Decimal }) =>
+  p.end.minus(p.start).minus(p.in).plus(p.out);
 
 /**
  * The actual box 3 return of one calendar year, per the tegenbewijsregeling: direct return plus all
@@ -255,7 +261,7 @@ export async function actualReturn(
     costs: Decimal,
     tax: Decimal,
   ) => {
-    const ret = p.end.minus(p.start).minus(p.in).plus(p.out).plus(p.direct).mul(w);
+    const ret = valueChange(p).plus(p.direct).mul(w);
     if (cat === "exempt" || cat === "excluded") {
       leftOut.set(cat, (leftOut.get(cat) ?? ZERO).plus(ret));
       return;
@@ -290,6 +296,15 @@ export async function actualReturn(
     );
   let accountDebtInterest = ZERO;
   const property: PropertyYear[] = [];
+  const inBox3 = (c: Category) => c !== "exempt" && c !== "excluded";
+  // The part of the year the return covers: all of it, or up to today in the running year.
+  const day = (d: string) => Date.parse(`${d}T00:00:00Z`);
+  const yearShare = complete
+    ? 1
+    : Math.round(
+        ((day(endDay) - day(`${year}-01-01`) + 86_400_000) / (day(`${year + 1}-01-01`) - day(`${year}-01-01`))) *
+          10_000,
+      ) / 10_000;
   for (const acc of accountRows) {
     if (acc.tracking !== "yearly") continue;
     const byYear = yearly.get(acc.id);
@@ -322,21 +337,32 @@ export async function actualReturn(
     const inEur = D(row.inEur).plus(incomeStaysInAccount(acc.kind) ? income.minus(tax) : ZERO);
     const outEur = D(row.outEur);
     // The running year has no end value yet: the start with what came in and went out since.
-    const end = next ?? start.plus(inEur).minus(outEur);
+    const endOf = (from: Decimal, to: Decimal | null) => to ?? from.plus(inEur).minus(outEur);
+    const end = endOf(start, next);
     addTo(cat, cls, w, { start, end, in: inEur, out: outEur, direct: income }, D(row.costsEur), tax);
-    if (acc.kind === "property" && cat !== "exempt" && cat !== "excluded") {
+    if (acc.kind === "property" && inBox3(cat)) {
       // The planned system values a home at its WOZ value, whether it's let or not.
       const woz = D(row.valueEur);
       const nextWoz = byYear?.get(year + 1)?.valueEur;
-      const wozEnd = nextWoz != null ? D(nextWoz) : woz.plus(inEur).minus(outEur);
+      const wozEnd = endOf(woz, nextWoz != null ? D(nextWoz) : null);
+      // Sold: held this year and worth nothing on the next 1 January. A home that leaves box 3
+      // counts as sold just before it does (art. 5.31).
+      const sold =
+        (nextWoz != null && D(nextWoz).isZero() && (woz.gt(0) || inEur.gt(0))) ||
+        !inBox3(categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, year + 1));
+      // For a home held on 1 January 2028 the bill starts from the WOZ value with waardepeildatum
+      // 1 January 2028: the WOZ value of 2029 (art. 10a.31). Here, for a home held from its first
+      // year, that's the next year's value, so that year's change in WOZ value doesn't count.
+      const from = !byYear?.has(year - 1) && woz.gt(0) && !sold ? wozEnd : woz;
       property.push({
         accountId: acc.id,
-        returnEur: num(end.minus(start).minus(inEur).plus(outEur).plus(income).mul(w)),
+        returnEur: num(valueChange({ start, end, in: inEur, out: outEur }).plus(income).mul(w)),
         wozEur: num(woz.mul(w)),
+        yearShare,
         rentEur: num(income.mul(w)),
-        let: !!row.details?.rented,
-        gainEur: num(wozEnd.minus(woz).minus(inEur).plus(outEur).mul(w)),
-        sold: nextWoz != null && woz.gt(0) && D(nextWoz).isZero(),
+        rented: !!row.details?.rented,
+        gainEur: num(valueChange({ start: from, end: wozEnd, in: inEur, out: outEur }).mul(w)),
+        sold,
       });
     }
   }
@@ -347,7 +373,7 @@ export async function actualReturn(
   let total = extraReturn.minus(debtInterest);
   const outParts = {} as Record<Kind, ReturnPart>;
   for (const [k, p] of Object.entries(parts) as [Kind, ReturnType<typeof emptyPart>][]) {
-    const change = p.end.minus(p.start).minus(p.in).plus(p.out);
+    const change = valueChange(p);
     total = total.plus(change).plus(p.direct);
     outParts[k] = {
       startEur: num(p.start),

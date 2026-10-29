@@ -215,29 +215,23 @@ interface FutureRow {
   taxableEur: number;
   taxEur: number;
   lossBalanceEur: number;
-  propertyPendingEur: number;
+  propertyGainPendingEur: number;
   deemedTaxEur: number | null;
   differenceEur: number | null;
 }
 
+interface FutureParams {
+  ratePct: number;
+  allowanceEur: number;
+  lossThresholdEur: number;
+  carryBackYears: number;
+  propertyPct: number;
+}
+
 interface FutureResponse {
-  presets: {
-    id: string;
-    label: string;
-    ratePct: number;
-    allowanceEur: number;
-    lossThresholdEur: number;
-    carryBackYears: number;
-    propertyPct: number;
-  }[];
+  presets: (FutureParams & { id: string; label: string })[];
   preset: string;
-  params: {
-    ratePct: number;
-    allowanceEur: number;
-    lossThresholdEur: number;
-    carryBackYears: number;
-    propertyPct: number;
-  };
+  params: FutureParams;
   rows: FutureRow[];
 }
 
@@ -325,7 +319,7 @@ export function FuturePreviewCard() {
             </Select>
           )}
         </Field>
-        {field("propertyPct", t("Home not let (% of WOZ)"), t("vastgoedbijtelling"))}
+        {field("propertyPct", t("Vastgoedbijtelling (% of WOZ)"), t("home not let all year"))}
       </div>
       {q.isLoading ? (
         <Spinner />
@@ -408,13 +402,13 @@ export function FuturePreviewCard() {
                 d!.rows[0].lossBalanceEur > 0 &&
                 ` ${t("Losses still to carry forward: {amount}.", { amount: eur(d!.rows[0].lossBalanceEur) })}`}
               {d!.rows[0] &&
-                d!.rows[0].propertyPendingEur !== 0 &&
-                ` ${t("Homes' value change since their first value, taxed when they're sold: {amount}.", { amount: signed(d!.rows[0].propertyPendingEur) })}`}
+                d!.rows[0].propertyGainPendingEur !== 0 &&
+                ` ${t("Homes' gain so far, taxed when they're sold: {amount}.", { amount: signed(d!.rows[0].propertyGainPendingEur) })}`}
             </p>
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain is measured from the first value you entered, as the bill measures it from 1 January 2028, and counts in the year its value on the next 1 January is 0. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of 2029 for 2028, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>

@@ -85,7 +85,7 @@ Een schatting van box 3 onder het voorgestelde stelsel vanaf 2028 (Wet werkelijk
 _Vermijd_: nieuw stelsel (alsof het al geldt)
 
 **Vastgoedbijtelling** (propertyPct):
-In de vooruitblik: wat een woning of andere onroerende zaak elk jaar opbrengt als ze niet het hele jaar verhuurd is en de huur lager is, een percentage van de WOZ-waarde. De winst bij verkoop komt erbij in het jaar van verkoop.
+In de vooruitblik: wat een woning of andere onroerende zaak elk jaar opbrengt als ze niet het hele jaar verhuurd is en de huur lager is, een percentage van de WOZ-waarde. De winst bij verkoop komt erbij in het jaar van verkoop, of als de zaak box 3 verlaat.
 
 ## Huishouden
 

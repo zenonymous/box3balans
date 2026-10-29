@@ -101,7 +101,7 @@ const TAX_COUNTRIES =
 
 /** Labels that fit the kind of account: interest on savings, rent on a home, interest paid on a debt. */
 function columns(kind: AccountKind) {
-  const flows = kind !== "property" && kind !== "debt";
+  const flows = kind !== "debt";
   return {
     value: kind === "debt" ? t("Owed on 1 January") : kind === "property" ? t("WOZ value") : t("Value on 1 January"),
     valueHint:
@@ -110,8 +110,14 @@ function columns(kind: AccountKind) {
         : kind === "debt"
           ? undefined
           : t("From the year statement (jaaroverzicht) or the balance at the end of 31 December."),
-    in: flows ? (kind === "receivable" ? t("Lent more") : t("Money in")) : null,
-    out: flows ? (kind === "receivable" ? t("Paid back") : t("Money out")) : null,
+    in: flows
+      ? kind === "receivable"
+        ? t("Lent more")
+        : kind === "property"
+          ? t("Bought or improved")
+          : t("Money in")
+      : null,
+    out: flows ? (kind === "receivable" ? t("Paid back") : kind === "property" ? t("Sold for") : t("Money out")) : null,
     income:
       kind === "debt"
         ? t("Interest paid")

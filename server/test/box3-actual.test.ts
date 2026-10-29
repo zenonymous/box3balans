@@ -237,11 +237,15 @@ describe("2028 system preview", () => {
     property: [],
     ...extra,
   });
-  const home = (accountId: number, h: { woz: number; rent?: number; let?: boolean; gain: number; sold?: boolean }) => ({
+  const home = (
+    accountId: number,
+    h: { woz: number; share?: number; rent?: number; rented?: boolean; gain: number; sold?: boolean },
+  ) => ({
     accountId,
     wozEur: h.woz,
+    yearShare: h.share ?? 1,
     rentEur: h.rent ?? 0,
-    let: h.let ?? false,
+    rented: h.rented ?? false,
     gainEur: h.gain,
     sold: h.sold ?? false,
     // In the actual return: the value change and the rent.
@@ -260,28 +264,39 @@ describe("2028 system preview", () => {
       ],
       FUTURE_PRESETS.bill!,
     );
-    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.propertyPendingEur])).toEqual([
-      // 1,000 + 3.35% × 200,000 = 7,700; 5,900 above the allowance at 36%.
+    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.propertyGainPendingEur])).toEqual([
+      // 1,000 + 3.35% × 200,000 = 7,700; 5,900 above the allowance, at 36% 2,124. Gain 10,000 waits.
       [2024, 7700, 2124, 10_000],
+      // 1,000 + 3.35% × 210,000 = 8,035 (more than the 2,000 rent); 6,235 at 36%. 15,000 waits.
       [2025, 8035, 2244.6, 15_000],
-      // 1,000 + 7,202.50 + the 30,000 gained since the first value.
+      // 1,000 + 3.35% × 215,000 = 7,202.50, + the 10,000 + 5,000 + 15,000 gained since the first
+      // value: 38,202.50; 36,402.50 at 36%.
       [2026, 38_202.5, 13_104.9, 0],
     ]);
+  });
+
+  it("counts the vastgoedbijtelling for the part of the running year passed", () => {
+    const rows = simulateFuture(
+      [year(2026, 4_000, { complete: false, property: [home(1, { woz: 300_000, share: 0.25, gain: 0 })] })],
+      FUTURE_PRESETS.bill!,
+    );
+    // 4,000 other return + 3.35% × 300,000 × ¼ = 2,512.50: 6,512.50.
+    expect(rows[0]).toMatchObject({ resultEur: 6512.5, propertyGainPendingEur: 0 });
   });
 
   it("taxes a let home's rent instead, and a loss on its sale carries forward", () => {
     const rows = simulateFuture(
       [
-        year(2024, 16_000, { property: [home(2, { woz: 300_000, rent: 6_000, let: true, gain: 10_000 })] }),
+        year(2024, 16_000, { property: [home(2, { woz: 300_000, rent: 6_000, rented: true, gain: 10_000 })] }),
         // Sold for 280,000 after half a year's rent.
         year(2025, -27_000, {
-          property: [home(2, { woz: 310_000, rent: 3_000, let: true, gain: -30_000, sold: true })],
+          property: [home(2, { woz: 310_000, rent: 3_000, rented: true, gain: -30_000, sold: true })],
         }),
       ],
       FUTURE_PRESETS.bill!,
     );
-    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.lossBalanceEur, r.propertyPendingEur])).toEqual([
-      // The rent, below 3.35% of the WOZ value, since the home is let all year.
+    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.lossBalanceEur, r.propertyGainPendingEur])).toEqual([
+      // The rent, below 3.35% of the WOZ value, since the home is let all year; 4,200 at 36%.
       [2024, 6000, 1512, 0, 10_000],
       // 3,000 rent + 10,000 − 30,000 = −17,000.
       [2025, -17_000, 0, 17_000, 0],

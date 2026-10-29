@@ -746,6 +746,18 @@
       "extraReturnEur": 0,
       "debtInterestEur": 400,
       "totalEur": 12788.56,
+      "property": [
+        {
+          "accountId": 10,
+          "returnEur": 12000,
+          "wozEur": 298000,
+          "yearShare": 1,
+          "rentEur": 0,
+          "rented": false,
+          "gainEur": 12000,
+          "sold": false
+        }
+      ],
       "warnings": [],
       "comparison": {
         "deemedBenefitEur": 17170,
@@ -766,7 +778,7 @@
       "role": "self",
       "birthDate": null,
       "custody": "together",
-      "createdAt": "2026-10-22T08:59:22.396Z"
+      "createdAt": "2026-10-29T09:21:36.800Z"
     },
     {
       "id": 2,
@@ -774,7 +786,7 @@
       "role": "partner",
       "birthDate": null,
       "custody": "together",
-      "createdAt": "2026-10-22T08:59:22.398Z"
+      "createdAt": "2026-10-29T09:21:36.801Z"
     },
     {
       "id": 3,
@@ -782,7 +794,7 @@
       "role": "child",
       "birthDate": "2016-04-12",
       "custody": "together",
-      "createdAt": "2026-10-22T08:59:22.399Z"
+      "createdAt": "2026-10-29T09:21:36.803Z"
     }
   ],
   "/api/accounts": [
@@ -798,7 +810,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.610Z",
+      "createdAt": "2026-10-29T09:21:37.009Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -816,7 +828,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.587Z",
+      "createdAt": "2026-10-29T09:21:36.988Z",
       "txCount": 8,
       "itemCount": 0,
       "latestYear": null,
@@ -834,7 +846,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.570Z",
+      "createdAt": "2026-10-29T09:21:36.971Z",
       "txCount": 10,
       "itemCount": 0,
       "latestYear": null,
@@ -852,7 +864,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.599Z",
+      "createdAt": "2026-10-29T09:21:36.999Z",
       "txCount": 1,
       "itemCount": 0,
       "latestYear": null,
@@ -870,7 +882,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.606Z",
+      "createdAt": "2026-10-29T09:21:37.006Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -888,7 +900,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.601Z",
+      "createdAt": "2026-10-29T09:21:37.001Z",
       "txCount": 0,
       "itemCount": 3,
       "latestYear": null,
@@ -906,7 +918,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.588Z",
+      "createdAt": "2026-10-29T09:21:36.988Z",
       "txCount": 1,
       "itemCount": 0,
       "latestYear": null,
@@ -924,7 +936,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.619Z",
+      "createdAt": "2026-10-29T09:21:37.018Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -942,7 +954,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.615Z",
+      "createdAt": "2026-10-29T09:21:37.013Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -960,7 +972,7 @@
       "ownerChildId": 3,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.612Z",
+      "createdAt": "2026-10-29T09:21:37.011Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -978,7 +990,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.622Z",
+      "createdAt": "2026-10-29T09:21:37.020Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -996,7 +1008,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-22T08:59:22.617Z",
+      "createdAt": "2026-10-29T09:21:37.015Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -1018,7 +1030,7 @@
     "demo": true
   },
   "/api/version": {
-    "version": "0.1.35",
+    "version": "0.1.43",
     "source": "https://github.com/zenonymous/box3balans"
   },
   "/api/box3/2025/checklist": {
@@ -1140,49 +1152,49 @@
       "carryBackYears": 0,
       "propertyPct": 3.35
     },
-    "today": "2026-10-22",
+    "today": "2026-10-29",
     "rows": [
       {
         "year": 2026,
         "complete": false,
-        "resultEur": 11961.12,
+        "resultEur": 22092.03,
         "allowanceEur": 3600,
         "lossUsedEur": 0,
         "carriedBackEur": 0,
-        "taxableEur": 8361.12,
-        "taxEur": 3010,
+        "taxableEur": 18492.03,
+        "taxEur": 6657.13,
         "lossBalanceEur": 0,
-        "propertyPendingEur": 0,
+        "propertyGainPendingEur": 12000,
         "deemedTaxEur": 6562,
-        "differenceEur": -3552
+        "differenceEur": 95.13
       },
       {
         "year": 2025,
         "complete": true,
-        "resultEur": 12787.56,
+        "resultEur": 10770.56,
         "allowanceEur": 3600,
         "lossUsedEur": 0,
         "carriedBackEur": 0,
-        "taxableEur": 9187.56,
-        "taxEur": 3307.52,
+        "taxableEur": 7170.56,
+        "taxEur": 2581.4,
         "lossBalanceEur": 0,
-        "propertyPendingEur": 0,
+        "propertyGainPendingEur": 12000,
         "deemedTaxEur": 6180,
-        "differenceEur": -2872.48
+        "differenceEur": -3598.6
       },
       {
         "year": 2024,
         "complete": true,
-        "resultEur": 48850.58,
+        "resultEur": 45398.08,
         "allowanceEur": 3600,
         "lossUsedEur": 0,
         "carriedBackEur": 0,
-        "taxableEur": 45250.58,
-        "taxEur": 16290.21,
+        "taxableEur": 41798.08,
+        "taxEur": 15047.31,
         "lossBalanceEur": 0,
-        "propertyPendingEur": 0,
+        "propertyGainPendingEur": 0,
         "deemedTaxEur": 5170,
-        "differenceEur": 11120.21
+        "differenceEur": 9877.31
       },
       {
         "year": 2023,
@@ -1194,7 +1206,7 @@
         "taxableEur": 10567.19,
         "taxEur": 3804.19,
         "lossBalanceEur": 0,
-        "propertyPendingEur": 0,
+        "propertyGainPendingEur": 0,
         "deemedTaxEur": 0,
         "differenceEur": 3804.19
       },
@@ -1208,7 +1220,7 @@
         "taxableEur": 0,
         "taxEur": 0,
         "lossBalanceEur": 0,
-        "propertyPendingEur": 0,
+        "propertyGainPendingEur": 0,
         "deemedTaxEur": null,
         "differenceEur": null
       }

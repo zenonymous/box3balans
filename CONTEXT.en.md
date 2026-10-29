@@ -85,7 +85,7 @@ An estimate of box 3 under the proposed system from 2028 (Wet werkelijk rendemen
 _Avoid_: new system (as if it already applies)
 
 **Vastgoedbijtelling** — real estate addition (propertyPct):
-In the preview: what a home or other real estate yields each year when it isn't let all year and the rent is lower, a percentage of the WOZ value. The gain on sale comes on top in the year it's sold.
+In the preview: what a home or other real estate yields each year when it isn't let all year and the rent is lower, a percentage of the WOZ value. The gain on sale comes on top in the year it's sold, or when it leaves box 3.
 
 ## Household
 

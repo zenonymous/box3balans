@@ -94,9 +94,12 @@ Before the letter of 29 September, the cabinet looked into options such as a rat
 
 Not described in the sources, and assumed by the app:
 
-- A home's gain counts from the first value you entered, as the bill measures it from 1 January 2028. What you put in (in) and take out (out), such as improvements, counts. The home is sold in the year after which its value on 1 January is 0.
-- A home let with rent protection is let all year. Other rent only counts if it's higher than the vastgoedbijtelling.
-- The vastgoedbijtelling counts for the whole year, also in the year of sale: the app doesn't know the date of the sale.
+- A home's gain counts from its WOZ value of the year after the first you entered. For what you already had on 1 January 2028, the bill takes the WOZ value with waardepeildatum 1 January 2028, which is the WOZ value of 2029. For a home you bought during those years, the purchase price counts.
+- For a home, _Bought or improved_ holds the purchase price with the costs of buying, and what you spent on improvements; _Sold for_ holds the sale price minus the costs of selling (art. 5.22 and 5.23). The home is sold in the year after which its value on 1 January is 0.
+- A home that leaves box 3, for example because it becomes your own home, counts as sold at the end of the year before, at its value on the 1 January after (art. 5.31). A change in the share of a home you own doesn't count as a sale.
+- A home let with rent protection is let all year. Other rent only counts if it's higher than the vastgoedbijtelling, also when the home was let all year without rent protection.
+- The vastgoedbijtelling counts for the whole year, also in the year of sale: the app doesn't know the date of the sale. In the year of purchase the value on 1 January is 0, so it doesn't count then. In the running year, the part of the year passed counts.
+- A home's costs, such as maintenance, are deducted every year, also when the vastgoedbijtelling counts, as summaries of the bill describe it. Article 5.38 only mentions costs for the rent.
 - A loss of at least the threshold carries forward in full.
 - Losses carried forward are set off against the result left after the tax-free result.
 

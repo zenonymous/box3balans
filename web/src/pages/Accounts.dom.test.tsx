@@ -48,6 +48,18 @@ describe("Accounts page", () => {
     expect(rows.length).toBeGreaterThan(1); // the other years go along unchanged
   });
 
+  it("takes what a home was bought and sold for, for the gain on its sale", async () => {
+    const api = showPage("/accounts", "accounts", <AccountsPage />);
+    fireEvent.click(within(await rowOf("Vakantiehuis Zeeland")).getByRole("button", { name: /Waarden per jaar/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.change(await within(dialog).findByLabelText("Verkocht voor 2025"), { target: { value: "325.000" } });
+    fireEvent.change(within(dialog).getByLabelText("Gekocht of verbeterd 2025"), { target: { value: "12.500" } });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Opslaan" }));
+    await waitFor(() => expect(sent(api, "PUT", "/api/accounts/10/years")).toHaveLength(1));
+    const { rows } = sent(api, "PUT", "/api/accounts/10/years")[0] as { rows: { year: number }[] };
+    expect(rows.find((r) => r.year === 2025)).toMatchObject({ inEur: "12500", outEur: "325000" });
+  });
+
   it("asks for tax withheld abroad only on an account abroad, with the country", async () => {
     // Without "abroad", no such column.
     showPage("/accounts", "accounts", <AccountsPage />);

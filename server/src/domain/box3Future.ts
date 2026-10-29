@@ -1,4 +1,4 @@
-import { D, Decimal } from "../lib/decimal.js";
+import { D, Decimal, ZERO } from "../lib/decimal.js";
 import type { ActualReturn, PropertyYear } from "./box3Actual.js";
 
 /** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
@@ -43,7 +43,7 @@ export interface FutureParams {
   allowanceEur: number; // heffingsvrij resultaat per taxpayer
   lossThresholdEur: number; // smaller losses don't carry over
   carryBackYears: 0 | 1;
-  propertyPct: number; // vastgoedbijtelling: a home not let counts at this share of its WOZ value
+  propertyPct: number; // vastgoedbijtelling: a home not let all year counts at least this share of its WOZ value
 }
 
 /** See docs/box3-sources.md. Neither is law yet, hence everything is editable. */
@@ -88,7 +88,7 @@ export interface FutureYearRow {
   taxableEur: number;
   taxEur: number;
   lossBalanceEur: number; // losses still to carry forward after this year
-  propertyPendingEur: number; // homes' value change since their first value, taxed when they're sold
+  propertyGainPendingEur: number; // homes' gain since their first value, taxed when they're sold
   deemedTaxEur: number | null;
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
@@ -105,18 +105,18 @@ export interface FutureYearRow {
 export function simulateFuture(years: FutureYearInput[], p: FutureParams): FutureYearRow[] {
   const rows: FutureYearRow[] = [];
   let balance = 0;
-  const pending = new Map<number, number>();
+  // Per home: its gain so far, until it's sold.
+  const gains = new Map<number, Decimal>();
   for (const y of [...years].sort((a, b) => a.year - b.year)) {
     // The homes' actual return makes way for what the bill taxes of them this year.
-    let property = 0;
+    let homes = ZERO;
     for (const h of y.property) {
-      const gain = (pending.get(h.accountId) ?? 0) + h.gainEur;
-      if (h.sold) pending.delete(h.accountId);
-      else pending.set(h.accountId, gain);
-      const fixed = (h.wozEur * p.propertyPct) / 100;
-      property += (h.let ? h.rentEur : Math.max(h.rentEur, fixed)) + (h.sold ? gain : 0) - h.returnEur;
+      const gain = (gains.get(h.accountId) ?? ZERO).plus(h.gainEur);
+      if (h.sold) gains.delete(h.accountId);
+      else gains.set(h.accountId, gain);
+      homes = homes.plus(taxedOfHome(h, gain, p.propertyPct)).minus(h.returnEur);
     }
-    const result = y.actualReturnEur + property - y.costsEur;
+    const result = round2(D(y.actualReturnEur).plus(homes).minus(y.costsEur));
     const allowance = p.allowanceEur * (y.partner ? 2 : 1);
     let taxable = 0;
     let used = 0;
@@ -149,10 +149,21 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       taxableEur: round2(taxable),
       taxEur: tax,
       lossBalanceEur: round2(balance),
-      propertyPendingEur: round2([...pending.values()].reduce((a, b) => a + b, 0)),
+      propertyGainPendingEur: round2([...gains.values()].reduce((a, b) => a.plus(b), ZERO)),
       deemedTaxEur: y.deemedTaxEur,
       differenceEur: y.deemedTaxEur == null ? null : round2(tax - y.deemedTaxEur),
     });
   }
   return rows;
+}
+
+/**
+ * What the bill taxes of a home in a year: its rent if it's let all year or the rent is higher,
+ * else the vastgoedbijtelling (for the part of the year passed, in the running year); and in the
+ * year it's sold, its gain so far.
+ */
+function taxedOfHome(h: PropertyYear, gain: Decimal, propertyPct: number) {
+  const bijtelling = D(h.wozEur).mul(propertyPct).div(100).mul(h.yearShare);
+  const yearly = h.rented ? D(h.rentEur) : Decimal.max(h.rentEur, bijtelling);
+  return h.sold ? yearly.plus(gain) : yearly;
 }

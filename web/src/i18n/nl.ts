@@ -228,6 +228,8 @@ export const NL: Record<string, string> = {
   "Values per year": "Waarden per jaar",
   "Your share (%)": "Jouw deel (%)",
   "Value on 1 January": "Waarde op 1 januari",
+  "Bought or improved": "Gekocht of verbeterd",
+  "Sold for": "Verkocht voor",
   "Money in": "Geld in",
   "Money out": "Geld uit",
   Transaction: "Transactie",
@@ -560,12 +562,12 @@ export const NL: Record<string, string> = {
   "{amount} less": "{amount} minder",
   "{amount} more": "{amount} meer",
   "Losses still to carry forward: {amount}.": "Nog te verrekenen verlies: {amount}.",
-  "Homes' value change since their first value, taxed when they're sold: {amount}.":
-    "Waardeverandering van woningen sinds hun eerste waarde, belast bij verkoop: {amount}.",
-  "Home not let (% of WOZ)": "Woning niet verhuurd (% van WOZ)",
-  vastgoedbijtelling: "vastgoedbijtelling",
-  "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain is measured from the first value you entered, as the bill measures it from 1 January 2028, and counts in the year its value on the next 1 January is 0. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.":
-    "Gebruikt je werkelijk rendement per jaar (box 3-rekeningen, min rente op schulden) min kosten. De winst op een woning telt vanaf de eerste waarde die je invulde, zoals het wetsvoorstel hem meet vanaf 1 januari 2028, en telt in het jaar waarna de waarde op 1 januari 0 is. De belasting in het huidige stelsel volgt de regels voor het forfaitair rendement van dat jaar. De details van de novelle zijn niet definitief; bronnen in docs/box3-sources.md. Geen belastingadvies.",
+  "Homes' gain so far, taxed when they're sold: {amount}.":
+    "Winst op woningen tot nu toe, belast bij verkoop: {amount}.",
+  "Vastgoedbijtelling (% of WOZ)": "Vastgoedbijtelling (% van WOZ)",
+  "home not let all year": "woning niet het hele jaar verhuurd",
+  "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of 2029 for 2028, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.":
+    "Gebruikt je werkelijk rendement per jaar (box 3-rekeningen, min rente op schulden) min kosten. De winst op een woning telt vanaf de WOZ-waarde van het jaar na het eerste dat je invulde, zoals het wetsvoorstel haar voor 2028 laat tellen vanaf de WOZ-waarde van 2029, en wordt belast in het jaar waarna de waarde op 1 januari 0 is of de woning box 3 verlaat. De belasting in het huidige stelsel volgt de regels voor het forfaitair rendement van dat jaar. De details van de novelle zijn niet definitief; bronnen in docs/box3-sources.md. Geen belastingadvies.",
   "Over {n} finished year: <0>{new}</0> under the new system against <1>{old}</1> now ({diff}).":
     "Over {n} afgerond jaar: <0>{new}</0> in het nieuwe stelsel tegen <1>{old}</1> nu ({diff}).",
   "Over {n} finished years: <0>{new}</0> under the new system against <1>{old}</1> now ({diff}).":
