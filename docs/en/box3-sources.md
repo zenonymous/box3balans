@@ -83,6 +83,7 @@ Status on 8 October 2026:
 Rules of the bill as the House of Representatives adopted it (the default setting of the preview in the app):
 
 - **Capital accrual tax as the main rule:** every year the direct return plus the realised and unrealised changes in value, minus costs. Real estate and shares in start-ups are taxed on sale (capital gains tax).
+- **Real estate:** the gain counts when it's sold, or when it leaves box 3 in another way. For what you already had on 1 January 2028, the acquisition price is its value then, for a home the WOZ value (art. 10a.31). Each year the rent counts if it's let for all or nearly all of the year, or if the rent is higher than the **vastgoedbijtelling** (real estate addition); otherwise the vastgoedbijtelling counts: **3.35%** of the value, for a home the WOZ value, in proportion to the days you owned it (art. 5.15, 5.19 and 5.20). A summary of the bill says 3.55%, but the text the Tweede Kamer passed says 3.35%.
 - **Costs are deductible**, including transaction costs, account costs and interest paid. Dividend tax isn't deductible.
 - **Rate:** 36%.
 - **Tax-free result:** €1,800 per taxpayer.
@@ -93,12 +94,16 @@ Before the letter of 29 September, the cabinet looked into options such as a rat
 
 Not described in the sources, and assumed by the app:
 
+- A home's gain counts from the first value you entered, as the bill measures it from 1 January 2028. What you put in (in) and take out (out), such as improvements, counts. The home is sold in the year after which its value on 1 January is 0.
+- A home let with rent protection is let all year. Other rent only counts if it's higher than the vastgoedbijtelling.
+- The vastgoedbijtelling counts for the whole year, also in the year of sale: the app doesn't know the date of the sale.
 - A loss of at least the threshold carries forward in full.
 - Losses carried forward are set off against the result left after the tax-free result.
 
 Sources:
 
 - Eerste Kamer, bill 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- The bill as passed by the Tweede Kamer (Kamerstukken I 36.748, A), articles 5.15, 5.19, 5.20 and 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 September 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - SRA, _Wet werkelijk rendement box 3 (voorlopig) nog niet aangenomen_: https://www.sra.nl/nieuwsoverzicht/2026/wet-werkelijk-rendement-box-3-voorlopig-nog-niet-aangenomen
 - SRA, overview of the bill (rate, €1,800, €500, deductible costs): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027

@@ -83,6 +83,7 @@ Stand op 8 oktober 2026:
 Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstelling van de vooruitblik in de app):
 
 - **Vermogensaanwasbelasting als hoofdregel:** elk jaar het directe rendement plus de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Onroerend goed en aandelen in startende ondernemingen worden belast bij verkoop (vermogenswinstbelasting).
+- **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je op 1 januari 2028 al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
 - **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
 - **Tarief:** 36%.
 - **Heffingsvrij resultaat:** € 1.800 per belastingplichtige.
@@ -93,12 +94,16 @@ Vóór de brief van 29 september onderzocht het kabinet opties als een tarief va
 
 Niet beschreven in de bronnen, en aangenomen door de app:
 
+- De winst op een woning telt vanaf de eerste waarde die je invulde, zoals het wetsvoorstel haar meet vanaf 1 januari 2028. Wat je erin steekt (in) en eruit haalt (uit), zoals verbeteringen, telt mee. De woning is verkocht in het jaar waarna haar waarde op 1 januari 0 is.
+- Een woning die verhuurd is met huurbescherming, is het hele jaar verhuurd. Andere huur telt alleen als die hoger is dan de vastgoedbijtelling.
+- De vastgoedbijtelling telt over het hele jaar, ook in het jaar van verkoop: de app kent de datum van verkoop niet.
 - Een verlies van minstens de drempel schuift volledig door.
 - Doorgeschoven verliezen worden verrekend met het resultaat dat overblijft na het heffingsvrije resultaat.
 
 Bronnen:
 
 - Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- Wetsvoorstel zoals de Tweede Kamer het aannam (Kamerstukken I 36.748, A), artikelen 5.15, 5.19, 5.20 en 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - SRA, _Wet werkelijk rendement box 3 (voorlopig) nog niet aangenomen_: https://www.sra.nl/nieuwsoverzicht/2026/wet-werkelijk-rendement-box-3-voorlopig-nog-niet-aangenomen
 - SRA, overzicht van het wetsvoorstel (tarief, € 1.800, € 500, aftrekbare kosten): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/box-3-vanaf-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-box-3-vanaf-2027

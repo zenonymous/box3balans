@@ -23,6 +23,21 @@ export interface ReturnPart {
   returnEur: number; // value change + direct
 }
 
+/**
+ * A home or other real estate in box 3, for the planned system (from 2028): it taxes the gain when
+ * the property is sold and, each year, its rent or a share of its WOZ value. Amounts are the
+ * household's share.
+ */
+export interface PropertyYear {
+  accountId: number;
+  returnEur: number; // what it adds to this actual return: value change and rent
+  wozEur: number; // the value on 1 January, without the leegwaarderatio
+  rentEur: number;
+  let: boolean; // let with rent protection, so all year
+  gainEur: number; // next 1 January − this one − in + out, without the leegwaarderatio
+  sold: boolean; // worth nothing on the next 1 January
+}
+
 export interface ActualReturn {
   year: number;
   // False for the running year: "so far", with today's values as the end.
@@ -39,6 +54,7 @@ export interface ActualReturn {
   // Interest paid on debts: entered for the year plus debt accounts.
   debtInterestEur: number;
   totalEur: number; // the actual return; may be negative
+  property: PropertyYear[]; // homes and other real estate, inside the total
   // Accounts kept as values per year that miss a value the return needs.
   warnings: string[];
 }
@@ -273,6 +289,7 @@ export async function actualReturn(
       ),
     );
   let accountDebtInterest = ZERO;
+  const property: PropertyYear[] = [];
   for (const acc of accountRows) {
     if (acc.tracking !== "yearly") continue;
     const byYear = yearly.get(acc.id);
@@ -307,6 +324,21 @@ export async function actualReturn(
     // The running year has no end value yet: the start with what came in and went out since.
     const end = next ?? start.plus(inEur).minus(outEur);
     addTo(cat, cls, w, { start, end, in: inEur, out: outEur, direct: income }, D(row.costsEur), tax);
+    if (acc.kind === "property" && cat !== "exempt" && cat !== "excluded") {
+      // The planned system values a home at its WOZ value, whether it's let or not.
+      const woz = D(row.valueEur);
+      const nextWoz = byYear?.get(year + 1)?.valueEur;
+      const wozEnd = nextWoz != null ? D(nextWoz) : woz.plus(inEur).minus(outEur);
+      property.push({
+        accountId: acc.id,
+        returnEur: num(end.minus(start).minus(inEur).plus(outEur).plus(income).mul(w)),
+        wozEur: num(woz.mul(w)),
+        rentEur: num(income.mul(w)),
+        let: !!row.details?.rented,
+        gainEur: num(wozEnd.minus(woz).minus(inEur).plus(outEur).mul(w)),
+        sold: nextWoz != null && woz.gt(0) && D(nextWoz).isZero(),
+      });
+    }
   }
 
   const input = config.years[String(year)];
@@ -339,6 +371,7 @@ export async function actualReturn(
     extraReturnEur: num(extraReturn),
     debtInterestEur: num(debtInterest),
     totalEur: num(total),
+    property,
     warnings,
   };
 }

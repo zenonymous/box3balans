@@ -1,5 +1,5 @@
 import { D, Decimal } from "../lib/decimal.js";
-import type { ActualReturn } from "./box3Actual.js";
+import type { ActualReturn, PropertyYear } from "./box3Actual.js";
 
 /** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
 const round2 = (x: number | Decimal) => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
@@ -43,6 +43,7 @@ export interface FutureParams {
   allowanceEur: number; // heffingsvrij resultaat per taxpayer
   lossThresholdEur: number; // smaller losses don't carry over
   carryBackYears: 0 | 1;
+  propertyPct: number; // vastgoedbijtelling: a home not let counts at this share of its WOZ value
 }
 
 /** See docs/box3-sources.md. Neither is law yet, hence everything is editable. */
@@ -53,15 +54,17 @@ export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = 
     allowanceEur: 1800,
     lossThresholdEur: 500,
     carryBackYears: 0,
+    propertyPct: 3.35,
   },
   // The letter announcing the novelle names the tax-free amount; tax on sale for financial
-  // instruments isn't modelled (issue #11), so this still taxes unrealised gains each year.
+  // instruments isn't modelled (issue #11), so this still taxes their unrealised gains each year.
   letter: {
-    label: "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)",
+    label: "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)",
     ratePct: 36,
     allowanceEur: 1000,
     lossThresholdEur: 500,
     carryBackYears: 0,
+    propertyPct: 3.35,
   },
 };
 
@@ -72,6 +75,7 @@ export interface FutureYearInput {
   costsEur: number; // deductible under the new system
   partner: boolean;
   deemedTaxEur: number | null; // what the current (deemed-return) system charges
+  property: PropertyYear[]; // homes and other real estate, inside actualReturnEur
 }
 
 export interface FutureYearRow {
@@ -84,6 +88,7 @@ export interface FutureYearRow {
   taxableEur: number;
   taxEur: number;
   lossBalanceEur: number; // losses still to carry forward after this year
+  propertyPendingEur: number; // homes' value change since their first value, taxed when they're sold
   deemedTaxEur: number | null;
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
@@ -92,12 +97,26 @@ export interface FutureYearRow {
  * The planned capital-accrual tax applied to past years in order: each year's actual return minus
  * costs; a loss of at least the threshold carries forward (and back one year, if enabled); earlier
  * losses are set off against the result left after the tax-free amount.
+ *
+ * Homes and other real estate are taxed on their gain when sold instead (vermogenswinstbelasting),
+ * measured from their first value here as the bill measures it from 1 January 2028. Each year
+ * their rent counts if they're let all year or the rent is higher, else the vastgoedbijtelling.
  */
 export function simulateFuture(years: FutureYearInput[], p: FutureParams): FutureYearRow[] {
   const rows: FutureYearRow[] = [];
   let balance = 0;
+  const pending = new Map<number, number>();
   for (const y of [...years].sort((a, b) => a.year - b.year)) {
-    const result = y.actualReturnEur - y.costsEur;
+    // The homes' actual return makes way for what the bill taxes of them this year.
+    let property = 0;
+    for (const h of y.property) {
+      const gain = (pending.get(h.accountId) ?? 0) + h.gainEur;
+      if (h.sold) pending.delete(h.accountId);
+      else pending.set(h.accountId, gain);
+      const fixed = (h.wozEur * p.propertyPct) / 100;
+      property += (h.let ? h.rentEur : Math.max(h.rentEur, fixed)) + (h.sold ? gain : 0) - h.returnEur;
+    }
+    const result = y.actualReturnEur + property - y.costsEur;
     const allowance = p.allowanceEur * (y.partner ? 2 : 1);
     let taxable = 0;
     let used = 0;
@@ -130,6 +149,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       taxableEur: round2(taxable),
       taxEur: tax,
       lossBalanceEur: round2(balance),
+      propertyPendingEur: round2([...pending.values()].reduce((a, b) => a + b, 0)),
       deemedTaxEur: y.deemedTaxEur,
       differenceEur: y.deemedTaxEur == null ? null : round2(tax - y.deemedTaxEur),
     });

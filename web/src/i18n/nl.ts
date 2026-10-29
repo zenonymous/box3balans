@@ -534,12 +534,12 @@ export const NL: Record<string, string> = {
     "Een schatting om te controleren met je overzichten, geen belastingadvies.",
   "Bill as passed by the Tweede Kamer (12 Feb 2026)":
     "Wetsvoorstel zoals aangenomen door de Tweede Kamer (12 feb 2026)",
-  "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)":
-    "Kabinetsbrief 29 sep 2026: € 1.000 heffingsvrij (belasting bij verkoop niet nagebootst)",
+  "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)":
+    "Kabinetsbrief 29 sep 2026: € 1.000 heffingsvrij (belasting bij verkoop van beleggingen niet nagebootst)",
   "From 2028: tax on the actual return (preview)": "Vanaf 2028: belasting over het werkelijk rendement (vooruitblik)",
   "not law yet": "nog geen wet",
-  "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. Tax on sale isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.":
-    "Het wetsvoorstel dat de Tweede Kamer op 12 februari 2026 aannam, belast elk jaar het werkelijke resultaat, inclusief ongerealiseerde winst, na kosten, met een heffingsvrij resultaat en verliesverrekening. In een brief van 29 september 2026 kondigde het kabinet een novelle aan: vanaf 2028 worden aandelen, obligaties en opties pas belast bij verkoop, de overige bezittingen vanaf 2030, met een heffingsvrij resultaat van € 1.000. Hier worden de jaarlijkse regels toegepast op je afgelopen jaren. Belasting bij verkoop wordt nog niet nagebootst: voor beleggingen die je niet verkocht, toont dit dus meer belasting dan de novelle zou heffen.",
+  "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.":
+    "Het wetsvoorstel dat de Tweede Kamer op 12 februari 2026 aannam, belast elk jaar het werkelijke resultaat, inclusief ongerealiseerde winst, na kosten, met een heffingsvrij resultaat en verliesverrekening. Woningen en andere onroerende zaken worden belast op hun winst bij verkoop; elk jaar telt hun huur, of een deel van de WOZ-waarde (de vastgoedbijtelling) als dat hoger is en ze niet het hele jaar verhuurd zijn. In een brief van 29 september 2026 kondigde het kabinet een novelle aan: vanaf 2028 worden aandelen, obligaties en opties pas belast bij verkoop, de overige bezittingen vanaf 2030, met een heffingsvrij resultaat van € 1.000. Hier worden de jaarlijkse regels toegepast op je afgelopen jaren. Belasting bij verkoop van beleggingen uit de novelle wordt nog niet nagebootst: voor beleggingen die je niet verkocht, toont dit dus meer belasting dan de novelle zou heffen.",
   Assumptions: "Aannames",
   "Rate (%)": "Tarief (%)",
   "Tax-free result (€)": "Heffingvrij resultaat (€)",
@@ -560,8 +560,12 @@ export const NL: Record<string, string> = {
   "{amount} less": "{amount} minder",
   "{amount} more": "{amount} meer",
   "Losses still to carry forward: {amount}.": "Nog te verrekenen verlies: {amount}.",
-  "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.":
-    "Gebruikt je werkelijk rendement per jaar (box 3-rekeningen, min rente op schulden) min kosten. De belasting in het huidige stelsel volgt de regels voor het forfaitair rendement van dat jaar. De details van de novelle zijn niet definitief; bronnen in docs/box3-sources.md. Geen belastingadvies.",
+  "Homes' value change since their first value, taxed when they're sold: {amount}.":
+    "Waardeverandering van woningen sinds hun eerste waarde, belast bij verkoop: {amount}.",
+  "Home not let (% of WOZ)": "Woning niet verhuurd (% van WOZ)",
+  vastgoedbijtelling: "vastgoedbijtelling",
+  "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain is measured from the first value you entered, as the bill measures it from 1 January 2028, and counts in the year its value on the next 1 January is 0. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.":
+    "Gebruikt je werkelijk rendement per jaar (box 3-rekeningen, min rente op schulden) min kosten. De winst op een woning telt vanaf de eerste waarde die je invulde, zoals het wetsvoorstel hem meet vanaf 1 januari 2028, en telt in het jaar waarna de waarde op 1 januari 0 is. De belasting in het huidige stelsel volgt de regels voor het forfaitair rendement van dat jaar. De details van de novelle zijn niet definitief; bronnen in docs/box3-sources.md. Geen belastingadvies.",
   "Over {n} finished year: <0>{new}</0> under the new system against <1>{old}</1> now ({diff}).":
     "Over {n} afgerond jaar: <0>{new}</0> in het nieuwe stelsel tegen <1>{old}</1> nu ({diff}).",
   "Over {n} finished years: <0>{new}</0> under the new system against <1>{old}</1> now ({diff}).":

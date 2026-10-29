@@ -234,7 +234,58 @@ describe("2028 system preview", () => {
     costsEur: 0,
     partner: false,
     deemedTaxEur: null,
+    property: [],
     ...extra,
+  });
+  const home = (accountId: number, h: { woz: number; rent?: number; let?: boolean; gain: number; sold?: boolean }) => ({
+    accountId,
+    wozEur: h.woz,
+    rentEur: h.rent ?? 0,
+    let: h.let ?? false,
+    gainEur: h.gain,
+    sold: h.sold ?? false,
+    // In the actual return: the value change and the rent.
+    returnEur: h.gain + (h.rent ?? 0),
+  });
+
+  it("taxes a home not let at 3.35% of its WOZ value each year, and its value change when it's sold", () => {
+    // 1,000 interest on savings each year besides the home's actual return.
+    const rows = simulateFuture(
+      [
+        year(2024, 11_000, { property: [home(1, { woz: 200_000, gain: 10_000 })] }),
+        // Let for a few weeks: the rent is below 3.35%.
+        year(2025, 8_000, { property: [home(1, { woz: 210_000, rent: 2_000, gain: 5_000 })] }),
+        // Sold for 230,000.
+        year(2026, 16_000, { property: [home(1, { woz: 215_000, gain: 15_000, sold: true })] }),
+      ],
+      FUTURE_PRESETS.bill!,
+    );
+    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.propertyPendingEur])).toEqual([
+      // 1,000 + 3.35% × 200,000 = 7,700; 5,900 above the allowance at 36%.
+      [2024, 7700, 2124, 10_000],
+      [2025, 8035, 2244.6, 15_000],
+      // 1,000 + 7,202.50 + the 30,000 gained since the first value.
+      [2026, 38_202.5, 13_104.9, 0],
+    ]);
+  });
+
+  it("taxes a let home's rent instead, and a loss on its sale carries forward", () => {
+    const rows = simulateFuture(
+      [
+        year(2024, 16_000, { property: [home(2, { woz: 300_000, rent: 6_000, let: true, gain: 10_000 })] }),
+        // Sold for 280,000 after half a year's rent.
+        year(2025, -27_000, {
+          property: [home(2, { woz: 310_000, rent: 3_000, let: true, gain: -30_000, sold: true })],
+        }),
+      ],
+      FUTURE_PRESETS.bill!,
+    );
+    expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.lossBalanceEur, r.propertyPendingEur])).toEqual([
+      // The rent, below 3.35% of the WOZ value, since the home is let all year.
+      [2024, 6000, 1512, 0, 10_000],
+      // 3,000 rent + 10,000 − 30,000 = −17,000.
+      [2025, -17_000, 0, 17_000, 0],
+    ]);
   });
 
   it("carries losses forward under the bill as passed", () => {
@@ -279,7 +330,13 @@ describe("2028 system preview", () => {
   it("serves the preview with overridable parameters", async () => {
     await scenario(90_000);
     const r = json(await t.api("GET", "/api/box3/future?preset=letter&ratePct=35"));
-    expect(r.params).toEqual({ ratePct: 35, allowanceEur: 1000, lossThresholdEur: 500, carryBackYears: 0 });
+    expect(r.params).toEqual({
+      ratePct: 35,
+      allowanceEur: 1000,
+      lossThresholdEur: 500,
+      carryBackYears: 0,
+      propertyPct: 3.35,
+    });
     expect(r.presets.map((p: any) => p.id)).toEqual(["bill", "letter"]);
     const y2024 = r.rows.find((x: any) => x.year === 2024);
     // 5,500 actual − 63 deductible costs − 1,000 = 4,437 at 35%.

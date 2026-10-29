@@ -215,6 +215,7 @@ interface FutureRow {
   taxableEur: number;
   taxEur: number;
   lossBalanceEur: number;
+  propertyPendingEur: number;
   deemedTaxEur: number | null;
   differenceEur: number | null;
 }
@@ -227,16 +228,23 @@ interface FutureResponse {
     allowanceEur: number;
     lossThresholdEur: number;
     carryBackYears: number;
+    propertyPct: number;
   }[];
   preset: string;
-  params: { ratePct: number; allowanceEur: number; lossThresholdEur: number; carryBackYears: number };
+  params: {
+    ratePct: number;
+    allowanceEur: number;
+    lossThresholdEur: number;
+    carryBackYears: number;
+    propertyPct: number;
+  };
   rows: FutureRow[];
 }
 
 const presetLabel = (id: string, fallback: string) =>
   ({
     bill: t("Bill as passed by the Tweede Kamer (12 Feb 2026)"),
-    letter: t("Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)"),
+    letter: t("Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)"),
   })[id] ?? fallback;
 
 /** The planned actual-return system (2028) applied to your past years, with editable assumptions. */
@@ -280,10 +288,10 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. Tax on sale isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
+          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
         )}
       </p>
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-6">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
         <Field label={t("Assumptions")} className="col-span-2">
           {(id) => (
             <Select
@@ -317,6 +325,7 @@ export function FuturePreviewCard() {
             </Select>
           )}
         </Field>
+        {field("propertyPct", t("Home not let (% of WOZ)"), t("vastgoedbijtelling"))}
       </div>
       {q.isLoading ? (
         <Spinner />
@@ -398,11 +407,14 @@ export function FuturePreviewCard() {
               {d!.rows[0] &&
                 d!.rows[0].lossBalanceEur > 0 &&
                 ` ${t("Losses still to carry forward: {amount}.", { amount: eur(d!.rows[0].lossBalanceEur) })}`}
+              {d!.rows[0] &&
+                d!.rows[0].propertyPendingEur !== 0 &&
+                ` ${t("Homes' value change since their first value, taxed when they're sold: {amount}.", { amount: signed(d!.rows[0].propertyPendingEur) })}`}
             </p>
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain is measured from the first value you entered, as the bill measures it from 1 January 2028, and counts in the year its value on the next 1 January is 0. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>

@@ -1119,15 +1119,17 @@
         "ratePct": 36,
         "allowanceEur": 1800,
         "lossThresholdEur": 500,
-        "carryBackYears": 0
+        "carryBackYears": 0,
+        "propertyPct": 3.35
       },
       {
         "id": "letter",
-        "label": "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on sale not modelled)",
+        "label": "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)",
         "ratePct": 36,
         "allowanceEur": 1000,
         "lossThresholdEur": 500,
-        "carryBackYears": 0
+        "carryBackYears": 0,
+        "propertyPct": 3.35
       }
     ],
     "preset": "bill",
@@ -1135,7 +1137,8 @@
       "ratePct": 36,
       "allowanceEur": 1800,
       "lossThresholdEur": 500,
-      "carryBackYears": 0
+      "carryBackYears": 0,
+      "propertyPct": 3.35
     },
     "today": "2026-10-22",
     "rows": [
@@ -1149,6 +1152,7 @@
         "taxableEur": 8361.12,
         "taxEur": 3010,
         "lossBalanceEur": 0,
+        "propertyPendingEur": 0,
         "deemedTaxEur": 6562,
         "differenceEur": -3552
       },
@@ -1162,6 +1166,7 @@
         "taxableEur": 9187.56,
         "taxEur": 3307.52,
         "lossBalanceEur": 0,
+        "propertyPendingEur": 0,
         "deemedTaxEur": 6180,
         "differenceEur": -2872.48
       },
@@ -1175,6 +1180,7 @@
         "taxableEur": 45250.58,
         "taxEur": 16290.21,
         "lossBalanceEur": 0,
+        "propertyPendingEur": 0,
         "deemedTaxEur": 5170,
         "differenceEur": 11120.21
       },
@@ -1188,6 +1194,7 @@
         "taxableEur": 10567.19,
         "taxEur": 3804.19,
         "lossBalanceEur": 0,
+        "propertyPendingEur": 0,
         "deemedTaxEur": 0,
         "differenceEur": 3804.19
       },
@@ -1201,6 +1208,7 @@
         "taxableEur": 0,
         "taxEur": 0,
         "lossBalanceEur": 0,
+        "propertyPendingEur": 0,
         "deemedTaxEur": null,
         "differenceEur": null
       }

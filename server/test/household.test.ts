@@ -335,3 +335,33 @@ describe("household and values per year in box 3", () => {
     expect(backup.tables.accounts!.find((a) => a.name === "Joint")).toMatchObject({ owner: "joint" });
   });
 });
+
+describe("homes in the 2028 preview", () => {
+  it("taxes a home's gain when it's sold, and each year its rent or 3.35% of its WOZ value", async () => {
+    t = await createTestApp();
+    const yearly = async (name: string, rows: object[]) => {
+      const a = await ok("POST", "/api/accounts", { name, kind: "property", tracking: "yearly" });
+      await ok("PUT", `/api/accounts/${a.id}/years`, { rows });
+    };
+    // Not let, apart from a few weeks in 2025, and sold that year for 230,000.
+    await yearly("Holiday home", [
+      { year: 2024, valueEur: "200000" },
+      { year: 2025, valueEur: "210000", incomeEur: "2000", outEur: "230000" },
+      { year: 2026, valueEur: "0" },
+    ]);
+    // Let with rent protection: it counts in box 3 at 79% of its WOZ value now.
+    const rented = { rented: true, rentEur: "6000" };
+    await yearly("Let home", [
+      { year: 2024, valueEur: "300000", incomeEur: "6000", details: rented },
+      { year: 2025, valueEur: "310000", details: rented },
+      { year: 2026, valueEur: "310000", details: rented },
+    ]);
+    const r = await ok("GET", "/api/box3/future?preset=bill");
+    expect(r.params.propertyPct).toBe(3.35);
+    const row = (year: number) => r.rows.find((x: any) => x.year === year);
+    // 3.35% of 200,000 for the holiday home, the let home's rent; the WOZ values rose 20,000.
+    expect(row(2024)).toMatchObject({ resultEur: 12_700, taxEur: 3924, propertyPendingEur: 20_000 });
+    // Higher than the rent: 3.35% of 210,000 = 7,035, and the 30,000 gained since 1 January 2024.
+    expect(row(2025)).toMatchObject({ resultEur: 37_035, taxEur: 12_684.6, propertyPendingEur: 10_000 });
+  });
+});

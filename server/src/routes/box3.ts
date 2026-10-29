@@ -111,6 +111,7 @@ export async function box3Routes(app: FastifyInstance) {
         allowanceEur: z.coerce.number().min(0).max(1_000_000).optional(),
         lossThresholdEur: z.coerce.number().min(0).max(1_000_000).optional(),
         carryBackYears: z.coerce.number().int().min(0).max(1).optional(),
+        propertyPct: z.coerce.number().min(0).max(100).optional(),
       })
       .parse(req.query);
     const base = FUTURE_PRESETS[q.preset]!;
@@ -119,6 +120,7 @@ export async function box3Routes(app: FastifyInstance) {
       allowanceEur: q.allowanceEur ?? base.allowanceEur,
       lossThresholdEur: q.lossThresholdEur ?? base.lossThresholdEur,
       carryBackYears: (q.carryBackYears ?? base.carryBackYears) as 0 | 1,
+      propertyPct: q.propertyPct ?? base.propertyPct,
     };
     const config = await loadConfig(db);
     const taxYears = await availableYears(db);
@@ -139,6 +141,7 @@ export async function box3Routes(app: FastifyInstance) {
         costsEur: actual.costsEur,
         partner: config.years[String(year)]?.partner ?? false,
         deemedTaxEur: box3?.calculation ? Number(box3.calculation.netTaxEur) : null,
+        property: actual.property,
       });
     }
     return {

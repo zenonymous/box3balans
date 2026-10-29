@@ -84,6 +84,9 @@ The printable overview of a tax year: box 3, the actual return, the values on th
 An estimate of box 3 under the proposed system from 2028 (Wet werkelijk rendement box 3, the actual-return act). Not a calculation for the tax return.
 _Avoid_: new system (as if it already applies)
 
+**Vastgoedbijtelling** — real estate addition (propertyPct):
+In the preview: what a home or other real estate yields each year when it isn't let all year and the rent is lower, a percentage of the WOZ value. The gain on sale comes on top in the year it's sold.
+
 ## Household
 
 **Huishouden** — household (household):
