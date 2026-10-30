@@ -1,0 +1,2 @@
+import{t as e}from"./download-CirO0l-u.js";function t(t,n,r){let i=e=>{let t=e==null?``:String(e);return/^[=+\-@\t\r]/.test(t)&&!/^-?\d+(\.\d+)?$/.test(t)&&(t=`'${t}`),/[",\n\r]/.test(t)?`"${t.replace(/"/g,`""`)}"`:t},a=[r.map(e=>i(e.header)).join(`,`),...n.map(e=>r.map(t=>i(t.value(e))).join(`,`))];e(t,new Blob([`﻿`+a.join(`\r
+`)],{type:`text/csv;charset=utf-8`}))}export{t};
