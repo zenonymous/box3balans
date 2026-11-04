@@ -2,7 +2,7 @@
 
 _English: [en/box3-sources.md](en/box3-sources.md)_
 
-Gecontroleerd op 8 oktober 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
+Gecontroleerd op 8 oktober 2026, de cijfers voor 2027 op 4 november 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
 
 ## Forfaitair rendement (belastingjaren vanaf 2023)
 
@@ -16,16 +16,16 @@ De officiële stappen en de cijfers voor 2023–2026 staan in `server/src/domain
 
 - **Belastingplan 2027** (Prinsjesdag, 15 september 2026; wetsvoorstel 37.022): box 3 staat niet in het pakket zelf. De kerncijfers gingen uit van een heffingsvrij vermogen van € 60.098 en een tarief van 36%; de gewone actualisatie brengt het forfaitaire rendement op overige bezittingen op **6,37%** (was 6,00%).
 - **Brief van het kabinet van 29 september 2026** (Tweede Kamer 2026Z20444): stelde voor het heffingsvrij vermogen per 2027 terug te brengen naar het niveau van 2020, € 30.846 per persoon, en het forfait voor overige bezittingen 1,5 procentpunt te verhogen (naar 7,87%), om mee te betalen aan de novelle hieronder. Tot en met versie 0.1.45 rekende Box3balans met die cijfers.
-- **Aanpassing van 3 november 2026** (aanbiedingsbrief bij de derde nota van wijziging en de novelle, Kamerstuk 37 053, nr. 5): "De eerder voorgestelde verlaging van de grens van het heffingsvrij vermogen en heffingsvrij rendement, alsmede het forfait, zal worden geschrapt." Overige bezittingen houden dus 6,37%. De derde nota van wijziging op het Belastingplan past de tabelcorrectiefactor voor 2027 toe voor 59,8% in plaats van 48%, dus een inflatiecorrectie van 1,015548 per 1 januari 2027. Het heffingsvrij vermogen wordt daarmee € 59.357 × 1,015548 = € 60.279,88, afgerond **€ 60.280**. (De € 60.098 uit het Belastingplan is € 59.357 × 1,01248, op dezelfde manier afgerond.)
-- **Nog niet aangenomen:** de Tweede Kamer stemt op 12 november, en de bedragen kunnen in het debat nog veranderen. De definitieve bedragen staan in de ministeriële regeling van december; artikel 10.1 Wet IB 2001 laat de afronding daaraan over.
+- **Aanpassing van 3 november 2026** (aanbiedingsbrief bij de derde nota van wijziging en de novelle, Kamerstuk 37 053, nr. 5): "De eerder voorgestelde verlaging van de grens van het heffingsvrij vermogen en heffingsvrij rendement, alsmede het forfait, zal worden geschrapt." Overige bezittingen houden dus 6,37%. De derde nota van wijziging op het Belastingplan past de tabelcorrectiefactor voor 2027 toe voor 59,8% in plaats van 48%, dus een inflatiecorrectie van 1,015548 per 1 januari 2027 (de tabelcorrectiefactor is 1,026: 1 + 59,8% × 0,026). Het heffingsvrij vermogen wordt daarmee € 59.357 × 1,015548 = € 60.279,88, afgerond **€ 60.280**. (De € 60.098 uit het Belastingplan is € 59.357 × 1,01248, met 48%, op dezelfde manier afgerond.)
+- **Nog niet aangenomen:** de stemming in de Tweede Kamer staat gepland op 12 november, en de bedragen kunnen in het debat nog veranderen. De definitieve bedragen staan in de ministeriële regeling van december; artikel 10.1 Wet IB 2001 laat de afronding daaraan over.
 - **Groene beleggingen:** de vrijstelling en de heffingskorting vervallen per 1 januari 2028, niet al in 2027 zoals eerst gepland. De bedragen voor 2027 volgen met de vaste cijfers.
 - De percentages voor banktegoeden en schulden over 2027 zijn pas na afloop van het jaar definitief.
 
-Eerder dan [belastingregels.md](belastingregels.md) voorschrijft: 2027 is al toegevoegd, zodat het jaar klaarstaat. De schuldendrempel, de groene vrijstelling en de percentages voor banktegoeden en schulden zijn die van 2026 tot de cijfers van 2027 bekend zijn. De schuldendrempel en de groene vrijstelling gaan met dezelfde inflatiecorrectie mee (artikel 10.1 Wet IB 2001), maar hoe ze worden afgerond, staat pas in die regeling. **In december controleren** zodra het Belastingplan is aangenomen, en de bron van 2027 vervangen door de aangenomen tekst of de pagina van de Belastingdienst ([#4](https://github.com/zenonymous/box3balans/issues/4)). Wie andere cijfers wil, past ze aan onder _Regels en tarieven_.
+Eerder dan [belastingregels.md](belastingregels.md) voorschrijft: 2027 is al toegevoegd, zodat het jaar klaarstaat. De schuldendrempel, de groene vrijstelling en de percentages voor banktegoeden en schulden zijn die van 2026 tot de cijfers van 2027 bekend zijn. De schuldendrempel en de groene vrijstelling worden ook geïndexeerd (artikel 10.1 Wet IB 2001), maar met welke factor en welke afronding staat pas in die regeling: van 2025 naar 2026 bleef de schuldendrempel gelijk en steeg de groene vrijstelling minder dan het heffingsvrij vermogen. **In december controleren** zodra het Belastingplan is aangenomen, en de bron van 2027 vervangen door de aangenomen tekst of de pagina van de Belastingdienst ([#4](https://github.com/zenonymous/box3balans/issues/4)). Wie andere cijfers wil, past ze aan onder _Regels en tarieven_.
 
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026, afschrift aan de Eerste Kamer): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - Staatssecretaris van Financiën, _Aanbiedingsbrief bij derde nota van wijziging wetsvoorstel Belastingplan 2027, novelle Uitbreiding vermogenswinstbelasting box 3 en toezeggingen tweede wetgevingsoverleg_ (3 november 2026; Kamerstuk 37 053, nr. 5): https://www.tweedekamer.nl/kamerstukken/brieven_regering/detail?id=2026Z23922&did=2026D55254
-- Tweede Kamer, _Belastingplan 2027 (37.022)_, met de _Derde nota van wijziging_ van 3 november 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37022
+- Tweede Kamer, _Derde nota van wijziging inzake het Belastingplan 2027_ (3 november 2026; wetsvoorstel 37.022; Word-bestand): https://www.tweedekamer.nl/downloads/document?id=2026D55208
 - Eerste Kamer, _Belastingplan 2027 (37.022)_: https://www.eerstekamer.nl/wetsvoorstel/37022_belastingplan_2027
 - Deloitte, _Pakket Belastingplan 2027: tarieven en heffingskortingen_ (forfait 6,37%): https://www.deloitte.com/nl/nl/services/tax/blogs/pakket-belastingplan-2027-tarieven-heffingskortingen.html
 - Rendement, _Vrijstelling groene beleggingen vervalt pas per 2028_: https://www.rendement.nl/inkomen-uit-sparen-en-beleggen/nieuws/vrijstelling-groene-beleggingen-vervalt-pas-per-2028.html
@@ -76,6 +76,8 @@ Bronnen:
 - SRA, overzicht van de tegenbewijsregeling 2017–2027 (bruto dividenden, geen schuldendrempel, partners, toerekening van rente): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 
 ## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
+
+**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. Dit hoofdstuk en de vooruitblik in de app volgen dat na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 Stand op 8 oktober 2026:
 

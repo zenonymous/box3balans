@@ -2,7 +2,7 @@
 
 _Nederlands: [box3-sources.md](../box3-sources.md)_
 
-Checked on 8 October 2026. Box 3 changes often: check these rules again before you rely on the figures for a year. The sources are Dutch; their titles are kept as they are.
+Checked on 8 October 2026, the 2027 figures on 4 November 2026. Box 3 changes often: check these rules again before you rely on the figures for a year. The sources are Dutch; their titles are kept as they are.
 
 ## Deemed return (tax years from 2023)
 
@@ -16,16 +16,16 @@ The official steps and the figures for 2023–2026 are in `server/src/domain/box
 
 - **Belastingplan 2027** (tax plan; Prinsjesdag, 15 September 2026; bill 37.022): box 3 isn't in the package itself. The key figures assumed a tax-free allowance of €60,098 and a rate of 36%; the usual update brings the deemed return on other assets to **6.37%** (was 6.00%).
 - **Cabinet letter of 29 September 2026** (House of Representatives 2026Z20444): proposed taking the tax-free allowance back to the 2020 level from 2027, €30,846 per person, and raising the deemed return for other assets by 1.5 percentage points (to 7.87%), to help pay for the amendment (novelle) below. Up to version 0.1.45, Box3balans used those figures.
-- **Change of 3 November 2026** (cover letter for the third amendment (nota van wijziging) and the novelle, Kamerstuk 37 053, no. 5): the earlier proposed cuts of the tax-free allowance and the tax-free result, and the change to the deemed return, are dropped ("zal worden geschrapt"). So other assets keep 6.37%. The third amendment to the Belastingplan applies the table correction factor for 2027 at 59.8% instead of 48%, so an inflation correction of 1.015548 on 1 January 2027. That makes the tax-free allowance €59,357 × 1.015548 = €60,279.88, rounded **€60,280**. (The Belastingplan's €60,098 is €59,357 × 1.01248, rounded the same way.)
-- **Not adopted yet:** the House of Representatives votes on 12 November, and the amounts can still change in the debate. The final amounts are in the ministerial regulation in December; article 10.1 of the Wet IB 2001 leaves the rounding to it.
+- **Change of 3 November 2026** (cover letter for the third amendment (nota van wijziging) and the novelle, Kamerstuk 37 053, no. 5): the earlier proposed cuts of the tax-free allowance and the tax-free result, and the change to the deemed return, are dropped ("zal worden geschrapt"). So other assets keep 6.37%. The third amendment to the Belastingplan applies the table correction factor for 2027 at 59.8% instead of 48%, so an inflation correction of 1.015548 on 1 January 2027 (the table correction factor is 1.026: 1 + 59.8% × 0.026). That makes the tax-free allowance €59,357 × 1.015548 = €60,279.88, rounded **€60,280**. (The Belastingplan's €60,098 is €59,357 × 1.01248, at 48%, rounded the same way.)
+- **Not adopted yet:** the vote in the House of Representatives is planned for 12 November, and the amounts can still change in the debate. The final amounts are in the ministerial regulation in December; article 10.1 of the Wet IB 2001 leaves the rounding to it.
 - **Green investments:** the exemption and the tax credit end on 1 January 2028, not already in 2027 as first planned. The amounts for 2027 follow with the fixed figures.
 - The percentages for bank balances and debts for 2027 are only final after the year has ended.
 
-Earlier than [belastingregels.md](belastingregels.md) prescribes: 2027 has already been added, so the year is ready. The debt threshold, the green exemption and the percentages for bank balances and debts are those of 2026 until the 2027 figures are known. The debt threshold and the green exemption move with the same inflation correction (article 10.1 Wet IB 2001), but how they're rounded is only in that regulation. **Check in December** once the Belastingplan has been adopted, and replace the 2027 source with the adopted text or the Belastingdienst's page ([#4](https://github.com/zenonymous/box3balans/issues/4)). Anyone who wants other figures adjusts them under _Rules & rates_.
+Earlier than [belastingregels.md](belastingregels.md) prescribes: 2027 has already been added, so the year is ready. The debt threshold, the green exemption and the percentages for bank balances and debts are those of 2026 until the 2027 figures are known. The debt threshold and the green exemption are indexed too (article 10.1 Wet IB 2001), but by which factor and with which rounding is only in that regulation: from 2025 to 2026 the debt threshold stayed the same and the green exemption rose less than the tax-free allowance. **Check in December** once the Belastingplan has been adopted, and replace the 2027 source with the adopted text or the Belastingdienst's page ([#4](https://github.com/zenonymous/box3balans/issues/4)). Anyone who wants other figures adjusts them under _Rules & rates_.
 
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 September 2026, copy to the Senate): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
 - Staatssecretaris van Financiën, _Aanbiedingsbrief bij derde nota van wijziging wetsvoorstel Belastingplan 2027, novelle Uitbreiding vermogenswinstbelasting box 3 en toezeggingen tweede wetgevingsoverleg_ (3 November 2026; Kamerstuk 37 053, no. 5): https://www.tweedekamer.nl/kamerstukken/brieven_regering/detail?id=2026Z23922&did=2026D55254
-- Tweede Kamer (House of Representatives), _Belastingplan 2027 (37.022)_, with the _Derde nota van wijziging_ of 3 November 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37022
+- Tweede Kamer (House of Representatives), _Derde nota van wijziging inzake het Belastingplan 2027_ (third amendment, 3 November 2026; bill 37.022; Word file): https://www.tweedekamer.nl/downloads/document?id=2026D55208
 - Eerste Kamer (Senate), _Belastingplan 2027 (37.022)_: https://www.eerstekamer.nl/wetsvoorstel/37022_belastingplan_2027
 - Deloitte, _Pakket Belastingplan 2027: tarieven en heffingskortingen_ (deemed return 6.37%): https://www.deloitte.com/nl/nl/services/tax/blogs/pakket-belastingplan-2027-tarieven-heffingskortingen.html
 - Rendement, _Vrijstelling groene beleggingen vervalt pas per 2028_: https://www.rendement.nl/inkomen-uit-sparen-en-beleggen/nieuws/vrijstelling-groene-beleggingen-vervalt-pas-per-2028.html
@@ -76,6 +76,8 @@ Sources:
 - SRA, overview of the rebuttal scheme 2017–2027 (gross dividends, no debt threshold, partners, allocation of interest): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 
 ## From 2028: Wet werkelijk rendement box 3 (bill 36.748), not law yet
+
+**Change of 3 November 2026:** the cabinet submitted the amendment (novelle, Kamerstuk 37 053) and now proposes a start on 1 January 2029; 2028 then still falls under the current system. The cut of the tax-free result to €1,000 is dropped. This section and the preview in the app follow that after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 Status on 8 October 2026:
 

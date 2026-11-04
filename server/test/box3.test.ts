@@ -105,16 +105,17 @@ describe("box 3 calculation (official steps)", () => {
     });
   });
 
-  // 2027 as the cabinet changed it on 3 Nov 2026 (cover letter 37053-5, derde nota van wijziging
-  // 37022): the 29 Sep cuts are dropped, so other assets keep the Belastingplan's 6.37%, and the
-  // tax-free allowance is 2026's € 59,357 × 1.015548 = € 60,279.88 → € 60,280. Worked by hand.
-  it("uses the amended 2027 proposal: € 60,280 tax-free and 6.37% for other assets", () => {
+  // 2027 as the cabinet changed it on 3 Nov 2026 (cover letter Kamerstuk 37 053, nr. 5; third
+  // amendment to bill 37.022): the 29 Sep cuts are dropped, so other assets keep the Belastingplan's
+  // 6.37%, and the tax-free allowance is 2026's €59,357 × 1.015548 = €60,279.88 → €60,280.
+  // Worked by hand.
+  it("uses the amended 2027 proposal: €60,280 tax-free and 6.37% for other assets", () => {
     const c = calculateBox3({ bank: D(0), other: D(100_000), debts: D(0), partner: false }, DEFAULT_RATES["2027"]!);
     expect(c).toMatchObject({
       deemedReturnEur: "6370.00", // 6.37% of 100,000
       allowanceEur: "60280.00",
-      taxableBaseEur: "39720.00",
-      sharePct: "39.72",
+      taxableBaseEur: "39720.00", // 100,000 − 60,280
+      sharePct: "39.72", // 39,720 / 100,000
       benefitEur: "2530.00", // 6,370 × 39.72% = 2,530.16
       taxEur: "910.00", // 36% = 910.80
     });
