@@ -80,9 +80,35 @@ Tax already taken off dividend or interest: Dutch dividend tax, or withholding t
 **Dossier** (dossier):
 The printable overview of a tax year: box 3, the actual return, the values on the reference date and where every amount comes from.
 
+## Preview: the proposed system
+
 **Vooruitblik** — preview (future / 2028):
-An estimate of box 3 under the proposed system from 2028 (Wet werkelijk rendement box 3, the actual-return act). Not a calculation for the tax return.
+An estimate of box 3 under the proposed system based on actual return (Wet werkelijk rendement box 3, the actual-return act, with its amendment, the novelle), proposed from 2029. Not a calculation for the tax return.
 _Avoid_: new system (as if it already applies)
+
+**Vermogenswinst** — capital gain:
+The change in value that only counts when you sell something or it leaves box 3: the proceeds minus the acquisition price. For real estate and financial instruments.
+_Avoid_: realised result (that uses the cost basis), price gain
+
+**Vermogensaanwas** — capital accrual:
+The change in value that counts every year, sold or not. As proposed, in 2029 still for everything that isn't real estate or a financial instrument, such as bank balances, coins in a wallet or on an exchange, and physical precious metal.
+_Avoid_: unrealised result (that's the position against the cost basis)
+
+**Financieel instrument** — financial instrument:
+An asset that falls under the definition of the Wet op het financieel toezicht (the Financial Supervision Act), or a non-tradable share: shares, bonds, funds and ETFs, options and futures. Roughly the _beleggingen_ (investments) section of the tax return. Coins and precious metal themselves aren't.
+_Avoid_: security, instrument (on its own)
+
+**Verkrijgingsprijs** — acquisition price:
+What the capital gain is measured against. For what you already had at the start of the system, its value on that day; after that, the average price of everything you hold of the same asset, across all your accounts.
+_Avoid_: cost basis (what you actually paid)
+
+**Reguliere voordelen** — regular benefits:
+What assets yield each year without being sold, such as interest, dividend and rent, gross. They count every year, also under capital gain.
+_Avoid_: income (that's after tax withheld)
+
+**Heffingsvrij resultaat** — tax-free result:
+The part of the result you pay no tax on in the proposed system, per person.
+_Avoid_: tax-free allowance (that's the current system), tax-free return (heffingsvrij rendement)
 
 **Vastgoedbijtelling** — real estate addition (propertyPct):
 In the preview: what a home or other real estate yields each year when it isn't let all year and the rent is lower, a percentage of the WOZ value. The gain on sale comes on top in the year it's sold, or when it leaves box 3.

@@ -1,0 +1,9 @@
+# De vooruitblik rekent met een eigen verkrijgingsprijs, niet met de aankoopwaarde
+
+_English: [../en/adr/0013-verkrijgingsprijs-in-de-vooruitblik.md](../en/adr/0013-verkrijgingsprijs-in-de-vooruitblik.md)_
+
+Volgens de novelle (Kamerstuk 37 053, november 2026; nog geen wet) telt bij financiële instrumenten vanaf de start van het nieuwe stelsel, voorgesteld per 1 januari 2029, de vermogenswinst: de opbrengst min de verkrijgingsprijs. Die verkrijgingsprijs is voor wat je bij de start al had de waarde op die dag, en verder de gemiddelde prijs van alles wat je van dezelfde belegging hebt, zoals in box 2. De aankoopwaarde in de app is iets anders: wat je echt betaalde, per rekening, en naar keuze met FIFO. De vooruitblik rekent daarom een eigen verkrijgingsprijs uit de transacties: per belegging en per eigenaar over al diens rekeningen, vanaf de waarde bij de start, altijd gemiddeld, wat de instelling voor de aankoopwaarde ook is. Een overboeking tussen eigen rekeningen verandert hem niet. De vooruitblik wijkt daardoor af van _Resultaat_, maar volgt de wet.
+
+Of een belegging een financieel instrument is, hangt af van waar ze staat, niet alleen van haar soort. Aandelen, fondsen en ETF's zijn het altijd. Crypto en edelmetaal zijn het alleen bij een broker: een ETP of ETC is een effect. Dat is onze lezing, want de toelichting noemt ze niet. Munten in een wallet of op een beurs, edelmetaal in een kluis of thuis, banktegoeden en de rest blijven in 2029 op vermogensaanwas, zoals de novelle voorstelt.
+
+Nog niet besloten: rekeningen met waarden per jaar hebben geen verkopen, dus daar valt geen vermogenswinst uit te rekenen. Ze kunnen op vermogensaanwas blijven met een melding, of een veld krijgen voor wat er dat jaar is verkocht ([#11](https://github.com/zenonymous/box3balans/issues/11)).

@@ -80,9 +80,35 @@ Belasting die al van dividend of rente is afgehouden: Nederlandse dividendbelast
 **Dossier** (dossier):
 Het afdrukbare overzicht van een belastingjaar: box 3, het werkelijk rendement, de waarden op de peildatum en waar elk bedrag vandaan komt.
 
+## Vooruitblik: het voorgestelde stelsel
+
 **Vooruitblik** (future / 2028):
-Een schatting van box 3 onder het voorgestelde stelsel vanaf 2028 (Wet werkelijk rendement box 3). Geen berekening voor de aangifte.
+Een schatting van box 3 onder het voorgestelde stelsel op basis van werkelijk rendement (Wet werkelijk rendement box 3 met de novelle), volgens het voorstel vanaf 2029. Geen berekening voor de aangifte.
 _Vermijd_: nieuw stelsel (alsof het al geldt)
+
+**Vermogenswinst**:
+De waardeverandering die pas telt als je iets verkoopt of het box 3 verlaat: de opbrengst min de verkrijgingsprijs. Voor onroerende zaken en financiële instrumenten.
+_Vermijd_: gerealiseerd resultaat (dat rekent met de aankoopwaarde), koerswinst
+
+**Vermogensaanwas**:
+De waardeverandering die elk jaar telt, verkocht of niet. Volgens het voorstel in 2029 nog voor alles wat geen onroerende zaak of financieel instrument is, zoals banktegoeden, munten in een wallet of op een beurs en fysiek edelmetaal.
+_Vermijd_: ongerealiseerd resultaat (dat is de stand tegenover de aankoopwaarde)
+
+**Financieel instrument**:
+Een belegging die onder de definitie van de Wet op het financieel toezicht valt, of een niet-verhandelbaar aandeel: aandelen, obligaties, fondsen en ETF's, opties en futures. Ongeveer de rubriek _beleggingen_ in de aangifte. Munten en edelmetaal zelf zijn het niet.
+_Vermijd_: effect, instrument (los)
+
+**Verkrijgingsprijs**:
+Waartegen de vermogenswinst wordt berekend. Voor wat je bij de start van het stelsel al had, de waarde op die dag; daarna de gemiddelde prijs van alles wat je van dezelfde belegging hebt, over al je rekeningen.
+_Vermijd_: aankoopwaarde (wat je echt betaalde)
+
+**Reguliere voordelen**:
+Wat bezit elk jaar opbrengt zonder dat je het verkoopt, zoals rente, dividend en huur, bruto. Tellen elk jaar, ook bij vermogenswinst.
+_Vermijd_: inkomsten (die zijn na ingehouden belasting)
+
+**Heffingsvrij resultaat**:
+Het deel van het resultaat waarover je in het voorgestelde stelsel geen belasting betaalt, per persoon.
+_Vermijd_: heffingsvrij vermogen (dat is het huidige stelsel), heffingsvrij rendement
 
 **Vastgoedbijtelling** (propertyPct):
 In de vooruitblik: wat een woning of andere onroerende zaak elk jaar opbrengt als ze niet het hele jaar verhuurd is en de huur lager is, een percentage van de WOZ-waarde. De winst bij verkoop komt erbij in het jaar van verkoop, of als de zaak box 3 verlaat.

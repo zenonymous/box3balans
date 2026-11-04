@@ -1,0 +1,9 @@
+# The preview uses its own acquisition price, not the cost basis
+
+_Nederlands: [0013-verkrijgingsprijs-in-de-vooruitblik.md](../../adr/0013-verkrijgingsprijs-in-de-vooruitblik.md)_
+
+Under the amendment (novelle, Kamerstuk 37 053, November 2026; not law yet), financial instruments are taxed on their capital gain (vermogenswinst) from the start of the new system, proposed for 1 January 2029: the proceeds minus the acquisition price (verkrijgingsprijs). For what you already had at the start, that acquisition price is its value on that day; after that, it's the average price of everything you hold of the same asset, as in box 2. The cost basis in the app is something else: what you actually paid, per account, and optionally FIFO. So the preview works out its own acquisition price from the transactions: per asset and per owner across all of that owner's accounts, starting from the value at the start, always averaged, whatever the cost basis setting is. A transfer between your own accounts doesn't change it. The preview therefore differs from _Results_, but follows the law.
+
+Whether an asset is a financial instrument depends on where it's held, not only on its asset class. Shares, funds and ETFs always are. Crypto and precious metal are only when held at a broker: an ETP or ETC is a security. That's our reading, since the explanatory memorandum doesn't mention them. Coins in a wallet or on an exchange, precious metal in a vault or at home, bank balances and the rest stay on capital accrual (vermogensaanwas) in 2029, as the amendment proposes.
+
+Not decided yet: accounts kept as values per year have no sales, so no capital gain can be worked out for them. They can stay on capital accrual with a message, or get a field for what was sold that year ([#11](https://github.com/zenonymous/box3balans/issues/11)).
