@@ -113,9 +113,9 @@
       },
       "2027": {
         "bankPct": "1.28",
-        "otherPct": "7.87",
+        "otherPct": "6.37",
         "debtPct": "2.70",
-        "allowanceEur": "30846",
+        "allowanceEur": "60280",
         "debtThresholdEur": "3800",
         "taxRatePct": "36",
         "greenExemptEur": "26715",
@@ -124,13 +124,13 @@
       }
     },
     "rules": {
-      "checkedAt": "2026-10-09",
+      "checkedAt": "2026-11-04",
       "sources": {
         "2023": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2023",
         "2024": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2024",
         "2025": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2025",
         "2026": "https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/berekening-box-3-inkomen-2026",
-        "2027": "https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf"
+        "2027": "https://www.tweedekamer.nl/kamerstukken/brieven_regering/detail?id=2026Z23922&did=2026D55254"
       }
     },
     "accounts": [

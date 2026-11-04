@@ -29,7 +29,7 @@ describe("box 3 rules and rates", () => {
     fireEvent.click(within(card).getByRole("button", { name: "Regels en tarieven opslaan" }));
     await waitFor(() => expect(sent(api, "PUT", "/api/box3/config")).toHaveLength(1));
     const { rates } = sent(api, "PUT", "/api/box3/config")[0] as { rates: Record<string, Record<string, unknown>> };
-    expect(rates["2027"]).toMatchObject({ bankPct: "1.5", otherPct: "7.87", allowanceEur: "30846", final: true });
+    expect(rates["2027"]).toMatchObject({ bankPct: "1.5", otherPct: "6.37", allowanceEur: "60280", final: true });
     expect(await within(card).findByText(/Opgeslagen/)).toBeTruthy();
 
     fireEvent.click(within(card).getByRole("button", { name: "Herstellen" }));
