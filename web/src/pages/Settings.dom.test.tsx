@@ -63,7 +63,7 @@ describe("Settings page", () => {
     );
   });
 
-  it("makes a backup now, and restores one only after typing RESTORE", async () => {
+  it("makes a backup now, and restores one only after typing RESTORE and your password", async () => {
     const backup = {
       name: "box3balans-20261027-030000-auto.json.gz.enc",
       sizeBytes: 20480,
@@ -81,6 +81,7 @@ describe("Settings page", () => {
         backups: [backup],
       },
       "POST /api/backups": { ...backup, name: "box3balans-20261027-120000-manual.json.gz.enc" },
+      "GET /api/auth/2fa": { enabled: true, recoveryCodesLeft: 10 },
     });
     fireEvent.click(await screen.findByRole("button", { name: "Nu back-up maken" }));
     expect(await screen.findByText(/Back-up gemaakt: box3balans-20261027-120000-manual\.json\.gz\.enc/)).toBeTruthy();
@@ -90,11 +91,17 @@ describe("Settings page", () => {
     const restore = screen.getByRole<HTMLButtonElement>("button", { name: "Terugzetten" });
     expect(restore.disabled).toBe(true);
     fireEvent.change(confirm, { target: { value: "RESTORE" } });
+    expect(restore.disabled).toBe(true);
+    // A restore brings back the account as it was in the backup, so it takes the password; with
+    // two-step verification on, a code too.
+    const form = within(confirm.closest("form")!);
+    fireEvent.change(form.getByLabelText("Je wachtwoord"), { target: { value: "correct horse battery" } });
+    fireEvent.change(await form.findByLabelText("Code uit je authenticator-app"), { target: { value: "123456" } });
     expect(restore.disabled).toBe(false);
     fireEvent.click(restore);
     await waitFor(() =>
       expect(sent(api, "POST", `/api/backups/${encodeURIComponent(backup.name)}/restore`)).toEqual([
-        { confirm: "RESTORE" },
+        { confirm: "RESTORE", password: "correct horse battery", code: "123456" },
       ]),
     );
   });

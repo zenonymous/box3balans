@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { getTableName, is } from "drizzle-orm";
 import { PgTable } from "drizzle-orm/pg-core";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createBackup,
   decodeBackup,
@@ -18,11 +18,13 @@ import {
 } from "../src/backup/backup.js";
 import { openDatabase } from "../src/db/client.js";
 import { automaticBackup } from "../src/jobs/scheduler.js";
+import { base32Decode, hotp, totpStep } from "../src/lib/totp.js";
 import * as s from "../src/db/schema.js";
 import { SecretBox } from "../src/lib/secrets.js";
 import { WrongPassphraseError, decryptBackup, encryptBackup, isEncryptedBackup } from "../src/backup/crypto.js";
 import { createTestApp, type TestApp } from "./helpers.js";
 
+const PASSWORD = "correct horse battery";
 let t: TestApp | undefined;
 afterEach(async () => {
   await t?.close();
@@ -130,8 +132,10 @@ describe("backup and restore", () => {
 
     // Lose some data, then restore.
     await t.api("PUT", `/api/accounts/${a.id}`, { name: "Renamed by mistake" });
-    expect((await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "nope" })).statusCode).toBe(400);
-    const res = await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE" });
+    expect(
+      (await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "nope", password: PASSWORD })).statusCode,
+    ).toBe(400);
+    const res = await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE", password: PASSWORD });
     expect(res.statusCode).toBe(200);
     const body = json(res);
     expect(body.safetyBackup).toMatch(/-prerestore\.json\.gz$/);
@@ -146,6 +150,31 @@ describe("backup and restore", () => {
     expect(names).toContain("Broker");
     expect(names).not.toContain("Renamed by mistake");
     expect(json(await t.api("GET", "/api/settings")).costMethod).toBe("fifo");
+  });
+
+  // Security audit of 5 Nov 2026: a restore brings back the account as it was in the backup (an older
+  // password, two-step verification off if it was then), so it takes what turning that off takes.
+  it("takes the password to restore, and with two-step verification on a code too", async () => {
+    // Hold the clock in the middle of a 30-second step, so the codes below stay valid.
+    vi.spyOn(Date, "now").mockReturnValue((totpStep() * 30 + 15) * 1000);
+    try {
+      t = await createTestApp();
+      await populate();
+      const made = json(await t.api("POST", "/api/backups"));
+      const restore = (extra: object) =>
+        t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE", ...extra });
+      // Three tries: restoring allows three per five minutes.
+      expect(json(await restore({ password: "not it" })).error).toBe("Current password is incorrect");
+
+      const setup = json(await t.api("POST", "/api/auth/2fa/setup"));
+      const code = (offset: number) => hotp(base32Decode(setup.secret), totpStep() + offset);
+      await t.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code: code(-1) });
+      expect(json(await restore({ password: PASSWORD })).error).toBe("Enter the code from your authenticator app");
+      const ok = await restore({ password: PASSWORD, code: code(0) });
+      expect(ok.statusCode, ok.body).toBe(200);
+    } finally {
+      vi.restoreAllMocks();
+    }
   });
 
   it("only serves files it created (no path traversal)", async () => {
@@ -178,7 +207,10 @@ describe("backup and restore", () => {
       setupCode: "K7QX2-MPF9R",
     });
     t.cookie = `pd_session=${setup.cookies.find((c) => c.name === "pd_session")!.value}`;
-    const refused = await t.api("POST", `/api/backups/${early.name}/restore`, { confirm: "RESTORE" });
+    const refused = await t.api("POST", `/api/backups/${early.name}/restore`, {
+      confirm: "RESTORE",
+      password: PASSWORD,
+    });
     expect(refused.statusCode).toBe(400);
     expect(json(refused).error).toMatch(/no account/);
     await expect(
@@ -241,6 +273,7 @@ describe("backup and restore", () => {
     expect(pruneBackups(t.backupDir, 3)).toEqual(["kluishuis-20250101-000000-auto.json.gz"]);
     const res = await t.api("POST", "/api/backups/portfolio-20250601-120000-manual.json.gz/restore", {
       confirm: "RESTORE",
+      password: PASSWORD,
     });
     expect(res.statusCode).toBe(200);
   });
@@ -298,7 +331,7 @@ describe("encrypted backups", () => {
     await expect(readBackupFile(file)).rejects.toThrow(/encrypted/);
     expect((await readBackupFile(file, PASS)).tables.accounts).toHaveLength(2);
 
-    const res = await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE" });
+    const res = await t.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE", password: PASSWORD });
     expect(res.statusCode, res.body).toBe(200);
     expect(json(res).safetyBackup).toMatch(/-prerestore\.json\.gz\.enc$/);
 
@@ -308,11 +341,12 @@ describe("encrypted backups", () => {
 
     // A backup made with an earlier passphrase: refused, unless that passphrase is entered.
     const old = await writeBackupFile(t.database.db, t.backupDir, "manual", "an older passphrase");
-    const refused = await t.api("POST", `/api/backups/${old.name}/restore`, { confirm: "RESTORE" });
+    const refused = await t.api("POST", `/api/backups/${old.name}/restore`, { confirm: "RESTORE", password: PASSWORD });
     expect(refused.statusCode).toBe(400);
     expect(json(refused).error).toMatch(/Wrong backup passphrase/);
     const ok = await t.api("POST", `/api/backups/${old.name}/restore`, {
       confirm: "RESTORE",
+      password: PASSWORD,
       passphrase: "an older passphrase",
     });
     expect(ok.statusCode).toBe(200);

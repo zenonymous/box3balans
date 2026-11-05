@@ -50,7 +50,8 @@ services:
       - ./backups:/backups
 
   db:
-    # Major versions need a backup and restore to upgrade (README → PostgreSQL upgraden).
+    # Major versions need a backup and restore to upgrade (README → PostgreSQL upgraden). A tag on
+    # purpose, not a fixed digest: `docker compose pull` then brings PostgreSQL's security updates.
     image: postgres:18-alpine
     restart: unless-stopped
     security_opt:

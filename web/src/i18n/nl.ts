@@ -1592,6 +1592,8 @@ export const NL: Record<string, string> = {
     "De hele berekening en de regels per jaar staan op de pagina <0>Box 3</0>. Een schatting, geen belastingadvies.",
   // stage E
   "Code from your authenticator app": "Code uit je authenticator-app",
+  "Other browsers and devices where you're signed in will be signed out.":
+    "Andere browsers en apparaten waar je bent ingelogd, worden uitgelogd.",
   "Or one of your recovery codes, if you don't have your phone.":
     "Of een van je herstelcodes, als je je telefoon niet bij de hand hebt.",
   "Which holdings count as bank balances, other assets, green investments or not in box 3, and the rates per year. The official figures are built in (checked {date}); edit them when the rules change.":

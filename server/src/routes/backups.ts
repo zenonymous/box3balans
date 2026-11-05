@@ -62,9 +62,17 @@ export async function backupRoutes(app: FastifyInstance) {
   app.post("/:name/restore", { config: { rateLimit: { max: 3, timeWindow: "5 minutes" } } }, async (req, reply) => {
     const { name } = z.object({ name: z.string() }).parse(req.params);
     const body = z
-      .object({ confirm: z.literal("RESTORE"), passphrase: z.string().max(500).optional() })
+      .object({
+        confirm: z.literal("RESTORE"),
+        passphrase: z.string().max(500).optional(),
+        password: z.string().max(256).default(""),
+        code: z.string().trim().max(20).optional(),
+      })
       .safeParse(req.body);
     if (!body.success) throw new HttpError(400, tr("Type RESTORE to confirm"));
+    // A restore brings back the account as it was in the backup: an older password, or two-step
+    // verification off. So it takes what turning that off takes, not just a session.
+    await app.identity.confirm(req.user!.id, body.data.password, body.data.code);
     let file: string;
     try {
       file = backupPath(dir, name);

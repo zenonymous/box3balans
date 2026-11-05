@@ -7,6 +7,7 @@ import {
   createSession,
   createFirstUser,
   destroySession,
+  endOtherSessions,
   isSetupCode,
   newSetupCode,
   setupCodeMessage,
@@ -14,7 +15,7 @@ import {
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
-import { tr, trn } from "../i18n/index.js";
+import { tr } from "../i18n/index.js";
 import {
   disableTwoFactor,
   enableTwoFactor,
@@ -22,8 +23,6 @@ import {
   renewRecoveryCodes,
   startTwoFactor,
   twoFactorStatus,
-  TwoFactorUnreadable,
-  verifySecondFactor,
 } from "../auth/twoFactor.js";
 
 const credentials = z.object({
@@ -43,48 +42,7 @@ const newPassword = z
 export async function authRoutes(app: FastifyInstance) {
   const { db, config, secrets, setup } = app.deps;
   const codeBody = z.object({ code: z.string().trim().min(1).max(20) });
-  // Wrong codes per account: after five in a row, codes aren't checked for 15 minutes, doubling with
-  // each lockout up to a day. The login rate limit counts per IP address; this holds however many
-  // addresses someone uses. Kept in memory, like the rate limits.
-  const wrongCodes = new Map<number, { count: number; lockouts: number; until: number }>();
-  const checkCode = async (userId: number, code: string) => {
-    const w = wrongCodes.get(userId) ?? { count: 0, lockouts: 0, until: 0 };
-    if (w.until > Date.now()) {
-      const minutes = Math.ceil((w.until - Date.now()) / 60_000);
-      throw new HttpError(
-        429,
-        trn(
-          minutes,
-          "Too many wrong codes. Try again in {n} minute.",
-          "Too many wrong codes. Try again in {n} minutes.",
-        ),
-      );
-    }
-    const result = await verifyCode(userId, code);
-    if (result) wrongCodes.delete(userId);
-    else if (++w.count >= 5) {
-      w.until = Date.now() + Math.min(15 * 60_000 * 2 ** w.lockouts++, 86_400_000);
-      w.count = 0;
-      wrongCodes.set(userId, w);
-    } else wrongCodes.set(userId, w);
-    return result;
-  };
-  // A key that can't be opened means APP_SECRET changed: say how to get back in instead of failing.
-  const verifyCode = async (userId: number, code: string) => {
-    try {
-      return await verifySecondFactor(db, secrets, userId, code);
-    } catch (err) {
-      if (err instanceof TwoFactorUnreadable)
-        throw new HttpError(
-          500,
-          tr(
-            "Two-step verification can't be checked: its key can't be read (was APP_SECRET changed?). Turn it off on the server with node dist/cli.js disable-2fa, then set it up again.",
-          ),
-        );
-      throw err;
-    }
-  };
-
+  const identity = app.identity;
   const startSession = async (reply: FastifyReply, userId: number) => {
     const { token, expiresAt } = await createSession(db, userId, config.SESSION_DAYS);
     reply.setCookie(SESSION_COOKIE, token, {
@@ -146,7 +104,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (await isTwoFactorEnabled(db, user.id)) {
       if (!body.code)
         return reply.code(401).send({ error: tr("Enter the code from your authenticator app"), needsCode: true });
-      if (!(await checkCode(user.id, body.code)))
+      if (!(await identity.code(user.id, body.code)))
         return reply.code(401).send({ error: tr("That code isn't right, or was already used"), needsCode: true });
     }
     await startSession(reply, user.id);
@@ -162,29 +120,31 @@ export async function authRoutes(app: FastifyInstance) {
     return startTwoFactor(db, secrets, req.user!.id);
   });
 
+  // Turning it on takes the password, so a left-open session can't put it on someone else's phone and
+  // lock the owner out. Turning it on or off signs out every other session: one of them may be why.
   app.post("/2fa/enable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
     if (config.DEMO) throw notInDemo();
-    const { code } = codeBody.parse(req.body);
+    const { code, password } = codeBody.extend({ password: z.string().max(256).default("") }).parse(req.body);
+    await identity.confirm(req.user!.id, password, undefined);
     const recoveryCodes = await enableTwoFactor(db, secrets, req.user!.id, code);
     if (!recoveryCodes)
       throw new HttpError(400, tr("That code isn't right; check the time on your phone and try again"));
+    await endOtherSessions(db, req.user!.id, req.cookies[SESSION_COOKIE]);
     return { recoveryCodes };
   });
 
   // Turning it off or renewing the recovery codes takes a code too, so a left-open session isn't enough.
   app.post("/2fa/disable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
-    const { password, code } = codeBody.extend({ password: z.string() }).parse(req.body);
-    const ok = await checkCredentials(db, req.user!.username, password);
-    if (!ok) throw new HttpError(400, tr("Current password is incorrect"));
-    if (!(await checkCode(req.user!.id, code)))
-      throw new HttpError(400, tr("That code isn't right, or was already used"));
+    const { password, code } = codeBody.extend({ password: z.string().max(256) }).parse(req.body);
+    await identity.confirm(req.user!.id, password, code);
     await disableTwoFactor(db, req.user!.id);
+    await endOtherSessions(db, req.user!.id, req.cookies[SESSION_COOKIE]);
     return twoFactorStatus(db, req.user!.id);
   });
 
   app.post("/2fa/recovery-codes", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
     const { code } = codeBody.parse(req.body);
-    if (!(await checkCode(req.user!.id, code)))
+    if (!(await identity.code(req.user!.id, code)))
       throw new HttpError(400, tr("That code isn't right, or was already used"));
     return { recoveryCodes: await renewRecoveryCodes(db, secrets, req.user!.id) };
   });

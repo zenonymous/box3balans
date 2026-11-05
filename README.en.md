@@ -168,7 +168,7 @@ Don't expose Box3balans to the internet: don't forward port 8080 in your router.
 
 A backup is a gzip file with **all** data except login sessions: accounts, transactions, precious metal with photos, prices, settings, connections and wallets. They go into the **`backups` folder next to `docker-compose.yml`**:
 
-- **Automatically**, every `BACKUP_INTERVAL_HOURS` (24 by default). The newest `BACKUP_KEEP` (14 by default) automatic backups are kept.
+- **Automatically**, every `BACKUP_INTERVAL_HOURS` (24 by default), once your user exists. The newest `BACKUP_KEEP` (14 by default) automatic backups are kept.
 - **Manually**, via _Settings → Backups & export → Back up now_, or `docker compose exec app node dist/cli.js backup`. Manual backups are never deleted automatically.
 - **Before every restore**, as a safety net (`…-prerestore…`).
 
@@ -184,9 +184,9 @@ docker compose exec app cat /data/app-secret
 
 Restoring also works without that key, but then you have to enter the API keys again and set up two-step verification again (turn it off first with `docker compose exec app node dist/cli.js disable-2fa`).
 
-**Restoring** replaces all current data with that from the backup, in one database transaction: everything is restored or nothing changes. Backups from older versions work fine; backups from a newer version are refused. Afterwards everyone is signed out; sign in with the user from the backup.
+**Restoring** replaces all current data with that from the backup, in one database transaction: everything is restored or nothing changes. Backups from older versions work fine; backups from a newer version are refused, as is a backup without a user. Afterwards everyone is signed out; sign in with the user from the backup.
 
-- From the app: _Settings → Backups & export → Restore…_ next to a backup, and type `RESTORE`. If the backup was made with an earlier passphrase, fill that in there.
+- From the app: _Settings → Backups & export → Restore…_ next to a backup, type `RESTORE` and enter your password (with two-step verification on, a code too). If the backup was made with an earlier passphrase, fill that in there.
 - From a file, for example on a new server: put it in the `backups` folder and run:
 
   ```bash
@@ -386,14 +386,14 @@ How the parts fit together: [docs/en/architectuur.md](docs/en/architectuur.md).
 Why Box3balans keeps its security promises (threats, trust boundaries, countermeasures and residual risks): [docs/en/beveiligingsonderbouwing.md](docs/en/beveiligingsonderbouwing.md).
 
 - Passwords are hashed with argon2id. Sessions are random 256-bit tokens, stored hashed, in `HttpOnly; SameSite=Strict` cookies.
-- **Two-step verification** (_Settings_): after the password, a code from an authenticator app (TOTP, such as Aegis, 2FAS or Google Authenticator). Every code works once. You get ten recovery codes for when you lose your phone; they're shown only once and stored as an HMAC with the app key, so a copy of the database or a backup isn't enough to guess them. The secret is stored encrypted, just like API keys. After five wrong codes in a row the app checks no codes for your account for fifteen minutes, and after every following series twice as long (up to a day), from whatever IP address the attempts come. Turning it off needs your password and a code. Locked out: `docker compose exec app node dist/cli.js disable-2fa` turns it off (in the single-container variant: see [In one container](#in-one-container)).
+- **Two-step verification** (_Settings_): after the password, a code from an authenticator app (TOTP, such as Aegis, 2FAS or Google Authenticator). Every code works once. You get ten recovery codes for when you lose your phone; they're shown only once and stored as an HMAC with the app key, so a copy of the database or a backup isn't enough to guess them. The secret is stored encrypted, just like API keys. After five wrong codes in a row the app checks no codes for your account for fifteen minutes, and after every following series twice as long (up to a day), from whatever IP address the attempts come. Turning it on needs your password, turning it off your password and a code, and both sign out your other sessions. Locked out: `docker compose exec app node dist/cli.js disable-2fa` turns it off (in the single-container variant: see [In one container](#in-one-container)).
 - CSRF: every API request that changes something must have the `X-Requested-With: portfolio` header, which other sites can't send along without a CORS preflight the server never allows.
 - Signing in, the first installation, changing the password and setting up two-step verification are limited per IP address. The app only trusts `X-Forwarded-For` if `TRUST_PROXY` is set, so a forged header doesn't bypass the limit. Behind a reverse proxy you set `TRUST_PROXY` (for example `true`, or the proxy's IP address). The first installation is atomic: only one user can be created. Passwords and cookies aren't logged.
 - CSV exports defuse cells that would otherwise run as a spreadsheet formula (for example a token named `=HYPERLINK(…)`).
 - Every addition, change and deletion is recorded in `audit_log`, with the situation before and after.
 - Responses have a strict Content-Security-Policy (scripts only from the site itself, can't be loaded in a frame), `nosniff`, `no-referrer` and a restrictive Permissions-Policy. With `COOKIE_SECURE=true` HSTS is added.
 - The app runs as a normal user, not as root. Backups are only readable by their owner, and backup names are checked so requests can't get outside the backup folder.
-- A new installation only accepts its first user with the one-time setup code from the app's log. That way nobody else on your network can create it, not even a website you visit (via DNS rebinding).
+- A new installation only accepts its first user with the one-time setup code from the app's log. That way nobody else on your network can create it, not even a website you visit (via DNS rebinding). Should the user be gone again later, the app writes a new code to its log.
 - We advise against putting Box3balans on the internet; use a VPN (see [Access away from home](#access-away-from-home-vpn)). If you do anyway, put it behind a reverse proxy with HTTPS and set `COOKIE_SECURE=true`.
 - Exchange API keys are stored encrypted (AES-256-GCM, HKDF of the app key) and never sent back or logged. If the app key changes, you have to enter them again.
 - Found a vulnerability? Report it privately: see [SECURITY.md](SECURITY.md#security-in-english).

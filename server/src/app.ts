@@ -17,6 +17,7 @@ import type { SyncService } from "./sync/service.js";
 import type { WalletService } from "./wallets/service.js";
 import type { BackfillService } from "./jobs/backfill.js";
 import { SESSION_COOKIE, createSession, sessionUser } from "./auth/service.js";
+import { IdentityCheck } from "./auth/identity.js";
 import { users } from "./db/schema.js";
 import { authRoutes } from "./routes/auth.js";
 import { accountRoutes } from "./routes/accounts.js";
@@ -64,6 +65,8 @@ declare module "fastify" {
   }
   interface FastifyInstance {
     deps: AppDeps;
+    /** Codes at sign-in, and the password (plus code) before sensitive changes (auth/identity.ts). */
+    identity: IdentityCheck;
   }
 }
 
@@ -97,6 +100,7 @@ export async function buildApp(deps: AppDeps): Promise<FastifyInstance> {
         : deps.config.TRUST_PROXY,
   });
   app.decorate("deps", deps);
+  app.decorate("identity", new IdentityCheck(deps.db, deps.secrets));
   app.decorateRequest("user", null);
 
   await app.register(cookie);

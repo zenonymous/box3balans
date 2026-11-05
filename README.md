@@ -174,7 +174,7 @@ Zet Box3balans niet open naar het internet: stuur poort 8080 niet door in je rou
 
 Een back-up is een gzip-bestand met **alle** gegevens behalve inlogsessies: rekeningen, transacties, edelmetaal met foto's, koersen, instellingen, koppelingen en wallets. Ze komen in de map **`backups` naast `docker-compose.yml`**:
 
-- **Automatisch**, elke `BACKUP_INTERVAL_HOURS` (standaard 24). De nieuwste `BACKUP_KEEP` (standaard 14) automatische back-ups blijven bewaard.
+- **Automatisch**, elke `BACKUP_INTERVAL_HOURS` (standaard 24), zodra je gebruiker bestaat. De nieuwste `BACKUP_KEEP` (standaard 14) automatische back-ups blijven bewaard.
 - **Handmatig**, via _Instellingen → Back-ups en export → Nu back-up maken_, of `docker compose exec app node dist/cli.js backup`. Handmatige back-ups worden nooit automatisch verwijderd.
 - **Vóór elke terugzetting**, als vangnet (`…-prerestore…`).
 
@@ -190,9 +190,9 @@ docker compose exec app cat /data/app-secret
 
 Zonder die sleutel lukt het terugzetten ook, maar moet je de API-sleutels opnieuw invoeren en tweestapsverificatie opnieuw instellen (zet het eerst uit met `docker compose exec app node dist/cli.js disable-2fa`).
 
-**Terugzetten** vervangt alle huidige gegevens door die uit de back-up, in één databasetransactie: alles wordt teruggezet of er verandert niets. Back-ups van oudere versies gaan prima; back-ups van een nieuwere versie worden geweigerd. Daarna is iedereen uitgelogd; log in met de gebruiker uit de back-up.
+**Terugzetten** vervangt alle huidige gegevens door die uit de back-up, in één databasetransactie: alles wordt teruggezet of er verandert niets. Back-ups van oudere versies gaan prima; back-ups van een nieuwere versie worden geweigerd, net als een back-up zonder gebruiker. Daarna is iedereen uitgelogd; log in met de gebruiker uit de back-up.
 
-- Vanuit de app: _Instellingen → Back-ups en export → Terugzetten…_ naast een back-up, en typ `RESTORE`. Is de back-up met een eerdere wachtwoordzin gemaakt, vul die dan daar in.
+- Vanuit de app: _Instellingen → Back-ups en export → Terugzetten…_ naast een back-up, typ `RESTORE` en vul je wachtwoord in (met tweestapsverificatie aan ook een code). Is de back-up met een eerdere wachtwoordzin gemaakt, vul die dan daar in.
 - Vanuit een bestand, bijvoorbeeld op een nieuwe server: zet het in de map `backups` en voer uit:
 
   ```bash
@@ -392,14 +392,14 @@ Hoe de onderdelen samenhangen: [docs/architectuur.md](docs/architectuur.md).
 Waarom Box3balans zijn beveiligingsbeloften waarmaakt (dreigingen, vertrouwensgrenzen, tegenmaatregelen en restrisico's): [docs/beveiligingsonderbouwing.md](docs/beveiligingsonderbouwing.md).
 
 - Wachtwoorden worden gehasht met argon2id. Sessies zijn willekeurige tokens van 256 bits, gehasht opgeslagen, in `HttpOnly; SameSite=Strict`-cookies.
-- **Tweestapsverificatie** (_Instellingen_): na het wachtwoord een code uit een authenticator-app (TOTP, zoals Aegis, 2FAS of Google Authenticator). Elke code werkt één keer. Je krijgt tien herstelcodes voor als je je telefoon kwijt bent; die worden maar één keer getoond en zijn opgeslagen als HMAC met de app-sleutel, dus een kopie van de database of een back-up is niet genoeg om ze te raden. Het geheim staat versleuteld opgeslagen, net als API-sleutels. Na vijf verkeerde codes op rij controleert de app een kwartier lang geen codes voor je account, en na elke volgende reeks twee keer zo lang (tot een dag), vanaf welk IP-adres er ook geprobeerd wordt. Uitzetten vraagt je wachtwoord en een code. Kom je er niet meer in: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: zie [In één container](#in-één-container)).
+- **Tweestapsverificatie** (_Instellingen_): na het wachtwoord een code uit een authenticator-app (TOTP, zoals Aegis, 2FAS of Google Authenticator). Elke code werkt één keer. Je krijgt tien herstelcodes voor als je je telefoon kwijt bent; die worden maar één keer getoond en zijn opgeslagen als HMAC met de app-sleutel, dus een kopie van de database of een back-up is niet genoeg om ze te raden. Het geheim staat versleuteld opgeslagen, net als API-sleutels. Na vijf verkeerde codes op rij controleert de app een kwartier lang geen codes voor je account, en na elke volgende reeks twee keer zo lang (tot een dag), vanaf welk IP-adres er ook geprobeerd wordt. Aanzetten vraagt je wachtwoord, uitzetten je wachtwoord en een code, en allebei loggen ze je andere sessies uit. Kom je er niet meer in: `docker compose exec app node dist/cli.js disable-2fa` zet het uit (in de variant met één container: zie [In één container](#in-één-container)).
 - CSRF: elk API-verzoek dat iets verandert, moet de header `X-Requested-With: portfolio` hebben, die andere sites niet kunnen meesturen zonder een CORS-preflight die de server nooit toestaat.
 - Inloggen, de eerste installatie, wachtwoord wijzigen en tweestapsverificatie instellen zijn per IP-adres begrensd. De app vertrouwt `X-Forwarded-For` alleen als `TRUST_PROXY` is gezet, zodat een vervalste header de limiet niet omzeilt. Achter een reverse proxy zet je `TRUST_PROXY` (bijvoorbeeld `true`, of het IP-adres van de proxy). De eerste installatie is atomair: er kan maar één gebruiker worden aangemaakt. Wachtwoorden en cookies worden niet gelogd.
 - CSV-exports maken cellen onschadelijk die anders als spreadsheetformule zouden draaien (bijvoorbeeld een token met de naam `=HYPERLINK(…)`).
 - Elke toevoeging, wijziging en verwijdering wordt vastgelegd in `audit_log`, met de situatie ervoor en erna.
 - Antwoorden hebben een strikte Content-Security-Policy (alleen scripts van de eigen site, niet in een frame te laden), `nosniff`, `no-referrer` en een beperkende Permissions-Policy. Met `COOKIE_SECURE=true` komt er HSTS bij.
 - De app draait als gewone gebruiker, niet als root. Back-ups zijn alleen leesbaar voor de eigenaar, en back-upnamen worden gecontroleerd zodat verzoeken niet buiten de back-upmap kunnen komen.
-- Een nieuwe installatie neemt de eerste gebruiker alleen aan met de eenmalige setupcode uit het log van de app. Zo kan niemand anders op je netwerk hem aanmaken, ook geen website die je bezoekt (via DNS-rebinding).
+- Een nieuwe installatie neemt de eerste gebruiker alleen aan met de eenmalige setupcode uit het log van de app. Zo kan niemand anders op je netwerk hem aanmaken, ook geen website die je bezoekt (via DNS-rebinding). Is de gebruiker later weer weg, dan zet de app een nieuwe code in het log.
 - Box3balans op het internet zetten raden we af; gebruik een VPN (zie [Toegang buitenshuis](#toegang-buitenshuis-vpn)). Doe je het toch, zet het dan achter een reverse proxy met HTTPS en zet `COOKIE_SECURE=true`.
 - API-sleutels van beurzen worden versleuteld opgeslagen (AES-256-GCM, HKDF van de app-sleutel) en nooit teruggestuurd of gelogd. Verandert de app-sleutel, dan moet je ze opnieuw invoeren.
 - Een kwetsbaarheid gevonden? Meld het privé: zie [SECURITY.md](SECURITY.md).

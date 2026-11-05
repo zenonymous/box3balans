@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
-import { and, eq, gt, lt, sql } from "drizzle-orm";
+import { and, eq, gt, lt, ne, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { sessions, users } from "../db/schema.js";
 
@@ -80,6 +80,12 @@ export async function sessionUser(db: DB, token: string | undefined) {
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.id, sha256(token)), gt(sessions.expiresAt, new Date())));
   return row ?? null;
+}
+
+/** Signs out every session of the user but this one (`token`, the cookie of the current request). */
+export async function endOtherSessions(db: DB, userId: number, token: string | undefined) {
+  const others = eq(sessions.userId, userId);
+  await db.delete(sessions).where(token ? and(others, ne(sessions.id, sha256(token))) : others);
 }
 
 export async function destroySession(db: DB, token: string | undefined) {

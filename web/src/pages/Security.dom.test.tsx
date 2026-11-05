@@ -29,8 +29,16 @@ describe("Settings: security", () => {
     // The key, in groups of four, for entering by hand.
     expect(await screen.findByText("ABCD EFGH IJKL MNOP")).toBeTruthy();
     fireEvent.change(screen.getByLabelText("Code uit je authenticator-app"), { target: { value: "123456" } });
+    // Turning it on takes the password too, and says other sessions will be signed out.
+    expect(screen.getByText("Andere browsers en apparaten waar je bent ingelogd, worden uitgelogd.")).toBeTruthy();
+    const form = screen.getByLabelText("Code uit je authenticator-app").closest("form")!;
+    fireEvent.change(within(form).getByLabelText("Huidig wachtwoord"), { target: { value: "correct horse battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Aanzetten" }));
-    await waitFor(() => expect(sent(api, "POST", "/api/auth/2fa/enable")).toEqual([{ code: "123456" }]));
+    await waitFor(() =>
+      expect(sent(api, "POST", "/api/auth/2fa/enable")).toEqual([
+        { code: "123456", password: "correct horse battery" },
+      ]),
+    );
     expect(await screen.findByText("aaaa-bbbb")).toBeTruthy();
     expect(screen.getByText("cccc-dddd")).toBeTruthy();
   });
@@ -48,7 +56,11 @@ describe("Settings: security", () => {
       "POST /api/auth/2fa/enable": { recoveryCodes: ["aaaa-bbbb", "cccc-dddd"] },
     });
     fireEvent.click(await screen.findByRole("button", { name: "Instellen" }));
-    fireEvent.change(await screen.findByLabelText("Code uit je authenticator-app"), { target: { value: "123456" } });
+    const code = await screen.findByLabelText("Code uit je authenticator-app");
+    fireEvent.change(code, { target: { value: "123456" } });
+    fireEvent.change(within(code.closest("form")!).getByLabelText("Huidig wachtwoord"), {
+      target: { value: "correct horse battery" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Aanzetten" }));
     fireEvent.click(await screen.findByRole("button", { name: "Kopiëren" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith("aaaa-bbbb\ncccc-dddd"));
