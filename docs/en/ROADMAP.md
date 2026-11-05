@@ -15,7 +15,7 @@ Have an idea or want to help? See [CONTRIBUTING.en.md](../../CONTRIBUTING.en.md)
 - **Annual statements as PDF** (0.1.18): under _Values per year_ Box3balans reads an annual statement in the browser and offers the amounts next to a reference date; with a template per provider the right ones are ticked right away ([ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)). Goldrepublic's account statement (0.1.27) is recognised too, and read as transactions under _Import CSV_.
 - **Crypto prices:** Bitvavo as a price source; price history for coins an exchange no longer trades and for swapped coins (NU → T, FTM → S, MATIC → POL and others), from Yahoo or Binance, but only when it's certain to be the same coin; conversions by Bitvavo as a sale and a purchase. Released in 0.1.4 up to and including 0.1.7, after testing with real accounts.
 - **Returns:** time- and money-weighted return with a benchmark, a cost overview and expected dividends.
-- **Box 3:** actual return for the rebuttal scheme (tegenbewijsregeling) and a preview of the system from 2028.
+- **Box 3:** actual return for the rebuttal scheme (tegenbewijsregeling) and a preview of the system proposed from 2029.
 - **Online demo** (0.1.26): look around the example household at [box3balans.nl/demo](https://box3balans.nl/demo/) without installing; recorded from the real demo at every release ([ADR 0010](adr/0010-online-demo-zonder-server.md)).
 - **Demonstrable privacy** (0.1.30): Box3balans only connects to a fixed list of hosts, enforced in the code and visible under _Settings → Network_, where you switch features off down to fully offline (0.1.32); optionally sealed off with a proxy at network level, and checked in CI on every change. A new installation only accepts its first user with a setup code from the log ([ADR 0011](adr/0011-vaste-lijst-van-bestemmingen.md), [what Box3balans sends](privacy.md)).
 - **Management:** encrypted backups, change history with restore, _Needs attention_, second price sources, PostgreSQL 18 with a tested upgrade.
@@ -31,7 +31,7 @@ Have an idea or want to help? See [CONTRIBUTING.en.md](../../CONTRIBUTING.en.md)
 ## Phase B: box 3 for everyone, not just investors ✅
 
 - **Household:** you, a fiscal partner and minor children (their assets count for the parents with custody). An owner per account: you, your partner, joint (with your share) or a child. The split of the base between partners, with per person the assets, the base and the tax.
-- **Values per year:** per account only the value on 1 January, money in and out, income and costs. Enough for the deemed-return calculation, the comparison with the actual return and the 2028 preview, without importing every transaction.
+- **Values per year:** per account only the value on 1 January, money in and out, income and costs. Enough for the deemed-return calculation, the comparison with the actual return and the preview, without importing every transaction.
 - **Savings:** balances on 1 January, interest and money in and out, read from your bank's export (CSV with balance, ABN AMRO's TAB file, CAMT.053, or CSV without balance with one known balance).
 - **Other assets and debts:** a second or let home (WOZ value, with the vacant-value ratio when let), money lent to others, capital insurance policies, debts with interest paid, and a tick box for accounts abroad.
 
@@ -73,14 +73,14 @@ The work is tracked as issues in the [Phase F](https://github.com/zenonymous/box
 - **Templates for annual statements:** a template per provider (Brand New Day, Peaks, BLOX, Geldvoorelkaar, Mintos …), as soon as someone shares the text of a statement via [the form](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml).
 - **More providers:** built in October 2026, on public descriptions and not yet tested with real data: XTB, Schwab Equity Awards (employer share plans), Bitstamp and a connection with Bitpanda's new API (the old one stops on 31 January 2027). After that: Morgan Stanley at Work and Finst, as soon as someone shares a sample; see the issues with [priority 1](https://github.com/zenonymous/box3balans/issues?q=is%3Aissue+is%3Aopen+label%3A%22prioriteit+1%22).
 - **A dossier per year** ✅ (already in 0.1.9): one printable document with the box 3 overview, the actual return, the values on 1 January and where every amount comes from. For your own records, and for when the Belastingdienst asks questions.
-- **Following the Wet werkelijk rendement:** the Senate is expected to deal with the bill and the amendment (novelle) from January. The preview in the app has followed the cabinet letter of 29 September (tax-free result €1,000) since 0.1.3; tax on sale for shares, bonds and options will be added once the text of the amendment is out, after the Council of State's advice ([#11](https://github.com/zenonymous/box3balans/issues/11)). On 3 November the cabinet moved the start to 2029 and dropped the cut to €1,000; the preview follows that after the vote of 12 November.
+- **Following the Wet werkelijk rendement:** the Senate is expected to deal with the bill and the amendment (novelle) from January. On 3 November the cabinet moved the start to 2029 and dropped the cut to €1,000. Since 0.1.48 the preview in the app names 2029 and uses the bill (€1,800); tax on sale for financial instruments will be added after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
-## Phase H: the new system from 2028 (from mid-2027, if the law passes)
+## Phase H: the new system, proposed from 2029 (from mid-2028, if the law passes)
 
-- **The full calculation, not just a preview:** per asset the return of the year (realised and unrealised), tax on sale for real estate and shares in start-ups (with the rules for what you already had before 2028), deductible costs, the tax-free result, offsetting losses across years and the split between partners.
-- **Starting values on 1 January 2028:** the unrealised return over 2028 is measured from those values. A checklist makes sure every asset has a reliable value on 31 December 2027 before that date.
-- **The 2028 tax return** (in 2029) in the order of the new form, once the Belastingdienst publishes it.
-- **The old system stays** for 2027 and earlier, for corrections and objections. If the law doesn't pass, the yearly rhythm of the deemed-return rules simply continues.
+- **The full calculation, not just a preview:** per asset the return of the year (realised and unrealised), tax on sale for real estate and shares in start-ups (with the rules for what you already had before 2029), deductible costs, the tax-free result, offsetting losses across years and the split between partners.
+- **Starting values on 1 January 2029:** the return from 2029 on is measured from those values. A checklist makes sure every asset has a reliable value on 31 December 2028 before that date.
+- **The 2029 tax return** (in 2030) in the order of the new form, once the Belastingdienst publishes it.
+- **The old system stays** for 2028 and earlier, for corrections and objections. If the law doesn't pass, the yearly rhythm of the deemed-return rules simply continues.
 
 ## Ongoing
 

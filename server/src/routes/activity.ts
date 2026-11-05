@@ -82,6 +82,9 @@ function transactionParts(s: Snapshot, names: Names) {
   };
 }
 
+const partsTitle = (p: ReturnType<typeof transactionParts>) =>
+  [p.type, p.quantity, p.subject].filter(Boolean).join(" ").replace(/\s+/g, " ");
+
 function title(entity: string, s: Snapshot | null, names: Names, entityId: number): string {
   if (!s) return entity;
   switch (entity) {
@@ -91,10 +94,8 @@ function title(entity: string, s: Snapshot | null, names: Names, entityId: numbe
       });
     case "person":
       return `${text(s.name, tr("Person"))} (${s.role === "self" ? tr("you") : s.role === "partner" ? tr("partner") : tr("child")})`;
-    case "transaction": {
-      const p = transactionParts(s, names);
-      return [p.type, p.quantity, p.subject].filter(Boolean).join(" ").replace(/\s+/g, " ");
-    }
+    case "transaction":
+      return partsTitle(transactionParts(s, names));
     case "asset":
       return [s.symbol, s.name].filter(Boolean).join(" · ") || tr("Asset");
     case "account":
@@ -216,14 +217,14 @@ export async function activityRoutes(app: FastifyInstance) {
         const after = r.after as Snapshot | null;
         // Name what it was when deleted, else what it became (a patch fills in from "before").
         const subject = r.action === "delete" ? before : { ...(before ?? {}), ...(after ?? {}) };
+        const parts = r.entity === "transaction" && subject ? transactionParts(subject, names) : null;
         return {
           id: r.id,
           at: r.at,
           entity: r.entity,
           entityId: r.entityId,
           action: r.action,
-          title: title(r.entity, subject, names, r.entityId),
-          ...(r.entity === "transaction" && subject ? { parts: transactionParts(subject, names) } : {}),
+          ...(parts ? { title: partsTitle(parts), parts } : { title: title(r.entity, subject, names, r.entityId) }),
           via: (after?.via as string | undefined) ?? (after?.restoredFrom ? "restore" : undefined),
           changes: r.action === "update" ? changes(r.entity, before, after, names) : null,
           restorable: r.action === "delete" && (gone.get(r.entity)?.has(r.entityId) ?? false),

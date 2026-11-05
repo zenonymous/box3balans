@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { AllocationDonut } from "../charts/AllocationDonut";
 import { RankedBars, type RankedRow } from "../charts/RankedBars";
-import type { Account, Holding, Summary } from "../api";
+import type { Holding, Summary } from "../api";
 import { NetWorthChart } from "../charts/NetWorthChart";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Card, Delta, Empty, PageHeader, Spinner, Stat, Tabs } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, pct } from "../format";
-import { useAccounts, useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
+import { useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
 import { t, tj, tn } from "../i18n";
 import { kindLabel } from "../labels";
 import { useStoredFlag } from "../storage";
@@ -20,7 +20,6 @@ const rangeLabel = (r: HistoryRange) =>
 export function OverviewPage() {
   const portfolio = usePortfolio();
   const status = usePriceStatus();
-  const accounts = useAccounts();
   const [range, setRange] = useState<HistoryRange>("1Y");
   const [showInvested, toggleInvested] = useStoredFlag("showInvested", true);
   const history = useHistory(range);
@@ -36,6 +35,7 @@ export function OverviewPage() {
         <PageHeader title={t("Overview")} />
         <Card>
           <Empty title={t("Nothing here yet")}>
+            <NotCounted value={summary.notCounted} />
             <p>
               {tj(
                 "New here? <0>Get started</0>: your household, your accounts and a first box 3 estimate in a few steps.",
@@ -78,7 +78,7 @@ export function OverviewPage() {
       <section className="mb-6">
         <div className="text-sm text-ink-2">{t("Net worth")}</div>
         <div className="mt-1 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">{eur(summary.totalEur)}</div>
-        <YearlyNotCounted accounts={accounts.data} />
+        <NotCounted value={summary.notCounted} />
         <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <span>
             <Delta value={summary.dayChangeEur} percent={summary.dayChangePct} />{" "}
@@ -300,19 +300,26 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
 
 /**
  * "Vermogen" is what's tracked with transactions and prices. Accounts kept as values per year (a home,
- * savings, a loan) only have a value on 1 January, so they aren't in it: say so, with their net value.
+ * savings, a loan) only have a value on 1 January, so they aren't in it: say so, with their net value
+ * as the server works it out (PortfolioSummary.notCounted).
  */
-function YearlyNotCounted({ accounts }: { accounts: Account[] | undefined }) {
-  const yearly = (accounts ?? []).filter((a) => a.tracking === "yearly" && !a.archived && a.latestValueEur != null);
-  if (yearly.length === 0) return null;
-  const net = yearly.reduce((sum, a) => sum + (a.kind === "debt" ? -1 : 1) * Number(a.latestValueEur), 0);
+function NotCounted({ value }: { value: Summary["notCounted"] }) {
+  if (!value) return null;
+  const link = [<Link key="b" to="/box3" className="text-accent" />];
+  const params = { amount: eur(value.netEur, { decimals: 0 }), year: value.year };
   return (
     <p className="mt-1 text-sm text-muted">
-      {tj(
-        "Accounts kept as values per year, not counted above: {amount} net, on the last 1 January entered. <0>Box 3 →</0>",
-        [<Link key="b" to="/box3" className="text-accent" />],
-        { amount: eur(net, { decimals: 0 }) },
-      )}
+      {value.mixed
+        ? tj(
+            "Accounts kept as values per year, not counted above: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>",
+            link,
+            params,
+          )
+        : tj(
+            "Accounts kept as values per year, not counted above: {amount} net on 1 January {year}. <0>Box 3 →</0>",
+            link,
+            params,
+          )}
     </p>
   );
 }

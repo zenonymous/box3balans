@@ -82,7 +82,7 @@ The printable overview of a tax year: box 3, the actual return, the values on th
 
 ## Preview: the proposed system
 
-**Vooruitblik** — preview (future / 2028):
+**Vooruitblik** — preview (future):
 An estimate of box 3 under the proposed system based on actual return (Wet werkelijk rendement box 3, the actual-return act, with its amendment, the novelle), proposed from 2029. Not a calculation for the tax return.
 _Avoid_: new system (as if it already applies)
 

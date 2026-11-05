@@ -31,7 +31,7 @@ export interface ReturnPart {
 }
 
 /**
- * A home or other real estate in box 3, for the planned system (from 2028): it taxes the gain when
+ * A home or other real estate in box 3, for the planned system (proposed from 2029): it taxes the gain when
  * the property is sold and, each year, its rent or a share of its WOZ value. Amounts are the
  * household's share.
  */
@@ -480,7 +480,7 @@ function addYearlyAccounts(args: {
 const endValue = (start: Decimal, next: Decimal | null, inEur: Decimal, outEur: Decimal) =>
   next ?? start.plus(inEur).minus(outEur);
 
-/** A home or other real estate's year as the planned system (from 2028) sees it: see PropertyYear. */
+/** A home or other real estate's year as the planned system (proposed from 2029) sees it: see PropertyYear. */
 function propertyYear(args: {
   acc: Account;
   cls: ReturnType<typeof yearlyClass>;

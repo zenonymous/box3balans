@@ -22,8 +22,6 @@ import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../qu
 import { YearsModal } from "./AccountYears";
 
 const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "bitpanda", "goldrepublic"];
-// Kinds that are always kept as values per year.
-
 export function AccountsPage() {
   const accounts = useAccounts();
   const people = useHousehold();

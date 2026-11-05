@@ -281,7 +281,7 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, other assets from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
+          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
         )}
       </p>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
@@ -407,7 +407,7 @@ export function FuturePreviewCard() {
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of 2029 for 2028, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of its second year, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>

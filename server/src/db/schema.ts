@@ -156,7 +156,7 @@ export const accountYears = pgTable(
     outEur: money("out_eur").notNull().default("0"),
     // Interest, dividends or rent received (gross); for a debt, the interest paid.
     incomeEur: money("income_eur").notNull().default("0"),
-    // Costs paid, for the system planned from 2028 (where they're deductible).
+    // Costs paid, for the planned system (proposed from 2029), where they're deductible.
     costsEur: money("costs_eur").notNull().default("0"),
     details: jsonb("details").$type<AccountYearDetails>().notNull().default({}),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

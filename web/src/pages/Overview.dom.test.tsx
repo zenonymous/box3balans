@@ -17,7 +17,7 @@ describe("Overview", () => {
   it("says how much is on accounts kept as values per year, which Vermogen leaves out", async () => {
     showPage("/", "/", <OverviewPage />);
     const line = await screen.findByText(/Rekeningen met waarden per jaar/);
-    expect(line.textContent).toMatch(/netto €\s359\.595/);
+    expect(line.textContent).toMatch(/netto €\s359\.595 op 1 januari 2026\./);
     expect(within(line).getByRole("link", { name: "Box 3 →" }).getAttribute("href")).toBe("/box3");
   });
 

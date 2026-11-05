@@ -44,7 +44,7 @@ const STEP_LABEL: Record<Step, string> = {
   result: t("Your box 3"),
 };
 
-// Kinds that only exist as values per year, and kinds whose history usually comes from a sync.
+// Kinds whose history usually comes from a sync.
 const USUALLY_SYNCED = new Set<AccountKind>(["exchange", "wallet", "vault"]);
 
 /**

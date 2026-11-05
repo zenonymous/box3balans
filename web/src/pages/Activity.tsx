@@ -33,7 +33,7 @@ interface Entry {
 
 const titleOf = (e: Entry) =>
   e.parts
-    ? [e.parts.type, e.parts.quantity && num(e.parts.quantity), e.parts.subject].filter(Boolean).join(" ")
+    ? [e.parts.type, e.parts.quantity && num(e.parts.quantity, 18), e.parts.subject].filter(Boolean).join(" ")
     : e.title;
 
 const ENTITY_LABEL: Record<Entity, string> = {

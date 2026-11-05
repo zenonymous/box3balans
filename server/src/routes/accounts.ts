@@ -13,11 +13,9 @@ import { D, type Decimal } from "../lib/decimal.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
 
-const KINDS = accountKind.enumValues;
-
 const body = z.object({
   name: z.string().trim().min(1).max(100),
-  kind: z.enum(KINDS),
+  kind: z.enum(accountKind.enumValues),
   provider: z.string().trim().max(50).nullish(),
   notes: z.string().max(2000).nullish(),
   archived: z.boolean().optional(),

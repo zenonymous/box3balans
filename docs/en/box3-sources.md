@@ -77,7 +77,7 @@ Sources:
 
 ## From 2028: Wet werkelijk rendement box 3 (bill 36.748), not law yet
 
-**Change of 3 November 2026:** the cabinet submitted the amendment (novelle, Kamerstuk 37 053) and now proposes a start on 1 January 2029; 2028 then still falls under the current system. The cut of the tax-free result to €1,000 is dropped. This section and the preview in the app follow that after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
+**Change of 3 November 2026:** the cabinet submitted the amendment (novelle, Kamerstuk 37 053) and now proposes a start on 1 January 2029; 2028 then still falls under the current system. The cut of the tax-free result to €1,000 is dropped. Since 0.1.48 the preview in the app names 2029 and has no setting for €1,000 anymore; this section, and tax on sale in the preview, follow after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 Status on 8 October 2026:
 

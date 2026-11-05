@@ -77,7 +77,7 @@ Bronnen:
 
 ## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
 
-**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. Dit hoofdstuk en de vooruitblik in de app volgen dat na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
+**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. De vooruitblik in de app noemt sinds 0.1.48 2029 en heeft geen instelling meer voor € 1.000; dit hoofdstuk, en belasting bij verkoop in de vooruitblik, volgen na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 Stand op 8 oktober 2026:
 

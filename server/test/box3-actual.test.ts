@@ -222,7 +222,7 @@ describe("interest booked early in January", () => {
   });
 });
 
-describe("2028 system preview", () => {
+describe("preview of the planned system", () => {
   const year = (
     y: number,
     actualReturnEur: number,

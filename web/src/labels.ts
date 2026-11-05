@@ -54,7 +54,7 @@ export const kindHint = (k: AccountKind): string =>
     insurance: t("A kapitaalverzekering or other policy with a surrender value"),
   })[k];
 
-export const KIND_ORDER: AccountKind[] = [
+export const KIND_ORDER = [
   "bank",
   "broker",
   "exchange",
@@ -66,7 +66,10 @@ export const KIND_ORDER: AccountKind[] = [
   "insurance",
   "debt",
   "other",
-];
+] as const satisfies readonly AccountKind[];
+// Every kind is in the order, so none is left out of a form: tsc fails here if one is missing.
+const kindOrderIsComplete: [Exclude<AccountKind, (typeof KIND_ORDER)[number]>] extends [never] ? true : never = true;
+void kindOrderIsComplete;
 
 /** Kinds only kept as values per year, never with transactions (server: YEARLY_ONLY_KINDS in domain/yearly.ts). */
 export const YEARLY_ONLY_KINDS: ReadonlySet<AccountKind> = new Set(["property", "receivable", "debt", "insurance"]);
