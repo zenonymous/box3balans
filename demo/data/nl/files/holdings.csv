@@ -1,11 +1,11 @@
 ﻿Asset,Symbol,Class,Account,Quantity,Unit,Price EUR,Value EUR,Cost EUR
-Bitcoin,BTC,crypto,Bitvavo,0.15,unit,100690.560000,15103.58,3214.67
-Bitcoin,BTC,crypto,Ledger,0.2999,unit,100690.560000,30197.10,6429.33
-iShares Core MSCI World UCITS ETF,IWDA,etf,DEGIRO,220,unit,114.830000,25262.60,18011.00
-Goud (fysiek),XAU,metal,Kluis thuis,92.487762,g,115.130000,10648.12,5340.00
-Ethereum,ETH,crypto,Bitvavo,2.542,unit,3712.290000,9436.64,4265.30
-Goud (in kluis),XAU,metal,Goldrepublic,50,g,115.130000,5756.50,2905.00
-ASML Holding,ASML,stock,DEGIRO,5,unit,887.530000,4437.65,3251.25
-Zilver (fysiek),XAG,metal,Kluis thuis,777.672225,g,1.569500,1220.56,720.00
+Bitcoin,BTC,crypto,Bitvavo,0.15,unit,100634.890000,15095.23,3214.67
+Bitcoin,BTC,crypto,Ledger,0.2999,unit,100634.890000,30180.40,6429.33
+iShares Core MSCI World UCITS ETF,IWDA,etf,DEGIRO,220,unit,115.180000,25339.60,18011.00
+Goud (fysiek),XAU,metal,Kluis thuis,92.487762,g,115.440000,10676.79,5340.00
+Ethereum,ETH,crypto,Bitvavo,2.542,unit,3699.400000,9403.87,4265.30
+Goud (in kluis),XAU,metal,Goldrepublic,50,g,115.440000,5772.00,2905.00
+ASML Holding,ASML,stock,DEGIRO,5,unit,890.060000,4450.30,3251.25
+Zilver (fysiek),XAG,metal,Kluis thuis,777.672225,g,1.566100,1217.91,720.00
 Euro,EUR,cash,Bitvavo,423,EUR,1.000000,423.00,423.00
 Euro,EUR,cash,DEGIRO,740.3,EUR,1.000000,740.30,740.30
