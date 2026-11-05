@@ -248,7 +248,7 @@ describe("backup and restore", () => {
 
   // A fresh install has nothing to back up until the account exists: such a backup holds no data and
   // could only reopen setup (security audit, 5 Nov 2026).
-  it("writes no automatic backup before the first account, then one per interval", async () => {
+  it("writes no automatic backup before the first user, then one per interval", async () => {
     t = await createTestApp(undefined, { login: false });
     const config = t.app.deps.config;
     expect(await automaticBackup(t.database.db, config)).toBeNull();
@@ -256,6 +256,9 @@ describe("backup and restore", () => {
     await t.api("POST", "/api/auth/setup", { username: "me", password: "correct horse battery" });
     const first = await automaticBackup(t.database.db, config);
     expect(first?.backup.name).toMatch(/-auto\.json\.gz$/);
+    // A backup's time is its file's; give it the app's clock, which test-dates.sh moves to other years.
+    const now = new Date();
+    fs.utimesSync(path.join(t.backupDir, first!.backup.name), now, now);
     expect(await automaticBackup(t.database.db, config)).toBeNull(); // the newest is recent enough
     expect(listBackups(t.backupDir)).toHaveLength(1);
   });
