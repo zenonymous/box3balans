@@ -1,5 +1,7 @@
 import { D, Decimal, ZERO } from "../lib/decimal.js";
+import { localDay } from "../lib/time.js";
 import type { ActualReturn, PropertyYear } from "./box3Actual.js";
+import { replayLedger, sortTransactions, type LedgerTx } from "./ledger.js";
 
 /** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
 const round2 = (x: number | Decimal) => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
@@ -169,4 +171,92 @@ function taxedOfHome(h: PropertyYear, gain: Decimal, propertyPct: number) {
   // deducted from the result as a whole: with the vastgoedbijtelling they're added back.
   const yearly = rentCounts ? D(h.rentEur) : bijtelling.plus(h.costsEur);
   return h.sold ? yearly.plus(gain) : yearly;
+}
+
+export interface GainAssetRow {
+  assetId: number;
+  quantity: number; // held at the end of the year
+  acquisitionPriceEur: number; // per unit: the average acquisition price at the end of the year
+  gainEur: number; // capital gain on what was sold this year
+  regularEur: number; // regular benefits: dividend and interest, gross
+}
+
+export interface GainYearRow {
+  year: number;
+  gainEur: number;
+  regularEur: number;
+  assets: GainAssetRow[];
+}
+
+/**
+ * The capital gain (vermogenswinst) on financial instruments as the novelle proposes it, for one
+ * owner (ADR 0013). What the owner already held at the start counts at its value then
+ * (`startPrices`, per unit); after that, every asset has one average acquisition price across all
+ * the owner's accounts. A sale's gain is its proceeds minus that price of the part sold. Regular
+ * benefits count gross, every year. `txs` are the owner's transactions in financial instruments.
+ */
+export function capitalGains(
+  txs: LedgerTx[],
+  opts: { from: number; to: number; startPrices: ReadonlyMap<number, string> },
+): GainYearRow[] {
+  const yearOf = (tx: LedgerTx) => Number(localDay(tx.occurredAt).slice(0, 4));
+  const sorted = sortTransactions(txs);
+  const held = new Map<number, { qty: Decimal; costEur: Decimal }>();
+  for (const p of replayLedger(sorted.filter((t) => yearOf(t) < opts.from)).positions) {
+    if (p.quantity.lte(0)) continue;
+    const h = held.get(p.assetId) ?? { qty: ZERO, costEur: ZERO };
+    h.qty = h.qty.plus(p.quantity);
+    held.set(p.assetId, h);
+  }
+  for (const [assetId, h] of held) h.costEur = h.qty.mul(D(opts.startPrices.get(assetId) ?? "0"));
+
+  const rows: GainYearRow[] = [];
+  for (let year = opts.from; year <= opts.to; year++) {
+    const gain = new Map<number, Decimal>();
+    const regular = new Map<number, Decimal>();
+    const add = (m: Map<number, Decimal>, id: number, v: Decimal) => m.set(id, (m.get(id) ?? ZERO).plus(v));
+    for (const tx of sorted.filter((t) => yearOf(t) === year)) {
+      const h = held.get(tx.assetId) ?? { qty: ZERO, costEur: ZERO };
+      held.set(tx.assetId, h);
+      const q = D(tx.quantity);
+      const valueEur = q.mul(D(tx.price)).mul(D(tx.fxRate));
+      switch (tx.type) {
+        case "buy":
+          h.qty = h.qty.plus(q);
+          h.costEur = h.costEur.plus(valueEur);
+          break;
+        case "sell": {
+          const cost = h.qty.isZero() ? ZERO : h.costEur.mul(q).div(h.qty);
+          h.qty = h.qty.minus(q);
+          h.costEur = h.costEur.minus(cost);
+          add(gain, tx.assetId, valueEur.minus(cost));
+          break;
+        }
+        case "dividend":
+          add(regular, tx.assetId, D(tx.amount).mul(D(tx.fxRate)));
+          break;
+        case "split":
+          // Same acquisition price in total, over more (or fewer) units.
+          if (q.gt(0)) h.qty = h.qty.mul(q);
+          break;
+      }
+    }
+    const assets: GainAssetRow[] = [...held]
+      .filter(([id, h]) => h.qty.gt(0) || gain.has(id) || regular.has(id))
+      .sort(([a], [b]) => a - b)
+      .map(([assetId, h]) => ({
+        assetId,
+        quantity: h.qty.toNumber(),
+        acquisitionPriceEur: h.qty.isZero() ? 0 : round2(h.costEur.div(h.qty)),
+        gainEur: round2(gain.get(assetId) ?? ZERO),
+        regularEur: round2(regular.get(assetId) ?? ZERO),
+      }));
+    rows.push({
+      year,
+      gainEur: round2(assets.reduce((s, a) => s.plus(a.gainEur), ZERO)),
+      regularEur: round2(assets.reduce((s, a) => s.plus(a.regularEur), ZERO)),
+      assets,
+    });
+  }
+  return rows;
 }
