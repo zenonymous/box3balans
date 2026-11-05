@@ -97,6 +97,24 @@ describe("capital gain on financial instruments (preview from 2029)", () => {
     ]);
   });
 
+  // Art. 5.22 and 5.23: the costs of buying are part of the acquisition price, the costs of selling
+  // come off the proceeds (as for homes). 10 at €100 at the start plus 10 bought for €2,000 + €10:
+  // €3,010 for 20 = €150.50 each. Selling 5 at €180 with €5 costs: €895 − 5 × €150.50 = €142.50.
+  // Worked by hand.
+  it("counts the costs of buying and selling in the gain", () => {
+    const rows = capitalGains(
+      [
+        tx("buy", { occurredAt: at("2027-02-01"), quantity: "10", price: "80", feeEur: "3" }),
+        tx("buy", { occurredAt: at("2029-03-01"), quantity: "10", price: "200", feeEur: "10" }),
+        tx("sell", { occurredAt: at("2029-09-01"), quantity: "5", price: "180", feeEur: "5" }),
+      ],
+      { from: 2029, to: 2029, startPrices: new Map([[1, "100"]]) },
+    );
+    expect(rows[0]!.assets).toEqual([
+      { assetId: 1, quantity: 15, acquisitionPriceEur: 150.5, gainEur: 142.5, regularEur: 0 },
+    ]);
+  });
+
   // A 1:4 split in 2029: the 10 units held at €100 become 40 at €25; selling 8 at €30 gains
   // 8 × (30 − 25) = €40. Worked by hand.
   it("spreads the acquisition price over the new units after a split", () => {

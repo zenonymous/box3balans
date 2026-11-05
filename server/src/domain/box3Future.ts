@@ -223,13 +223,13 @@ export function capitalGains(
       switch (tx.type) {
         case "buy":
           h.qty = h.qty.plus(q);
-          h.costEur = h.costEur.plus(valueEur);
+          h.costEur = h.costEur.plus(valueEur).plus(D(tx.feeEur)); // art. 5.22: with the costs of buying
           break;
         case "sell": {
           const cost = h.qty.isZero() ? ZERO : h.costEur.mul(q).div(h.qty);
           h.qty = h.qty.minus(q);
           h.costEur = h.costEur.minus(cost);
-          add(gain, tx.assetId, valueEur.minus(cost));
+          add(gain, tx.assetId, valueEur.minus(D(tx.feeEur)).minus(cost)); // art. 5.23: minus the costs of selling
           break;
         }
         case "dividend":
