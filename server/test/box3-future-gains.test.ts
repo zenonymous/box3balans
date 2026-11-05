@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { isFinancialInstrument } from "../src/domain/box3.js";
 import { capitalGains } from "../src/domain/box3Future.js";
 import type { LedgerTx, TxType } from "../src/domain/ledger.js";
 
@@ -129,5 +130,41 @@ describe("capital gain on financial instruments (preview from 2029)", () => {
     expect(rows[0]!.assets).toEqual([
       { assetId: 1, quantity: 32, acquisitionPriceEur: 25, gainEur: 40, regularEur: 0 },
     ]);
+  });
+});
+
+// ADR 0013: whether an asset is a financial instrument depends on where it's held. An ETP or ETC
+// at a broker is a security; coins in a wallet or on an exchange and metal in a vault or at home
+// stay on capital accrual in 2029.
+describe("financial instruments in the preview", () => {
+  it.each([
+    ["broker", "crypto", true],
+    ["broker", "metal", true],
+    ["exchange", "crypto", false],
+    ["wallet", "crypto", false],
+    ["vault", "metal", false],
+    ["physical", "metal", false],
+  ])("%s holding %s: %s", (accountKind, assetClass, expected) => {
+    expect(isFinancialInstrument({ accountKind, assetClass })).toBe(expected);
+  });
+
+  // Cash at a broker is a bank balance or foreign currency: capital accrual in 2029.
+  it.each(["broker", "exchange", "bank"])("cash at a %s isn't one", (accountKind) => {
+    expect(isFinancialInstrument({ accountKind, assetClass: "cash" })).toBe(false);
+  });
+
+  // Shares and funds are financial instruments wherever they're held; "other" only at a broker
+  // (bonds, structured products), elsewhere it's things like loans to others.
+  it.each([
+    ["broker", "stock", true],
+    ["broker", "etf", true],
+    ["broker", "other", true],
+    ["bank", "stock", true],
+    ["exchange", "etf", true],
+    ["other", "stock", true],
+    ["bank", "other", false],
+    ["other", "other", false],
+  ])("%s holding %s: %s", (accountKind, assetClass, expected) => {
+    expect(isFinancialInstrument({ accountKind, assetClass })).toBe(expected);
   });
 });

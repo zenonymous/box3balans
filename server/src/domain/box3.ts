@@ -175,6 +175,16 @@ export function categoryOf(
   return config.mapping.classCategory[h.assetClass as (typeof NON_CASH_CLASSES)[number]] ?? "other";
 }
 
+/**
+ * Whether a holding is a financial instrument, taxed on its capital gain in the preview from 2029
+ * (ADR 0013): shares and funds wherever they're held, and at a broker everything but cash, so
+ * crypto and precious metal only there, as an ETP or ETC.
+ */
+export function isFinancialInstrument(h: { accountKind: string; assetClass: string }): boolean {
+  if (h.assetClass === "stock" || h.assetClass === "etf") return true;
+  return h.accountKind === "broker" && h.assetClass !== "cash";
+}
+
 export interface Box3Calculation {
   bankEur: string;
   otherEur: string;
