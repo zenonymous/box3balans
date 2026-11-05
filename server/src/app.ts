@@ -16,7 +16,7 @@ import type { SecretBox } from "./lib/secrets.js";
 import type { SyncService } from "./sync/service.js";
 import type { WalletService } from "./wallets/service.js";
 import type { BackfillService } from "./jobs/backfill.js";
-import { SESSION_COOKIE, createSession, sessionUser } from "./auth/service.js";
+import { SESSION_COOKIE, createSession, sessionUser, type SetupGate } from "./auth/service.js";
 import { IdentityCheck } from "./auth/identity.js";
 import { users } from "./db/schema.js";
 import { authRoutes } from "./routes/auth.js";
@@ -52,11 +52,8 @@ export interface AppDeps {
   backfill: BackfillService;
   /** Every request to the internet (lib/net.ts), for Settings → Network. */
   network: NetworkLog;
-  /**
-   * While nobody has an account: the one-time code the first one needs. `required`: setup never
-   * goes without one (only tests set it false); when the account is gone again, a new code is made.
-   */
-  setup: { code: string | null; required: boolean };
+  /** While there's no user: the one-time code setting one up takes (auth/service.ts). */
+  setup: SetupGate;
 }
 
 declare module "fastify" {

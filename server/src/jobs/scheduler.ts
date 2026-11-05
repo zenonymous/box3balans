@@ -23,13 +23,9 @@ export async function refreshAndSnapshot(db: DB, prices: PriceService, config: C
 }
 
 /**
- * Runs `refreshAndSnapshot` now and every PRICE_REFRESH_MINUTES, and syncs exchange connections
- * every SYNC_INTERVAL_HOURS (first run a minute after startup). Runs of the same job never overlap.
- */
-/**
  * An automatic backup, when the newest one is older than the interval; the oldest beyond BACKUP_KEEP
- * go. None before the first account: there's nothing to back up yet, and restoring such a backup
- * would only reopen setup (security audit, 5 Nov 2026). Null when nothing was written.
+ * go. None before the first user: there's nothing to back up yet, and restoring such a backup
+ * would only reopen setup. Null when nothing was written.
  */
 export async function automaticBackup(db: DB, config: Config) {
   if ((await userCount(db)) === 0) return null;
@@ -39,6 +35,10 @@ export async function automaticBackup(db: DB, config: Config) {
   return { backup, removed: pruneBackups(config.BACKUP_DIR, config.BACKUP_KEEP) };
 }
 
+/**
+ * Runs `refreshAndSnapshot` now and every PRICE_REFRESH_MINUTES, and syncs exchange connections
+ * every SYNC_INTERVAL_HOURS (first run a minute after startup). Runs of the same job never overlap.
+ */
 export function startScheduler(
   db: DB,
   prices: PriceService,

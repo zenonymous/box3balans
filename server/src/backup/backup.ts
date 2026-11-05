@@ -131,9 +131,9 @@ export function decodeBackup(buf: Buffer): BackupFile {
 }
 
 /**
- * Throws when a backup can't be restored: one from a newer version, or one without an account. The
- * latter is an automatic backup from before Box3balans was set up; restoring it would leave no
- * account, and setup would then be open without its one-time code (security audit, 5 Nov 2026).
+ * Throws when a backup can't be restored: one from a newer version, or one without a user. The
+ * latter is an automatic backup from before Box3balans was set up: there's nothing in it, and
+ * restoring it would leave no user, so setup would be open again.
  */
 export function checkRestorable(b: BackupFile): void {
   if (b.schemaVersion > schemaVersion()) {
@@ -141,9 +141,7 @@ export function checkRestorable(b: BackupFile): void {
   }
   if (!b.tables[getTableName(s.users)]?.length) {
     throw new Error(
-      tr(
-        "This backup holds no account: it was made before Box3balans was set up, so there's nothing in it to restore.",
-      ),
+      tr("This backup holds no user: it was made before Box3balans was set up, so there's nothing in it to restore."),
     );
   }
 }

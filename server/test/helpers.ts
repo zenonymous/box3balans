@@ -70,6 +70,9 @@ export const defaultRoutes = {
   },
 };
 
+/** The password of the user createTestApp signs in as ("me"). */
+export const TEST_PASSWORD = "correct horse battery";
+
 export interface TestApp {
   app: FastifyInstance;
   database: Database;
@@ -139,7 +142,7 @@ export async function createTestApp(
   };
 
   if (opts.login !== false) {
-    const res = await t.api("POST", "/api/auth/setup", { username: "me", password: "correct horse battery" });
+    const res = await t.api("POST", "/api/auth/setup", { username: "me", password: TEST_PASSWORD });
     if (res.statusCode !== 200) throw new Error(`setup failed: ${res.body}`);
     const c = res.cookies.find((x) => x.name === "pd_session")!;
     t.cookie = `pd_session=${c.value}`;

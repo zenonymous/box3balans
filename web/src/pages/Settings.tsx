@@ -327,12 +327,16 @@ function UpdateCheck() {
  * Two-step verification: after the password, a code from an authenticator app (or a recovery code).
  * Turning it on shows a QR code to scan, a code confirms it, and ten recovery codes are shown once.
  */
-function TwoFactorCard() {
-  const qc = useQueryClient();
-  const status = useQuery({
+/** Whether two-step verification is on, and how many recovery codes are left. */
+const useTwoFactorStatus = () =>
+  useQuery({
     queryKey: ["2fa"],
     queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
   });
+
+function TwoFactorCard() {
+  const qc = useQueryClient();
+  const status = useTwoFactorStatus();
   const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
   const [mode, setMode] = useState<"off" | "renew" | null>(null);
@@ -779,14 +783,11 @@ function BackupsCard() {
   const [restoring, setRestoring] = useState<string | null>(null);
   const [confirm, setConfirm] = useState("");
   const [passphrase, setPassphrase] = useState("");
-  // A restore brings back the account as it was in the backup, so it takes the password, and with
+  // A restore brings back the user as it was in the backup, so it takes the password, and with
   // two-step verification on a code too.
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const twoFactor = useQuery({
-    queryKey: ["2fa"],
-    queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
-  });
+  const twoFactor = useTwoFactorStatus();
 
   const backupNow = async () => {
     setBusy(true);
@@ -953,7 +954,8 @@ function BackupsCard() {
                 />
               )}
             </Field>
-            {twoFactor.data?.enabled && (
+            {/* Unless it's known to be off: while loading or after an error, the field is there. */}
+            {twoFactor.data?.enabled !== false && (
               <Field label={t("Code from your authenticator app")}>
                 {(id) => (
                   <Input

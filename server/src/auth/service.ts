@@ -1,6 +1,6 @@
 import { createHash, randomBytes, randomInt, timingSafeEqual } from "node:crypto";
 import { hash, verify } from "@node-rs/argon2";
-import { and, eq, gt, lt, ne, sql } from "drizzle-orm";
+import { and, eq, gt, lt, sql } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { sessions, users } from "../db/schema.js";
 
@@ -60,8 +60,16 @@ export async function changePassword(db: DB, userId: number, current: string, ne
     .set({ passwordHash: await hashPassword(next) })
     .where(eq(users.id, userId));
   // Invalidate all sessions; the caller issues a fresh one.
-  await db.delete(sessions).where(eq(sessions.userId, userId));
+  await endSessions(db, userId);
   return true;
+}
+
+/**
+ * Signs out every session of the user, this one too; the caller issues a fresh one. Also a copy of
+ * this browser's cookie stops working that way.
+ */
+export async function endSessions(db: DB, userId: number) {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
 export async function createSession(db: DB, userId: number, days: number): Promise<{ token: string; expiresAt: Date }> {
@@ -82,12 +90,6 @@ export async function sessionUser(db: DB, token: string | undefined) {
   return row ?? null;
 }
 
-/** Signs out every session of the user but this one (`token`, the cookie of the current request). */
-export async function endOtherSessions(db: DB, userId: number, token: string | undefined) {
-  const others = eq(sessions.userId, userId);
-  await db.delete(sessions).where(token ? and(others, ne(sessions.id, sha256(token))) : others);
-}
-
 export async function destroySession(db: DB, token: string | undefined) {
   if (token) await db.delete(sessions).where(eq(sessions.id, sha256(token)));
 }
@@ -102,9 +104,33 @@ export function newSetupCode(): string {
   return `${chars.slice(0, 5)}-${chars.slice(5)}`;
 }
 
-/** What the log says while there's no account yet, with the code the first one needs. */
-export const setupCodeMessage = (code: string) =>
-  `No account yet. Open Box3balans in your browser and use this setup code: ${code}`;
+/**
+ * Setting up the user: the one-time code it takes, while there's no user. `required`: setup never
+ * goes without a code (false only in tests and the demo, which has its user from the start).
+ */
+export interface SetupGate {
+  code: string | null;
+  required: boolean;
+}
+
+/**
+ * Makes the setup code and puts it in the log when there's no user and none is waiting: at the
+ * first start, and again should the user be gone later (a user table emptied some other way), so
+ * setup never takes anyone without it. `own` is SETUP_CODE, when set.
+ */
+export async function ensureSetupCode(
+  db: DB,
+  setup: SetupGate,
+  own: string | undefined,
+  log: { warn: (msg: string) => void },
+): Promise<void> {
+  if (!setup.required || setup.code) return;
+  if ((await userCount(db)) > 0) return;
+  // Another request may have made one meanwhile: keep that, it's the one in the log.
+  if (setup.code) return;
+  setup.code = own ?? newSetupCode();
+  log.warn(`No account yet. Open Box3balans in your browser and use this setup code: ${setup.code}`);
+}
 
 /** Whether `given` is the setup code, ignoring case, spaces and dashes; in constant time. */
 export function isSetupCode(expected: string, given: string | undefined): boolean {

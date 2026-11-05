@@ -92,7 +92,7 @@ describe("Settings page", () => {
     expect(restore.disabled).toBe(true);
     fireEvent.change(confirm, { target: { value: "RESTORE" } });
     expect(restore.disabled).toBe(true);
-    // A restore brings back the account as it was in the backup, so it takes the password; with
+    // A restore brings back the user as it was in the backup, so it takes the password; with
     // two-step verification on, a code too.
     const form = within(confirm.closest("form")!);
     fireEvent.change(form.getByLabelText("Je wachtwoord"), { target: { value: "correct horse battery" } });

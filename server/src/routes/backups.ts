@@ -60,6 +60,8 @@ export async function backupRoutes(app: FastifyInstance) {
 
   // Replaces ALL data with a backup from the backup folder. A safety backup is taken first.
   app.post("/:name/restore", { config: { rateLimit: { max: 3, timeWindow: "5 minutes" } } }, async (req, reply) => {
+    // The demo's user has a password nobody knows, and the demo keeps nothing anyway.
+    if (config.DEMO) throw notInDemo();
     const { name } = z.object({ name: z.string() }).parse(req.params);
     const body = z
       .object({
@@ -70,9 +72,10 @@ export async function backupRoutes(app: FastifyInstance) {
       })
       .safeParse(req.body);
     if (!body.success) throw new HttpError(400, tr("Type RESTORE to confirm"));
-    // A restore brings back the account as it was in the backup: an older password, or two-step
-    // verification off. So it takes what turning that off takes, not just a session.
-    await app.identity.confirm(req.user!.id, body.data.password, body.data.code);
+    // A restore brings back the user as it was in the backup: an older password, or two-step
+    // verification off. So it takes what turning that off takes, not just a session: the password
+    // now, and the code once the backup is known to be restorable, so a refusal doesn't spend it.
+    await app.identity.checkPassword(req.user!.id, body.data.password);
     let file: string;
     try {
       file = backupPath(dir, name);
@@ -89,6 +92,7 @@ export async function backupRoutes(app: FastifyInstance) {
     } catch (err) {
       throw new HttpError(400, (err as Error).message);
     }
+    await app.identity.checkSecondFactor(req.user!.id, body.data.code);
     const safety = await writeBackupFile(db, dir, "prerestore", config.BACKUP_PASSPHRASE);
     try {
       const counts = await restoreBackup(db, backup);

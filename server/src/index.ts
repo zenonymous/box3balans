@@ -16,7 +16,7 @@ import { BackfillService } from "./jobs/backfill.js";
 import { APP_VERSION } from "./lib/version.js";
 import { NetworkLog, loadTurnedOff } from "./domain/networkLog.js";
 import { allowConfiguredUrl, allowLocalUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
-import { newSetupCode, setupCodeMessage, userCount } from "./auth/service.js";
+import { ensureSetupCode, type SetupGate } from "./auth/service.js";
 import { ensureBackupPassphrase } from "./backup/passphrase.js";
 
 const config = loadConfig();
@@ -52,13 +52,10 @@ if (!config.DEMO) {
   setTurnedOff(await loadTurnedOff(database.db));
 }
 
-// A fresh install takes its first account only with a one-time code from this log, so nobody else
-// on the network (or a website, via DNS rebinding) can claim it first.
-const setup = {
-  code: !config.DEMO && (await userCount(database.db)) === 0 ? (config.SETUP_CODE ?? newSetupCode()) : null,
-  // Also later, should the account be gone again (routes/auth.ts makes a new code then).
-  required: !config.DEMO,
-};
+// A fresh install takes its first user only with a one-time code from this log, so nobody else on
+// the network (or a website, via DNS rebinding) can claim it first. The code is made once the app
+// listens (below), and again should the user be gone later (routes/auth.ts).
+const setup: SetupGate = { code: null, required: !config.DEMO };
 
 // Backups are encrypted by default: with a passphrase made now if there's none yet.
 const madePassphrase = ensureBackupPassphrase(config);
@@ -103,4 +100,4 @@ process.on("SIGINT", () => void shutdown("SIGINT"));
 
 app.log.info({ version: APP_VERSION, demo: config.DEMO }, "Box3balans starting");
 await app.listen({ port: config.PORT, host: config.HOST });
-if (setup.code) app.log.warn(setupCodeMessage(setup.code));
+await ensureSetupCode(database.db, setup, config.SETUP_CODE, app.log);

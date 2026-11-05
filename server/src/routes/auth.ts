@@ -7,10 +7,9 @@ import {
   createSession,
   createFirstUser,
   destroySession,
-  endOtherSessions,
+  endSessions,
   isSetupCode,
-  newSetupCode,
-  setupCodeMessage,
+  ensureSetupCode,
   userCount,
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
@@ -54,17 +53,9 @@ export async function authRoutes(app: FastifyInstance) {
     });
   };
 
-  // No account and no code waiting, while one is required: the account is gone again after the first
-  // one was set up (a user table emptied some other way). Make a new code and log it, as at the
-  // first start, rather than letting anyone take the account (security audit, 5 Nov 2026).
-  const pendingCode = async () => {
-    if (!setup.required || setup.code || (await userCount(db)) > 0) return;
-    setup.code = config.SETUP_CODE ?? newSetupCode();
-    app.log.warn(setupCodeMessage(setup.code));
-  };
-
   app.get("/state", async (req) => {
-    await pendingCode();
+    // Should the user be gone again, a new code goes in the log (auth/service.ts).
+    await ensureSetupCode(db, setup, config.SETUP_CODE, app.log);
     const needsSetup = (await userCount(db)) === 0;
     return {
       needsSetup,
@@ -82,7 +73,7 @@ export async function authRoutes(app: FastifyInstance) {
     const body = credentials
       .extend({ password: newPassword, setupCode: z.string().trim().max(64).optional() })
       .parse(req.body);
-    await pendingCode();
+    await ensureSetupCode(db, setup, config.SETUP_CODE, app.log);
     // Without the code from the log, someone else on the network can't claim a fresh install.
     if (setup.code && !isSetupCode(setup.code, body.setupCode))
       throw new HttpError(
@@ -104,7 +95,7 @@ export async function authRoutes(app: FastifyInstance) {
     if (await isTwoFactorEnabled(db, user.id)) {
       if (!body.code)
         return reply.code(401).send({ error: tr("Enter the code from your authenticator app"), needsCode: true });
-      if (!(await identity.code(user.id, body.code)))
+      if (!(await identity.verifyCode(user.id, body.code)))
         return reply.code(401).send({ error: tr("That code isn't right, or was already used"), needsCode: true });
     }
     await startSession(reply, user.id);
@@ -121,30 +112,36 @@ export async function authRoutes(app: FastifyInstance) {
   });
 
   // Turning it on takes the password, so a left-open session can't put it on someone else's phone and
-  // lock the owner out. Turning it on or off signs out every other session: one of them may be why.
-  app.post("/2fa/enable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+  // lock the owner out. Turning it on or off signs out every session, a copy of this browser's cookie
+  // too (one of them may be why), and this browser gets a fresh one, as with a new password.
+  app.post("/2fa/enable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req, reply) => {
     if (config.DEMO) throw notInDemo();
     const { code, password } = codeBody.extend({ password: z.string().max(256).default("") }).parse(req.body);
-    await identity.confirm(req.user!.id, password, undefined);
+    await identity.checkPassword(req.user!.id, password);
     const recoveryCodes = await enableTwoFactor(db, secrets, req.user!.id, code);
     if (!recoveryCodes)
       throw new HttpError(400, tr("That code isn't right; check the time on your phone and try again"));
-    await endOtherSessions(db, req.user!.id, req.cookies[SESSION_COOKIE]);
+    await endSessions(db, req.user!.id);
+    await startSession(reply, req.user!.id);
     return { recoveryCodes };
   });
 
   // Turning it off or renewing the recovery codes takes a code too, so a left-open session isn't enough.
-  app.post("/2fa/disable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
+  app.post("/2fa/disable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req, reply) => {
     const { password, code } = codeBody.extend({ password: z.string().max(256) }).parse(req.body);
+    // Already off: no code can be right (as before), and nothing to sign out for.
+    if (!(await isTwoFactorEnabled(db, req.user!.id)))
+      throw new HttpError(400, tr("That code isn't right, or was already used"));
     await identity.confirm(req.user!.id, password, code);
     await disableTwoFactor(db, req.user!.id);
-    await endOtherSessions(db, req.user!.id, req.cookies[SESSION_COOKIE]);
+    await endSessions(db, req.user!.id);
+    await startSession(reply, req.user!.id);
     return twoFactorStatus(db, req.user!.id);
   });
 
   app.post("/2fa/recovery-codes", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
     const { code } = codeBody.parse(req.body);
-    if (!(await identity.code(req.user!.id, code)))
+    if (!(await identity.verifyCode(req.user!.id, code)))
       throw new HttpError(400, tr("That code isn't right, or was already used"));
     return { recoveryCodes: await renewRecoveryCodes(db, secrets, req.user!.id) };
   });

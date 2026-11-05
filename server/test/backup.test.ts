@@ -22,9 +22,8 @@ import { base32Decode, hotp, totpStep } from "../src/lib/totp.js";
 import * as s from "../src/db/schema.js";
 import { SecretBox } from "../src/lib/secrets.js";
 import { WrongPassphraseError, decryptBackup, encryptBackup, isEncryptedBackup } from "../src/backup/crypto.js";
-import { createTestApp, type TestApp } from "./helpers.js";
+import { createTestApp, TEST_PASSWORD as PASSWORD, type TestApp } from "./helpers.js";
 
-const PASSWORD = "correct horse battery";
 let t: TestApp | undefined;
 afterEach(async () => {
   await t?.close();
@@ -168,10 +167,36 @@ describe("backup and restore", () => {
 
       const setup = json(await t.api("POST", "/api/auth/2fa/setup"));
       const code = (offset: number) => hotp(base32Decode(setup.secret), totpStep() + offset);
-      await t.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code: code(-1) });
+      const on = await t.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code: code(-1) });
+      // Turning it on signs every session out and gives this one a fresh cookie.
+      t.cookie = `pd_session=${on.cookies.find((c) => c.name === "pd_session")!.value}`;
       expect(json(await restore({ password: PASSWORD })).error).toBe("Enter the code from your authenticator app");
       const ok = await restore({ password: PASSWORD, code: code(0) });
       expect(ok.statusCode, ok.body).toBe(200);
+    } finally {
+      vi.restoreAllMocks();
+    }
+  });
+
+  // The code is checked last, so a restore refused for another reason doesn't spend a recovery code.
+  it("keeps a recovery code when a restore is refused for another reason", async () => {
+    vi.spyOn(Date, "now").mockReturnValue((totpStep() * 30 + 15) * 1000);
+    try {
+      t = await createTestApp();
+      const setup = json(await t.api("POST", "/api/auth/2fa/setup"));
+      const on = await t.api("POST", "/api/auth/2fa/enable", {
+        password: PASSWORD,
+        code: hotp(base32Decode(setup.secret), totpStep()),
+      });
+      t.cookie = `pd_session=${on.cookies.find((c) => c.name === "pd_session")!.value}`;
+      const recovery = json(on).recoveryCodes[0];
+      const missing = await t.api("POST", "/api/backups/box3balans-20260101-000000-manual.json.gz/restore", {
+        confirm: "RESTORE",
+        password: PASSWORD,
+        code: recovery,
+      });
+      expect(missing.statusCode).toBe(404);
+      expect(json(await t.api("GET", "/api/auth/2fa")).recoveryCodesLeft).toBe(10);
     } finally {
       vi.restoreAllMocks();
     }
@@ -212,10 +237,10 @@ describe("backup and restore", () => {
       password: PASSWORD,
     });
     expect(refused.statusCode).toBe(400);
-    expect(json(refused).error).toMatch(/no account/);
+    expect(json(refused).error).toMatch(/no user/);
     await expect(
       restoreBackup(t.database.db, await readBackupFile(path.join(t.backupDir, early.name))),
-    ).rejects.toThrow(/no account/);
+    ).rejects.toThrow(/no user/);
     // Still signed in, and no safety backup was made for nothing.
     expect((await t.api("GET", "/api/accounts")).statusCode).toBe(200);
     expect(listBackups(t.backupDir).map((b) => b.name)).toEqual([early.name]);
