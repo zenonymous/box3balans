@@ -9,6 +9,7 @@ import { getTableConfig, type PgTable } from "drizzle-orm/pg-core";
 import type { DB } from "../db/client.js";
 import * as s from "../db/schema.js";
 import { reloadLanguage } from "../domain/settings.js";
+import { tr } from "../i18n/index.js";
 import { decryptBackup, encryptingWriter, isEncryptedBackup } from "./crypto.js";
 
 export const BACKUP_FORMAT = "box3balans-backup";
@@ -130,13 +131,29 @@ export function decodeBackup(buf: Buffer): BackupFile {
 }
 
 /**
+ * Throws when a backup can't be restored: one from a newer version, or one without an account. The
+ * latter is an automatic backup from before Box3balans was set up; restoring it would leave no
+ * account, and setup would then be open without its one-time code (security audit, 5 Nov 2026).
+ */
+export function checkRestorable(b: BackupFile): void {
+  if (b.schemaVersion > schemaVersion()) {
+    throw new Error("This backup comes from a newer version of the app; update the app first.");
+  }
+  if (!b.tables[getTableName(s.users)]?.length) {
+    throw new Error(
+      tr(
+        "This backup holds no account: it was made before Box3balans was set up, so there's nothing in it to restore.",
+      ),
+    );
+  }
+}
+
+/**
  * Replaces all data with the backup's, in one database transaction (all or nothing). Backups from
  * older versions restore fine (new columns take their defaults); newer ones are refused.
  */
 export async function restoreBackup(db: DB, b: BackupFile): Promise<Record<string, number>> {
-  if (b.schemaVersion > schemaVersion()) {
-    throw new Error("This backup comes from a newer version of the app; update the app first.");
-  }
+  checkRestorable(b);
   const counts: Record<string, number> = {};
   await db.transaction(async (trx) => {
     const names = TABLES.map((t) => `"${getTableName(t)}"`).join(", ");

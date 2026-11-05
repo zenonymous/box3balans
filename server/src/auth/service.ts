@@ -96,6 +96,10 @@ export function newSetupCode(): string {
   return `${chars.slice(0, 5)}-${chars.slice(5)}`;
 }
 
+/** What the log says while there's no account yet, with the code the first one needs. */
+export const setupCodeMessage = (code: string) =>
+  `No account yet. Open Box3balans in your browser and use this setup code: ${code}`;
+
 /** Whether `given` is the setup code, ignoring case, spaces and dashes; in constant time. */
 export function isSetupCode(expected: string, given: string | undefined): boolean {
   const norm = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "");

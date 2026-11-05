@@ -16,7 +16,7 @@ import { BackfillService } from "./jobs/backfill.js";
 import { APP_VERSION } from "./lib/version.js";
 import { NetworkLog, loadTurnedOff } from "./domain/networkLog.js";
 import { allowConfiguredUrl, allowLocalUrl, installNetworkGuard, setTurnedOff } from "./lib/net.js";
-import { newSetupCode, userCount } from "./auth/service.js";
+import { newSetupCode, setupCodeMessage, userCount } from "./auth/service.js";
 import { ensureBackupPassphrase } from "./backup/passphrase.js";
 
 const config = loadConfig();
@@ -56,6 +56,8 @@ if (!config.DEMO) {
 // on the network (or a website, via DNS rebinding) can claim it first.
 const setup = {
   code: !config.DEMO && (await userCount(database.db)) === 0 ? (config.SETUP_CODE ?? newSetupCode()) : null,
+  // Also later, should the account be gone again (routes/auth.ts makes a new code then).
+  required: !config.DEMO,
 };
 
 // Backups are encrypted by default: with a passphrase made now if there's none yet.
@@ -101,4 +103,4 @@ process.on("SIGINT", () => void shutdown("SIGINT"));
 
 app.log.info({ version: APP_VERSION, demo: config.DEMO }, "Box3balans starting");
 await app.listen({ port: config.PORT, host: config.HOST });
-if (setup.code) app.log.warn(`No account yet. Open Box3balans in your browser and use this setup code: ${setup.code}`);
+if (setup.code) app.log.warn(setupCodeMessage(setup.code));

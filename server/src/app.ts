@@ -51,8 +51,11 @@ export interface AppDeps {
   backfill: BackfillService;
   /** Every request to the internet (lib/net.ts), for Settings → Network. */
   network: NetworkLog;
-  /** While nobody has an account: the one-time code the first one needs (null: none needed). */
-  setup: { code: string | null };
+  /**
+   * While nobody has an account: the one-time code the first one needs. `required`: setup never
+   * goes without one (only tests set it false); when the account is gone again, a new code is made.
+   */
+  setup: { code: string | null; required: boolean };
 }
 
 declare module "fastify" {

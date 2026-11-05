@@ -9,6 +9,7 @@ import type { BackfillService } from "./backfill.js";
 import { isAutomatic, listBackups, pruneBackups, writeBackupFile } from "../backup/backup.js";
 import { recordBackupStatus } from "../backup/status.js";
 import { checkForUpdate } from "../domain/updates.js";
+import { userCount } from "../auth/service.js";
 
 // A price counts as stale once it missed two refresh cycles plus some slack.
 export const staleAfterMs = (config: Config) => (config.PRICE_REFRESH_MINUTES * 2 + 10) * 60_000;
@@ -25,6 +26,19 @@ export async function refreshAndSnapshot(db: DB, prices: PriceService, config: C
  * Runs `refreshAndSnapshot` now and every PRICE_REFRESH_MINUTES, and syncs exchange connections
  * every SYNC_INTERVAL_HOURS (first run a minute after startup). Runs of the same job never overlap.
  */
+/**
+ * An automatic backup, when the newest one is older than the interval; the oldest beyond BACKUP_KEEP
+ * go. None before the first account: there's nothing to back up yet, and restoring such a backup
+ * would only reopen setup (security audit, 5 Nov 2026). Null when nothing was written.
+ */
+export async function automaticBackup(db: DB, config: Config) {
+  if ((await userCount(db)) === 0) return null;
+  const latest = listBackups(config.BACKUP_DIR).find((b) => isAutomatic(b.name));
+  if (latest && Date.now() - Date.parse(latest.createdAt) < config.BACKUP_INTERVAL_HOURS * 3_600_000) return null;
+  const backup = await writeBackupFile(db, config.BACKUP_DIR, "auto", config.BACKUP_PASSPHRASE);
+  return { backup, removed: pruneBackups(config.BACKUP_DIR, config.BACKUP_KEEP) };
+}
+
 export function startScheduler(
   db: DB,
   prices: PriceService,
@@ -93,10 +107,9 @@ export function startScheduler(
   const backupMs = config.BACKUP_INTERVAL_HOURS * 3_600_000;
   const backupTick = async () => {
     try {
-      const latest = listBackups(config.BACKUP_DIR).find((b) => isAutomatic(b.name));
-      if (latest && Date.now() - Date.parse(latest.createdAt) < backupMs) return;
-      const b = await writeBackupFile(db, config.BACKUP_DIR, "auto", config.BACKUP_PASSPHRASE);
-      const removed = pruneBackups(config.BACKUP_DIR, config.BACKUP_KEEP);
+      const made = await automaticBackup(db, config);
+      if (!made) return;
+      const { backup: b, removed } = made;
       await recordBackupStatus(db, { lastSuccessAt: new Date().toISOString(), lastName: b.name });
       log.info({ backup: b.name, sizeBytes: b.sizeBytes, pruned: removed.length }, "automatic backup written");
     } catch (err) {

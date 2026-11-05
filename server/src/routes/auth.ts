@@ -8,6 +8,8 @@ import {
   createFirstUser,
   destroySession,
   isSetupCode,
+  newSetupCode,
+  setupCodeMessage,
   userCount,
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
@@ -94,7 +96,17 @@ export async function authRoutes(app: FastifyInstance) {
     });
   };
 
+  // No account and no code waiting, while one is required: the account is gone again after the first
+  // one was set up (a user table emptied some other way). Make a new code and log it, as at the
+  // first start, rather than letting anyone take the account (security audit, 5 Nov 2026).
+  const pendingCode = async () => {
+    if (!setup.required || setup.code || (await userCount(db)) > 0) return;
+    setup.code = config.SETUP_CODE ?? newSetupCode();
+    app.log.warn(setupCodeMessage(setup.code));
+  };
+
   app.get("/state", async (req) => {
+    await pendingCode();
     const needsSetup = (await userCount(db)) === 0;
     return {
       needsSetup,
@@ -112,6 +124,7 @@ export async function authRoutes(app: FastifyInstance) {
     const body = credentials
       .extend({ password: newPassword, setupCode: z.string().trim().max(64).optional() })
       .parse(req.body);
+    await pendingCode();
     // Without the code from the log, someone else on the network can't claim a fresh install.
     if (setup.code && !isSetupCode(setup.code, body.setupCode))
       throw new HttpError(

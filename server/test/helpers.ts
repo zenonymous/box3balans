@@ -109,7 +109,7 @@ export async function createTestApp(
   backfill.request = () => {};
   const network = new NetworkLog(database.db);
   // No setup code unless a test asks for one (opts.setupCode).
-  const setup = { code: opts.setupCode ?? null };
+  const setup = { code: opts.setupCode ?? null, required: opts.setupCode != null };
   const app = await buildApp({ db: database.db, config, prices, secrets, sync, wallets, backfill, network, setup });
   // Tests read messages in English unless they ask for Dutch.
   await setLanguage(database.db, opts.lang ?? "en");

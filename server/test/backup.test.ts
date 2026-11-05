@@ -17,6 +17,7 @@ import {
   writeBackupFile,
 } from "../src/backup/backup.js";
 import { openDatabase } from "../src/db/client.js";
+import { automaticBackup } from "../src/jobs/scheduler.js";
 import * as s from "../src/db/schema.js";
 import { SecretBox } from "../src/lib/secrets.js";
 import { WrongPassphraseError, decryptBackup, encryptBackup, isEncryptedBackup } from "../src/backup/crypto.js";
@@ -164,6 +165,42 @@ describe("backup and restore", () => {
     );
     expect(() => decodeBackup(Buffer.from("hello"))).toThrow(/Not a readable backup/);
     expect(() => decodeBackup(Buffer.from(JSON.stringify({ format: "other" })))).toThrow(/Not a Box3balans backup/);
+  });
+
+  // Security audit of 5 Nov 2026: restoring a backup from before the first account emptied the user
+  // table, and setup then took anyone's account without the setup code.
+  it("refuses a backup without an account, and nothing changes", async () => {
+    t = await createTestApp(undefined, { login: false, setupCode: "K7QX2-MPF9R" });
+    const early = await writeBackupFile(t.database.db, t.backupDir, "auto", undefined);
+    const setup = await t.api("POST", "/api/auth/setup", {
+      username: "me",
+      password: "correct horse battery",
+      setupCode: "K7QX2-MPF9R",
+    });
+    t.cookie = `pd_session=${setup.cookies.find((c) => c.name === "pd_session")!.value}`;
+    const refused = await t.api("POST", `/api/backups/${early.name}/restore`, { confirm: "RESTORE" });
+    expect(refused.statusCode).toBe(400);
+    expect(json(refused).error).toMatch(/no account/);
+    await expect(
+      restoreBackup(t.database.db, await readBackupFile(path.join(t.backupDir, early.name))),
+    ).rejects.toThrow(/no account/);
+    // Still signed in, and no safety backup was made for nothing.
+    expect((await t.api("GET", "/api/accounts")).statusCode).toBe(200);
+    expect(listBackups(t.backupDir).map((b) => b.name)).toEqual([early.name]);
+  });
+
+  // A fresh install has nothing to back up until the account exists: such a backup holds no data and
+  // could only reopen setup (security audit, 5 Nov 2026).
+  it("writes no automatic backup before the first account, then one per interval", async () => {
+    t = await createTestApp(undefined, { login: false });
+    const config = t.app.deps.config;
+    expect(await automaticBackup(t.database.db, config)).toBeNull();
+    expect(listBackups(t.backupDir)).toEqual([]);
+    await t.api("POST", "/api/auth/setup", { username: "me", password: "correct horse battery" });
+    const first = await automaticBackup(t.database.db, config);
+    expect(first?.backup.name).toMatch(/-auto\.json\.gz$/);
+    expect(await automaticBackup(t.database.db, config)).toBeNull(); // the newest is recent enough
+    expect(listBackups(t.backupDir)).toHaveLength(1);
   });
 
   it("keeps only the newest automatic backups", async () => {

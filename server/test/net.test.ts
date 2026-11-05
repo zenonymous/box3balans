@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { sql } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { NetworkLog, loadTurnedOff } from "../src/domain/networkLog.js";
 import {
@@ -310,5 +311,20 @@ describe("the setup code", () => {
     expect((await t.api("POST", "/api/auth/setup", { ...body, setupCode: "k7qx2 mpf9r" })).statusCode).toBe(200);
     expect(t.app.deps.setup.code).toBeNull();
     expect((await t.api("GET", "/api/auth/state")).json()).toMatchObject({ needsSetup: false, needsSetupCode: false });
+  });
+
+  // Security audit of 5 Nov 2026: when the account is gone again after the first one was set up (the
+  // user table emptied), setup asks for a new code from the log instead of taking anyone.
+  it("asks for a new code from the log when the account is gone again", async () => {
+    t = await createTestApp(undefined, { login: false, setupCode: "K7QX2-MPF9R" });
+    const body = { username: "me", password: "correct horse battery" };
+    expect((await t.api("POST", "/api/auth/setup", { ...body, setupCode: "K7QX2-MPF9R" })).statusCode).toBe(200);
+    await t.database.db.execute(sql`TRUNCATE users CASCADE`);
+    expect((await t.api("GET", "/api/auth/state")).json()).toMatchObject({ needsSetup: true, needsSetupCode: true });
+    expect((await t.api("POST", "/api/auth/setup", body)).statusCode).toBe(403);
+    expect((await t.api("POST", "/api/auth/setup", { ...body, setupCode: "K7QX2-MPF9R" })).statusCode).toBe(403);
+    const fresh = t.app.deps.setup.code!;
+    expect(fresh).toMatch(/^[A-HJKMNP-Z2-9]{5}-[A-HJKMNP-Z2-9]{5}$/);
+    expect((await t.api("POST", "/api/auth/setup", { ...body, setupCode: fresh })).statusCode).toBe(200);
   });
 });

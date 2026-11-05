@@ -231,6 +231,9 @@ export const NL: Record<string, string> = {
   "Type RESTORE to confirm": "Typ RESTORE om te bevestigen",
   "Wait for running syncs to finish": "Wacht tot lopende syncs klaar zijn",
   "Restore failed, nothing was changed: {error}": "Terugzetten mislukt, er is niets gewijzigd: {error}",
+  // backup/backup.ts
+  "This backup holds no account: it was made before Box3balans was set up, so there's nothing in it to restore.":
+    "Deze back-up bevat geen account: hij is gemaakt voordat Box3balans was ingesteld, dus er valt niets uit terug te zetten.",
   // routes/box3.ts
   "The peildatum of that year hasn't happened yet": "De peildatum van dat jaar is nog niet geweest",
   // routes/household.ts

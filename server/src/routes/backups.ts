@@ -1,7 +1,14 @@
 import fs from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { backupPath, listBackups, readBackupFile, restoreBackup, writeBackupFile } from "../backup/backup.js";
+import {
+  backupPath,
+  checkRestorable,
+  listBackups,
+  readBackupFile,
+  restoreBackup,
+  writeBackupFile,
+} from "../backup/backup.js";
 import { getBackupStatus } from "../backup/status.js";
 import { SESSION_COOKIE, isUserPassword } from "../auth/service.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
@@ -70,6 +77,7 @@ export async function backupRoutes(app: FastifyInstance) {
     try {
       // A backup made with an earlier passphrase can be restored by entering that one.
       backup = await readBackupFile(file, body.data.passphrase || config.BACKUP_PASSPHRASE);
+      checkRestorable(backup);
     } catch (err) {
       throw new HttpError(400, (err as Error).message);
     }
