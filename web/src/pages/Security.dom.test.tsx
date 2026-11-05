@@ -32,7 +32,7 @@ describe("Settings: security", () => {
     // Turning it on takes the password too, and says other sessions will be signed out.
     expect(screen.getByText("Andere browsers en apparaten waar je bent ingelogd, worden uitgelogd.")).toBeTruthy();
     const form = screen.getByLabelText("Code uit je authenticator-app").closest("form")!;
-    fireEvent.change(within(form).getByLabelText("Huidig wachtwoord"), { target: { value: "correct horse battery" } });
+    fireEvent.change(within(form).getByLabelText("Je wachtwoord"), { target: { value: "correct horse battery" } });
     fireEvent.click(screen.getByRole("button", { name: "Aanzetten" }));
     await waitFor(() =>
       expect(sent(api, "POST", "/api/auth/2fa/enable")).toEqual([
@@ -58,7 +58,7 @@ describe("Settings: security", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Instellen" }));
     const code = await screen.findByLabelText("Code uit je authenticator-app");
     fireEvent.change(code, { target: { value: "123456" } });
-    fireEvent.change(within(code.closest("form")!).getByLabelText("Huidig wachtwoord"), {
+    fireEvent.change(within(code.closest("form")!).getByLabelText("Je wachtwoord"), {
       target: { value: "correct horse battery" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Aanzetten" }));

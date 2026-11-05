@@ -24,10 +24,17 @@ interface Entry {
   entityId: number;
   action: "create" | "update" | "delete";
   title: string;
+  // A transaction's title in parts, so its quantity is written in the number format.
+  parts?: { type: string; quantity: string | null; subject: string };
   via?: string;
   changes: { fields: { field: string; from: unknown; to: unknown }[]; flags: string[] } | null;
   restorable: boolean;
 }
+
+const titleOf = (e: Entry) =>
+  e.parts
+    ? [e.parts.type, e.parts.quantity && num(e.parts.quantity), e.parts.subject].filter(Boolean).join(" ")
+    : e.title;
 
 const ENTITY_LABEL: Record<Entity, string> = {
   transaction: t("Transaction"),
@@ -207,7 +214,7 @@ export function ActivityList({ entity, entityId, compact }: { entity?: Entity; e
             <div className="flex flex-wrap items-center gap-2">
               <Badge tone={ACTION[e.action].tone}>{ACTION[e.action].label}</Badge>
               {!compact && <span className="text-xs text-ink-2">{ENTITY_LABEL[e.entity] ?? e.entity}</span>}
-              <span className="font-medium">{compact && e.action === "update" ? "" : e.title}</span>
+              <span className="font-medium">{compact && e.action === "update" ? "" : titleOf(e)}</span>
               {e.via && (
                 <span className="text-xs text-muted">
                   {e.via === "restore"

@@ -95,7 +95,7 @@ Rules of the bill as the House of Representatives adopted it (the default settin
 - **Losses** above €500 carry forward to later years. Carrying back to an earlier year isn't in the bill; the letter of 29 September says nothing about it.
 - **Green investments** keep a tax credit.
 
-Before the letter of 29 September, the cabinet looked into options such as a rate of 35%, a tax-free result of €1,900 and carrying losses back one year. So besides the bill, the preview in the app has the setting _Cabinet letter of 29 Sep 2026_: €1,000 tax-free result, 36% and no carry-back (the letter doesn't mention it). **The preview doesn't simulate tax on sale of financial instruments yet** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); for investments you don't sell, it therefore shows more tax than the amendment would levy. Every setting can be adjusted.
+Before the letter of 29 September, the cabinet looked into options such as a rate of 35%, a tax-free result of €1,900 and carrying losses back one year. Besides the bill, the preview in the app had a setting for that letter (€1,000 tax-free result); since the change of 3 November, which dropped the cut, it uses the bill only. **The preview doesn't simulate tax on sale of financial instruments yet** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); for investments you don't sell, it therefore shows more tax than the amendment would levy. Every setting can be adjusted.
 
 Not described in the sources, and assumed by the app:
 

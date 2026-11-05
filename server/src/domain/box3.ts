@@ -1,7 +1,7 @@
 import { eq, min } from "drizzle-orm";
 import { z } from "zod";
 import type { DB } from "../db/client.js";
-import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
+import { accountKind, accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
 import type { AssetClassKey } from "./portfolio.js";
@@ -53,19 +53,7 @@ export const DEFAULT_RATES: Record<string, Box3Rates> = Object.fromEntries(
   Object.entries(RULES.years).map(([year, { source: _source, proposal: _proposal, ...r }]) => [year, r]),
 );
 
-const ACCOUNT_KINDS = [
-  "broker",
-  "exchange",
-  "vault",
-  "wallet",
-  "bank",
-  "physical",
-  "other",
-  "property",
-  "receivable",
-  "debt",
-  "insurance",
-] as const;
+const ACCOUNT_KINDS = accountKind.enumValues;
 const NON_CASH_CLASSES = ["stock", "etf", "crypto", "metal", "other"] as const;
 
 const category = z.enum(CATEGORIES);

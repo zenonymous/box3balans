@@ -46,22 +46,12 @@ export interface FutureParams {
   propertyPct: number; // vastgoedbijtelling: a home not let all year counts at least this share of its WOZ value
 }
 
-/** See docs/box3-sources.md. Neither is law yet, hence everything is editable. */
+/** See docs/box3-sources.md. Not law yet, hence everything is editable. */
 export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = {
   bill: {
     label: "Bill as passed by the Tweede Kamer (12 Feb 2026)",
     ratePct: 36,
     allowanceEur: 1800,
-    lossThresholdEur: 500,
-    carryBackYears: 0,
-    propertyPct: 3.35,
-  },
-  // The letter announcing the novelle names the tax-free amount; tax on sale for financial
-  // instruments isn't modelled (issue #11), so this still taxes their unrealised gains each year.
-  letter: {
-    label: "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)",
-    ratePct: 36,
-    allowanceEur: 1000,
     lossThresholdEur: 500,
     carryBackYears: 0,
     propertyPct: 3.35,

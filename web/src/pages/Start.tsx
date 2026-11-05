@@ -29,7 +29,7 @@ import {
 } from "../components/ui";
 import { date, eur, toApiNumber, toInputNumber } from "../format";
 import { t, tj, tn } from "../i18n";
-import { KIND_ORDER, kindHint, kindLabel, ownerLabel } from "../labels";
+import { KIND_ORDER, YEARLY_ONLY_KINDS, kindHint, kindLabel, ownerLabel } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll } from "../queries";
 import { YearsModal } from "./AccountYears";
 import { HouseholdEditor } from "./Household";
@@ -45,7 +45,6 @@ const STEP_LABEL: Record<Step, string> = {
 };
 
 // Kinds that only exist as values per year, and kinds whose history usually comes from a sync.
-const YEARLY_ONLY = new Set<AccountKind>(["property", "receivable", "debt", "insurance"]);
 const USUALLY_SYNCED = new Set<AccountKind>(["exchange", "wallet", "vault"]);
 
 /**
@@ -266,7 +265,7 @@ function AddAccountForm({ persons }: { persons: Person[] }) {
   const [error, setError] = useState<string>();
   const partner = persons.find((p) => p.role === "partner");
   const children = persons.filter((p) => p.role === "child");
-  const yearlyOnly = YEARLY_ONLY.has(kind);
+  const yearlyOnly = YEARLY_ONLY_KINDS.has(kind);
 
   const pickKind = (k: AccountKind) => {
     setKind(k);

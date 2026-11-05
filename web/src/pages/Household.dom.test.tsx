@@ -62,15 +62,14 @@ describe("Box 3 page", () => {
     expect(config.years["2025"]).toMatchObject({ debtsEur: "2500", partner: true });
   });
 
-  it("recalculates the 2028 preview with other assumptions", async () => {
-    const api = showPage("/box3?year=2025", "box3", <Box3Page />);
+  // Since 3 November the novelle proposes 2029 and keeps €1,800: no setting for the September letter.
+  it("presents the preview as proposed from 2029, with the bill as its assumptions", async () => {
+    showPage("/box3?year=2025", "box3", <Box3Page />);
+    expect(await screen.findByText(/Vanaf 2029: belasting over het werkelijk rendement/)).toBeTruthy();
     const assumptions = await screen.findByLabelText("Aannames");
-    await within(assumptions).findAllByRole("option");
-    fireEvent.change(assumptions, { target: { value: "letter" } });
-    await waitFor(() =>
-      expect(api.requests.some((r) => r.url.startsWith("/api/box3/future?preset=letter"))).toBe(true),
-    );
-    expect(api.missed).toEqual([]);
+    const options = await within(assumptions).findAllByRole("option");
+    expect(options.map((o) => o.getAttribute("value"))).toEqual(["bill"]);
+    expect(screen.queryByText(/29 september/)).toBeNull();
   });
 
   it("says how much of the homes' gain waits for their sale, and takes another vastgoedbijtelling", async () => {

@@ -2,12 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { AllocationDonut } from "../charts/AllocationDonut";
 import { RankedBars, type RankedRow } from "../charts/RankedBars";
-import type { Holding, Summary } from "../api";
+import type { Account, Holding, Summary } from "../api";
 import { NetWorthChart } from "../charts/NetWorthChart";
 import { RefreshButton } from "../components/RefreshButton";
 import { Alert, Card, Delta, Empty, PageHeader, Spinner, Stat, Tabs } from "../components/ui";
 import { CLASS_COLOR, CLASS_LABEL, CLASS_ORDER, eur, pct } from "../format";
-import { useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
+import { useAccounts, useHistory, usePortfolio, usePriceStatus, type HistoryRange } from "../queries";
 import { t, tj, tn } from "../i18n";
 import { kindLabel } from "../labels";
 import { useStoredFlag } from "../storage";
@@ -20,6 +20,7 @@ const rangeLabel = (r: HistoryRange) =>
 export function OverviewPage() {
   const portfolio = usePortfolio();
   const status = usePriceStatus();
+  const accounts = useAccounts();
   const [range, setRange] = useState<HistoryRange>("1Y");
   const [showInvested, toggleInvested] = useStoredFlag("showInvested", true);
   const history = useHistory(range);
@@ -77,6 +78,7 @@ export function OverviewPage() {
       <section className="mb-6">
         <div className="text-sm text-ink-2">{t("Net worth")}</div>
         <div className="mt-1 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">{eur(summary.totalEur)}</div>
+        <YearlyNotCounted accounts={accounts.data} />
         <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <span>
             <Delta value={summary.dayChangeEur} percent={summary.dayChangePct} />{" "}
@@ -293,5 +295,24 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
     >
       {view === "class" ? <AllocationDonut slices={slices} /> : <RankedBars rows={rows} legend={legend} />}
     </Card>
+  );
+}
+
+/**
+ * "Vermogen" is what's tracked with transactions and prices. Accounts kept as values per year (a home,
+ * savings, a loan) only have a value on 1 January, so they aren't in it: say so, with their net value.
+ */
+function YearlyNotCounted({ accounts }: { accounts: Account[] | undefined }) {
+  const yearly = (accounts ?? []).filter((a) => a.tracking === "yearly" && !a.archived && a.latestValueEur != null);
+  if (yearly.length === 0) return null;
+  const net = yearly.reduce((sum, a) => sum + (a.kind === "debt" ? -1 : 1) * Number(a.latestValueEur), 0);
+  return (
+    <p className="mt-1 text-sm text-muted">
+      {tj(
+        "Accounts kept as values per year, not counted above: {amount} net, on the last 1 January entered. <0>Box 3 →</0>",
+        [<Link key="b" to="/box3" className="text-accent" />],
+        { amount: eur(net, { decimals: 0 }) },
+      )}
+    </p>
   );
 }

@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { and, asc, eq, sql } from "drizzle-orm";
 import { z } from "zod";
-import { accounts, accountYears, metalItems, persons, transactions } from "../db/schema.js";
+import { accountKind, accounts, accountYears, metalItems, persons, transactions } from "../db/schema.js";
 import { YEARLY_ONLY_KINDS } from "../domain/yearly.js";
 import { foreignDays, parseBankExport, summarizeExport } from "../import/bank.js";
 import { readYearStatement } from "../import/yearStatement.js";
@@ -13,19 +13,7 @@ import { D, type Decimal } from "../lib/decimal.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
 
-const KINDS = [
-  "broker",
-  "exchange",
-  "vault",
-  "wallet",
-  "bank",
-  "physical",
-  "other",
-  "property",
-  "receivable",
-  "debt",
-  "insurance",
-] as const;
+const KINDS = accountKind.enumValues;
 
 const body = z.object({
   name: z.string().trim().min(1).max(100),

@@ -101,8 +101,8 @@ export async function box3Routes(app: FastifyInstance) {
     return taxReturnOverview(db, year, await loadConfig(db));
   });
 
-  // The planned actual-return system (from 2028) applied to your past years. Not law yet: the
-  // parameters come from a preset and can each be overridden.
+  // The planned actual-return system (proposed from 2029) applied to your past years. Not law yet:
+  // the parameters come from a preset and can each be overridden.
   app.get("/future", async (req) => {
     const q = z
       .object({

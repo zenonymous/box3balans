@@ -377,9 +377,10 @@ function TwoFactorCard() {
     </Field>
   );
 
-  // Turning it on or off takes the password, so a left-open session isn't enough.
+  // Turning it on or off takes the password, so a left-open session isn't enough. The same label as
+  // the other fields that ask for it again (Backups).
   const passwordField = (
-    <Field label={t("Current password")}>
+    <Field label={t("Your password")}>
       {(id) => (
         <Input
           id={id}

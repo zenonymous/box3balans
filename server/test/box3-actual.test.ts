@@ -365,7 +365,9 @@ describe("2028 system preview", () => {
 
   it("serves the preview with overridable parameters", async () => {
     await scenario(90_000);
-    const r = json(await t.api("GET", "/api/box3/future?preset=letter&ratePct=35"));
+    // The setting for the letter of 29 September (€1,000 tax-free) is gone: the change of
+    // 3 November dropped that cut. The bill's own figures, with the rate and tax-free result set by hand.
+    const r = json(await t.api("GET", "/api/box3/future?preset=bill&ratePct=35&allowanceEur=1000"));
     expect(r.params).toEqual({
       ratePct: 35,
       allowanceEur: 1000,
@@ -373,7 +375,8 @@ describe("2028 system preview", () => {
       carryBackYears: 0,
       propertyPct: 3.35,
     });
-    expect(r.presets.map((p: any) => p.id)).toEqual(["bill", "letter"]);
+    expect(r.presets.map((p: any) => p.id)).toEqual(["bill"]);
+    expect((await t.api("GET", "/api/box3/future?preset=letter")).statusCode).toBe(400);
     const y2024 = r.rows.find((x: any) => x.year === 2024);
     // 5,500 actual − 63 deductible costs − 1,000 = 4,437 at 35%.
     expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 4437, taxEur: 1552.95 });

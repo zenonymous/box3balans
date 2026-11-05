@@ -11,6 +11,16 @@ afterEach(() => {
 });
 
 describe("Overview", () => {
+  // "Vermogen" is what's tracked with transactions and prices; the demo's accounts kept as values per
+  // year (a holiday home, savings, a loan to Eva, a student loan) aren't in it, so the page says so:
+  // 310,000 + 38,730 + 12,450 + 6,900 + 4,015 + 3,000 − 15,500 = 359,595. Worked by hand.
+  it("says how much is on accounts kept as values per year, which Vermogen leaves out", async () => {
+    showPage("/", "/", <OverviewPage />);
+    const line = await screen.findByText(/Rekeningen met waarden per jaar/);
+    expect(line.textContent).toMatch(/netto €\s359\.595/);
+    expect(within(line).getByRole("link", { name: "Box 3 →" }).getAttribute("href")).toBe("/box3");
+  });
+
   it("loads another history range when you pick it", async () => {
     const api = showPage("/", "/", <OverviewPage />);
     const card = (await screen.findByRole("heading", { name: "Vermogen in de tijd" })).closest("section")!;

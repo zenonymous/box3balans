@@ -17,13 +17,12 @@ import {
 } from "../components/ui";
 import { eur } from "../format";
 import { t, tj, tn } from "../i18n";
-import { KIND_ORDER, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
+import { KIND_ORDER, YEARLY_ONLY_KINDS, kindHint, kindLabel, ownerLabel, providerName } from "../labels";
 import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
 import { YearsModal } from "./AccountYears";
 
 const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "bitpanda", "goldrepublic"];
 // Kinds that are always kept as values per year.
-const YEARLY_ONLY = new Set<AccountKind>(["property", "receivable", "debt", "insurance"]);
 
 export function AccountsPage() {
   const accounts = useAccounts();
@@ -93,8 +92,13 @@ export function AccountsPage() {
                           <div className="tabular text-sm text-ink">{eur(valueNow.get(a.id), { decimals: 0 })}</div>
                         )}
                         <div>
-                          {tn(a.txCount, "{n} transaction", "{n} transactions")}
-                          {a.itemCount ? ` · ${tn(a.itemCount, "{n} item", "{n} items")}` : ""}
+                          {/* A place for physical metal holds items: no "0 transactions" next to them. */}
+                          {[
+                            a.txCount || !a.itemCount ? tn(a.txCount, "{n} transaction", "{n} transactions") : null,
+                            a.itemCount ? tn(a.itemCount, "{n} item", "{n} items") : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")}
                         </div>
                       </>
                     )}
@@ -152,7 +156,7 @@ function AccountModal({
   const partner = persons.find((p) => p.role === "partner");
   const children = persons.filter((p) => p.role === "child");
   const used = !!account && (account.txCount > 0 || account.itemCount > 0);
-  const yearlyOnly = YEARLY_ONLY.has(f.kind);
+  const yearlyOnly = YEARLY_ONLY_KINDS.has(f.kind);
   const tracking = yearlyOnly ? "yearly" : f.tracking;
 
   const submit = async (e: FormEvent) => {

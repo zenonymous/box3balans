@@ -67,9 +67,23 @@ interface Names {
   asset: Map<number, string>;
 }
 
+/**
+ * A transaction's title in parts ("Storting", "10000", "EUR · DEGIRO"), so the web app can write the
+ * quantity in the user's number format, which the server doesn't know. No quantity for a dividend.
+ */
+function transactionParts(s: Snapshot, names: Names) {
+  const asset = names.asset.get(Number(s.assetId)) ?? tr("asset #{id}", { id: text(s.assetId) });
+  const account = names.account.get(Number(s.accountId)) ?? tr("account #{id}", { id: text(s.accountId) });
+  const label = TX_LABEL[text(s.type)];
+  return {
+    type: label ? tr(label) : text(s.type, tr("Transaction")),
+    quantity: s.type === "dividend" ? null : text(tidy(s.quantity)) || null,
+    subject: `${asset} · ${account}`,
+  };
+}
+
 function title(entity: string, s: Snapshot | null, names: Names, entityId: number): string {
   if (!s) return entity;
-  const n = (v: unknown) => Number(v);
   switch (entity) {
     case "account_years":
       return tr("Values per year · {account}", {
@@ -78,12 +92,8 @@ function title(entity: string, s: Snapshot | null, names: Names, entityId: numbe
     case "person":
       return `${text(s.name, tr("Person"))} (${s.role === "self" ? tr("you") : s.role === "partner" ? tr("partner") : tr("child")})`;
     case "transaction": {
-      const asset = names.asset.get(n(s.assetId)) ?? tr("asset #{id}", { id: text(s.assetId) });
-      const account = names.account.get(n(s.accountId)) ?? tr("account #{id}", { id: text(s.accountId) });
-      const label = TX_LABEL[text(s.type)];
-      const type = label ? tr(label) : text(s.type, tr("Transaction"));
-      const qty = s.type === "dividend" ? "" : ` ${text(tidy(s.quantity))}`;
-      return `${type}${qty} ${asset} · ${account}`.replace(/\s+/g, " ");
+      const p = transactionParts(s, names);
+      return [p.type, p.quantity, p.subject].filter(Boolean).join(" ").replace(/\s+/g, " ");
     }
     case "asset":
       return [s.symbol, s.name].filter(Boolean).join(" · ") || tr("Asset");
@@ -213,6 +223,7 @@ export async function activityRoutes(app: FastifyInstance) {
           entityId: r.entityId,
           action: r.action,
           title: title(r.entity, subject, names, r.entityId),
+          ...(r.entity === "transaction" && subject ? { parts: transactionParts(subject, names) } : {}),
           via: (after?.via as string | undefined) ?? (after?.restoredFrom ? "restore" : undefined),
           changes: r.action === "update" ? changes(r.entity, before, after, names) : null,
           restorable: r.action === "delete" && (gone.get(r.entity)?.has(r.entityId) ?? false),

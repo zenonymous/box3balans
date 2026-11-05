@@ -68,6 +68,9 @@ export const KIND_ORDER: AccountKind[] = [
   "other",
 ];
 
+/** Kinds only kept as values per year, never with transactions (server: YEARLY_ONLY_KINDS in domain/yearly.ts). */
+export const YEARLY_ONLY_KINDS: ReadonlySet<AccountKind> = new Set(["property", "receivable", "debt", "insurance"]);
+
 export const categoryLabel = (c: Box3Category | "debt"): string =>
   ({
     bank: t("Bank balances"),

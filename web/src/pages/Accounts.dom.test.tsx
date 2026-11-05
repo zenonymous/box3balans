@@ -17,6 +17,14 @@ const sent = (api: ReturnType<typeof showPage>, method: string, url: string) =>
   api.requests.filter((r) => r.method === method && r.url === url).map((r) => r.body);
 
 describe("Accounts page", () => {
+  it("counts what a place for physical metal holds, without a count of zero transactions", async () => {
+    showPage("/accounts", "accounts", <AccountsPage />);
+    // The demo's safe at home holds 3 coins and has no transactions.
+    const safe = (await screen.findByText("Kluis thuis")).closest("li")!;
+    expect(within(safe).getByText("3 stuks")).toBeTruthy();
+    expect(within(safe).queryByText(/0 transacties/)).toBeNull();
+  });
+
   it("adds an account with what you filled in", async () => {
     const api = showPage("/accounts", "accounts", <AccountsPage />, {
       "POST /api/accounts": (b: unknown) => ({ id: 99, txCount: 0, itemCount: 0, ...(b as object) }),
