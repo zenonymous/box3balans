@@ -472,11 +472,6 @@ describe("CSV export", () => {
 
 // `node dist/cli.js restore` replaces all data, so its order matters (restoreFromFile).
 describe("the CLI's restore", () => {
-  afterEach(async () => {
-    await t?.close();
-    t = undefined;
-  });
-
   it("makes a safety backup of the current data first, then restores", async () => {
     t = await createTestApp();
     await t.api("POST", "/api/accounts", { name: "Before", kind: "bank" });
