@@ -323,10 +323,6 @@ function UpdateCheck() {
   );
 }
 
-/**
- * Two-step verification: after the password, a code from an authenticator app (or a recovery code).
- * Turning it on shows a QR code to scan, a code confirms it, and ten recovery codes are shown once.
- */
 /** Whether two-step verification is on, and how many recovery codes are left. */
 const useTwoFactorStatus = () =>
   useQuery({
@@ -334,6 +330,10 @@ const useTwoFactorStatus = () =>
     queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
   });
 
+/**
+ * Two-step verification: after the password, a code from an authenticator app (or a recovery code).
+ * Turning it on shows a QR code to scan, a code confirms it, and ten recovery codes are shown once.
+ */
 function TwoFactorCard() {
   const qc = useQueryClient();
   const status = useTwoFactorStatus();
@@ -816,7 +816,7 @@ function BackupsCard() {
         ...(code ? { code } : {}),
         ...(passphrase ? { passphrase } : {}),
       });
-      // Sessions aren't in backups: sign in again with the restored account.
+      // Sessions aren't in backups: sign in again as the restored user.
       switchSession(qc, null);
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });

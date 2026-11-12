@@ -63,12 +63,13 @@ describe("Box 3 page", () => {
   });
 
   // Since 3 November the novelle proposes 2029 and keeps €1,800: no setting for the September letter.
-  it("presents the preview as proposed from 2029, with the bill as its assumptions", async () => {
+  it("presents the preview as proposed from 2029, starting from the bill's figures", async () => {
     showPage("/box3?year=2025", "box3", <Box3Page />);
     expect(await screen.findByText(/Vanaf 2029: belasting over het werkelijk rendement/)).toBeTruthy();
-    const assumptions = await screen.findByLabelText("Aannames");
-    const options = await within(assumptions).findAllByRole("option");
-    expect(options.map((o) => o.getAttribute("value"))).toEqual(["bill"]);
+    // One starting point, so nothing to pick: the bill's €1,800 is what the field starts from.
+    const allowance = await screen.findByLabelText(/Heffingsvrij resultaat/);
+    await waitFor(() => expect(allowance.getAttribute("placeholder")).toBe("1800"));
+    expect(screen.queryByLabelText("Aannames")).toBeNull();
     expect(screen.queryByText(/29 september/)).toBeNull();
   });
 

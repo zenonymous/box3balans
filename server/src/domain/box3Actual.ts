@@ -413,7 +413,7 @@ class Totals {
 /**
  * Adds the accounts kept as values per year to the totals: from this 1 January to the next, plus
  * what came in, went out and was received; and a warning for each that misses a value. Returns the
- * interest paid on debts (repaying one isn't a return) and the homes' figures for the 2028 preview.
+ * interest paid on debts (repaying one isn't a return) and the homes' figures for the 2029 preview.
  */
 function addYearlyAccounts(args: {
   accountRows: Account[];

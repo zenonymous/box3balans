@@ -12,4 +12,4 @@ That way it's real output from the real code, with no server to maintain, no cos
 - **The whole app in the browser**, with PGlite: the database can run there, Fastify and `node:crypto` can't without a lot of emulation, and it becomes a download of several MB.
 - **Screenshots only**: already in the README, but you can't click through them.
 
-What's not in it: requests with freely typed input (searching for an asset, your own assumptions in the 2028 preview) and everything that saves or imports something.
+What's not in it: requests with freely typed input (searching for an asset, your own assumptions in the 2029 preview) and everything that saves or imports something.

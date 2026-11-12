@@ -117,7 +117,7 @@ describe("signing in with a second factor", () => {
     const code = hotp(base32Decode(setup.secret), step - 1);
     expect((await t.api("POST", "/api/auth/2fa/enable", { code })).statusCode).toBe(400);
     const wrong = await t.api("POST", "/api/auth/2fa/enable", { password: "not it", code });
-    expect(wrong.json().error).toBe("Current password is incorrect");
+    expect(wrong.json().error).toBe("That password isn't right");
     // Every session ends, this browser's too (a copy of its cookie may be why); it gets a fresh one.
     const fresh = (res: { cookies: { name: string; value: string }[] }) =>
       `pd_session=${res.cookies.find((c) => c.name === "pd_session")!.value}`;

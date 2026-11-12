@@ -1134,15 +1134,6 @@
         "lossThresholdEur": 500,
         "carryBackYears": 0,
         "propertyPct": 3.35
-      },
-      {
-        "id": "letter",
-        "label": "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)",
-        "ratePct": 36,
-        "allowanceEur": 1000,
-        "lossThresholdEur": 500,
-        "carryBackYears": 0,
-        "propertyPct": 3.35
       }
     ],
     "preset": "bill",

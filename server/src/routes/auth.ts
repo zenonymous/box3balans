@@ -10,7 +10,6 @@ import {
   endSessions,
   isSetupCode,
   ensureSetupCode,
-  userCount,
 } from "../auth/service.js";
 import { getLanguage } from "../domain/settings.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
@@ -55,11 +54,10 @@ export async function authRoutes(app: FastifyInstance) {
 
   app.get("/state", async (req) => {
     // Should the user be gone again, a new code goes in the log (auth/service.ts).
-    await ensureSetupCode(db, setup, config.SETUP_CODE, app.log);
-    const needsSetup = (await userCount(db)) === 0;
+    const needsSetup = await ensureSetupCode(db, setup, config.SETUP_CODE, app.log);
     return {
       needsSetup,
-      // The first account needs the one-time code from the app's log (index.ts).
+      // The first user needs the setup code from the app's log (index.ts).
       needsSetupCode: needsSetup && !!setup.code,
       user: req.user,
       // Public, so the sign-in screen is in the right language too.
@@ -126,7 +124,7 @@ export async function authRoutes(app: FastifyInstance) {
     return { recoveryCodes };
   });
 
-  // Turning it off or renewing the recovery codes takes a code too, so a left-open session isn't enough.
+  // Turning it off takes the password and a code, so a left-open session isn't enough.
   app.post("/2fa/disable", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req, reply) => {
     const { password, code } = codeBody.extend({ password: z.string().max(256) }).parse(req.body);
     // Already off: no code can be right (as before), and nothing to sign out for.
@@ -139,6 +137,7 @@ export async function authRoutes(app: FastifyInstance) {
     return twoFactorStatus(db, req.user!.id);
   });
 
+  // New recovery codes take a code too, for the same reason.
   app.post("/2fa/recovery-codes", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req) => {
     const { code } = codeBody.parse(req.body);
     if (!(await identity.verifyCode(req.user!.id, code)))

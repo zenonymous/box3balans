@@ -11,7 +11,7 @@ Voor een rekening met **waarden per jaar** (_Rekeningen → Waarden per jaar_) v
 - **de waarde op 1 januari**: van het jaaroverzicht van je bank of broker, of het saldo aan het eind van 31 december. De waarde op 31 december is de waarde op 1 januari van het jaar erna, dus die vul je niet apart in;
 - **geld erin en eruit** in dat jaar (stortingen en opnames);
 - **inkomsten**: rente of dividend dat op de rekening binnenkwam, huur van een verhuurde woning, rente op uitgeleend geld; bij een schuld de **betaalde rente**;
-- **kosten** (alleen voor de vooruitblik op 2028, waar ze aftrekbaar zijn).
+- **kosten** (alleen voor de vooruitblik op 2029, waar ze aftrekbaar zijn).
 
 Bij een **rekening in het buitenland** (vink bij de rekening _In het buitenland_ aan) vul je de rente bruto in, dus vóór belasting. Heeft het land belasting op de rente ingehouden, vul die dan in bij _Ingehouden in het buitenland_, met het land dat hem inhield. Het werkelijk rendement telt de rente bruto, en _Voor de aangifte_ toont de ingehouden belasting bij de rekening en per land: de aangifte vraagt ernaar bij elke buitenlandse rekening en verrekent hem tot het verdragstarief ter voorkoming van dubbele belasting.
 

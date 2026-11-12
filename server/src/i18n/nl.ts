@@ -225,6 +225,9 @@ export const NL: Record<string, string> = {
   "Already set up": "Al ingesteld",
   "Invalid username or password": "Onjuiste gebruikersnaam of wachtwoord",
   "Current password is incorrect": "Het huidige wachtwoord klopt niet",
+  "That password isn't right": "Dat wachtwoord klopt niet",
+  "This backup comes from a newer version of the app; update the app first.":
+    "Deze back-up komt uit een nieuwere versie van de app; werk de app eerst bij.",
   // routes/backups.ts
   "Invalid backup name": "Ongeldige naam voor een back-up",
   "Backup not found": "Back-up niet gevonden",

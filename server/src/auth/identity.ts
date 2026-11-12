@@ -54,13 +54,12 @@ export class IdentityCheck {
 
   /** The first half of confirm(): throws a 400 when the password isn't the user's. */
   async checkPassword(userId: number, password: string): Promise<void> {
-    if (!(await isUserPassword(this.db, userId, password)))
-      throw new HttpError(400, tr("Current password is incorrect"));
+    if (!(await isUserPassword(this.db, userId, password))) throw new HttpError(400, tr("That password isn't right"));
   }
 
   /**
    * The second half: with two-step verification on, a code, which is then spent. Callers that can
-   * still refuse for other reasons check those first, so a refusal doesn't use up a recovery code.
+   * still refuse or fail for other reasons do those first, so that doesn't use up a recovery code.
    */
   async checkSecondFactor(userId: number, code: string | undefined): Promise<void> {
     if (!(await isTwoFactorEnabled(this.db, userId))) return;

@@ -11,7 +11,7 @@ For an account with **values per year** (_Accounts → Values per year_) you fil
 - **the value on 1 January**: from your bank's or broker's annual statement, or the balance at the end of 31 December. The value on 31 December is the value on 1 January of the next year, so you don't fill that in separately;
 - **money in and out** in that year (deposits and withdrawals);
 - **income**: interest or dividend that came in on the account, rent from a let home, interest on money lent; for a debt the **interest paid**;
-- **costs** (only for the 2028 preview, where they're deductible).
+- **costs** (only for the 2029 preview, where they're deductible).
 
 For an **account abroad** (tick _Held abroad_ on the account) you fill in the interest gross, before tax. If the country withheld tax on the interest, fill it in under _Tax withheld abroad_, with the country that withheld it. The actual return counts the interest gross, and _For the tax return_ shows the tax withheld with the account and per country: the return asks for it with each account abroad and offsets it up to the treaty rate to avoid double taxation.
 

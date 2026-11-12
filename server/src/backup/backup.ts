@@ -137,7 +137,7 @@ export function decodeBackup(buf: Buffer): BackupFile {
  */
 export function checkRestorable(b: BackupFile): void {
   if (b.schemaVersion > schemaVersion()) {
-    throw new Error("This backup comes from a newer version of the app; update the app first.");
+    throw new Error(tr("This backup comes from a newer version of the app; update the app first."));
   }
   if (!b.tables[getTableName(s.users)]?.length) {
     throw new Error(

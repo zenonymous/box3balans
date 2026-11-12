@@ -71,8 +71,17 @@ export const KIND_ORDER = [
 const kindOrderIsComplete: [Exclude<AccountKind, (typeof KIND_ORDER)[number]>] extends [never] ? true : never = true;
 void kindOrderIsComplete;
 
-/** Kinds only kept as values per year, never with transactions (server: YEARLY_ONLY_KINDS in domain/yearly.ts). */
-export const YEARLY_ONLY_KINDS: ReadonlySet<AccountKind> = new Set(["property", "receivable", "debt", "insurance"]);
+/**
+ * Kinds only kept as values per year, never with transactions. The server has the same list
+ * (YEARLY_ONLY_KIND_LIST in domain/yearly.ts); contract/api.ts checks that the two agree.
+ */
+export const YEARLY_ONLY_KIND_LIST = [
+  "property",
+  "receivable",
+  "debt",
+  "insurance",
+] as const satisfies readonly AccountKind[];
+export const YEARLY_ONLY_KINDS: ReadonlySet<AccountKind> = new Set(YEARLY_ONLY_KIND_LIST);
 
 export const categoryLabel = (c: Box3Category | "debt"): string =>
   ({

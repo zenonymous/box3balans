@@ -536,15 +536,12 @@ export const NL: Record<string, string> = {
   "accounts outside box 3": "rekeningen buiten box 3",
   "An estimate to check against your statements, not tax advice.":
     "Een schatting om te controleren met je overzichten, geen belastingadvies.",
-  "Bill as passed by the Tweede Kamer (12 Feb 2026)":
-    "Wetsvoorstel zoals aangenomen door de Tweede Kamer (12 feb 2026)",
   "From 2029: tax on the actual return (preview)": "Vanaf 2029: belasting over het werkelijk rendement (vooruitblik)",
-  "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.":
+  "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free result and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.":
     "Het wetsvoorstel dat de Tweede Kamer op 12 februari 2026 aannam, belast elk jaar het werkelijke resultaat, inclusief ongerealiseerde winst, na kosten, met een heffingsvrij resultaat en verliesverrekening. Woningen en andere onroerende zaken worden belast op hun winst bij verkoop; elk jaar telt hun huur, of een deel van de WOZ-waarde (de vastgoedbijtelling) als dat hoger is en ze niet het hele jaar verhuurd zijn. Op 3 november 2026 diende het kabinet een novelle in: het nieuwe stelsel begint dan op 1 januari 2029, aandelen, obligaties, fondsen en opties worden pas belast bij verkoop, de rest vanaf 2030, en het heffingsvrij resultaat blijft € 1.800. Hier worden de jaarlijkse regels van het wetsvoorstel toegepast op je afgelopen jaren. Belasting bij verkoop van beleggingen uit de novelle wordt nog niet nagebootst: voor beleggingen die je niet verkocht, toont dit dus meer belasting dan de novelle zou heffen.",
   "not law yet": "nog geen wet",
-  Assumptions: "Aannames",
   "Rate (%)": "Tarief (%)",
-  "Tax-free result (€)": "Heffingvrij resultaat (€)",
+  "Tax-free result (€)": "Heffingsvrij resultaat (€)",
   "per person": "per persoon",
   "Loss threshold (€)": "Verliesdrempel (€)",
   "smaller losses don't carry over": "kleinere verliezen worden niet verrekend",
@@ -1007,6 +1004,15 @@ export const NL: Record<string, string> = {
   "The last refresh could not update {list}; showing the previous price.":
     "De laatste verversing kon {list} niet bijwerken; de vorige koers wordt getoond.",
   "Net worth": "Vermogen",
+  "Nothing tracked with transactions yet": "Nog niets dat met transacties wordt gevolgd",
+  "Add <0>accounts</0>, record <1>transactions</1> or add <2>physical metal</2> to follow their value day by day.":
+    "Voeg <0>rekeningen</0> toe, leg <1>transacties</1> vast of voeg <2>fysiek metaal</2> toe om de waarde van dag tot dag te volgen.",
+  "Your accounts kept as values per year: {amount} net on 1 January {year}. <0>Box 3 →</0>":
+    "Je rekeningen met waarden per jaar: netto {amount} op 1 januari {year}. <0>Box 3 →</0>",
+  "Your accounts kept as values per year: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>":
+    "Je rekeningen met waarden per jaar: netto {amount}, elk op de laatst ingevulde 1 januari (tot en met {year}). <0>Box 3 →</0>",
+  "Accounts whose last value is older than that are left out.":
+    "Rekeningen waarvan de laatste waarde ouder is, tellen niet mee.",
   "Accounts kept as values per year, not counted above: {amount} net on 1 January {year}. <0>Box 3 →</0>":
     "Rekeningen met waarden per jaar, hierboven niet meegeteld: netto {amount} op 1 januari {year}. <0>Box 3 →</0>",
   "Accounts kept as values per year, not counted above: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>":

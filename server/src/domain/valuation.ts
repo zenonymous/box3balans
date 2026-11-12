@@ -28,7 +28,7 @@ export interface HoldingOn {
 
 /**
  * The tables a replay of the ledger reads, loaded once and shared by the calculations of one request
- * (a box 3 year, its actual return, the 2028 preview over every year). Loading every transaction is
+ * (a box 3 year, its actual return, the 2029 preview over every year). Loading every transaction is
  * most of the work, so each holdingsOn on its own was slow with years of history (issue #84).
  */
 export class LedgerData {

@@ -162,8 +162,7 @@ describe("backup and restore", () => {
       const made = json(await t.api("POST", "/api/backups"));
       const restore = (extra: object) =>
         t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE", ...extra });
-      // Three tries: restoring allows three per five minutes.
-      expect(json(await restore({ password: "not it" })).error).toBe("Current password is incorrect");
+      expect(json(await restore({ password: "not it" })).error).toBe("That password isn't right");
 
       const setup = json(await t.api("POST", "/api/auth/2fa/setup"));
       const code = (offset: number) => hotp(base32Decode(setup.secret), totpStep() + offset);
@@ -171,6 +170,12 @@ describe("backup and restore", () => {
       // Turning it on signs every session out and gives this one a fresh cookie.
       t.cookie = `pd_session=${on.cookies.find((c) => c.name === "pd_session")!.value}`;
       expect(json(await restore({ password: PASSWORD })).error).toBe("Enter the code from your authenticator app");
+      expect(json(await restore({ password: PASSWORD, code: "000000" })).error).toBe(
+        "That code isn't right, or was already used",
+      );
+      // A try that stops at the code leaves no safety backup behind.
+      const kept = json(await t.api("GET", "/api/backups")).backups.map((b: { name: string }) => b.name);
+      expect(kept).toEqual([made.name]);
       const ok = await restore({ password: PASSWORD, code: code(0) });
       expect(ok.statusCode, ok.body).toBe(200);
     } finally {
