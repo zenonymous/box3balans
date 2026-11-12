@@ -79,6 +79,14 @@ Sources:
 
 **Change of 3 November 2026:** the cabinet submitted the amendment (novelle, Kamerstuk 37 053) and now proposes a start on 1 January 2029; 2028 then still falls under the current system. The cut of the tax-free result to €1,000 is dropped. Since 0.1.48 the preview in the app names 2029 and has no setting for €1,000 anymore; this section, and tax on sale in the preview, follow after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
+**Capital gain on financial instruments under the amendment** (explanatory memorandum, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). The app doesn't calculate with this yet; the choices are in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
+
+- **The value at the start as the acquisition price:** for what you already had on 1 January 2029, the acquisition price is its market value on that day. Changes in value before then stay untaxed.
+- **One average:** the acquisition price is the average price of everything you hold of the same kind, as in box 2 (art. 5.26), so across all your accounts together.
+- **Costs in the gain:** the costs of buying are part of the acquisition price and the costs of selling come off the proceeds (art. 5.22 and 5.23).
+- **Regular benefits** (dividend, interest) count every year, gross.
+- **Example from the memorandum:** Henk has one share worth €1,000 on 1 January 2029 and buys two more at €1,600 each: €1,400 on average. With €50 dividend, €50 is taxable in 2029. In 2030 he sells one for €1,700 and gets €40 dividend: a gain of €300 plus €40, €340 together.
+
 Status on 8 October 2026:
 
 - **House of Representatives:** adopted the bill on 12 February 2026.

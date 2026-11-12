@@ -1,7 +1,8 @@
+import type { accountKind, assetClass } from "../db/schema.js";
 import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { localDay } from "../lib/time.js";
 import type { ActualReturn, PropertyYear } from "./box3Actual.js";
-import { replayLedger, sortTransactions, type LedgerTx } from "./ledger.js";
+import { Ledger, sortTransactions, type LedgerTx, type TxType } from "./ledger.js";
 
 /** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
 const round2 = (x: number | Decimal) => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
@@ -163,90 +164,173 @@ function taxedOfHome(h: PropertyYear, gain: Decimal, propertyPct: number) {
   return h.sold ? yearly.plus(gain) : yearly;
 }
 
+/**
+ * Whether a holding is a financial instrument, taxed on its capital gain in the preview from 2029
+ * (ADR 0013): shares and funds wherever they're held, and at a broker everything but cash, so
+ * crypto and precious metal only there, as an ETP or ETC.
+ */
+export function isFinancialInstrument(h: {
+  accountKind: (typeof accountKind.enumValues)[number];
+  assetClass: (typeof assetClass.enumValues)[number];
+}): boolean {
+  if (h.assetClass === "stock" || h.assetClass === "etf") return true;
+  return h.accountKind === "broker" && h.assetClass !== "cash";
+}
+
 export interface GainAssetRow {
   assetId: number;
   quantity: number; // held at the end of the year
-  acquisitionPriceEur: number; // per unit: the average acquisition price at the end of the year
+  acquisitionEur: number; // the acquisition price of all of them together (the average × quantity)
   gainEur: number; // capital gain on what was sold this year
-  regularEur: number; // regular benefits: dividend and interest, gross
+  regularBenefitsEur: number; // dividend, interest and other rewards, gross
 }
 
 export interface GainYearRow {
   year: number;
   gainEur: number;
-  regularEur: number;
+  regularBenefitsEur: number;
   assets: GainAssetRow[];
+}
+
+export interface CapitalGains {
+  years: GainYearRow[];
+  /** Held at the start without a value then: left out altogether, not counted as bought for €0. */
+  missingStartValue: number[];
+  warnings: string[];
+}
+
+/** The one "account" all of an owner's accounts are collapsed into: one average per asset. */
+const OWNER = 0;
+const TAKES: ReadonlySet<TxType> = new Set(["sell", "withdrawal", "fee", "transfer_out"]);
+
+/**
+ * A partner's share of a transaction on a joint account (ADR 0013): that share of the units and of
+ * every amount, at the same price. A split's quantity is a ratio and stays whole.
+ */
+export function ownerShare<T extends LedgerTx>(tx: T, fraction: Decimal.Value): T {
+  const part = (v: string) => D(v).mul(fraction).toFixed();
+  return {
+    ...tx,
+    quantity: tx.type === "split" ? tx.quantity : part(tx.quantity),
+    feeEur: part(tx.feeEur),
+    amount: part(tx.amount),
+    taxWithheld: part(tx.taxWithheld),
+  };
 }
 
 /**
  * The capital gain (vermogenswinst) on financial instruments as the novelle proposes it, for one
- * owner (ADR 0013). What the owner already held at the start counts at its value then
- * (`startPrices`, per unit); after that, every asset has one average acquisition price across all
- * the owner's accounts. A sale's gain is its proceeds minus that price of the part sold. Regular
- * benefits count gross, every year. `txs` are the owner's transactions in financial instruments.
+ * owner (ADR 0013). `txs` are the owner's transactions in financial instruments, a joint account's
+ * by the owner's share (ownerShare).
+ *
+ * - What the owner held on 1 January of `start` counts at its value then (`startPrices`, in euros
+ *   per unit), whatever was paid for it. Costs and income before the start play no part.
+ * - After that every asset has one average acquisition price over all the owner's accounts: the
+ *   ledger's average method, with the accounts collapsed into one. Moving units between the
+ *   owner's own accounts changes nothing.
+ * - A sale's gain is its proceeds minus the costs of selling, minus the acquisition price of the
+ *   part sold, which includes the costs of buying (art. 5.22 and 5.23). Whoever adds these gains to
+ *   a year's result must leave those buying and selling costs out of the year's deductible costs,
+ *   or they count twice.
+ * - Regular benefits (dividend, interest and other rewards) count gross, every year. Units received
+ *   as a reward come in at their value then.
+ * - Units that leave without a sale (a withdrawal, or sent to someone else) take their acquisition
+ *   price with them, with no gain. Units used up as a fee are a cost, not a capital loss.
+ *
+ * Rows are given for `from` (default: `start`) to `to`.
  */
 export function capitalGains(
   txs: LedgerTx[],
-  opts: { from: number; to: number; startPrices: ReadonlyMap<number, string> },
-): GainYearRow[] {
+  opts: { start: number; to: number; from?: number; startPrices: ReadonlyMap<number, string> },
+): CapitalGains {
   const yearOf = (tx: LedgerTx) => Number(localDay(tx.occurredAt).slice(0, 4));
-  const sorted = sortTransactions(txs);
-  const held = new Map<number, { qty: Decimal; costEur: Decimal }>();
-  for (const p of replayLedger(sorted.filter((t) => yearOf(t) < opts.from)).positions) {
-    if (p.quantity.lte(0)) continue;
-    const h = held.get(p.assetId) ?? { qty: ZERO, costEur: ZERO };
-    h.qty = h.qty.plus(p.quantity);
-    held.set(p.assetId, h);
-  }
-  for (const [assetId, h] of held) h.costEur = h.qty.mul(D(opts.startPrices.get(assetId) ?? "0"));
+  // A transfer with both legs here is between the owner's own accounts: nothing happens. Cash isn't
+  // a financial instrument, so the cash side of a trade (settleAssetId) is left out.
+  const legs = new Map<string, Set<TxType>>();
+  for (const t of txs)
+    if (t.transferGroup) legs.set(t.transferGroup, (legs.get(t.transferGroup) ?? new Set()).add(t.type));
+  const ownTransfer = (t: LedgerTx) =>
+    !!t.transferGroup &&
+    legs.get(t.transferGroup)!.has("transfer_in") &&
+    legs.get(t.transferGroup)!.has("transfer_out");
+  const own = sortTransactions(txs)
+    .filter((t) => !ownTransfer(t))
+    .map((t) => ({ ...t, accountId: OWNER, settleAssetId: null }));
 
-  const rows: GainYearRow[] = [];
-  for (let year = opts.from; year <= opts.to; year++) {
+  // What's held at the start, at its value then.
+  const before = new Ledger("average");
+  for (const t of own) if (yearOf(t) < opts.start) before.apply(t);
+  const ledger = new Ledger("average");
+  const missingStartValue: number[] = [];
+  for (const p of before.positions.values()) {
+    if (p.quantity.lte(0)) continue;
+    const price = opts.startPrices.get(p.assetId);
+    if (price === undefined) {
+      missingStartValue.push(p.assetId);
+      continue;
+    }
+    ledger.apply({
+      id: -p.assetId,
+      accountId: OWNER,
+      assetId: p.assetId,
+      type: "deposit",
+      occurredAt: new Date(Date.UTC(opts.start, 0, 1)),
+      quantity: p.quantity.toFixed(),
+      price,
+      fxRate: "1",
+      feeEur: "0",
+      amount: "0",
+      taxWithheld: "0",
+      transferGroup: null,
+    });
+  }
+  const leftOut = new Set(missingStartValue);
+  const warnings: string[] = [];
+
+  const years: GainYearRow[] = [];
+  for (let year = opts.start; year <= opts.to; year++) {
+    const [salesSeen, incomeSeen] = [ledger.realized.length, ledger.income.length];
+    for (const t of own) {
+      if (yearOf(t) !== year || leftOut.has(t.assetId)) continue;
+      const held = ledger.position(OWNER, t.assetId).quantity;
+      if (TAKES.has(t.type) && D(t.quantity).gt(held)) {
+        // More than is held: an earlier purchase is missing. Only what's held can be sold; a
+        // negative holding would spoil the average for every year after.
+        warnings.push(
+          `Transaction ${t.id}: ${t.type} of ${D(t.quantity).toFixed()} exceeds holding of ${held.toFixed()} (asset ${t.assetId}); only the part held is counted`,
+        );
+        if (held.gt(0)) ledger.apply({ ...t, quantity: held.toFixed() });
+        continue;
+      }
+      ledger.apply(t);
+    }
+    if (year < (opts.from ?? opts.start)) continue;
+
     const gain = new Map<number, Decimal>();
     const regular = new Map<number, Decimal>();
     const add = (m: Map<number, Decimal>, id: number, v: Decimal) => m.set(id, (m.get(id) ?? ZERO).plus(v));
-    for (const tx of sorted.filter((t) => yearOf(t) === year)) {
-      const h = held.get(tx.assetId) ?? { qty: ZERO, costEur: ZERO };
-      held.set(tx.assetId, h);
-      const q = D(tx.quantity);
-      const valueEur = q.mul(D(tx.price)).mul(D(tx.fxRate));
-      switch (tx.type) {
-        case "buy":
-          h.qty = h.qty.plus(q);
-          h.costEur = h.costEur.plus(valueEur).plus(D(tx.feeEur)); // art. 5.22: with the costs of buying
-          break;
-        case "sell": {
-          const cost = h.qty.isZero() ? ZERO : h.costEur.mul(q).div(h.qty);
-          h.qty = h.qty.minus(q);
-          h.costEur = h.costEur.minus(cost);
-          add(gain, tx.assetId, valueEur.minus(D(tx.feeEur)).minus(cost)); // art. 5.23: minus the costs of selling
-          break;
-        }
-        case "dividend":
-          add(regular, tx.assetId, D(tx.amount).mul(D(tx.fxRate)));
-          break;
-        case "split":
-          // Same acquisition price in total, over more (or fewer) units.
-          if (q.gt(0)) h.qty = h.qty.mul(q);
-          break;
-      }
-    }
-    const assets: GainAssetRow[] = [...held]
-      .filter(([id, h]) => h.qty.gt(0) || gain.has(id) || regular.has(id))
-      .sort(([a], [b]) => a - b)
-      .map(([assetId, h]) => ({
-        assetId,
-        quantity: h.qty.toNumber(),
-        acquisitionPriceEur: h.qty.isZero() ? 0 : round2(h.costEur.div(h.qty)),
-        gainEur: round2(gain.get(assetId) ?? ZERO),
-        regularEur: round2(regular.get(assetId) ?? ZERO),
+    for (const r of ledger.realized.slice(salesSeen)) if (r.kind === "sale") add(gain, r.assetId, r.gainEur);
+    for (const i of ledger.income.slice(incomeSeen)) add(regular, i.assetId, i.grossEur);
+    const assets: GainAssetRow[] = [...ledger.positions.values()]
+      .filter((p) => p.quantity.gt(0) || gain.has(p.assetId) || regular.has(p.assetId))
+      .sort((a, b) => a.assetId - b.assetId)
+      .map((p) => ({
+        assetId: p.assetId,
+        quantity: p.quantity.toNumber(),
+        acquisitionEur: round2(p.costEur),
+        gainEur: round2(gain.get(p.assetId) ?? ZERO),
+        regularBenefitsEur: round2(regular.get(p.assetId) ?? ZERO),
       }));
-    rows.push({
+    years.push({
       year,
       gainEur: round2(assets.reduce((s, a) => s.plus(a.gainEur), ZERO)),
-      regularEur: round2(assets.reduce((s, a) => s.plus(a.regularEur), ZERO)),
+      regularBenefitsEur: round2(assets.reduce((s, a) => s.plus(a.regularBenefitsEur), ZERO)),
       assets,
     });
   }
-  return rows;
+  return {
+    years,
+    missingStartValue: missingStartValue.sort((a, b) => a - b),
+    warnings: [...warnings, ...ledger.warnings],
+  };
 }

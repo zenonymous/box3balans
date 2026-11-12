@@ -79,6 +79,14 @@ Bronnen:
 
 **Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. De vooruitblik in de app noemt sinds 0.1.48 2029 en heeft geen instelling meer voor € 1.000; dit hoofdstuk, en belasting bij verkoop in de vooruitblik, volgen na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
+**Vermogenswinst op financiële instrumenten volgens de novelle** (memorie van toelichting, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). De app rekent hier nog niet mee; de keuzes staan in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
+
+- **Waarde bij de start als verkrijgingsprijs:** voor wat je op 1 januari 2029 al had, is de verkrijgingsprijs de waarde in het economische verkeer op die dag. Waardeveranderingen van daarvoor blijven onbelast.
+- **Eén gemiddelde:** de verkrijgingsprijs is de gemiddelde prijs van alles wat je van dezelfde soort hebt, zoals in box 2 (art. 5.26), dus over al je rekeningen samen.
+- **Kosten in de winst:** aankoopkosten horen bij de verkrijgingsprijs en verkoopkosten gaan van de opbrengst af (art. 5.22 en 5.23).
+- **Reguliere voordelen** (dividend, rente) tellen elk jaar, bruto.
+- **Voorbeeld uit de toelichting:** Henk heeft op 1 januari 2029 één aandeel van € 1.000 en koopt er twee bij voor € 1.600 per stuk: gemiddeld € 1.400. Met € 50 dividend is er in 2029 € 50 belastbaar. In 2030 verkoopt hij er één voor € 1.700 en krijgt hij € 40 dividend: € 300 winst plus € 40, samen € 340.
+
 Stand op 8 oktober 2026:
 
 - **Tweede Kamer:** nam het wetsvoorstel aan op 12 februari 2026.

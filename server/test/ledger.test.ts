@@ -1,24 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { Ledger, replayLedger, sortTransactions, type LedgerTx, type TxType } from "../src/domain/ledger.js";
-
-let nextId = 1;
-const tx = (type: TxType, fields: Partial<LedgerTx> = {}): LedgerTx => ({
-  id: nextId++,
-  accountId: 1,
-  assetId: 1,
-  type,
-  occurredAt: new Date("2024-01-01T00:00:00Z"),
-  quantity: "0",
-  price: "0",
-  fxRate: "1",
-  feeEur: "0",
-  amount: "0",
-  taxWithheld: "0",
-  transferGroup: null,
-  ...fields,
-});
-
-const at = (d: string) => new Date(`${d}T12:00:00Z`);
+import { Ledger, replayLedger, sortTransactions } from "../src/domain/ledger.js";
+import { ledgerTx as tx, noon as at } from "./helpers.js";
 
 describe("replayLedger", () => {
   it("averages cost across buys and includes fees", () => {
