@@ -9,14 +9,7 @@
  * Encrypted backups use BACKUP_PASSPHRASE from the environment.
  */
 import fs from "node:fs";
-import {
-  checkRestorable,
-  listBackups,
-  readBackupFile,
-  resolveBackupFile,
-  restoreBackup,
-  writeBackupFile,
-} from "./backup/backup.js";
+import { listBackups, resolveBackupFile, restoreFromFile, writeBackupFile } from "./backup/backup.js";
 import { decryptBackup } from "./backup/crypto.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
@@ -78,12 +71,12 @@ async function main() {
       const b = await writeBackupFile(database.db, config.BACKUP_DIR, "manual", config.BACKUP_PASSPHRASE);
       console.log(`Backup written: ${config.BACKUP_DIR}/${b.name} (${Math.max(1, Math.round(b.sizeBytes / 1024))} KB)`);
     } else {
-      const backup = await readBackupFile(resolveBackupFile(arg, config.BACKUP_DIR), config.BACKUP_PASSPHRASE);
-      // Refused before the safety backup, so a backup that can't be restored leaves nothing behind.
-      checkRestorable(backup);
-      const safety = await writeBackupFile(database.db, config.BACKUP_DIR, "prerestore", config.BACKUP_PASSPHRASE);
-      console.log(`Safety backup of the current data: ${config.BACKUP_DIR}/${safety.name}`);
-      const counts = await restoreBackup(database.db, backup);
+      const { backup, counts } = await restoreFromFile(database.db, {
+        file: resolveBackupFile(arg, config.BACKUP_DIR),
+        dir: config.BACKUP_DIR,
+        passphrase: config.BACKUP_PASSPHRASE,
+        onSafety: (safety) => console.log(`Safety backup of the current data: ${config.BACKUP_DIR}/${safety.name}`),
+      });
       console.log(`Restored backup from ${backup.createdAt}:`);
       for (const [t, n] of Object.entries(counts)) if (n) console.log(`  ${t}: ${n} rows`);
       console.log("Restart the app so caches start fresh. Everyone has to sign in again.");

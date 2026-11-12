@@ -13,6 +13,7 @@ import {
   readBackupFile,
   resolveBackupFile,
   restoreBackup,
+  restoreFromFile,
   schemaVersion,
   writeBackupFile,
 } from "../src/backup/backup.js";
@@ -466,6 +467,46 @@ describe("CSV export", () => {
     expect(lines[0]).toMatch(/^Date,Type,Account,Asset,Symbol,ISIN,Quantity/);
     expect(lines).toHaveLength(4);
     expect(lines[1]).toContain("buy,Broker,Bitcoin,BTC");
+  });
+});
+
+// `node dist/cli.js restore` replaces all data, so its order matters (restoreFromFile).
+describe("the CLI's restore", () => {
+  afterEach(async () => {
+    await t?.close();
+    t = undefined;
+  });
+
+  it("makes a safety backup of the current data first, then restores", async () => {
+    t = await createTestApp();
+    await t.api("POST", "/api/accounts", { name: "Before", kind: "bank" });
+    const made = await writeBackupFile(t.database.db, t.backupDir, "manual", undefined);
+    await t.api("POST", "/api/accounts", { name: "After", kind: "bank" });
+    const accountNames = async () => (await t!.database.db.select().from(s.accounts)).map((a) => a.name);
+    const seen: string[] = [];
+    const done = await restoreFromFile(t.database.db, {
+      file: path.join(t.backupDir, made.name),
+      dir: t.backupDir,
+      onSafety: (safety) => seen.push(safety.name),
+    });
+    expect(seen).toEqual([done.safety.name]);
+    expect(done.safety.name).toMatch(/-prerestore\.json\.gz$/);
+    expect(done.counts.accounts).toBe(1);
+    expect(await accountNames()).toEqual(["Before"]);
+    // The safety backup holds what was there just before: both accounts.
+    const namesAtSafety = (await readBackupFile(path.join(t.backupDir, done.safety.name))).tables.accounts!.map(
+      (r) => r.name as string,
+    );
+    expect(namesAtSafety.sort()).toEqual(["After", "Before"]);
+  });
+
+  it("refuses a backup without a user before making a safety backup", async () => {
+    t = await createTestApp(undefined, { login: false, setupCode: "K7QX2-MPF9R" });
+    const early = await writeBackupFile(t.database.db, t.backupDir, "auto", undefined);
+    await expect(
+      restoreFromFile(t.database.db, { file: path.join(t.backupDir, early.name), dir: t.backupDir }),
+    ).rejects.toThrow(/no user/);
+    expect(listBackups(t.backupDir).map((b) => b.name)).toEqual([early.name]);
   });
 });
 

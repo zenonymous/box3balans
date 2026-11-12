@@ -43,4 +43,3 @@ const schema = z.object({
 });
 
 export const RULES = schema.parse(data);
-export type YearRules = (typeof RULES.years)[string];
