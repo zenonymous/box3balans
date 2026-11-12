@@ -36,6 +36,25 @@ export async function automaticBackup(db: DB, config: Config) {
 }
 
 /**
+ * Wraps a job so two runs never overlap: a call while one is still going does nothing. `onCrash`
+ * hears what the job threw; the next call runs again.
+ */
+export function oneAtATime(job: () => Promise<void>, onCrash: (err: unknown) => void): () => Promise<void> {
+  let running = false;
+  return async () => {
+    if (running) return;
+    running = true;
+    try {
+      await job();
+    } catch (err) {
+      onCrash(err);
+    } finally {
+      running = false;
+    }
+  };
+}
+
+/**
  * Runs `refreshAndSnapshot` now and every PRICE_REFRESH_MINUTES, and syncs exchange connections
  * every SYNC_INTERVAL_HOURS (first run a minute after startup). Runs of the same job never overlap.
  */
@@ -48,28 +67,19 @@ export function startScheduler(
   config: Config,
   log: FastifyBaseLogger,
 ): () => void {
-  let running = false;
-  const tick = async () => {
-    if (running) return;
-    running = true;
-    try {
+  const tick = oneAtATime(
+    async () => {
       const r = await refreshAndSnapshot(db, prices, config);
       log.info({ updated: r.updated, failed: r.failed.length, fxError: r.fxError }, "price refresh done");
       for (const f of r.failed) log.warn({ asset: f.symbol, error: f.error }, "price refresh failed for asset");
-    } catch (err) {
-      log.error({ err }, "price refresh crashed");
-    } finally {
-      running = false;
-    }
-  };
+    },
+    (err) => log.error({ err }, "price refresh crashed"),
+  );
   const first = setTimeout(() => void tick(), 2_000);
   const timer = setInterval(() => void tick(), config.PRICE_REFRESH_MINUTES * 60_000);
 
-  let syncing = false;
-  const syncTick = async () => {
-    if (syncing) return;
-    syncing = true;
-    try {
+  const syncTick = oneAtATime(
+    async () => {
       for (const r of await sync.runAll()) {
         const { status, inserted, error } = r.result;
         if (status === "error") log.warn({ account: r.account, error }, "exchange sync failed");
@@ -80,12 +90,9 @@ export function startScheduler(
         if (status === "error") log.warn({ account: r.account, chain: r.chain, error }, "wallet sync failed");
         else log.info({ account: r.account, chain: r.chain, inserted, status }, "wallet sync done");
       }
-    } catch (err) {
-      log.error({ err }, "exchange sync crashed");
-    } finally {
-      syncing = false;
-    }
-  };
+    },
+    (err) => log.error({ err }, "exchange sync crashed"),
+  );
   const syncMs = config.SYNC_INTERVAL_HOURS * 3_600_000;
   const firstSync = syncMs > 0 ? setTimeout(() => void syncTick(), 60_000) : undefined;
   const syncTimer = syncMs > 0 ? setInterval(() => void syncTick(), syncMs) : undefined;
