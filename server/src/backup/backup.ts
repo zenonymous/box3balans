@@ -147,6 +147,22 @@ export function checkRestorable(b: BackupFile): void {
 }
 
 /**
+ * The command line's restore, in the order that matters: read the file, refuse what can't be
+ * restored (so that leaves nothing behind), write a safety backup of the current data, then replace
+ * everything. `onSafety` hears about the safety backup before the data is replaced.
+ */
+export async function restoreFromFile(
+  db: DB,
+  opts: { file: string; dir: string; passphrase?: string; onSafety?: (safety: BackupInfo) => void },
+): Promise<{ backup: BackupFile; safety: BackupInfo; counts: Record<string, number> }> {
+  const backup = await readBackupFile(opts.file, opts.passphrase);
+  checkRestorable(backup);
+  const safety = await writeBackupFile(db, opts.dir, "prerestore", opts.passphrase);
+  opts.onSafety?.(safety);
+  return { backup, safety, counts: await restoreBackup(db, backup) };
+}
+
+/**
  * Replaces all data with the backup's, in one database transaction (all or nothing). Backups from
  * older versions restore fine (new columns take their defaults); newer ones are refused.
  */

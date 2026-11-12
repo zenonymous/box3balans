@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { D } from "../src/lib/decimal.js";
 import { movementsToEvents } from "../src/wallets/netting.js";
 import { solanaAdapter } from "../src/wallets/solana.js";
-import { tronHexToBase58 } from "../src/wallets/tron.js";
+import { tronAdapter, tronHexToBase58 } from "../src/wallets/tron.js";
 import type { AssetRef } from "../src/sync/types.js";
 import type { ChainContext } from "../src/wallets/types.js";
 import { xrpAdapter } from "../src/wallets/xrp.js";
@@ -216,6 +216,107 @@ const btcRoutes = {
     return addr === A ? stats(50_000_000, 50_000_000, 2) : addr === B ? stats(30_000_000, 0, 1) : stats(0, 0, 0);
   },
 };
+
+// TronGrid's answers, cut down to what the adapter reads. Amounts are in sun (1 TRX = 1,000,000 sun)
+// and worked by hand: 2,500,000 sun = 2.5 TRX; 12,345,678 units of a 6-decimal token = 12.345678.
+describe("chain parsers (Tron)", () => {
+  const symbol = (a: AssetRef) => (a.kind === "fiat" ? a.currency : a.symbol);
+  const ME = "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t";
+  const ME_HEX = "41a614f803b6fd780986a42c78ec9c7f77e6ded13c";
+  const OTHER_HEX = "41a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
+  const TOKEN = "TXLAQ63Xg1NAzckPwKHvzw7CSEmLMEqcdj";
+  const trx = (id: string, ts: number, from: string, to: string, amount: number, extra: object = {}) => ({
+    txID: id,
+    block_timestamp: ts,
+    ret: [{ contractRet: "SUCCESS", fee: 0 }],
+    raw_data: {
+      contract: [{ type: "TransferContract", parameter: { value: { amount, owner_address: from, to_address: to } } }],
+    },
+    ...extra,
+  });
+  const token = { address: TOKEN, symbol: "usdt", decimals: 6, name: "Tether USD" };
+  const routes = (calls: string[]) =>
+    fakeFetch({
+      [`api.trongrid.io/v1/accounts/${ME}/transactions/trc20`]: (url: string) => {
+        calls.push(url);
+        return {
+          data: [
+            {
+              transaction_id: "t4",
+              block_timestamp: 1_704_070_800_000,
+              from: "TQrY8tryqsYVCYS3MFbtffiPp2ccyn4STm",
+              to: ME,
+              value: "12345678",
+              type: "Transfer",
+              token_info: token,
+            },
+            // Allowing a contract to spend isn't a transfer.
+            {
+              transaction_id: "t5",
+              block_timestamp: 1,
+              from: ME,
+              to: ME,
+              value: "9",
+              type: "Approval",
+              token_info: token,
+            },
+          ],
+        };
+      },
+      [`api.trongrid.io/v1/accounts/${ME}/transactions`]: (url: string) => {
+        calls.push(url);
+        return {
+          data: [
+            trx("t1", 1_704_067_200_000, ME_HEX, OTHER_HEX, 2_500_000, {
+              ret: [{ contractRet: "SUCCESS", fee: 1_100_000 }],
+            }),
+            trx("t2", 1_704_068_000_000, OTHER_HEX, ME_HEX, 10_000_000),
+            // Failed, so nothing moved, but its fee was paid: energy 300,000 + bandwidth 45,000 sun.
+            trx("t3", 1_704_069_000_000, ME_HEX, OTHER_HEX, 4_000_000, {
+              ret: [{ contractRet: "REVERT" }],
+              energy_fee: 300_000,
+              net_fee: 45_000,
+            }),
+          ],
+        };
+      },
+      [`api.trongrid.io/v1/accounts/${ME}`]: {
+        data: [{ balance: 7_500_000, trc20: [{ [TOKEN]: "5000000" }, { TUnknownContract: "123" }] }],
+      },
+    });
+
+  it("reads TRX and TRC-20 transfers, fees and balances", async () => {
+    const result = await tronAdapter().fetch([{ address: ME }], ctx(routes([])));
+    expect(result.movements.map((m) => [m.tx, symbol(m.asset), m.amount.toFixed()])).toEqual([
+      ["t1", "TRX", "-2.5"],
+      ["t2", "TRX", "10"],
+      ["t4", "USDT", "12.345678"],
+    ]);
+    expect(result.movements[2]!.asset).toMatchObject({ chain: "tron", contract: TOKEN, name: "Tether USD" });
+    expect(result.fees.map((f) => [f.tx, f.amount.toFixed()])).toEqual([
+      ["t1", "1.1"],
+      ["t3", "0.345"],
+    ]);
+    // A token balance counts only when a transfer told its decimals.
+    expect(result.balances.map((b) => [symbol(b.asset), b.quantity])).toEqual([
+      ["TRX", "7.5"],
+      ["USDT", "5"],
+    ]);
+    expect(result.cursor).toEqual({ lastTs: { [ME]: 1_704_070_800_000 } });
+  });
+
+  it("asks only for what's new next time, with an hour of overlap", async () => {
+    const calls: string[] = [];
+    await tronAdapter().fetch([{ address: ME }], ctx(routes(calls), { lastTs: { [ME]: 1_704_070_800_000 } }));
+    expect(calls.every((url) => url.includes("min_timestamp=1704067200000"))).toBe(true);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("takes a T… address and refuses anything else", () => {
+    expect(tronAdapter().normalise(` ${ME} `)).toBe(ME);
+    expect(() => tronAdapter().normalise("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")).toThrow(/Tron address/);
+  });
+});
 
 describe("wallet tracking (Bitcoin)", () => {
   it("asks your own mempool or Electrs server when MEMPOOL_URL is set, mempool.space otherwise", async () => {

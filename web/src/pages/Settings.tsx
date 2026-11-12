@@ -21,6 +21,7 @@ import { NUMBER_LOCALES, date, getLocale, relativeTime, setLocale } from "../for
 import { switchSession, usePriceStatus } from "../queries";
 import { followLanguage, getLang, t, tj, tn, type Lang } from "../i18n";
 import { MORE_PAGES } from "../nav";
+import { useAction } from "../useAction";
 
 type Theme = "system" | "light" | "dark";
 
@@ -237,21 +238,14 @@ interface UpdateStatus {
 function UpdateCheck() {
   const qc = useQueryClient();
   const status = useQuery({ queryKey: ["updates"], queryFn: () => get<UpdateStatus>("/api/updates") });
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string>();
+  const action = useAction();
+  const { busy, error } = action;
   const s = status.data;
-  const run = async (fn: () => Promise<UpdateStatus>) => {
-    setBusy(true);
-    setError(undefined);
-    try {
+  const run = (fn: () => Promise<UpdateStatus>) =>
+    action.run(async () => {
       qc.setQueryData(["updates"], await fn());
       await qc.invalidateQueries({ queryKey: ["attention"] });
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
+    });
   if (!s) return null;
   return (
     <div className="mt-2 border-t border-line pt-3">
@@ -342,23 +336,16 @@ function TwoFactorCard() {
   const [mode, setMode] = useState<"off" | "renew" | null>(null);
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
+  const action = useAction();
+  const { busy, error } = action;
 
-  const act = async (fn: () => Promise<void>) => {
-    setBusy(true);
-    setError(undefined);
-    try {
+  const act = (fn: () => Promise<void>) =>
+    action.run(async () => {
       await fn();
       setCode("");
       setPassword("");
       await qc.invalidateQueries({ queryKey: ["2fa"] });
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
+    });
   const s = status.data;
   const codeField = (
     <Field label={t("Code from your authenticator app")}>
@@ -616,18 +603,14 @@ function PasswordCard() {
 function CostMethodCard() {
   const qc = useQueryClient();
   const settings = useSettings();
-  const [error, setError] = useState<string>();
+  const { run, error } = useAction();
 
-  const change = async (costMethod: "average" | "fifo") => {
-    setError(undefined);
-    try {
+  const change = (costMethod: "average" | "fifo") =>
+    run(async () => {
       await put("/api/settings", { costMethod });
       // Every P&L figure depends on it.
       await qc.invalidateQueries({ predicate: (q) => q.queryKey[0] !== "auth" });
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+    });
 
   return (
     <Card title={t("Cost basis")}>
@@ -681,16 +664,12 @@ const FALLBACK_LABEL: Record<string, string> = { bitvavo: "Bitvavo", yahoo: "Yah
 /** The app's language; stored on the server, so server messages follow it too. */
 function LanguageField() {
   const settings = useSettings();
-  const [error, setError] = useState<string>();
-  const change = async (language: Lang) => {
-    setError(undefined);
-    try {
+  const { run, error } = useAction();
+  const change = (language: Lang) =>
+    run(async () => {
       await put("/api/settings", { language });
       followLanguage(language);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+    });
   return (
     <Field label={t("Language")}>
       {(id) => (
@@ -718,20 +697,13 @@ function LanguageField() {
 function PassphraseNote() {
   const [password, setPassword] = useState("");
   const [shown, setShown] = useState<string>();
-  const [error, setError] = useState<string>();
-  const [busy, setBusy] = useState(false);
-  const reveal = async (e: FormEvent) => {
+  const { run, busy, error } = useAction();
+  const reveal = (e: FormEvent) => {
     e.preventDefault();
-    setBusy(true);
-    setError(undefined);
-    try {
+    void run(async () => {
       setShown((await post<{ passphrase: string }>("/api/backups/passphrase", { password })).passphrase);
       setPassword("");
-    } catch (err) {
-      setError((err as Error).message);
-    } finally {
-      setBusy(false);
-    }
+    });
   };
   return (
     <div className="rounded-lg border border-line p-3 text-sm">

@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { accounts, walletAddresses } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound, notInDemo } from "../lib/errors.js";
+import { found, HttpError, notInDemo } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import { purgeSynced } from "../sync/purge.js";
 import { SCRIPT_TYPES } from "../wallets/registry.js";
@@ -120,8 +120,7 @@ export async function walletRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const body = updateBody.parse(req.body);
-    const [before] = await db.select().from(walletAddresses).where(eq(walletAddresses.id, id));
-    if (!before) throw notFound(tr("Address"));
+    const before = found(await db.select().from(walletAddresses).where(eq(walletAddresses.id, id)), tr("Address"));
     const [row] = await db.update(walletAddresses).set(body).where(eq(walletAddresses.id, id)).returning();
     await audit(db, "wallet_address", id, "update", { ...before, cursor: undefined }, { ...row, cursor: undefined });
     return { ok: true };
@@ -143,8 +142,7 @@ export async function walletRoutes(app: FastifyInstance) {
     const { deleteTransactions } = z
       .object({ deleteTransactions: z.enum(["true", "false"]).default("false") })
       .parse(req.query);
-    const [row] = await db.select().from(walletAddresses).where(eq(walletAddresses.id, id));
-    if (!row) throw notFound(tr("Address"));
+    const row = found(await db.select().from(walletAddresses).where(eq(walletAddresses.id, id)), tr("Address"));
     if (wallets.isRunning(row.accountId, row.chain))
       throw new HttpError(409, tr("Wait for the running sync to finish"));
     await db.delete(walletAddresses).where(eq(walletAddresses.id, id));

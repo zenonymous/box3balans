@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { DB } from "../db/client.js";
 import { accounts, assets, auditLog, imports, metalItems, syncIgnored, transactions } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import { msg, tr } from "../i18n/index.js";
 
@@ -236,8 +236,7 @@ export async function activityRoutes(app: FastifyInstance) {
   // Undo a deletion: puts the row back with its old id. Both legs of a transfer come back together.
   app.post("/:id/restore", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [entry] = await db.select().from(auditLog).where(eq(auditLog.id, id));
-    if (!entry) throw notFound(tr("History entry"));
+    const entry = found(await db.select().from(auditLog).where(eq(auditLog.id, id)), tr("History entry"));
     const table = RESTORABLE[entry.entity];
     if (entry.action !== "delete" || !table || !entry.before) {
       throw new HttpError(400, tr("Only deleted transactions and metal items can be restored"));
