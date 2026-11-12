@@ -2,9 +2,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { disableTwoFactor } from "../src/auth/twoFactor.js";
 import { users } from "../src/db/schema.js";
 import { base32Decode, base32Encode, hotp, matchTotp, otpauthUri, totpStep } from "../src/lib/totp.js";
-import { createTestApp, type TestApp } from "./helpers.js";
+import { createTestApp, TEST_PASSWORD as PASSWORD, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
+
+/** Turns two-step verification on; like a browser, the test goes on with the fresh session cookie. */
+async function turnOn(app: TestApp, code: string) {
+  const res = await app.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code });
+  if (res.statusCode === 200) app.cookie = `pd_session=${res.cookies.find((c) => c.name === "pd_session")!.value}`;
+  return res;
+}
 afterEach(async () => t?.close());
 
 describe("TOTP", () => {
@@ -54,8 +61,8 @@ describe("signing in with a second factor", () => {
     const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
     expect(setup.uri).toContain("otpauth://totp/Box3balans%3Ame");
     expect(setup.qrSvg).toMatch(/^<svg/);
-    expect((await t.api("POST", "/api/auth/2fa/enable", { code: "000000" })).statusCode).toBe(400);
-    const enabled = (await t.api("POST", "/api/auth/2fa/enable", { code: codeFor(setup.secret, -1) })).json();
+    expect((await t.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code: "000000" })).statusCode).toBe(400);
+    const enabled = (await turnOn(t, codeFor(setup.secret, -1))).json();
     expect(enabled.recoveryCodes).toHaveLength(10);
     expect(enabled.recoveryCodes[0]).toMatch(/^[a-z2-7]{5}-[a-z2-7]{5}$/);
 
@@ -91,12 +98,53 @@ describe("signing in with a second factor", () => {
     expect((await login()).statusCode).toBe(200);
   });
 
+  // Security audit of 5 Nov 2026: a left-open session isn't enough to turn it on (and lock the owner
+  // out with someone else's phone), and turning it on or off signs out every other session, which
+  // may be the one it was turned on against.
+  it("takes the password to turn on, and signs out every session when turned on or off", async () => {
+    t = await createTestApp();
+    const step = totpStep();
+    const signIn = async (code?: string) => {
+      const res = await t!.api("POST", "/api/auth/login", { username: "me", password: PASSWORD, code });
+      expect(res.statusCode, res.body).toBe(200);
+      return `pd_session=${res.cookies.find((c) => c.name === "pd_session")!.value}`;
+    };
+    const as = (cookie: string) =>
+      t!.app.inject({ method: "GET", url: "/api/accounts", headers: { cookie } }).then((r) => r.statusCode);
+    const other = await signIn();
+
+    const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
+    const code = hotp(base32Decode(setup.secret), step - 1);
+    expect((await t.api("POST", "/api/auth/2fa/enable", { code })).statusCode).toBe(400);
+    const wrong = await t.api("POST", "/api/auth/2fa/enable", { password: "not it", code });
+    expect(wrong.json().error).toBe("That password isn't right");
+    // Every session ends, this browser's too (a copy of its cookie may be why); it gets a fresh one.
+    const fresh = (res: { cookies: { name: string; value: string }[] }) =>
+      `pd_session=${res.cookies.find((c) => c.name === "pd_session")!.value}`;
+    const before = t.cookie;
+    const on = await t.api("POST", "/api/auth/2fa/enable", { password: PASSWORD, code });
+    expect(on.statusCode, on.body).toBe(200);
+    expect(await as(other)).toBe(401);
+    expect(await as(before)).toBe(401);
+    t.cookie = fresh(on);
+    expect(await as(t.cookie)).toBe(200);
+
+    const again = await signIn(hotp(base32Decode(setup.secret), step));
+    const off = await t.api("POST", "/api/auth/2fa/disable", { password: PASSWORD, code: on.json().recoveryCodes[0] });
+    expect(off.statusCode, off.body).toBe(200);
+    expect(await as(again)).toBe(401);
+    t.cookie = fresh(off);
+    expect(await as(t.cookie)).toBe(200);
+    // Already off: refused, as before, and nobody is signed out.
+    const offAgain = await t.api("POST", "/api/auth/2fa/disable", { password: PASSWORD, code: "123456" });
+    expect(offAgain.statusCode).toBe(400);
+    expect(await as(t.cookie)).toBe(200);
+  });
+
   it("stops checking codes for a while after five wrong ones", async () => {
     t = await createTestApp();
     const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
-    const enabled = (
-      await t.api("POST", "/api/auth/2fa/enable", { code: hotp(base32Decode(setup.secret), totpStep() - 1) })
-    ).json();
+    const enabled = (await turnOn(t, hotp(base32Decode(setup.secret), totpStep() - 1))).json();
     const login = (code: string) =>
       t!.app.inject({
         method: "POST",
@@ -125,7 +173,7 @@ describe("signing in with a second factor", () => {
   it("explains a key that can't be read after APP_SECRET changed", async () => {
     t = await createTestApp();
     const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
-    await t.api("POST", "/api/auth/2fa/enable", { code: hotp(base32Decode(setup.secret), totpStep()) });
+    await turnOn(t, hotp(base32Decode(setup.secret), totpStep()));
     await t.database.db.update(users).set({ totpSecret: "v1:AAAA" });
     const res = await t.app.inject({
       method: "POST",
@@ -140,7 +188,7 @@ describe("signing in with a second factor", () => {
   it("can be switched off from the command line when the phone is lost", async () => {
     t = await createTestApp();
     const setup = (await t.api("POST", "/api/auth/2fa/setup")).json();
-    await t.api("POST", "/api/auth/2fa/enable", { code: hotp(base32Decode(setup.secret), totpStep()) });
+    await turnOn(t, hotp(base32Decode(setup.secret), totpStep()));
     await disableTwoFactor(t.database.db);
     expect((await t.api("GET", "/api/auth/2fa")).json().enabled).toBe(false);
   });

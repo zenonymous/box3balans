@@ -193,7 +193,7 @@ export function HoldingsPage() {
                       aria-hidden
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium text-ink">{h.name}</div>
+                      <div className="font-medium break-words text-ink">{h.name}</div>
                       <div className="text-xs text-muted">
                         {h.symbol} · {qtyLabel(h)}
                       </div>

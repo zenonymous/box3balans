@@ -323,16 +323,20 @@ function UpdateCheck() {
   );
 }
 
+/** Whether two-step verification is on, and how many recovery codes are left. */
+const useTwoFactorStatus = () =>
+  useQuery({
+    queryKey: ["2fa"],
+    queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
+  });
+
 /**
  * Two-step verification: after the password, a code from an authenticator app (or a recovery code).
  * Turning it on shows a QR code to scan, a code confirms it, and ten recovery codes are shown once.
  */
 function TwoFactorCard() {
   const qc = useQueryClient();
-  const status = useQuery({
-    queryKey: ["2fa"],
-    queryFn: () => get<{ enabled: boolean; recoveryCodesLeft: number }>("/api/auth/2fa"),
-  });
+  const status = useTwoFactorStatus();
   const [setup, setSetup] = useState<{ secret: string; qrSvg: string } | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
   const [mode, setMode] = useState<"off" | "renew" | null>(null);
@@ -367,6 +371,23 @@ function TwoFactorCard() {
           value={code}
           onChange={(e) => setCode(e.target.value)}
           className="max-w-40"
+          required
+        />
+      )}
+    </Field>
+  );
+
+  // Turning it on or off takes the password, so a left-open session isn't enough. The same label as
+  // the other fields that ask for it again (Backups).
+  const passwordField = (
+    <Field label={t("Your password")}>
+      {(id) => (
+        <Input
+          id={id}
+          type="password"
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           required
         />
       )}
@@ -421,7 +442,7 @@ function TwoFactorCard() {
               onSubmit={(e) => {
                 e.preventDefault();
                 void act(async () => {
-                  const r = await post<{ recoveryCodes: string[] }>("/api/auth/2fa/enable", { code });
+                  const r = await post<{ recoveryCodes: string[] }>("/api/auth/2fa/enable", { code, password });
                   setSetup(null);
                   setCodes(r.recoveryCodes);
                 });
@@ -444,6 +465,10 @@ function TwoFactorCard() {
                 </code>
               </p>
               {codeField}
+              {passwordField}
+              <p className="text-xs text-muted">
+                {t("Other browsers and devices where you're signed in will be signed out.")}
+              </p>
               <div className="flex gap-2">
                 <Button type="submit" variant="primary" disabled={busy}>
                   {t("Turn on")}
@@ -493,20 +518,7 @@ function TwoFactorCard() {
                   });
                 }}
               >
-                {mode === "off" && (
-                  <Field label={t("Current password")}>
-                    {(id) => (
-                      <Input
-                        id={id}
-                        type="password"
-                        autoComplete="current-password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                      />
-                    )}
-                  </Field>
-                )}
+                {mode === "off" && passwordField}
                 {codeField}
                 <div className="flex gap-2">
                   <Button type="submit" variant={mode === "off" ? "danger" : "primary"} disabled={busy}>
@@ -772,6 +784,11 @@ function BackupsCard() {
   const [restoring, setRestoring] = useState<string | null>(null);
   const [confirm, setConfirm] = useState("");
   const [passphrase, setPassphrase] = useState("");
+  // A restore brings back the user as it was in the backup, so it takes the password, and with
+  // two-step verification on a code too.
+  const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const twoFactor = useTwoFactorStatus();
 
   const backupNow = async () => {
     setBusy(true);
@@ -795,9 +812,11 @@ function BackupsCard() {
     try {
       await post(`/api/backups/${encodeURIComponent(restoring)}/restore`, {
         confirm,
+        password,
+        ...(code ? { code } : {}),
         ...(passphrase ? { passphrase } : {}),
       });
-      // Sessions aren't in backups: sign in again with the restored account.
+      // Sessions aren't in backups: sign in again as the restored user.
       switchSession(qc, null);
     } catch (err) {
       setMsg({ ok: false, text: (err as Error).message });
@@ -924,6 +943,32 @@ function BackupsCard() {
                 />
               )}
             </Field>
+            <Field label={t("Your password")}>
+              {(id) => (
+                <Input
+                  id={id}
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="max-w-72"
+                />
+              )}
+            </Field>
+            {/* Unless it's known to be off: while loading or after an error, the field is there. */}
+            {twoFactor.data?.enabled !== false && (
+              <Field label={t("Code from your authenticator app")}>
+                {(id) => (
+                  <Input
+                    id={id}
+                    autoComplete="one-time-code"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    className="max-w-40"
+                  />
+                )}
+              </Field>
+            )}
             {restoring.endsWith(".enc") && (
               <Field
                 label={t("Passphrase")}
@@ -942,10 +987,18 @@ function BackupsCard() {
               </Field>
             )}
             <div className="flex gap-2">
-              <Button type="submit" variant="danger" disabled={busy || confirm !== "RESTORE"}>
+              <Button type="submit" variant="danger" disabled={busy || confirm !== "RESTORE" || !password}>
                 {busy ? t("Restoring…") : t("Restore")}
               </Button>
-              <Button onClick={() => setRestoring(null)}>{t("Cancel")}</Button>
+              <Button
+                onClick={() => {
+                  setRestoring(null);
+                  setPassword("");
+                  setCode("");
+                }}
+              >
+                {t("Cancel")}
+              </Button>
             </div>
           </form>
         )}

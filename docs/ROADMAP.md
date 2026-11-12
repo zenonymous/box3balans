@@ -15,7 +15,7 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 - **Jaaroverzichten als pdf** (0.1.18): bij _Waarden per jaar_ leest Box3balans een jaaroverzicht in de browser en biedt de bedragen naast een peildatum aan; met een sjabloon per aanbieder staan de juiste meteen aangevinkt ([ADR 0009](adr/0009-pdf-lezen-in-de-browser.md)). Het rekeningoverzicht van Goldrepublic (0.1.27) wordt ook herkend, en bij _CSV importeren_ als transacties gelezen.
 - **Koersen voor crypto:** Bitvavo als koersbron; koersgeschiedenis voor munten die een beurs niet meer verhandelt en voor ingeruilde munten (NU → T, FTM → S, MATIC → POL en andere), van Yahoo of Binance, maar alleen als vaststaat dat het dezelfde munt is; omwisselingen door Bitvavo als verkoop en aankoop. Uitgebracht in 0.1.4 tot en met 0.1.7, na het testen met echte accounts.
 - **Rendement:** tijd- en geldgewogen rendement met een benchmark, een kostenoverzicht en verwachte dividenden.
-- **Box 3:** werkelijk rendement voor de tegenbewijsregeling en een vooruitblik op het stelsel vanaf 2028.
+- **Box 3:** werkelijk rendement voor de tegenbewijsregeling en een vooruitblik op het stelsel dat voorgesteld is vanaf 2029.
 - **Online demo** (0.1.26): op [box3balans.nl/demo](https://box3balans.nl/demo/) rondkijken in het voorbeeldhuishouden, zonder te installeren; opgenomen uit de echte demo bij elke release ([ADR 0010](adr/0010-online-demo-zonder-server.md)).
 - **Aantoonbare privacy** (0.1.30): Box3balans maakt alleen verbinding met een vaste lijst van adressen, afgedwongen in de code en zichtbaar onder _Instellingen → Netwerk_, waar je functies uitzet tot helemaal offline (0.1.32); optioneel afgeschermd met een proxy op netwerkniveau, en bij elke wijziging in de CI gecontroleerd. Een nieuwe installatie neemt de eerste gebruiker alleen aan met een setupcode uit het log ([ADR 0011](adr/0011-vaste-lijst-van-bestemmingen.md), [wat Box3balans verstuurt](privacy.md)).
 - **Beheer:** versleutelde back-ups, wijzigingsgeschiedenis met terugzetten, _Aandacht nodig_, tweede koersbronnen, PostgreSQL 18 met een geteste upgrade.
@@ -31,7 +31,7 @@ Heb je een idee of wil je meehelpen? Zie [CONTRIBUTING.md](../CONTRIBUTING.md).
 ## Fase B: box 3 voor iedereen, niet alleen beleggers ✅
 
 - **Huishouden:** jij, een fiscale partner en minderjarige kinderen (hun bezit telt voor de ouders met gezag). Per rekening een eigenaar: jij, je partner, samen (met jouw aandeel) of een kind. De verdeling van de grondslag tussen partners, met per persoon het bezit, de grondslag en de belasting.
-- **Waarden per jaar:** per rekening alleen de waarde op 1 januari, geld erin en eruit, inkomsten en kosten. Genoeg voor de forfaitaire berekening, de vergelijking met het werkelijk rendement en de vooruitblik op 2028, zonder elke transactie te importeren.
+- **Waarden per jaar:** per rekening alleen de waarde op 1 januari, geld erin en eruit, inkomsten en kosten. Genoeg voor de forfaitaire berekening, de vergelijking met het werkelijk rendement en de vooruitblik, zonder elke transactie te importeren.
 - **Spaargeld:** saldi op 1 januari, rente en geld erin en eruit, ingelezen uit de export van je bank (CSV met saldo, het TAB-bestand van ABN AMRO, CAMT.053, of CSV zonder saldo met één bekend saldo).
 - **Overige bezittingen en schulden:** een tweede of verhuurde woning (WOZ-waarde, met de leegwaarderatio bij verhuur), uitgeleend geld, kapitaalverzekeringen, schulden met betaalde rente, en een vinkje voor rekeningen in het buitenland.
 
@@ -73,14 +73,14 @@ De werkzaamheden staan als issues in de mijlpaal [Fase F](https://github.com/zen
 - **Sjablonen voor jaaroverzichten:** per aanbieder (Brand New Day, Peaks, BLOX, Geldvoorelkaar, Mintos …) een sjabloon, zodra iemand de tekst van een overzicht deelt via [het formulier](https://github.com/zenonymous/box3balans/issues/new?template=formaat-delen.yml).
 - **Meer aanbieders:** gebouwd in oktober 2026, op openbare beschrijvingen en nog niet getest met echte gegevens: XTB, Schwab Equity Awards (aandelenplannen van werkgevers), Bitstamp en een koppeling met de nieuwe API van Bitpanda (de oude stopt op 31 januari 2027). Daarna: Morgan Stanley at Work en Finst, zodra iemand een voorbeeld deelt; zie de issues met [prioriteit 1](https://github.com/zenonymous/box3balans/issues?q=is%3Aissue+is%3Aopen+label%3A%22prioriteit+1%22).
 - **Een dossier per jaar** ✅ (al in 0.1.9): één afdrukbaar document met het box 3-overzicht, het werkelijk rendement, de waarden op 1 januari en waar elk bedrag vandaan komt. Voor je eigen administratie, en voor als de Belastingdienst vragen stelt.
-- **De Wet werkelijk rendement volgen:** de Eerste Kamer behandelt het wetsvoorstel en de novelle naar verwachting vanaf januari. De vooruitblik in de app volgt sinds 0.1.3 de kabinetsbrief van 29 september (heffingsvrij resultaat € 1.000); belasting bij verkoop voor aandelen, obligaties en opties komt erin zodra de tekst van de novelle er is, na het advies van de Raad van State ([#11](https://github.com/zenonymous/box3balans/issues/11)). Op 3 november schoof het kabinet de start op naar 2029 en schrapte het de verlaging naar € 1.000; de vooruitblik volgt dat na de stemming van 12 november.
+- **De Wet werkelijk rendement volgen:** de Eerste Kamer behandelt het wetsvoorstel en de novelle naar verwachting vanaf januari. Op 3 november schoof het kabinet de start op naar 2029 en schrapte het de verlaging naar € 1.000. De vooruitblik in de app noemt sinds 0.1.48 2029 en rekent met het wetsvoorstel (€ 1.800); belasting bij verkoop voor financiële instrumenten komt erin na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
-## Fase H: het nieuwe stelsel vanaf 2028 (vanaf medio 2027, als de wet er komt)
+## Fase H: het nieuwe stelsel, voorgesteld vanaf 2029 (vanaf medio 2028, als de wet er komt)
 
-- **De volledige berekening, niet alleen een vooruitblik:** per bezitting het rendement van het jaar (gerealiseerd en ongerealiseerd), belasting bij verkoop voor onroerend goed en aandelen in startende ondernemingen (met de regels voor wat je al vóór 2028 had), aftrekbare kosten, het heffingsvrije resultaat, verliesverrekening over de jaren heen en de verdeling tussen partners.
-- **Beginwaarden op 1 januari 2028:** het ongerealiseerde rendement over 2028 wordt vanaf die waarden gemeten. Een checklist zorgt dat elke bezitting vóór die datum een betrouwbare waarde op 31 december 2027 heeft.
-- **De aangifte over 2028** (in 2029) in de volgorde van het nieuwe formulier, zodra de Belastingdienst dat publiceert.
-- **Het oude stelsel blijft** voor 2027 en eerder, voor correcties en bezwaar. Komt de wet er niet, dan gaat het jaarritme van de forfaitaire regels gewoon door.
+- **De volledige berekening, niet alleen een vooruitblik:** per bezitting het rendement van het jaar (gerealiseerd en ongerealiseerd), belasting bij verkoop voor onroerend goed en aandelen in startende ondernemingen (met de regels voor wat je al vóór 2029 had), aftrekbare kosten, het heffingsvrije resultaat, verliesverrekening over de jaren heen en de verdeling tussen partners.
+- **Beginwaarden op 1 januari 2029:** het rendement vanaf 2029 wordt vanaf die waarden gemeten. Een checklist zorgt dat elke bezitting vóór die datum een betrouwbare waarde op 31 december 2028 heeft.
+- **De aangifte over 2029** (in 2030) in de volgorde van het nieuwe formulier, zodra de Belastingdienst dat publiceert.
+- **Het oude stelsel blijft** voor 2028 en eerder, voor correcties en bezwaar. Komt de wet er niet, dan gaat het jaarritme van de forfaitaire regels gewoon door.
 
 ## Doorlopend
 

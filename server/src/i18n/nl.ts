@@ -225,12 +225,18 @@ export const NL: Record<string, string> = {
   "Already set up": "Al ingesteld",
   "Invalid username or password": "Onjuiste gebruikersnaam of wachtwoord",
   "Current password is incorrect": "Het huidige wachtwoord klopt niet",
+  "That password isn't right": "Dat wachtwoord klopt niet",
+  "This backup comes from a newer version of the app; update the app first.":
+    "Deze back-up komt uit een nieuwere versie van de app; werk de app eerst bij.",
   // routes/backups.ts
   "Invalid backup name": "Ongeldige naam voor een back-up",
   "Backup not found": "Back-up niet gevonden",
   "Type RESTORE to confirm": "Typ RESTORE om te bevestigen",
   "Wait for running syncs to finish": "Wacht tot lopende syncs klaar zijn",
   "Restore failed, nothing was changed: {error}": "Terugzetten mislukt, er is niets gewijzigd: {error}",
+  // backup/backup.ts
+  "This backup holds no user: it was made before Box3balans was set up, so there's nothing in it to restore.":
+    "Deze back-up bevat geen gebruiker: hij is gemaakt voordat Box3balans was ingesteld, dus er valt niets uit terug te zetten.",
   // routes/box3.ts
   "The peildatum of that year hasn't happened yet": "De peildatum van dat jaar is nog niet geweest",
   // routes/household.ts

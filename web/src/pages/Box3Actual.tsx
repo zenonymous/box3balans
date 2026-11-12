@@ -229,23 +229,15 @@ interface FutureParams {
 }
 
 interface FutureResponse {
-  presets: (FutureParams & { id: string; label: string })[];
-  preset: string;
   params: FutureParams;
   rows: FutureRow[];
 }
 
-const presetLabel = (id: string, fallback: string) =>
-  ({
-    bill: t("Bill as passed by the Tweede Kamer (12 Feb 2026)"),
-    letter: t("Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)"),
-  })[id] ?? fallback;
-
-/** The planned actual-return system (2028) applied to your past years, with editable assumptions. */
+/** The planned actual-return system (proposed from 2029) applied to your past years, with editable assumptions. */
 export function FuturePreviewCard() {
-  const [preset, setPreset] = useState("bill");
   const [over, setOver] = useState<Record<string, string>>({});
-  const params = new URLSearchParams({ preset });
+  // The figures start from the bill as the Tweede Kamer passed it (the server's only preset).
+  const params = new URLSearchParams({ preset: "bill" });
   for (const [k, v] of Object.entries(over)) if (v.trim() !== "") params.set(k, v.replace(",", "."));
   const q = useQuery({
     queryKey: ["box3-future", params.toString()],
@@ -275,35 +267,17 @@ export function FuturePreviewCard() {
     <Card
       title={
         <span className="flex flex-wrap items-center gap-2">
-          {t("From 2028: tax on the actual return (preview)")} <Badge tone="warn">{t("not law yet")}</Badge>
+          {t("From 2029: tax on the actual return (preview)")} <Badge tone="warn">{t("not law yet")}</Badge>
         </span>
       }
       className="print:hidden"
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. In a letter of 29 September 2026 the cabinet announced an amendment (novelle): from 2028 shares, bonds and options would be taxed only when sold, other assets from 2030, with a tax-free result of €1,000. Here the yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
+          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free result and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
         )}
       </p>
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
-        <Field label={t("Assumptions")} className="col-span-2">
-          {(id) => (
-            <Select
-              id={id}
-              value={preset}
-              onChange={(e) => {
-                setPreset(e.target.value);
-                setOver({});
-              }}
-            >
-              {d?.presets.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {presetLabel(x.id, x.label)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
         {field("ratePct", t("Rate (%)"))}
         {field("allowanceEur", t("Tax-free result (€)"), t("per person"))}
         {field("lossThresholdEur", t("Loss threshold (€)"), t("smaller losses don't carry over"))}
@@ -408,7 +382,7 @@ export function FuturePreviewCard() {
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of 2029 for 2028, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of its second year, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>

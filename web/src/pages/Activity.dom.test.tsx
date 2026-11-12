@@ -80,6 +80,22 @@ describe("History", () => {
     expect(years.getByText(/^Buitenland:/).textContent).toBe("Buitenland: nee → ja");
   });
 
+  it("writes a transaction's quantity in the number format, like every other amount", async () => {
+    showPage("/activity", "activity", <ActivityPage />, {
+      "GET /api/activity": {
+        total: 1,
+        items: [
+          entry(1, {
+            action: "create",
+            title: "Storting 10000 EUR · DEGIRO",
+            parts: { type: "Storting", quantity: "10000", subject: "EUR · DEGIRO" },
+          }),
+        ],
+      },
+    });
+    expect(await screen.findByText("Storting 10.000 EUR · DEGIRO")).toBeTruthy();
+  });
+
   it("restores a deleted transaction", async () => {
     const api = showPage("/activity", "activity", <ActivityPage />, {
       "GET /api/activity": { total: 1, items: [entry(5, { action: "delete", title: "ASML 3", restorable: true })] },

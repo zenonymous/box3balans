@@ -1,9 +1,16 @@
 import fs from "node:fs";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { backupPath, listBackups, readBackupFile, restoreBackup, writeBackupFile } from "../backup/backup.js";
+import {
+  backupPath,
+  checkRestorable,
+  listBackups,
+  readBackupFile,
+  restoreBackup,
+  writeBackupFile,
+} from "../backup/backup.js";
 import { getBackupStatus } from "../backup/status.js";
-import { SESSION_COOKIE, isUserPassword } from "../auth/service.js";
+import { SESSION_COOKIE } from "../auth/service.js";
 import { HttpError, notInDemo } from "../lib/errors.js";
 import { tr } from "../i18n/index.js";
 
@@ -25,9 +32,8 @@ export async function backupRoutes(app: FastifyInstance) {
   // The passphrase backups are encrypted with, for the user's password manager; it takes the password.
   app.post("/passphrase", { config: { rateLimit: { max: 5, timeWindow: "5 minutes" } } }, async (req) => {
     if (config.DEMO) throw notInDemo();
-    const { password } = z.object({ password: z.string().min(1).max(500) }).parse(req.body);
-    if (!(await isUserPassword(db, req.user!.id, password)))
-      throw new HttpError(400, tr("Current password is incorrect"));
+    const { password } = z.object({ password: z.string().min(1).max(256) }).parse(req.body);
+    await app.identity.checkPassword(req.user!.id, password);
     if (!config.BACKUP_PASSPHRASE) throw new HttpError(404, tr("Backups aren't encrypted"));
     return { passphrase: config.BACKUP_PASSPHRASE, source: config.BACKUP_PASSPHRASE_SOURCE ?? null };
   });
@@ -51,13 +57,26 @@ export async function backupRoutes(app: FastifyInstance) {
       .send(fs.createReadStream(file));
   });
 
-  // Replaces ALL data with a backup from the backup folder. A safety backup is taken first.
-  app.post("/:name/restore", { config: { rateLimit: { max: 3, timeWindow: "5 minutes" } } }, async (req, reply) => {
+  // Replaces ALL data with a backup from the backup folder. A safety backup is taken first. The limit
+  // leaves room for a mistyped password, passphrase or code; wrong codes also count per user.
+  app.post("/:name/restore", { config: { rateLimit: { max: 10, timeWindow: "5 minutes" } } }, async (req, reply) => {
+    // The demo's user has a password nobody knows, and the demo keeps nothing anyway.
+    if (config.DEMO) throw notInDemo();
     const { name } = z.object({ name: z.string() }).parse(req.params);
     const body = z
-      .object({ confirm: z.literal("RESTORE"), passphrase: z.string().max(500).optional() })
+      .object({
+        confirm: z.literal("RESTORE"),
+        passphrase: z.string().max(500).optional(),
+        password: z.string().max(256).default(""),
+        code: z.string().trim().max(20).optional(),
+      })
       .safeParse(req.body);
     if (!body.success) throw new HttpError(400, tr("Type RESTORE to confirm"));
+    // A restore brings back the user as it was in the backup: an older password, or two-step
+    // verification off. So it takes what turning that off takes, not just a session: the password
+    // now, and the code last, once the backup is known to be restorable and the safety backup is
+    // made, so a refusal or a failure there doesn't spend a recovery code.
+    await app.identity.checkPassword(req.user!.id, body.data.password);
     let file: string;
     try {
       file = backupPath(dir, name);
@@ -70,10 +89,18 @@ export async function backupRoutes(app: FastifyInstance) {
     try {
       // A backup made with an earlier passphrase can be restored by entering that one.
       backup = await readBackupFile(file, body.data.passphrase || config.BACKUP_PASSPHRASE);
+      checkRestorable(backup);
     } catch (err) {
       throw new HttpError(400, (err as Error).message);
     }
     const safety = await writeBackupFile(db, dir, "prerestore", config.BACKUP_PASSPHRASE);
+    try {
+      await app.identity.checkSecondFactor(req.user!.id, body.data.code);
+    } catch (err) {
+      // Nothing gets restored, so the safety backup has no use: don't leave one per wrong code.
+      fs.rmSync(backupPath(dir, safety.name), { force: true });
+      throw err;
+    }
     try {
       const counts = await restoreBackup(db, backup);
       // Sessions are not part of a backup, so everyone (including this browser) is signed out.

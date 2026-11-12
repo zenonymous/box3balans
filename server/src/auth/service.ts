@@ -60,8 +60,16 @@ export async function changePassword(db: DB, userId: number, current: string, ne
     .set({ passwordHash: await hashPassword(next) })
     .where(eq(users.id, userId));
   // Invalidate all sessions; the caller issues a fresh one.
-  await db.delete(sessions).where(eq(sessions.userId, userId));
+  await endSessions(db, userId);
   return true;
+}
+
+/**
+ * Signs out every session of the user, this one too; the caller issues a fresh one. Also a copy of
+ * this browser's cookie stops working that way.
+ */
+export async function endSessions(db: DB, userId: number) {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
 }
 
 export async function createSession(db: DB, userId: number, days: number): Promise<{ token: string; expiresAt: Date }> {
@@ -89,11 +97,41 @@ export async function destroySession(db: DB, token: string | undefined) {
 // No 0/O, 1/I/L: easy to read from a log and type over.
 const SETUP_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-/** A one-time code for creating the first account, like "K7QX2-MPF9R" (about 49 bits). */
+/** A code for creating the first user, like "K7QX2-MPF9R" (about 49 bits). */
 export function newSetupCode(): string {
   // randomInt picks each character evenly (a byte modulo 31 would favour some).
   const chars = Array.from({ length: 10 }, () => SETUP_ALPHABET[randomInt(SETUP_ALPHABET.length)]).join("");
   return `${chars.slice(0, 5)}-${chars.slice(5)}`;
+}
+
+/**
+ * Setting up the user: the code it takes, while there's no user. `required`: setup never
+ * goes without a code (false only in tests and the demo, which has its user from the start).
+ */
+export interface SetupGate {
+  code: string | null;
+  required: boolean;
+}
+
+/**
+ * Makes the setup code and puts it in the log when there's no user and none is waiting: at the
+ * first start, and again should the user be gone later (a user table emptied some other way), so
+ * setup never takes anyone without it. `own` is SETUP_CODE, when set: then that same code applies
+ * each time. Returns whether there's no user yet.
+ */
+export async function ensureSetupCode(
+  db: DB,
+  setup: SetupGate,
+  own: string | undefined,
+  log: { warn: (msg: string) => void },
+): Promise<boolean> {
+  const noUser = (await userCount(db)) === 0;
+  // Nothing is awaited between this check and setting the code, so two requests can't both make one.
+  if (noUser && setup.required && !setup.code) {
+    setup.code = own ?? newSetupCode();
+    log.warn(`No user yet. Open Box3balans in your browser and use this setup code: ${setup.code}`);
+  }
+  return noUser;
 }
 
 /** Whether `given` is the setup code, ignoring case, spaces and dashes; in constant time. */

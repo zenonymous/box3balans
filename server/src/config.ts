@@ -78,7 +78,7 @@ const schema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
-  // The one-time code the first account needs (see index.ts); made up at startup when not set.
+  // The setup code the first user needs (see index.ts); made up at startup when not set.
   SETUP_CODE: z
     .string()
     .trim()

@@ -75,7 +75,13 @@ export const incomeStaysInAccount = (kind: Account["kind"]) =>
   kind !== "property" && kind !== "receivable" && kind !== "debt";
 
 /** Kinds that only make sense as values per year. */
-export const YEARLY_ONLY_KINDS = new Set<Account["kind"]>(["property", "receivable", "debt", "insurance"]);
+export const YEARLY_ONLY_KIND_LIST = [
+  "property",
+  "receivable",
+  "debt",
+  "insurance",
+] as const satisfies readonly Account["kind"][];
+export const YEARLY_ONLY_KINDS: ReadonlySet<Account["kind"]> = new Set(YEARLY_ONLY_KIND_LIST);
 
 /** All values per year, by account and year. */
 export async function loadYearly(db: DB): Promise<Map<number, Map<number, AccountYear>>> {

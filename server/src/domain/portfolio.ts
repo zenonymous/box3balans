@@ -1,10 +1,20 @@
-import { asc } from "drizzle-orm";
+import { and, asc, eq, isNotNull } from "drizzle-orm";
 import type { DB } from "../db/client.js";
-import { accounts, assets, metalItems, netWorthSnapshots, pricesLatest, transactions } from "../db/schema.js";
+import {
+  accountKind,
+  accountYears,
+  accounts,
+  assets,
+  metalItems,
+  netWorthSnapshots,
+  pricesLatest,
+  transactions,
+} from "../db/schema.js";
 import { METAL_CODES } from "../db/seed.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { replayLedger, type CostMethod, type LedgerResult } from "./ledger.js";
 import { getCostMethod } from "./settings.js";
+import { yearlyClass } from "./yearly.js";
 import { computeHistory, pointOn } from "./history.js";
 import { tr } from "../i18n/index.js";
 import { displayName } from "../db/seed.js";
@@ -60,10 +70,18 @@ export interface PortfolioSummary {
   dayChangeEur: string;
   dayChangePct: string | null;
   byClass: Record<AssetClassKey, string>;
-  byAccount: { accountId: number; name: string; kind: string; valueEur: string }[];
+  byAccount: { accountId: number; name: string; kind: (typeof accountKind.enumValues)[number]; valueEur: string }[];
   periodChanges: { period: "1W" | "1M" | "YTD"; fromDay: string; changeEur: string; changePct: string | null }[];
   missingPrices: string[];
   warnings: string[];
+  /**
+   * What totalEur leaves out: accounts kept as values per year (a home, savings, a loan), which only
+   * have a value on 1 January. Their net value (debts off), each on the last 1 January entered. `year`
+   * is the latest of those and `yearsDiffer` says some are a year older. An account whose last value
+   * is older still (a home sold years ago, never archived) isn't in the sum: `olderLeftOut`. Null
+   * without such accounts.
+   */
+  yearlyAccounts: { netEur: string; year: number; yearsDiffer: boolean; olderLeftOut: boolean } | null;
 }
 
 export interface Portfolio {
@@ -105,6 +123,37 @@ export async function loadLedger(db: DB, method?: CostMethod): Promise<LedgerRes
     method ? Promise.resolve(method) : getCostMethod(db),
   ]);
   return replayLedger(txs, m);
+}
+
+/** PortfolioSummary.yearlyAccounts: the accounts kept as values per year, at their latest 1 January. */
+async function yearlyAccountsNet(db: DB): Promise<PortfolioSummary["yearlyAccounts"]> {
+  const rows = await db
+    .select({
+      accountId: accountYears.accountId,
+      kind: accounts.kind,
+      year: accountYears.year,
+      valueEur: accountYears.valueEur,
+    })
+    .from(accountYears)
+    .innerJoin(accounts, eq(accounts.id, accountYears.accountId))
+    .where(and(eq(accounts.tracking, "yearly"), eq(accounts.archived, false), isNotNull(accountYears.valueEur)));
+  const latest = new Map<number, { year: number; value: Decimal; debt: boolean }>();
+  for (const r of rows) {
+    const seen = latest.get(r.accountId);
+    if (!seen || r.year > seen.year)
+      latest.set(r.accountId, { year: r.year, value: D(r.valueEur), debt: yearlyClass(r.kind) === "debt" });
+  }
+  if (latest.size === 0) return null;
+  const year = Math.max(...[...latest.values()].map((l) => l.year));
+  // A value from the year before still says something (this year's may not be entered yet); older doesn't.
+  const counted = [...latest.values()].filter((l) => l.year >= year - 1);
+  const net = counted.reduce((sum, l) => (l.debt ? sum.minus(l.value) : sum.plus(l.value)), ZERO);
+  return {
+    netEur: money2(net),
+    year,
+    yearsDiffer: counted.some((l) => l.year !== year),
+    olderLeftOut: counted.length < latest.size,
+  };
 }
 
 /**
@@ -289,13 +338,14 @@ export async function buildPortfolio(db: DB, opts: { staleAfterMs: number; now?:
         .map(([accountId, v]) => ({
           accountId,
           name: accountById.get(accountId)?.name ?? `#${accountId}`,
-          kind: accountById.get(accountId)?.kind ?? "other",
+          kind: accountById.get(accountId)?.kind ?? ("other" as const),
           valueEur: money2(v),
         }))
         .sort((x, y) => D(y.valueEur).cmp(D(x.valueEur))),
       periodChanges,
       missingPrices: [...missing],
       warnings: ledger.warnings,
+      yearlyAccounts: await yearlyAccountsNet(db),
     },
   };
 }

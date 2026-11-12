@@ -37,6 +37,8 @@ describe("activity history", () => {
     expect(h.total).toBe(2);
     const [update, create] = h.items;
     expect(create).toMatchObject({ action: "create", title: "Buy 10 XAU · Broker", restorable: false });
+    // The parts too, so the web app can write the quantity in the user's number format.
+    expect(create.parts).toEqual({ type: "Buy", quantity: "10", subject: "XAU · Broker" });
     expect(update).toMatchObject({ action: "update", title: "Buy 12 XAU · Broker" });
     expect(update.changes.fields).toHaveLength(2);
     expect(update.changes.fields).toEqual(

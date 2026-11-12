@@ -53,6 +53,7 @@ services:
       - inside
 
   db:
+    # A tag on purpose, not a fixed digest: `docker compose pull` then brings security updates.
     image: postgres:18-alpine
     restart: unless-stopped
     security_opt:
@@ -75,7 +76,9 @@ services:
       - inside
 
   proxy:
-    # Squid, maintained by Canonical: the only container that reaches the internet.
+    # Squid, maintained by Canonical: the only container that reaches the internet. For Ubuntu 24.04
+    # Canonical updates only the "edge" channel (there's no stable one); a tag, so that
+    # `docker compose pull` brings its updates.
     image: ubuntu/squid:6.6-24.04_edge
     restart: unless-stopped
     security_opt:

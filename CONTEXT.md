@@ -82,7 +82,7 @@ Het afdrukbare overzicht van een belastingjaar: box 3, het werkelijk rendement, 
 
 ## Vooruitblik: het voorgestelde stelsel
 
-**Vooruitblik** (future / 2028):
+**Vooruitblik** (future):
 Een schatting van box 3 onder het voorgestelde stelsel op basis van werkelijk rendement (Wet werkelijk rendement box 3 met de novelle), volgens het voorstel vanaf 2029. Geen berekening voor de aangifte.
 _Vermijd_: nieuw stelsel (alsof het al geldt)
 

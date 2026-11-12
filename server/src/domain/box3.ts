@@ -1,7 +1,7 @@
 import { eq, min } from "drizzle-orm";
 import { z } from "zod";
 import type { DB } from "../db/client.js";
-import { accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
+import { accountKind, accounts, accountYears, metalItems, settings, transactions } from "../db/schema.js";
 import { D, Decimal, ZERO, money2 } from "../lib/decimal.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
 import type { AssetClassKey } from "./portfolio.js";
@@ -53,19 +53,6 @@ export const DEFAULT_RATES: Record<string, Box3Rates> = Object.fromEntries(
   Object.entries(RULES.years).map(([year, { source: _source, proposal: _proposal, ...r }]) => [year, r]),
 );
 
-const ACCOUNT_KINDS = [
-  "broker",
-  "exchange",
-  "vault",
-  "wallet",
-  "bank",
-  "physical",
-  "other",
-  "property",
-  "receivable",
-  "debt",
-  "insurance",
-] as const;
 const NON_CASH_CLASSES = ["stock", "etf", "crypto", "metal", "other"] as const;
 
 const category = z.enum(CATEGORIES);
@@ -74,7 +61,7 @@ export const configSchema = z.object({
   mapping: z.object({
     // Cash balances: a bank or broker (whose cash sits at a bank) counts as a bank balance; cash on a
     // crypto exchange or in a wallet does not.
-    cashByAccountKind: z.record(z.enum(ACCOUNT_KINDS), category),
+    cashByAccountKind: z.record(z.enum(accountKind.enumValues), category),
     classCategory: z.record(z.enum(NON_CASH_CLASSES), category),
     // Whole-account overrides, e.g. a green fund account (exempt) or a pension account (excluded).
     accountOverrides: z.record(z.string().regex(/^\d+$/), category),
@@ -171,7 +158,7 @@ export function categoryOf(
   const override = config.mapping.accountOverrides[String(h.accountId)];
   if (override) return override;
   if (h.assetClass === "cash")
-    return config.mapping.cashByAccountKind[h.accountKind as (typeof ACCOUNT_KINDS)[number]] ?? "bank";
+    return config.mapping.cashByAccountKind[h.accountKind as (typeof accountKind.enumValues)[number]] ?? "bank";
   return config.mapping.classCategory[h.assetClass as (typeof NON_CASH_CLASSES)[number]] ?? "other";
 }
 

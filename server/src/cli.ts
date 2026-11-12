@@ -9,7 +9,14 @@
  * Encrypted backups use BACKUP_PASSPHRASE from the environment.
  */
 import fs from "node:fs";
-import { listBackups, readBackupFile, resolveBackupFile, restoreBackup, writeBackupFile } from "./backup/backup.js";
+import {
+  checkRestorable,
+  listBackups,
+  readBackupFile,
+  resolveBackupFile,
+  restoreBackup,
+  writeBackupFile,
+} from "./backup/backup.js";
 import { decryptBackup } from "./backup/crypto.js";
 import { loadConfig } from "./config.js";
 import { openDatabase } from "./db/client.js";
@@ -72,6 +79,8 @@ async function main() {
       console.log(`Backup written: ${config.BACKUP_DIR}/${b.name} (${Math.max(1, Math.round(b.sizeBytes / 1024))} KB)`);
     } else {
       const backup = await readBackupFile(resolveBackupFile(arg, config.BACKUP_DIR), config.BACKUP_PASSPHRASE);
+      // Refused before the safety backup, so a backup that can't be restored leaves nothing behind.
+      checkRestorable(backup);
       const safety = await writeBackupFile(database.db, config.BACKUP_DIR, "prerestore", config.BACKUP_PASSPHRASE);
       console.log(`Safety backup of the current data: ${config.BACKUP_DIR}/${safety.name}`);
       const counts = await restoreBackup(database.db, backup);

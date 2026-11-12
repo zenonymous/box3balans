@@ -77,7 +77,7 @@ Bronnen:
 
 ## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
 
-**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. Dit hoofdstuk en de vooruitblik in de app volgen dat na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
+**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. De vooruitblik in de app noemt sinds 0.1.48 2029 en heeft geen instelling meer voor € 1.000; dit hoofdstuk, en belasting bij verkoop in de vooruitblik, volgen na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
 
 Stand op 8 oktober 2026:
 
@@ -95,7 +95,7 @@ Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstel
 - **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de brief van 29 september zegt daar niets over.
 - **Groene beleggingen** houden een heffingskorting.
 
-Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De vooruitblik in de app heeft daarom naast het wetsvoorstel de instelling _Kabinetsbrief 29 sep 2026_: € 1.000 heffingsvrij resultaat, 36% en geen terugwenteling (de brief noemt die niet). **Belasting bij verkoop van financiële instrumenten bootst de vooruitblik nog niet na** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); voor beleggingen die je niet verkoopt, toont hij dus meer belasting dan de novelle zou heffen. Elke instelling is aan te passen.
+Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De vooruitblik in de app had naast het wetsvoorstel een instelling voor die brief (€ 1.000 heffingsvrij resultaat); sinds de aanpassing van 3 november, die de verlaging schrapte, rekent hij alleen met het wetsvoorstel. **Belasting bij verkoop van financiële instrumenten bootst de vooruitblik nog niet na** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); voor beleggingen die je niet verkoopt, toont hij dus meer belasting dan de novelle zou heffen. Elke instelling is aan te passen.
 
 Niet beschreven in de bronnen, en aangenomen door de app:
 

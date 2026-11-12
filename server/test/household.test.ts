@@ -336,7 +336,7 @@ describe("household and values per year in box 3", () => {
   });
 });
 
-describe("homes in the 2028 preview", () => {
+describe("homes in the 2029 preview", () => {
   const yearly = async (name: string, rows: object[]) => {
     const a = await ok("POST", "/api/accounts", { name, kind: "property", tracking: "yearly" });
     await ok("PUT", `/api/accounts/${a.id}/years`, { rows });

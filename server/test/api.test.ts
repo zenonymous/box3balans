@@ -292,6 +292,41 @@ describe("portfolio flow", () => {
     expect(json(await t.api("GET", "/api/transactions")).total).toBe(0);
   });
 
+  // The overview's total is what's tracked with transactions and prices. Accounts kept as values per
+  // year only have a value on 1 January, so the summary gives their net value apart, on the last
+  // 1 January entered for each. Worked by hand: savings 12,000 + home 250,000 − student loan 20,000
+  // = 242,000 on 1 January 2025; an archived account doesn't count. A loan to a friend with only 2024
+  // (3,000) makes it 245,000, with the years now differing. A home sold long ago, last filled in for
+  // 2021 and never archived, stays out: its value says nothing about now.
+  it("gives the net value of accounts kept as values per year, which the total leaves out", async () => {
+    t = await createTestApp();
+    const summary = async () => json(await t.api("GET", "/api/portfolio")).summary;
+    const yearly = async (name: string, kind: string, rows: object[], archived = false) => {
+      const a = json(await t.api("POST", "/api/accounts", { name, kind, tracking: "yearly" }));
+      expect((await t.api("PUT", `/api/accounts/${a.id}/years`, { rows })).statusCode).toBe(200);
+      if (archived) await t.api("PUT", `/api/accounts/${a.id}`, { archived: true });
+    };
+    expect((await summary()).yearlyAccounts).toBeNull();
+    await yearly("Spaarrekening", "bank", [
+      { year: 2024, valueEur: "10000" },
+      { year: 2025, valueEur: "12000" },
+    ]);
+    await yearly("Huis", "property", [{ year: 2025, valueEur: "250000" }]);
+    await yearly("Studieschuld", "debt", [{ year: 2025, valueEur: "20000" }]);
+    await yearly("Oude rekening", "bank", [{ year: 2025, valueEur: "5000" }], true);
+    expect((await summary()).yearlyAccounts).toEqual({
+      netEur: "242000.00",
+      year: 2025,
+      yearsDiffer: false,
+      olderLeftOut: false,
+    });
+    await yearly("Lening aan Eva", "receivable", [{ year: 2024, valueEur: "3000" }]);
+    const differing = { netEur: "245000.00", year: 2025, yearsDiffer: true, olderLeftOut: false };
+    expect((await summary()).yearlyAccounts).toEqual(differing);
+    await yearly("Verkocht huis", "property", [{ year: 2021, valueEur: "180000" }]);
+    expect((await summary()).yearlyAccounts).toEqual({ ...differing, olderLeftOut: true });
+  });
+
   it("counts transactions per account correctly", async () => {
     t = await createTestApp();
     const a = json(await t.api("POST", "/api/accounts", { name: "A", kind: "bank" }));

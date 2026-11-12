@@ -1,8 +1,10 @@
 # Weekly update proposals; minor and patch updates come grouped in one pull request per ecosystem.
 # A new version is only proposed once it's at least 14 days old (cooldown), so a broken or
 # compromised release has time to be noticed first. Security updates aren't held back.
-# The PostgreSQL image in docker-compose.yml is left out on purpose: a new major version needs a
-# backup and restore (README → PostgreSQL upgraden), and patch releases arrive with `docker compose pull`.
+# The images in the compose files (PostgreSQL, and Squid in deploy/egress) are left out on purpose:
+# they're pulled by tag, so their updates arrive with `docker compose pull`, and a new major version
+# of PostgreSQL needs a backup and restore (README → PostgreSQL upgraden). Pinning them to a digest
+# would hold those updates back for anyone who keeps their compose file.
 version: 2
 updates:
   - package-ecosystem: npm
