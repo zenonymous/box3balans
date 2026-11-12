@@ -7,7 +7,7 @@ import { accounts, assets, syncIgnored, transactions } from "../db/schema.js";
 import { settlesInCash, type TxType } from "../domain/ledger.js";
 import { audit } from "../lib/audit.js";
 import { D, str } from "../lib/decimal.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { currencyCode, decimalString, idParam, isoDay } from "../lib/validation.js";
 import type { FxService } from "../prices/fx.js";
 import { AssetResolver } from "../sync/assets.js";
@@ -227,8 +227,7 @@ export async function transactionRoutes(app: FastifyInstance) {
 
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!before) throw notFound(tr("Transaction"));
+    const before = found(await db.select().from(transactions).where(eq(transactions.id, id)), tr("Transaction"));
     if (before.transferGroup) {
       // Keep transfer legs consistent: only date, quantity, fee and notes are editable per leg.
       const patch = z
@@ -284,8 +283,7 @@ export async function transactionRoutes(app: FastifyInstance) {
   // deposit again and are never auto-matched again.
   app.post("/:id/unlink", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [row] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!row) throw notFound(tr("Transaction"));
+    const row = found(await db.select().from(transactions).where(eq(transactions.id, id)), tr("Transaction"));
     if (!row.transferGroup) throw new HttpError(400, tr("This transaction is not part of a transfer"));
     const legs = await db.select().from(transactions).where(eq(transactions.transferGroup, row.transferGroup));
     const history = new HistoryService(db, prices.fx);
@@ -311,8 +309,7 @@ export async function transactionRoutes(app: FastifyInstance) {
 
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(transactions).where(eq(transactions.id, id));
-    if (!before) throw notFound(tr("Transaction"));
+    const before = found(await db.select().from(transactions).where(eq(transactions.id, id)), tr("Transaction"));
     // Deleting one leg of a transfer deletes both.
     const victims = before.transferGroup
       ? await db.select().from(transactions).where(eq(transactions.transferGroup, before.transferGroup))

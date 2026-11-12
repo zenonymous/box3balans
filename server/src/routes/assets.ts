@@ -3,7 +3,7 @@ import { and, asc, eq, ne } from "drizzle-orm";
 import { z } from "zod";
 import { assets, pricesLatest, transactions } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { currencyCode, decimalString, idParam } from "../lib/validation.js";
 import { coingeckoSearch } from "../prices/coingecko.js";
 import { migrationOf } from "../prices/migrations.js";
@@ -125,8 +125,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const data = updateBody.parse(req.body);
-    const [before] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!before) throw notFound(tr("Asset"));
+    const before = found(await db.select().from(assets).where(eq(assets.id, id)), tr("Asset"));
     // Built-in assets keep their (English) name and symbol; they're shown translated.
     if (displayName(before) !== before.name || isBuiltin(before)) {
       delete data.name;
@@ -148,8 +147,7 @@ export async function assetRoutes(app: FastifyInstance) {
   app.post("/:id/price", async (req) => {
     const { id } = idParam.parse(req.params);
     const { price, currency } = z.object({ price: decimalString, currency: currencyCode }).parse(req.body);
-    const [asset] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!asset) throw notFound(tr("Asset"));
+    const asset = found(await db.select().from(assets).where(eq(assets.id, id)), tr("Asset"));
     if (asset.priceSource !== "manual") throw new HttpError(400, tr("Only manually priced assets accept a price"));
     await prices.setManual(id, price, currency);
     return { ok: true };
@@ -157,8 +155,7 @@ export async function assetRoutes(app: FastifyInstance) {
 
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(assets).where(eq(assets.id, id));
-    if (!before) throw notFound(tr("Asset"));
+    const before = found(await db.select().from(assets).where(eq(assets.id, id)), tr("Asset"));
     if (before.priceSource === "metal") throw new HttpError(400, tr("Built-in metal assets cannot be deleted"));
     const [used] = await db
       .select({ id: transactions.id })

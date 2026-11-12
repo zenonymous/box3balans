@@ -3,7 +3,7 @@ import { asc, eq } from "drizzle-orm";
 import { z, ZodError } from "zod";
 import { accounts, integrations } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound, notInDemo } from "../lib/errors.js";
+import { found, HttpError, notInDemo } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import { PROVIDERS } from "../sync/service.js";
 import { purgeSynced } from "../sync/purge.js";
@@ -111,8 +111,7 @@ export async function integrationRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const body = updateBody.parse(req.body);
-    const [row] = await db.select().from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound(tr("Connection"));
+    const row = found(await db.select().from(integrations).where(eq(integrations.id, id)), tr("Connection"));
     const patch: Partial<typeof integrations.$inferInsert> = {};
     if (body.enabled !== undefined) patch.enabled = body.enabled;
     if (body.credentials) {
@@ -135,8 +134,7 @@ export async function integrationRoutes(app: FastifyInstance) {
   // Starts a sync in the background (large histories take minutes); the UI polls GET /.
   app.post("/:id/sync", { config: { rateLimit: { max: 6, timeWindow: "1 minute" } } }, async (req, reply) => {
     const { id } = idParam.parse(req.params);
-    const [row] = await db.select({ id: integrations.id }).from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound(tr("Connection"));
+    found(await db.select({ id: integrations.id }).from(integrations).where(eq(integrations.id, id)), tr("Connection"));
     if (!sync.start(id)) throw new HttpError(409, tr("A sync is already running"));
     return reply.code(202).send({ started: true });
   });
@@ -147,8 +145,7 @@ export async function integrationRoutes(app: FastifyInstance) {
     const { deleteTransactions } = z
       .object({ deleteTransactions: z.enum(["true", "false"]).default("false") })
       .parse(req.query);
-    const [row] = await db.select().from(integrations).where(eq(integrations.id, id));
-    if (!row) throw notFound(tr("Connection"));
+    const row = found(await db.select().from(integrations).where(eq(integrations.id, id)), tr("Connection"));
     if (sync.isRunning(id)) throw new HttpError(409, tr("Wait for the running sync to finish"));
     let removed = 0;
     if (deleteTransactions === "true") removed = await purgeSynced(db, row.accountId, "api");

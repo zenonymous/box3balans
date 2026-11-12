@@ -3,7 +3,7 @@ import { and, asc, eq } from "drizzle-orm";
 import { z } from "zod";
 import { accounts, persons } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { tr } from "../i18n/index.js";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, { error: () => tr("Use YYYY-MM-DD") });
@@ -44,8 +44,7 @@ export async function householdRoutes(app: FastifyInstance) {
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
     const data = body.omit({ role: true }).partial().parse(req.body);
-    const [before] = await db.select().from(persons).where(eq(persons.id, id));
-    if (!before) throw notFound(tr("Person"));
+    const before = found(await db.select().from(persons).where(eq(persons.id, id)), tr("Person"));
     const [row] = await db.update(persons).set(data).where(eq(persons.id, id)).returning();
     await audit(db, "person", id, "update", before, row);
     return row;
@@ -53,8 +52,7 @@ export async function householdRoutes(app: FastifyInstance) {
 
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(persons).where(eq(persons.id, id));
-    if (!before) throw notFound(tr("Person"));
+    const before = found(await db.select().from(persons).where(eq(persons.id, id)), tr("Person"));
     await db.transaction(async (trx) => {
       // Accounts of a removed child or partner become yours, rather than counting for nobody.
       if (before.role === "child")

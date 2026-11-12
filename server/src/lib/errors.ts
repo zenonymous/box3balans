@@ -10,6 +10,12 @@ export class HttpError extends Error {
 
 /** `what` is already translated, e.g. notFound(tr("Account")). */
 export const notFound = (what: string) => new HttpError(404, tr("{what} not found", { what }));
+/** The one row a lookup by id gave, or a 404 naming `what` (already translated). */
+export function found<T>(rows: T[], what: string): T {
+  const [row] = rows;
+  if (row === undefined) throw notFound(what);
+  return row;
+}
 export const notInDemo = () => new HttpError(403, tr("Not available in the demo"));
 
 /** Postgres SQLSTATE of a database error, looking through driver/ORM wrappers. */
