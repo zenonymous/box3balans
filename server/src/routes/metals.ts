@@ -8,7 +8,7 @@ import { METAL_PRODUCTS } from "../domain/metal-products.js";
 import { loadLedger } from "../domain/portfolio.js";
 import { audit } from "../lib/audit.js";
 import { D, Decimal, TROY_OUNCE_G, ZERO, money2, str } from "../lib/decimal.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError, notFound } from "../lib/errors.js";
 import { decimalString, idParam, isoDay } from "../lib/validation.js";
 import { tr } from "../i18n/index.js";
 
@@ -270,8 +270,7 @@ export async function metalRoutes(app: FastifyInstance) {
 
   app.put("/items/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!before) throw notFound(tr("Item"));
+    const before = found(await db.select().from(metalItems).where(eq(metalItems.id, id)), tr("Item"));
     const data = itemBody.parse({ ...before, ...(req.body as object) });
     if ((data.soldDate == null) !== (data.salePriceEur == null)) {
       throw new HttpError(400, tr("Sale date and sale price must be given together"));
@@ -303,8 +302,7 @@ export async function metalRoutes(app: FastifyInstance) {
   app.post("/items/:id/photos", { bodyLimit: 6 * 1024 * 1024 }, async (req) => {
     const { id } = idParam.parse(req.params);
     const { mime, data } = photoBody.parse(req.body);
-    const [item] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!item) throw notFound(tr("Item"));
+    const item = found(await db.select().from(metalItems).where(eq(metalItems.id, id)), tr("Item"));
     const buf = Buffer.from(data, "base64");
     if (buf.length > MAX_PHOTO_BYTES) throw new HttpError(413, tr("Photo is too large (max 4 MB)"));
     if (sniffImage(buf) !== mime) throw new HttpError(400, tr("That isn't a JPEG, PNG or WebP image"));
@@ -320,8 +318,7 @@ export async function metalRoutes(app: FastifyInstance) {
 
   app.get("/photos/:id", async (req, reply) => {
     const { id } = idParam.parse(req.params);
-    const [p] = await db.select().from(metalPhotos).where(eq(metalPhotos.id, id));
-    if (!p) throw notFound(tr("Photo"));
+    const p = found(await db.select().from(metalPhotos).where(eq(metalPhotos.id, id)), tr("Photo"));
     // A photo never changes under its id.
     reply.header("content-type", p.mime).header("cache-control", "private, max-age=31536000, immutable");
     return Buffer.from(p.data, "base64");
@@ -342,8 +339,7 @@ export async function metalRoutes(app: FastifyInstance) {
 
   app.delete("/items/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(metalItems).where(eq(metalItems.id, id));
-    if (!before) throw notFound(tr("Item"));
+    const before = found(await db.select().from(metalItems).where(eq(metalItems.id, id)), tr("Item"));
     await db.delete(metalItems).where(eq(metalItems.id, id));
     await audit(db, "metal_item", id, "delete", before, null);
     return { ok: true };

@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { DB } from "../db/client.js";
 import { accounts, imports, settings, transactions } from "../db/schema.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { idParam } from "../lib/validation.js";
 import {
   FIELDS,
@@ -355,8 +355,7 @@ export async function importRoutes(app: FastifyInstance) {
   // transfer become a plain deposit or withdrawal again (and can be linked anew later).
   app.delete("/imports/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [imp] = await db.select().from(imports).where(eq(imports.id, id));
-    if (!imp) throw notFound(tr("Import"));
+    const imp = found(await db.select().from(imports).where(eq(imports.id, id)), tr("Import"));
     const rows = await db.select().from(transactions).where(eq(transactions.importId, id));
     const groups = [...new Set(rows.map((r) => r.transferGroup).filter((g): g is string => !!g))];
     const partners = groups.length

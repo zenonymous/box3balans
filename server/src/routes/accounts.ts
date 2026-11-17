@@ -8,7 +8,7 @@ import { readYearStatement } from "../import/yearStatement.js";
 import { pdfContribution, personalNames } from "../import/contribute.js";
 import { APP_VERSION } from "../lib/version.js";
 import { audit } from "../lib/audit.js";
-import { HttpError, notFound } from "../lib/errors.js";
+import { found, HttpError } from "../lib/errors.js";
 import { D, type Decimal } from "../lib/decimal.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
@@ -170,8 +170,7 @@ export async function accountRoutes(app: FastifyInstance) {
 
   app.put("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!before) throw notFound(tr("Account"));
+    const before = found(await db.select().from(accounts).where(eq(accounts.id, id)), tr("Account"));
     const data = await checked(body.partial().parse(req.body), before);
     const [row] = await db.update(accounts).set(data).where(eq(accounts.id, id)).returning();
     await audit(db, "account", id, "update", before, row);
@@ -189,8 +188,7 @@ export async function accountRoutes(app: FastifyInstance) {
   app.put("/:id/years", async (req) => {
     const { id } = idParam.parse(req.params);
     const { rows } = z.object({ rows: z.array(yearRow).max(200) }).parse(req.body);
-    const [acc] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!acc) throw notFound(tr("Account"));
+    const acc = found(await db.select().from(accounts).where(eq(accounts.id, id)), tr("Account"));
     if (acc.tracking !== "yearly")
       throw new HttpError(400, tr("This account is kept with transactions, not values per year"));
     if (new Set(rows.map((r) => r.year)).size !== rows.length)
@@ -293,8 +291,7 @@ export async function accountRoutes(app: FastifyInstance) {
 
   app.delete("/:id", async (req) => {
     const { id } = idParam.parse(req.params);
-    const [before] = await db.select().from(accounts).where(eq(accounts.id, id));
-    if (!before) throw notFound(tr("Account"));
+    const before = found(await db.select().from(accounts).where(eq(accounts.id, id)), tr("Account"));
     const [used] = await db
       .select({ id: transactions.id })
       .from(transactions)

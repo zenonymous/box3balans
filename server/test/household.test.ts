@@ -336,7 +336,7 @@ describe("household and values per year in box 3", () => {
   });
 });
 
-describe("homes in the 2028 preview", () => {
+describe("homes in the 2029 preview", () => {
   const yearly = async (name: string, rows: object[]) => {
     const a = await ok("POST", "/api/accounts", { name, kind: "property", tracking: "yearly" });
     await ok("PUT", `/api/accounts/${a.id}/years`, { rows });
@@ -358,7 +358,8 @@ describe("homes in the 2028 preview", () => {
       { year: 2025, valueEur: "310000", details: rented },
       { year: 2026, valueEur: "320000", details: rented },
     ]);
-    const r = await ok("GET", "/api/box3/future?preset=bill");
+    // Worked by hand at the single rate of 36% the bill had before the Tweede Kamer split it.
+    const r = await ok("GET", "/api/box3/future?preset=bill&ratePct=36&topRatePct=36");
     expect(r.params.propertyPct).toBe(3.35);
     const row = (year: number) => r.rows.find((x: any) => x.year === year);
     // 3.35% of 200,000 = 6,700 for the holiday home and the let home's 6,000 rent: 12,700; 10,900

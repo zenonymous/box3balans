@@ -137,13 +137,29 @@ export function decodeBackup(buf: Buffer): BackupFile {
  */
 export function checkRestorable(b: BackupFile): void {
   if (b.schemaVersion > schemaVersion()) {
-    throw new Error("This backup comes from a newer version of the app; update the app first.");
+    throw new Error(tr("This backup comes from a newer version of the app; update the app first."));
   }
   if (!b.tables[getTableName(s.users)]?.length) {
     throw new Error(
       tr("This backup holds no user: it was made before Box3balans was set up, so there's nothing in it to restore."),
     );
   }
+}
+
+/**
+ * The command line's restore, in the order that matters: read the file, refuse what can't be
+ * restored (so that leaves nothing behind), write a safety backup of the current data, then replace
+ * everything. `onSafety` hears about the safety backup before the data is replaced.
+ */
+export async function restoreFromFile(
+  db: DB,
+  opts: { file: string; dir: string; passphrase?: string; onSafety?: (safety: BackupInfo) => void },
+): Promise<{ backup: BackupFile; safety: BackupInfo; counts: Record<string, number> }> {
+  const backup = await readBackupFile(opts.file, opts.passphrase);
+  checkRestorable(backup);
+  const safety = await writeBackupFile(db, opts.dir, "prerestore", opts.passphrase);
+  opts.onSafety?.(safety);
+  return { backup, safety, counts: await restoreBackup(db, backup) };
 }
 
 /**

@@ -97,7 +97,7 @@ export async function destroySession(db: DB, token: string | undefined) {
 // No 0/O, 1/I/L: easy to read from a log and type over.
 const SETUP_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 
-/** A one-time code for creating the first account, like "K7QX2-MPF9R" (about 49 bits). */
+/** A code for creating the first user, like "K7QX2-MPF9R" (about 49 bits). */
 export function newSetupCode(): string {
   // randomInt picks each character evenly (a byte modulo 31 would favour some).
   const chars = Array.from({ length: 10 }, () => SETUP_ALPHABET[randomInt(SETUP_ALPHABET.length)]).join("");
@@ -105,7 +105,7 @@ export function newSetupCode(): string {
 }
 
 /**
- * Setting up the user: the one-time code it takes, while there's no user. `required`: setup never
+ * Setting up the user: the code it takes, while there's no user. `required`: setup never
  * goes without a code (false only in tests and the demo, which has its user from the start).
  */
 export interface SetupGate {
@@ -116,20 +116,22 @@ export interface SetupGate {
 /**
  * Makes the setup code and puts it in the log when there's no user and none is waiting: at the
  * first start, and again should the user be gone later (a user table emptied some other way), so
- * setup never takes anyone without it. `own` is SETUP_CODE, when set.
+ * setup never takes anyone without it. `own` is SETUP_CODE, when set: then that same code applies
+ * each time. Returns whether there's no user yet.
  */
 export async function ensureSetupCode(
   db: DB,
   setup: SetupGate,
   own: string | undefined,
   log: { warn: (msg: string) => void },
-): Promise<void> {
-  if (!setup.required || setup.code) return;
-  if ((await userCount(db)) > 0) return;
-  // Another request may have made one meanwhile: keep that, it's the one in the log.
-  if (setup.code) return;
-  setup.code = own ?? newSetupCode();
-  log.warn(`No account yet. Open Box3balans in your browser and use this setup code: ${setup.code}`);
+): Promise<boolean> {
+  const noUser = (await userCount(db)) === 0;
+  // Nothing is awaited between this check and setting the code, so two requests can't both make one.
+  if (noUser && setup.required && !setup.code) {
+    setup.code = own ?? newSetupCode();
+    log.warn(`No user yet. Open Box3balans in your browser and use this setup code: ${setup.code}`);
+  }
+  return noUser;
 }
 
 /** Whether `given` is the setup code, ignoring case, spaces and dashes; in constant time. */

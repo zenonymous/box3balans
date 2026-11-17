@@ -77,7 +77,7 @@ describe.skipIf(!RUN)("box 3 with years of history", () => {
     await t?.close();
   });
 
-  it("computes a year, its actual return and the 2028 preview", async () => {
+  it("computes a year, its actual return and the 2029 preview", async () => {
     await time("GET /api/box3/2025 (cold)", () => t.api("GET", "/api/box3/2025"));
     await time("GET /api/box3/2025", () => t.api("GET", "/api/box3/2025"));
     await time("GET /api/box3/2025/return", () => t.api("GET", "/api/box3/2025/return"));

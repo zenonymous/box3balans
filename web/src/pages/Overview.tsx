@@ -30,24 +30,36 @@ export function OverviewPage() {
   const failed = status.data?.status?.failed ?? [];
 
   if (holdings.length === 0) {
+    const startLinks = [
+      <Link key="a" className="text-accent underline" to="/accounts" />,
+      <Link key="t" className="text-accent underline" to="/transactions" />,
+      <Link key="m" className="text-accent underline" to="/metals" />,
+    ];
     return (
       <>
         <PageHeader title={t("Overview")} />
         <Card>
-          <Empty title={t("Nothing here yet")}>
-            <NotCounted value={summary.notCounted} />
-            <p>
-              {tj(
-                "New here? <0>Get started</0>: your household, your accounts and a first box 3 estimate in a few steps.",
-                [<Link key="s" className="text-accent underline" to="/start" />],
-              )}
-            </p>
+          {/* With only accounts kept as values per year there is wealth to show, just not here. */}
+          <Empty title={summary.yearlyAccounts ? t("Nothing tracked with transactions yet") : t("Nothing here yet")}>
+            <YearlyAccounts value={summary.yearlyAccounts} alone />
+            {!summary.yearlyAccounts && (
+              <p>
+                {tj(
+                  "New here? <0>Get started</0>: your household, your accounts and a first box 3 estimate in a few steps.",
+                  [<Link key="s" className="text-accent underline" to="/start" />],
+                )}
+              </p>
+            )}
             <p className="mt-2">
-              {tj("Or go your own way: add <0>accounts</0>, record <1>transactions</1> or add <2>physical metal</2>.", [
-                <Link key="a" className="text-accent underline" to="/accounts" />,
-                <Link key="t" className="text-accent underline" to="/transactions" />,
-                <Link key="m" className="text-accent underline" to="/metals" />,
-              ])}
+              {summary.yearlyAccounts
+                ? tj(
+                    "Add <0>accounts</0>, record <1>transactions</1> or add <2>physical metal</2> to follow their value day by day.",
+                    startLinks,
+                  )
+                : tj(
+                    "Or go your own way: add <0>accounts</0>, record <1>transactions</1> or add <2>physical metal</2>.",
+                    startLinks,
+                  )}
             </p>
           </Empty>
         </Card>
@@ -78,7 +90,7 @@ export function OverviewPage() {
       <section className="mb-6">
         <div className="text-sm text-ink-2">{t("Net worth")}</div>
         <div className="mt-1 text-4xl font-semibold tracking-tight text-ink sm:text-5xl">{eur(summary.totalEur)}</div>
-        <NotCounted value={summary.notCounted} />
+        <YearlyAccounts value={summary.yearlyAccounts} />
         <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
           <span>
             <Delta value={summary.dayChangeEur} percent={summary.dayChangePct} />{" "}
@@ -301,25 +313,36 @@ function AllocationCard({ summary, holdings }: { summary: Summary; holdings: Hol
 /**
  * "Vermogen" is what's tracked with transactions and prices. Accounts kept as values per year (a home,
  * savings, a loan) only have a value on 1 January, so they aren't in it: say so, with their net value
- * as the server works it out (PortfolioSummary.notCounted).
+ * as the server works it out (PortfolioSummary.yearlyAccounts). `alone`: on the empty overview, where
+ * there's no total above to compare with.
  */
-function NotCounted({ value }: { value: Summary["notCounted"] }) {
+function YearlyAccounts({ value, alone }: { value: Summary["yearlyAccounts"]; alone?: boolean }) {
   if (!value) return null;
   const link = [<Link key="b" to="/box3" className="text-accent" />];
   const params = { amount: eur(value.netEur, { decimals: 0 }), year: value.year };
+  const text = alone
+    ? value.yearsDiffer
+      ? tj(
+          "Your accounts kept as values per year: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>",
+          link,
+          params,
+        )
+      : tj("Your accounts kept as values per year: {amount} net on 1 January {year}. <0>Box 3 →</0>", link, params)
+    : value.yearsDiffer
+      ? tj(
+          "Accounts kept as values per year, not counted above: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>",
+          link,
+          params,
+        )
+      : tj(
+          "Accounts kept as values per year, not counted above: {amount} net on 1 January {year}. <0>Box 3 →</0>",
+          link,
+          params,
+        );
   return (
     <p className="mt-1 text-sm text-muted">
-      {value.mixed
-        ? tj(
-            "Accounts kept as values per year, not counted above: {amount} net, each on the last 1 January entered (up to {year}). <0>Box 3 →</0>",
-            link,
-            params,
-          )
-        : tj(
-            "Accounts kept as values per year, not counted above: {amount} net on 1 January {year}. <0>Box 3 →</0>",
-            link,
-            params,
-          )}
+      {text}
+      {value.olderLeftOut && <> {t("Accounts whose last value is older than that are left out.")}</>}
     </p>
   );
 }

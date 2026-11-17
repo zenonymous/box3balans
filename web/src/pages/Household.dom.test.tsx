@@ -63,13 +63,29 @@ describe("Box 3 page", () => {
   });
 
   // Since 3 November the novelle proposes 2029 and keeps €1,800: no setting for the September letter.
-  it("presents the preview as proposed from 2029, with the bill as its assumptions", async () => {
+  it("presents the preview as proposed from 2029, starting from the bill's figures", async () => {
     showPage("/box3?year=2025", "box3", <Box3Page />);
     expect(await screen.findByText(/Vanaf 2029: belasting over het werkelijk rendement/)).toBeTruthy();
-    const assumptions = await screen.findByLabelText("Aannames");
-    const options = await within(assumptions).findAllByRole("option");
-    expect(options.map((o) => o.getAttribute("value"))).toEqual(["bill"]);
+    // One starting point, so nothing to pick: the bill's €1,800 is what the field starts from.
+    const allowance = await screen.findByLabelText(/Heffingsvrij resultaat/);
+    await waitFor(() => expect(allowance.getAttribute("placeholder")).toBe("1800"));
+    expect(screen.queryByLabelText("Aannames")).toBeNull();
     expect(screen.queryByText(/29 september/)).toBeNull();
+  });
+
+  // The two rates the Tweede Kamer adopted on 12 November 2026, each adjustable. Amounts are typed in
+  // the user's number format: "70.000" is seventy thousand, not seventy.
+  it("starts from the two rates and reads an amount the Dutch way", async () => {
+    const api = showPage("/box3?year=2025", "box3", <Box3Page />);
+    const top = await screen.findByLabelText("Toptarief (%)");
+    await waitFor(() => expect(top.getAttribute("placeholder")).toBe("38.5"));
+    expect(screen.getByLabelText("Tarief (%)").getAttribute("placeholder")).toBe("35.5");
+    const from = screen.getByLabelText("Toptarief vanaf (€)");
+    expect(from.getAttribute("placeholder")).toBe("60000");
+    fireEvent.change(from, { target: { value: "70.000" } });
+    await waitFor(() =>
+      expect(api.requests.some((r) => r.url === "/api/box3/future?preset=bill&topRateFromEur=70000")).toBe(true),
+    );
   });
 
   it("says how much of the homes' gain waits for their sale, and takes another vastgoedbijtelling", async () => {

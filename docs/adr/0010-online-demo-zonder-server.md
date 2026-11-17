@@ -12,4 +12,4 @@ Zo is het echte uitvoer van de echte code, zonder server om te onderhouden, zond
 - **De hele app in de browser**, met PGlite: de database kan daar draaien, Fastify en `node:crypto` niet zonder veel nabootsen, en het wordt een download van meerdere MB.
 - **Alleen schermafbeeldingen**: staan al in de README, maar je kunt er niet doorheen klikken.
 
-Wat er niet in zit: vragen met vrij getypte invoer (een belegging zoeken, eigen aannames in de voorvertoning van 2028) en alles wat iets opslaat of inleest.
+Wat er niet in zit: vragen met vrij getypte invoer (een belegging zoeken, eigen aannames in de vooruitblik op 2029) en alles wat iets opslaat of inleest.

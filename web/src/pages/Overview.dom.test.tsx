@@ -21,6 +21,21 @@ describe("Overview", () => {
     expect(within(line).getByRole("link", { name: "Box 3 →" }).getAttribute("href")).toBe("/box3");
   });
 
+  // With only such accounts the overview has no total to compare with: it doesn't call itself empty
+  // or say "above", and "New here?" is for someone who hasn't started.
+  it("names what's kept as values per year when nothing is tracked with transactions", async () => {
+    const yearlyAccounts = { netEur: "242000.00", year: 2025, yearsDiffer: false, olderLeftOut: true };
+    showPage("/", "/", <OverviewPage />, {
+      "GET /api/portfolio": { holdings: [], summary: { yearlyAccounts } },
+    });
+    expect(await screen.findByText("Nog niets dat met transacties wordt gevolgd")).toBeTruthy();
+    const line = screen.getByText(/Je rekeningen met waarden per jaar/);
+    expect(line.textContent).toMatch(/netto €\s242\.000 op 1 januari 2025\./);
+    expect(line.textContent).toMatch(/Rekeningen waarvan de laatste waarde ouder is, tellen niet mee\./);
+    expect(screen.queryByText(/hierboven niet meegeteld/)).toBeNull();
+    expect(screen.queryByText(/Nieuw hier/)).toBeNull();
+  });
+
   it("loads another history range when you pick it", async () => {
     const api = showPage("/", "/", <OverviewPage />);
     const card = (await screen.findByRole("heading", { name: "Vermogen in de tijd" })).closest("section")!;

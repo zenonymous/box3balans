@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import type { LedgerTx, TxType } from "../src/domain/ledger.js";
 import os from "node:os";
 import path from "node:path";
 import type { FastifyInstance, LightMyRequestResponse } from "fastify";
@@ -149,3 +150,24 @@ export async function createTestApp(
   }
   return t;
 }
+
+let nextLedgerTxId = 1;
+/** A transaction as the ledger takes it, for tests that replay a few by hand. */
+export const ledgerTx = (type: TxType, fields: Partial<LedgerTx> = {}): LedgerTx => ({
+  id: nextLedgerTxId++,
+  accountId: 1,
+  assetId: 1,
+  type,
+  occurredAt: new Date("2024-01-01T00:00:00Z"),
+  quantity: "0",
+  price: "0",
+  fxRate: "1",
+  feeEur: "0",
+  amount: "0",
+  taxWithheld: "0",
+  transferGroup: null,
+  ...fields,
+});
+
+/** Noon (UTC) on a day: the same day in Dutch time, summer and winter. */
+export const noon = (day: string) => new Date(`${day}T12:00:00Z`);

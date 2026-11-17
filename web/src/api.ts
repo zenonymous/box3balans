@@ -281,8 +281,8 @@ export interface Summary {
   periodChanges: { period: "1W" | "1M" | "YTD"; fromDay: string; changeEur: string; changePct: string | null }[];
   missingPrices: string[];
   warnings: string[];
-  // Accounts kept as values per year, which totalEur leaves out (server: PortfolioSummary.notCounted).
-  notCounted: { netEur: string; year: number; mixed: boolean } | null;
+  // Accounts kept as values per year, which totalEur leaves out (server: PortfolioSummary.yearlyAccounts).
+  yearlyAccounts: { netEur: string; year: number; yearsDiffer: boolean; olderLeftOut: boolean } | null;
 }
 
 export interface Snapshot {

@@ -14,6 +14,7 @@
  * can lack fields added since: a field added to them later should be optional on the web.
  */
 import type * as Web from "../src/api";
+import type * as WebLabels from "../src/labels";
 import type * as Box3 from "../../server/src/domain/box3.js";
 import type * as Box3Actual from "../../server/src/domain/box3Actual.js";
 import type * as Dossier from "../../server/src/domain/dossier.js";
@@ -84,6 +85,7 @@ export const yearField: Web.YearField = sent<YearStatement.YearField>();
 export const yearStatement: Web.YearStatement = sent<YearStatement.YearStatement>();
 export const assetCandidate: Web.AssetCandidate = sent<Prices.AssetCandidate>();
 export const holding: Web.Holding = sent<Portfolio.Holding>();
+export const summary: Web.Summary = sent<Portfolio.PortfolioSummary>();
 export const metalProduct: Web.MetalProduct = sent<MetalProducts.MetalProduct>();
 export const mismatch: Web.Mismatch = sent<Reconcile.Mismatch>();
 export const checklistItem: Web.ChecklistItem = sent<Peildatum.ChecklistItem>();
@@ -105,6 +107,12 @@ export const returnPart: Web.ReturnPart = sent<Box3Actual.ReturnPart>();
 export const actualReturn: Web.ActualReturn = sent<ActualReturnSent>();
 export const dossier: Web.Dossier = sent<Dossier.Dossier>();
 
+// The kinds only kept as values per year: the same list on both sides, checked in both directions.
+type YearlyOnlyWeb = (typeof WebLabels.YEARLY_ONLY_KIND_LIST)[number];
+type YearlyOnlyServer = (typeof Yearly.YEARLY_ONLY_KIND_LIST)[number];
+export const yearlyOnlyKind: YearlyOnlyWeb = sent<YearlyOnlyServer>();
+export const yearlyOnlyKindBack: YearlyOnlyServer = sent<YearlyOnlyWeb>();
+
 export type FieldsSent = [
   NoneMissing<MissingSent<Web.TxType, Ledger.TxType>>,
   NoneMissing<MissingSent<Web.Person, Household.Person>>,
@@ -116,6 +124,7 @@ export type FieldsSent = [
   NoneMissing<MissingSent<Web.YearStatement, YearStatement.YearStatement>>,
   NoneMissing<MissingSent<Web.AssetCandidate, Prices.AssetCandidate>>,
   NoneMissing<MissingSent<Web.Holding, Portfolio.Holding>>,
+  NoneMissing<MissingSent<Web.Summary, Portfolio.PortfolioSummary>>,
   NoneMissing<MissingSent<Web.MetalProduct, MetalProducts.MetalProduct>>,
   NoneMissing<MissingSent<Web.Mismatch, Reconcile.Mismatch>>,
   NoneMissing<MissingSent<Web.ChecklistItem, Peildatum.ChecklistItem>>,

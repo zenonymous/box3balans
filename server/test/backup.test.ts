@@ -13,6 +13,7 @@ import {
   readBackupFile,
   resolveBackupFile,
   restoreBackup,
+  restoreFromFile,
   schemaVersion,
   writeBackupFile,
 } from "../src/backup/backup.js";
@@ -162,8 +163,7 @@ describe("backup and restore", () => {
       const made = json(await t.api("POST", "/api/backups"));
       const restore = (extra: object) =>
         t!.api("POST", `/api/backups/${made.name}/restore`, { confirm: "RESTORE", ...extra });
-      // Three tries: restoring allows three per five minutes.
-      expect(json(await restore({ password: "not it" })).error).toBe("Current password is incorrect");
+      expect(json(await restore({ password: "not it" })).error).toBe("That password isn't right");
 
       const setup = json(await t.api("POST", "/api/auth/2fa/setup"));
       const code = (offset: number) => hotp(base32Decode(setup.secret), totpStep() + offset);
@@ -171,6 +171,12 @@ describe("backup and restore", () => {
       // Turning it on signs every session out and gives this one a fresh cookie.
       t.cookie = `pd_session=${on.cookies.find((c) => c.name === "pd_session")!.value}`;
       expect(json(await restore({ password: PASSWORD })).error).toBe("Enter the code from your authenticator app");
+      expect(json(await restore({ password: PASSWORD, code: "000000" })).error).toBe(
+        "That code isn't right, or was already used",
+      );
+      // A try that stops at the code leaves no safety backup behind.
+      const kept = json(await t.api("GET", "/api/backups")).backups.map((b: { name: string }) => b.name);
+      expect(kept).toEqual([made.name]);
       const ok = await restore({ password: PASSWORD, code: code(0) });
       expect(ok.statusCode, ok.body).toBe(200);
     } finally {
@@ -461,6 +467,41 @@ describe("CSV export", () => {
     expect(lines[0]).toMatch(/^Date,Type,Account,Asset,Symbol,ISIN,Quantity/);
     expect(lines).toHaveLength(4);
     expect(lines[1]).toContain("buy,Broker,Bitcoin,BTC");
+  });
+});
+
+// `node dist/cli.js restore` replaces all data, so its order matters (restoreFromFile).
+describe("the CLI's restore", () => {
+  it("makes a safety backup of the current data first, then restores", async () => {
+    t = await createTestApp();
+    await t.api("POST", "/api/accounts", { name: "Before", kind: "bank" });
+    const made = await writeBackupFile(t.database.db, t.backupDir, "manual", undefined);
+    await t.api("POST", "/api/accounts", { name: "After", kind: "bank" });
+    const accountNames = async () => (await t!.database.db.select().from(s.accounts)).map((a) => a.name);
+    const seen: string[] = [];
+    const done = await restoreFromFile(t.database.db, {
+      file: path.join(t.backupDir, made.name),
+      dir: t.backupDir,
+      onSafety: (safety) => seen.push(safety.name),
+    });
+    expect(seen).toEqual([done.safety.name]);
+    expect(done.safety.name).toMatch(/-prerestore\.json\.gz$/);
+    expect(done.counts.accounts).toBe(1);
+    expect(await accountNames()).toEqual(["Before"]);
+    // The safety backup holds what was there just before: both accounts.
+    const namesAtSafety = (await readBackupFile(path.join(t.backupDir, done.safety.name))).tables.accounts!.map(
+      (r) => r.name as string,
+    );
+    expect(namesAtSafety.sort()).toEqual(["After", "Before"]);
+  });
+
+  it("refuses a backup without a user before making a safety backup", async () => {
+    t = await createTestApp(undefined, { login: false, setupCode: "K7QX2-MPF9R" });
+    const early = await writeBackupFile(t.database.db, t.backupDir, "auto", undefined);
+    await expect(
+      restoreFromFile(t.database.db, { file: path.join(t.backupDir, early.name), dir: t.backupDir }),
+    ).rejects.toThrow(/no user/);
+    expect(listBackups(t.backupDir).map((b) => b.name)).toEqual([early.name]);
   });
 });
 

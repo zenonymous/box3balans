@@ -100,7 +100,7 @@ Een laptop staat niet altijd aan: zolang hij slaapt, worden koersen en koppeling
 
 ## Na de installatie
 
-- **De setupcode:** bij de eerste start zet Box3balans een eenmalige code in zijn log (`No account yet … setup code: K7QX2-MPF9R`); die vraagt het scherm waarop je je gebruiker aanmaakt. Zo kan niemand anders op je netwerk een nieuwe installatie overnemen. Bij elke herstart zolang er nog geen gebruiker is, komt er een nieuwe. Een eigen code kan ook, met `SETUP_CODE` in `.env`.
+- **De setupcode:** bij de eerste start zet Box3balans een setupcode in zijn log (`No user yet … setup code: K7QX2-MPF9R`); die vraagt het scherm waarop je je gebruiker aanmaakt. Zo kan niemand anders op je netwerk een nieuwe installatie overnemen. Bij elke herstart zolang er nog geen gebruiker is, komt er een nieuwe. Een eigen code kan ook, met `SETUP_CODE` in `.env`; dan geldt steeds die.
 - **Extra afgeschermd (optioneel):** draai Box3balans zonder eigen internettoegang, met een proxy die alleen de adressen van de lijst doorlaat; zie [Wat Box3balans verstuurt](privacy.md#afgeschermd-draaien).
 - **Toegang buitenshuis:** gebruik een VPN, zie de [README](../README.md#toegang-buitenshuis-vpn). Zet poort 8080 niet open in je router.
 - **Een server met een openbaar adres** (een VPS): Docker zet een gepubliceerde poort open buiten een firewall als ufw om. Zet daar `HTTP_BIND=127.0.0.1` in `.env` en bereik Box3balans via een VPN of een reverse proxy op die server.

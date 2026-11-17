@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dateInputText, parseDateInput, parseNumberInput, toApiNumber, unambiguous } from "./format";
+import { dateInputText, exactNum, parseDateInput, parseNumberInput, toApiNumber, unambiguous } from "./format";
 
 const nl = (s: string) => parseNumberInput(s, "nl-NL");
 const en = (s: string) => parseNumberInput(s, "en-IE");
@@ -90,5 +90,24 @@ describe("parseDateInput (day first)", () => {
   it("shows an ISO day back day first", () => {
     expect(dateInputText("2020-07-27")).toBe("27-07-2020");
     expect(dateInputText("")).toBe("");
+  });
+});
+
+describe("exactNum", () => {
+  // A JavaScript number holds about 17 digits: Number("0.123456789012345678") prints …45680.
+  it("keeps every digit of a long quantity, in the Dutch number format", () => {
+    expect(exactNum("0.123456789012345678")).toBe("0,123456789012345678");
+    expect(exactNum("1234567.890000000000000001")).toBe("1.234.567,890000000000000001");
+    expect(exactNum("-0.5")).toBe("-0,5");
+  });
+
+  it("drops zeros at the end and a fraction of only zeros", () => {
+    expect(exactNum("2.5000")).toBe("2,5");
+    expect(exactNum("1000.000")).toBe("1.000");
+  });
+
+  it("shows what isn't a plain decimal as it is", () => {
+    expect(exactNum("1e-7")).toBe("1e-7");
+    expect(exactNum("veel")).toBe("veel");
   });
 });

@@ -225,6 +225,15 @@ export const NL: Record<string, string> = {
   "Already set up": "Al ingesteld",
   "Invalid username or password": "Onjuiste gebruikersnaam of wachtwoord",
   "Current password is incorrect": "Het huidige wachtwoord klopt niet",
+  "That password isn't right": "Dat wachtwoord klopt niet",
+  "Some investments were sold or sent away before they were bought, so a purchase is probably missing. Only what was held is counted.":
+    "Sommige beleggingen zijn verkocht of weggestuurd voordat ze gekocht waren, dus er ontbreekt waarschijnlijk een aankoop. Alleen wat er was, telt mee.",
+  "No value on 1 January {year} for {asset}: it counts with its yearly change in value instead.":
+    "Geen waarde op 1 januari {year} voor {asset}: die telt in plaats daarvan met de waardeverandering per jaar.",
+  "No value for {asset} on {day}, when it came in: it counts as bought for €0.":
+    "Geen waarde voor {asset} op {day}, toen die binnenkwam: die telt als gekocht voor € 0.",
+  "This backup comes from a newer version of the app; update the app first.":
+    "Deze back-up komt uit een nieuwere versie van de app; werk de app eerst bij.",
   // routes/backups.ts
   "Invalid backup name": "Ongeldige naam voor een back-up",
   "Backup not found": "Back-up niet gevonden",

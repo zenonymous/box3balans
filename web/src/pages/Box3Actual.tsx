@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { get, type Box3Year } from "../api";
 import { Alert, Badge, Card, Field, Input, Select, Spinner, cx } from "../components/ui";
-import { date, eur } from "../format";
+import { date, eur, parseNumberInput } from "../format";
 import { getLang, t, tj, tn } from "../i18n";
 
 type Kind = "bank" | "investments" | "crypto" | "metals" | "cash" | "other";
@@ -216,12 +216,15 @@ interface FutureRow {
   taxEur: number;
   lossBalanceEur: number;
   propertyGainPendingEur: number;
+  capitalGainEur: number;
   deemedTaxEur: number | null;
   differenceEur: number | null;
 }
 
 interface FutureParams {
   ratePct: number;
+  topRatePct: number;
+  topRateFromEur: number;
   allowanceEur: number;
   lossThresholdEur: number;
   carryBackYears: number;
@@ -229,23 +232,21 @@ interface FutureParams {
 }
 
 interface FutureResponse {
-  presets: (FutureParams & { id: string; label: string })[];
-  preset: string;
   params: FutureParams;
   rows: FutureRow[];
+  warnings: string[];
 }
-
-const presetLabel = (id: string, fallback: string) =>
-  ({
-    bill: t("Bill as passed by the Tweede Kamer (12 Feb 2026)"),
-  })[id] ?? fallback;
 
 /** The planned actual-return system (proposed from 2029) applied to your past years, with editable assumptions. */
 export function FuturePreviewCard() {
-  const [preset, setPreset] = useState("bill");
   const [over, setOver] = useState<Record<string, string>>({});
-  const params = new URLSearchParams({ preset });
-  for (const [k, v] of Object.entries(over)) if (v.trim() !== "") params.set(k, v.replace(",", "."));
+  // The figures start from the bill as the Tweede Kamer passed it (the server's only preset).
+  const params = new URLSearchParams({ preset: "bill" });
+  // In the user's number format: "60.000" is sixty thousand in Dutch, not sixty. Not a number: left out.
+  for (const [k, v] of Object.entries(over)) {
+    const n = parseNumberInput(v).value;
+    if (n) params.set(k, n);
+  }
   const q = useQuery({
     queryKey: ["box3-future", params.toString()],
     queryFn: () => get<FutureResponse>(`/api/box3/future?${params}`),
@@ -281,29 +282,13 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free amount and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
+          "The bill taxes each year's actual result, including unrealised gains, after costs, with a tax-free result of €1,800 and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 12 November 2026 the Tweede Kamer also passed the novelle: the new system starts on 1 January 2029, shares, bonds, funds and options are taxed only when sold, everything else from 2030. It also split the rate: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote. Here those rules are applied to your past years, as if the new system had started on 1 January of the first year shown: what you held then counts at its value that day, as holdings will on 1 January 2029. Shares, bonds and funds count when sold, at one average acquisition price per person, with their dividend each year; crypto in a wallet or on an exchange, precious metal and bank balances count with their change in value each year.",
         )}
       </p>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
-        <Field label={t("Assumptions")} className="col-span-2">
-          {(id) => (
-            <Select
-              id={id}
-              value={preset}
-              onChange={(e) => {
-                setPreset(e.target.value);
-                setOver({});
-              }}
-            >
-              {d?.presets.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {presetLabel(x.id, x.label)}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
         {field("ratePct", t("Rate (%)"))}
+        {field("topRatePct", t("Top rate (%)"))}
+        {field("topRateFromEur", t("Top rate from (€)"), t("taxable, per person"))}
         {field("allowanceEur", t("Tax-free result (€)"), t("per person"))}
         {field("lossThresholdEur", t("Loss threshold (€)"), t("smaller losses don't carry over"))}
         <Field label={t("Carry losses back")}>
@@ -320,6 +305,11 @@ export function FuturePreviewCard() {
         </Field>
         {field("propertyPct", t("Vastgoedbijtelling (% of WOZ)"), t("home not let all year"))}
       </div>
+      {d && d.warnings.length > 0 && (
+        <div className="mb-3">
+          <Alert>{d.warnings.join(" ")}</Alert>
+        </div>
+      )}
       {q.isLoading ? (
         <Spinner />
       ) : q.error ? (
@@ -327,12 +317,18 @@ export function FuturePreviewCard() {
       ) : (
         <>
           <div className="overflow-x-auto">
-            <table className="tabular w-full min-w-[640px] text-sm">
+            <table className="tabular w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-line text-xs text-ink-2">
                   <th className="px-3 py-2 text-left font-medium">{t("Year")}</th>
                   <th className="px-3 py-2 text-right font-medium" title={t("Actual return minus costs")}>
                     {t("Result")}
+                  </th>
+                  <th
+                    className="px-3 py-2 text-right font-medium"
+                    title={t("Gain on shares, bonds and funds sold that year, inside the result")}
+                  >
+                    {t("Capital gain")}
                   </th>
                   <th className="px-3 py-2 text-right font-medium">{t("Losses set off")}</th>
                   <th className="px-3 py-2 text-right font-medium">{t("Taxable")}</th>
@@ -349,6 +345,9 @@ export function FuturePreviewCard() {
                       {!r.complete && <span className="ml-1 text-xs text-muted">{t("so far")}</span>}
                     </td>
                     <td className="px-3 py-2 text-right">{signed(r.resultEur)}</td>
+                    <td className="px-3 py-2 text-right text-ink-2">
+                      {r.capitalGainEur ? signed(r.capitalGainEur) : "—"}
+                    </td>
                     <td className="px-3 py-2 text-right text-ink-2">
                       {r.lossUsedEur ? eur(r.lossUsedEur, { decimals: 0 }) : ""}
                       {r.carriedBackEur ? (

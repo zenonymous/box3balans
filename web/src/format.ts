@@ -58,6 +58,20 @@ export function num(v: string | number | null | undefined, maxDecimals = 8): str
   return new Intl.NumberFormat(getLocale(), { maximumFractionDigits: maxDecimals }).format(x);
 }
 
+/**
+ * A decimal string in the user's number format with every digit kept (a token amount can have 18
+ * decimals, more than a JavaScript number holds). Anything that isn't a plain decimal is shown as is.
+ */
+export function exactNum(v: string): string {
+  const m = /^(-?)(\d+)(?:\.(\d+))?$/.exec(v.trim());
+  if (!m) return v;
+  const [, sign = "", whole = "0", decimals = ""] = m;
+  const fmt = new Intl.NumberFormat(getLocale());
+  const decimalSign = fmt.formatToParts(1.5).find((p) => p.type === "decimal")?.value ?? ".";
+  const fraction = decimals.replace(/0+$/, "");
+  return sign + fmt.format(BigInt(whole)) + (fraction ? decimalSign + fraction : "");
+}
+
 export function pct(v: string | number | null | undefined, opts: { sign?: boolean } = {}): string {
   const x = n(v);
   if (Number.isNaN(x)) return "—";

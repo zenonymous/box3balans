@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useInfiniteQuery, useQueryClient } from "@tanstack/react-query";
 import { get, post } from "../api";
 import { Alert, Badge, Button, Card, Empty, PageHeader, Spinner, Tabs } from "../components/ui";
-import { TX_LABEL, date, eur, num, relativeTime } from "../format";
+import { TX_LABEL, date, eur, exactNum, num, relativeTime } from "../format";
 import { useInvalidateAll } from "../queries";
 import { dateLocale, t } from "../i18n";
 
@@ -33,7 +33,7 @@ interface Entry {
 
 const titleOf = (e: Entry) =>
   e.parts
-    ? [e.parts.type, e.parts.quantity && num(e.parts.quantity, 18), e.parts.subject].filter(Boolean).join(" ")
+    ? [e.parts.type, e.parts.quantity && exactNum(e.parts.quantity), e.parts.subject].filter(Boolean).join(" ")
     : e.title;
 
 const ENTITY_LABEL: Record<Entity, string> = {

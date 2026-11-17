@@ -645,6 +645,70 @@ export interface CommitResult {
 }
 
 /**
+ * Loads what valuing the rows takes, once per currency and asset: exchange rates for every foreign
+ * currency, and market prices for the rows the file gives no price for. A failure here isn't one
+ * yet: the single-day lookups after it say what's missing.
+ */
+async function loadRatesAndPrices(
+  deps: CommitDeps,
+  history: HistoryService,
+  todo: ParsedRow[],
+  needsMarket: ParsedRow[],
+  assetOf: Awaited<ReturnType<typeof resolveAssets>>,
+): Promise<void> {
+  const span = (rs: ParsedRow[]) => {
+    const days = rs.map((r) => localDay(r.at)).sort();
+    return [days[0]!, days[days.length - 1]!] as const;
+  };
+  for (const cur of new Set(todo.map((r) => r.currency).filter((c) => c !== "EUR" && isFiat(c)))) {
+    try {
+      await deps.fx.ensureRange([cur], ...span(todo.filter((r) => r.currency === cur)));
+    } catch {
+      // single-day lookups report what's missing
+    }
+  }
+  for (const key of new Set(needsMarket.map((r) => r.key))) {
+    try {
+      await history.ensureRange(assetOf.get(key)!.asset, ...span(needsMarket.filter((r) => r.key === key)));
+    } catch {
+      // valued at €0 with a warning
+    }
+  }
+}
+
+/**
+ * Writes the import and its transactions in one database transaction. Rows that already exist are
+ * left alone; an import that added nothing isn't kept.
+ */
+function writeImport(
+  db: DB,
+  file: { accountId: number; fileName: string; fileRows: number; rows: TxInsert[] },
+): Promise<{ importId: number | null; inserted: number }> {
+  return db.transaction(async (trx) => {
+    if (!file.rows.length) return { importId: null, inserted: 0 };
+    const [imp] = await trx
+      .insert(imports)
+      .values({ accountId: file.accountId, fileName: file.fileName.slice(0, 200), rows: file.fileRows, inserted: 0 })
+      .returning();
+    let inserted = 0;
+    for (let i = 0; i < file.rows.length; i += 200) {
+      const res = await trx
+        .insert(transactions)
+        .values(file.rows.slice(i, i + 200).map((r) => ({ ...r, importId: imp!.id })))
+        .onConflictDoNothing()
+        .returning({ id: transactions.id });
+      inserted += res.length;
+    }
+    if (inserted === 0) {
+      await trx.delete(imports).where(eq(imports.id, imp!.id));
+      return { importId: null, inserted };
+    }
+    await trx.update(imports).set({ inserted }).where(eq(imports.id, imp!.id));
+    return { importId: imp!.id, inserted };
+  });
+}
+
+/**
  * Imports the file: rows planned as "new", plus possible duplicates listed in `include`, in one
  * database transaction. Missing assets are created first.
  */
@@ -674,31 +738,12 @@ export async function commitImport(
   const assetOf = await resolveAssets(db, todo, m, resolver, false);
   const warnings: string[] = [];
 
-  // Exchange rates and market prices, fetched once per currency and asset.
-  const history = new HistoryService(db, deps.fx, deps.fetchFn);
-  const span = (rs: ParsedRow[]) => {
-    const days = rs.map((r) => localDay(r.at)).sort();
-    return [days[0]!, days[days.length - 1]!] as const;
-  };
-  for (const cur of new Set(todo.map((r) => r.currency).filter((c) => c !== "EUR" && isFiat(c)))) {
-    try {
-      await deps.fx.ensureRange([cur], ...span(todo.filter((r) => r.currency === cur)));
-    } catch {
-      // single-day lookups below report what's missing
-    }
-  }
   const atMarket = (r: ParsedRow) =>
     !r.price &&
     r.kind !== "fiat" &&
     (r.type === "deposit" || r.type === "reward" || (m.marketTrades && (r.type === "buy" || r.type === "sell")));
-  const needsMarket = todo.filter(atMarket);
-  for (const key of new Set(needsMarket.map((r) => r.key))) {
-    try {
-      await history.ensureRange(assetOf.get(key)!.asset, ...span(needsMarket.filter((r) => r.key === key)));
-    } catch {
-      // valued at €0 with a warning below
-    }
-  }
+  const history = new HistoryService(db, deps.fx, deps.fetchFn);
+  await loadRatesAndPrices(deps, history, todo, todo.filter(atMarket), assetOf);
   const fxOn = async (currency: string, at: Date) => {
     if (currency === "EUR") return D(1);
     try {
@@ -783,28 +828,7 @@ export async function commitImport(
     }
   }
 
-  const result = await db.transaction(async (trx) => {
-    if (!rows.length) return { importId: null, inserted: 0 };
-    const [imp] = await trx
-      .insert(imports)
-      .values({ accountId, fileName: fileName.slice(0, 200), rows: data.length, inserted: 0 })
-      .returning();
-    let inserted = 0;
-    for (let i = 0; i < rows.length; i += 200) {
-      const res = await trx
-        .insert(transactions)
-        .values(rows.slice(i, i + 200).map((r) => ({ ...r, importId: imp!.id })))
-        .onConflictDoNothing()
-        .returning({ id: transactions.id });
-      inserted += res.length;
-    }
-    if (inserted === 0) {
-      await trx.delete(imports).where(eq(imports.id, imp!.id));
-      return { importId: null, inserted };
-    }
-    await trx.update(imports).set({ inserted }).where(eq(imports.id, imp!.id));
-    return { importId: imp!.id, inserted };
-  });
+  const result = await writeImport(db, { accountId, fileName, fileRows: data.length, rows });
 
   return {
     ...result,

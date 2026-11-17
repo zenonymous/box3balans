@@ -363,12 +363,19 @@ const otherKind = (assetClass: string): OtherKind =>
           ? "cash"
           : "other";
 
-export async function computeBox3Year(
-  db: DB,
-  year: number,
-  config: Box3Config,
-  data = new LedgerData(db),
-): Promise<Box3Year> {
+interface PersonSums {
+  bank: Decimal;
+  other: Decimal;
+  green: Decimal;
+  debts: Decimal;
+}
+
+/**
+ * What the household holds on the reference date, before any tax is worked out: every holding and
+ * every account kept as values per year, valued, put in its box 3 category and divided over you and
+ * your partner. The first half of computeBox3Year; the 2029 preview needs the same step.
+ */
+async function collectBox3Year(db: DB, year: number, config: Box3Config, data: LedgerData) {
   const valuedAt = `${year - 1}-12-31`;
   const input = config.years[String(year)];
   const fiscalPartner = input?.partner ?? false;
@@ -382,7 +389,7 @@ export async function computeBox3Year(
 
   const totals: Record<Category, Decimal> = { bank: ZERO, other: ZERO, exempt: ZERO, excluded: ZERO };
   const other: Record<OtherKind, Decimal> = { investments: ZERO, crypto: ZERO, metals: ZERO, cash: ZERO, other: ZERO };
-  const blank = () => ({ bank: ZERO, other: ZERO, green: ZERO, debts: ZERO });
+  const blank = (): PersonSums => ({ bank: ZERO, other: ZERO, green: ZERO, debts: ZERO });
   const person = { self: blank(), partner: blank() };
   let accountDebts = ZERO;
   const warnings: string[] = [];
@@ -526,6 +533,22 @@ export async function computeBox3Year(
     });
   }
   rows.sort((x, y) => x.accountName.localeCompare(y.accountName) || Number(y.valueEur) - Number(x.valueEur));
+  return { valuedAt, input, fiscalPartner, totals, other, person, accountDebts, warnings, rows };
+}
+
+/** A year's box 3: what counts on 1 January (collectBox3Year), then the tax over it. */
+export async function computeBox3Year(
+  db: DB,
+  year: number,
+  config: Box3Config,
+  data = new LedgerData(db),
+): Promise<Box3Year> {
+  const { valuedAt, input, fiscalPartner, totals, other, person, accountDebts, warnings, rows } = await collectBox3Year(
+    db,
+    year,
+    config,
+    data,
+  );
 
   const extraBank = D(input?.extraBankEur ?? 0);
   const extraOther = D(input?.extraOtherEur ?? 0);
@@ -592,7 +615,7 @@ export async function computeBox3Year(
           partner: personCalc(calculation.persons[1], D(100).minus(selfPct)),
         }
       : null;
-  const personOut = (p: ReturnType<typeof blank>): PersonTotals => ({
+  const personOut = (p: PersonSums): PersonTotals => ({
     bank: money2(p.bank),
     other: money2(p.other),
     green: money2(p.green),

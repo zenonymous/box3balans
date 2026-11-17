@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { toCsv } from "../../server/src/lib/csv";
 import { downloadCsv } from "./csv";
 
 afterEach(() => vi.restoreAllMocks());
@@ -40,5 +41,34 @@ describe("downloadCsv", () => {
       [{ header: "v", value: (r) => r }],
     );
     expect(text.split("\r\n").slice(1)).toEqual(['"\'=HYPERLINK(""x"")"', "'+31 6", "'@SUM(A1)", "-12.50", "'-x"]);
+  });
+
+  // The server exports CSV too (server/src/lib/csv.ts), with the same defusing of formulas (CWE-1236).
+  // A fix in one must reach the other: both get the same hostile cells and must write the same file.
+  it("escapes exactly like the server's CSV export", async () => {
+    const cells = [
+      "=1+1",
+      "+31 6 1234",
+      "-5",
+      "-5 euro",
+      "-0.25",
+      "@SUM(A1)",
+      "\tcmd",
+      "\rcmd",
+      'a "quoted", cell',
+      "two\nlines",
+      '=HYPERLINK("http://x", "y")',
+      "",
+      "gewoon",
+    ];
+    const rows = cells.map((cell) => ({ cell, n: -12.5 }));
+    const columns = [
+      { header: "=Header", value: (r: { cell: string }) => r.cell },
+      { header: "N", value: (r: { n: number }) => r.n },
+    ];
+    const { text } = await download(rows, columns);
+    // The server ends the file with a line end; the web doesn't.
+    expect(text + "\r\n").toBe(toCsv(rows, columns));
+    expect(text).toContain("'=1+1");
   });
 });

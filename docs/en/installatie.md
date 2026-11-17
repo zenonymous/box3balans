@@ -100,7 +100,7 @@ A laptop isn't always on: while it sleeps, prices and connections aren't updated
 
 ## After installing
 
-- **The setup code:** on first start Box3balans writes a one-time code to its log (`No account yet … setup code: K7QX2-MPF9R`); the screen where you create your user asks for it. That way nobody else on your network can take over a new installation. Every restart while there's no user yet gives a new one. You can also set your own code with `SETUP_CODE` in `.env`.
+- **The setup code:** on first start Box3balans writes a setup code to its log (`No user yet … setup code: K7QX2-MPF9R`); the screen where you create your user asks for it. That way nobody else on your network can take over a new installation. Every restart while there's no user yet gives a new one. You can also set your own code with `SETUP_CODE` in `.env`; then that one applies each time.
 - **Extra sealed off (optional):** run Box3balans without its own internet access, with a proxy that only lets through the hosts on the list; see [What Box3balans sends](privacy.md#running-it-sealed-off).
 - **Access away from home:** use a VPN, see the [README](../../README.en.md#access-away-from-home-vpn). Don't open port 8080 in your router.
 - **A server with a public address** (a VPS): Docker opens a published port bypassing a firewall such as ufw. Set `HTTP_BIND=127.0.0.1` in `.env` there and reach Box3balans through a VPN or a reverse proxy on that server.

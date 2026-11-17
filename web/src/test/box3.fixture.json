@@ -1128,26 +1128,22 @@
     "presets": [
       {
         "id": "bill",
-        "label": "Bill as passed by the Tweede Kamer (12 Feb 2026)",
-        "ratePct": 36,
+        "label": "Bill with the novelle, as passed by the Tweede Kamer (12 Nov 2026)",
+        "ratePct": 35.5,
+        "topRatePct": 38.5,
+        "topRateFromEur": 60000,
         "allowanceEur": 1800,
-        "lossThresholdEur": 500,
-        "carryBackYears": 0,
-        "propertyPct": 3.35
-      },
-      {
-        "id": "letter",
-        "label": "Cabinet letter of 29 Sep 2026: €1,000 tax-free (tax on selling investments not modelled)",
-        "ratePct": 36,
-        "allowanceEur": 1000,
         "lossThresholdEur": 500,
         "carryBackYears": 0,
         "propertyPct": 3.35
       }
     ],
+    "warnings": [],
     "preset": "bill",
     "params": {
-      "ratePct": 36,
+      "ratePct": 35.5,
+      "topRatePct": 38.5,
+      "topRateFromEur": 60000,
       "allowanceEur": 1800,
       "lossThresholdEur": 500,
       "carryBackYears": 0,
@@ -1165,6 +1161,7 @@
         "taxableEur": 18492.03,
         "taxEur": 6657.13,
         "lossBalanceEur": 0,
+        "capitalGainEur": 0,
         "propertyGainPendingEur": 12000,
         "deemedTaxEur": 6562,
         "differenceEur": 95.13
@@ -1179,6 +1176,7 @@
         "taxableEur": 7170.56,
         "taxEur": 2581.4,
         "lossBalanceEur": 0,
+        "capitalGainEur": 0,
         "propertyGainPendingEur": 12000,
         "deemedTaxEur": 6180,
         "differenceEur": -3598.6
@@ -1193,6 +1191,7 @@
         "taxableEur": 41798.08,
         "taxEur": 15047.31,
         "lossBalanceEur": 0,
+        "capitalGainEur": 0,
         "propertyGainPendingEur": 0,
         "deemedTaxEur": 5170,
         "differenceEur": 9877.31
@@ -1207,6 +1206,7 @@
         "taxableEur": 10567.19,
         "taxEur": 3804.19,
         "lossBalanceEur": 0,
+        "capitalGainEur": 0,
         "propertyGainPendingEur": 0,
         "deemedTaxEur": 0,
         "differenceEur": 3804.19
@@ -1221,6 +1221,7 @@
         "taxableEur": 0,
         "taxEur": 0,
         "lossBalanceEur": 0,
+        "capitalGainEur": 0,
         "propertyGainPendingEur": 0,
         "deemedTaxEur": null,
         "differenceEur": null
