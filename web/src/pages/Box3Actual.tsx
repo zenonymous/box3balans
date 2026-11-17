@@ -222,6 +222,8 @@ interface FutureRow {
 
 interface FutureParams {
   ratePct: number;
+  topRatePct: number;
+  bracketEur: number;
   allowanceEur: number;
   lossThresholdEur: number;
   carryBackYears: number;
@@ -274,11 +276,13 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill the Tweede Kamer passed on 12 February 2026 taxes each year's actual result, including unrealised gains, after costs, with a tax-free result and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 3 November 2026 the cabinet submitted an amendment (novelle): the new system would start on 1 January 2029, shares, bonds, funds and options would be taxed only when sold, everything else from 2030, and the tax-free result stays €1,800. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
+          "The bill taxes each year's actual result, including unrealised gains, after costs, with a tax-free result of €1,800 and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 12 November 2026 the Tweede Kamer also passed the novelle: the new system starts on 1 January 2029, shares, bonds, funds and options are taxed only when sold, everything else from 2030. It also split the rate: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote. Here the bill's yearly rules are applied to your past years. The novelle's tax on selling investments isn't modelled yet, so for investments you didn't sell, this shows more tax than the novelle would charge.",
         )}
       </p>
-      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
         {field("ratePct", t("Rate (%)"))}
+        {field("topRatePct", t("Top rate (%)"))}
+        {field("bracketEur", t("Top rate from (€)"), t("taxable, per person"))}
         {field("allowanceEur", t("Tax-free result (€)"), t("per person"))}
         {field("lossThresholdEur", t("Loss threshold (€)"), t("smaller losses don't carry over"))}
         <Field label={t("Carry losses back")}>

@@ -2,7 +2,7 @@
 
 _Nederlands: [box3-sources.md](../box3-sources.md)_
 
-Checked on 8 October 2026, the 2027 figures on 4 November 2026. Box 3 changes often: check these rules again before you rely on the figures for a year. The sources are Dutch; their titles are kept as they are.
+Checked on 8 October 2026, the 2027 figures on 4 November 2026, the preview from 2029 on 17 November 2026. Box 3 changes often: check these rules again before you rely on the figures for a year. The sources are Dutch; their titles are kept as they are.
 
 ## Deemed return (tax years from 2023)
 
@@ -75,31 +75,43 @@ Sources:
 - Belastingdienst, frequently asked questions about the Opgaaf werkelijk rendement (no tax-free allowance; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
 - SRA, overview of the rebuttal scheme 2017–2027 (gross dividends, no debt threshold, partners, allocation of interest): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 
-## From 2028: Wet werkelijk rendement box 3 (bill 36.748), not law yet
+## From 2029: Wet werkelijk rendement box 3 with the amendment, not law yet
 
-**Change of 3 November 2026:** the cabinet submitted the amendment (novelle, Kamerstuk 37 053) and now proposes a start on 1 January 2029; 2028 then still falls under the current system. The cut of the tax-free result to €1,000 is dropped. Since 0.1.48 the preview in the app names 2029 and has no setting for €1,000 anymore; this section, and tax on sale in the preview, follow after the vote of 12 November ([#11](https://github.com/zenonymous/box3balans/issues/11)).
+**Status on 17 November 2026:** on 12 November 2026 the Tweede Kamer passed the Belastingplan 2027 package (76 to 74) and the amendment (novelle, Kamerstuk 37 053), slightly changed. The Senate (Eerste Kamer) still has to vote on the amendment; the bill itself (36.748) has been waiting there since February. The vote on the package is planned for 15 December 2026, and the amendment has to be adopted before 31 December 2026. According to Taxlive there's no majority in the Senate yet.
 
-Status on 8 October 2026:
+How it would go:
 
-- **House of Representatives:** adopted the bill on 12 February 2026.
-- **Senate:** postponed the vote until it has dealt with an amendment (novelle).
-- **Amendment** (cabinet letter of 29 September 2026): instead of taxing the change in value every year (capital accrual), from 2028 there will be a **capital gains tax**, tax on sale, for all financial instruments such as shares, bonds and options. According to the cabinet that's about 90% of the assets with changes in value in box 3. Other assets follow in 2030. The **tax-free result becomes €1,000** (€1,800 in the bill). The Senate has to adopt the amendment before 31 December 2026. Banks can't yet supply data for the pre-filled tax return in the first year.
+- **2027 and 2028:** the current system, with the deemed return and the rebuttal scheme.
+- **From 1 January 2029:** the new system. **Financial instruments** (shares, bonds, funds, options) and real estate are taxed on their **capital gain** (vermogenswinst), when sold. According to the cabinet that's about 90% of the assets with changes in value in box 3 at the start. The rest (bank balances, crypto you hold yourself, precious metal, receivables and debts) falls under **capital accrual** (vermogensaanwas) in 2029: the change in value every year.
+- **From 2030:** the rest on sale too, through a separate law. An adopted motion asks for it to be submitted by Prinsjesdag 2027 at the latest and to take effect by 1 January 2030 at the latest.
 
-Rules of the bill as the House of Representatives adopted it (the default setting of the preview in the app):
+Rules of the bill with the amendment, as the Tweede Kamer adopted them (the default setting of the preview in the app):
 
-- **Capital accrual tax as the main rule:** every year the direct return plus the realised and unrealised changes in value, minus costs. Real estate and shares in start-ups are taxed on sale (capital gains tax).
-- **Real estate:** the gain counts when it's sold, or when it leaves box 3 in another way. For what you already had on 1 January 2028, the acquisition price is its value then, for a home the WOZ value (art. 10a.31). Each year the rent counts if it's let for all or nearly all of the year, or if the rent is higher than the **vastgoedbijtelling** (real estate addition); otherwise the vastgoedbijtelling counts: **3.35%** of the value, for a home the WOZ value, in proportion to the days you owned it (art. 5.15, 5.19 and 5.20). A summary of the bill (Meijburg & Co, May 2025) says 3.55%, but the text the Tweede Kamer passed says 3.35%.
+- **Return per year:** the direct return plus, for what falls under capital accrual, the realised and unrealised changes in value, minus costs. For financial instruments and real estate, the change in value only counts when sold.
+- **Real estate:** the gain counts when it's sold, or when it leaves box 3 in another way. For what you already had at the start, the acquisition price is its value then, for a home the WOZ value (art. 10a.31). Each year the rent counts if it's let for all or nearly all of the year, or if the rent is higher than the **vastgoedbijtelling** (real estate addition); otherwise the vastgoedbijtelling counts: **3.35%** of the value, for a home the WOZ value, in proportion to the days you owned it (art. 5.15, 5.19 and 5.20). A summary of the bill (Meijburg & Co, May 2025) says 3.55%, but the text the Tweede Kamer passed says 3.35%.
 - **Costs are deductible**, including transaction costs, account costs and interest paid. Dividend tax isn't deductible.
-- **Rate:** 36%.
-- **Tax-free result:** €1,800 per taxpayer.
-- **Losses** above €500 carry forward to later years. Carrying back to an earlier year isn't in the bill; the letter of 29 September says nothing about it.
+- **Rate:** **35.5%** on the first **€60,000** of taxable income from saving and investing, **38.5%** above it (amendment 37 022, nr. 80, new art. 2.13). In the bill of February it was 36% on everything. The table applies per taxpayer, as in box 1; fiscal partners divide their income from saving and investing as they like (art. 2.17).
+- **Tax-free result:** €1,800 per taxpayer. The cut to €1,000 from the letter of 29 September was dropped on 3 November.
+- **Losses** above €500 carry forward to later years. Carrying back to an earlier year isn't in the bill.
 - **Green investments** keep a tax credit.
+- **Costs for real estate in the current system** (amendment 37 053, nr. 14): in the rebuttal scheme, costs for real estate become deductible from a date set by royal decree, not before 2028. The app doesn't calculate with this yet.
 
-Before the letter of 29 September, the cabinet looked into options such as a rate of 35%, a tax-free result of €1,900 and carrying losses back one year. Besides the bill, the preview in the app had a setting for that letter (€1,000 tax-free result); since the change of 3 November, which dropped the cut, it uses the bill only. **The preview doesn't simulate tax on sale of financial instruments yet** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); for investments you don't sell, it therefore shows more tax than the amendment would levy. Every setting can be adjusted.
+**Capital gain on financial instruments** (explanatory memorandum to the amendment, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). The app doesn't calculate with this yet; the choices are in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
+
+- **The value at the start as the acquisition price:** for what you already had on 1 January 2029, the acquisition price is its market value on that day. Changes in value before then stay untaxed.
+- **One average:** the acquisition price is the average price of everything you hold of the same kind, as in box 2 (art. 5.26), so across all your accounts together.
+- **Costs in the gain:** the costs of buying are part of the acquisition price and the costs of selling come off the proceeds (art. 5.22 and 5.23).
+- **Regular benefits** (dividend, interest) count every year, gross.
+- **Example from the memorandum:** Henk has one share worth €1,000 on 1 January 2029 and buys two more at €1,600 each: €1,400 on average. With €50 dividend, €50 is taxable in 2029. In 2030 he sells one for €1,700 and gets €40 dividend: a gain of €300 plus €40, €340 together.
+
+**What the preview in the app does:** it applies the yearly rules above to your past years, with the two rates and €60,000 per person as the default. **It doesn't simulate tax on sale of financial instruments yet** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)): for investments you don't sell, it therefore shows more tax than the amendment would levy. Every setting can be adjusted.
+
+Earlier in 2026: before the letter of 29 September, the cabinet looked into options such as a rate of 35%, a tax-free result of €1,900 and carrying losses back one year. That letter proposed a capital gains tax from 2028, with a €1,000 tax-free result; the preview had a setting for it until 0.1.48.
 
 Not described in the sources, and assumed by the app:
 
-- A home's gain counts from its WOZ value of the year after the first you entered. For what you already had on 1 January 2028, the bill takes the WOZ value with waardepeildatum 1 January 2028, which is the WOZ value of 2029. For a home you bought during those years, the purchase price counts.
+- **Fiscal partners:** the app divides the taxable income evenly over both partners, so each has €60,000 at the lower rate, €120,000 together. That's the cheapest division.
+- A home's gain counts from its WOZ value of the year after the first you entered. For what you already had at a start on 1 January 2028, the bill of February took the WOZ value with waardepeildatum 1 January 2028, which is the WOZ value of 2029; how that moves with a start in 2029 isn't in the text of the amendment. For a home you bought during those years, the purchase price counts.
 - For a home, _Bought or improved_ holds the purchase price with the costs of buying, and what you spent on improvements; _Sold for_ holds the sale price minus the costs of selling (art. 5.22 and 5.23). The home is sold in the year after which its value on 1 January is 0.
 - A home that leaves box 3, for example because it becomes your own home, counts as sold at the end of the year before, at its value at that moment (art. 5.31): the WOZ value with that waardepeildatum, so the one of the year after if you filled it in and it isn't 0. A change in the share of a home you own doesn't count as a sale.
 - A home let with rent protection is let all year. Other rent only counts if it's higher than the vastgoedbijtelling, also when the home was let all year without rent protection.
@@ -111,6 +123,11 @@ Not described in the sources, and assumed by the app:
 Sources:
 
 - Eerste Kamer, bill 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- Tweede Kamer, amendment (Kamerstuk 37 053), with the explanatory memorandum (nr. 3) and the vote of 12 November 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053
+- Eerste Kamer, amendment 37.053: https://www.eerstekamer.nl/wetsvoorstel/37053_novelle_uitbreiding
+- Amended amendment by Klaver and Dassen (Kamerstuk 37 022, nr. 80), two rates in box 3: https://www.tweedekamer.nl/downloads/document?id=2026D57504
+- Taxlive, _Tweede Kamer toch akkoord met pakket Belastingplan 2027 en novelle box 3_ (12 November 2026): https://www.taxlive.nl/nl/documenten/vn-vandaag/tweede-kamer-toch-akkoord-met-pakket-belastingplan-2027-en-novelle-box-3
+- Meijburg & Co, _Pakket Belastingplan 2027 en Novelle aangenomen door de Tweede Kamer_ (13 November 2026): https://www.meijburg.nl/nieuws/pakket-belastingplan-2027-en-novelle-uitbreiding-vermogenswinstbelasting-box-3-aangenomen
 - The bill as passed by the Tweede Kamer (Kamerstukken I 36.748, A), articles 5.15, 5.19, 5.20, 5.22, 5.23, 5.31, 5.38 and 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
 - Meijburg & Co, summary of the bill (May 2025): https://www.meijburg.nl/sites/default/files/2025-05/Definitieve%20wetsvoorstel%20Wet%20werkelijk%20rendement%20box%203%20gepubliceerd%20mei%202025_2.pdf
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 September 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf

@@ -2,7 +2,7 @@
 
 _English: [en/box3-sources.md](en/box3-sources.md)_
 
-Gecontroleerd op 8 oktober 2026, de cijfers voor 2027 op 4 november 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
+Gecontroleerd op 8 oktober 2026, de cijfers voor 2027 op 4 november 2026, de vooruitblik vanaf 2029 op 17 november 2026. Box 3 verandert vaak: controleer deze regels opnieuw voordat je op de cijfers van een jaar vertrouwt.
 
 ## Forfaitair rendement (belastingjaren vanaf 2023)
 
@@ -75,31 +75,43 @@ Bronnen:
 - Belastingdienst, veelgestelde vragen over de Opgaaf werkelijk rendement (geen heffingsvrij vermogen; partners): https://www.belastingdienst.nl/wps/wcm/connect/nl/box-3/content/veelgestelde-vragen-opgaaf-werkelijk-rendement
 - SRA, overzicht van de tegenbewijsregeling 2017–2027 (bruto dividenden, geen schuldendrempel, partners, toerekening van rente): https://www.sra.nl/dossiers/dossier-hoge-raad-box-3/tegenbewijsregeling-box-3-2017-2027/box-3-een-overzichtsartikel-met-de-belangrijkste-verwijzingen-werkelijk-rendement-box-3-2017-2026
 
-## Vanaf 2028: Wet werkelijk rendement box 3 (wetsvoorstel 36.748), nog geen wet
+## Vanaf 2029: Wet werkelijk rendement box 3 met de novelle, nog geen wet
 
-**Aanpassing van 3 november 2026:** het kabinet diende de novelle in (Kamerstuk 37 053) en stelt nu invoering per 1 januari 2029 voor; 2028 valt dan nog onder het huidige stelsel. De verlaging van het heffingsvrij resultaat naar € 1.000 is geschrapt. De vooruitblik in de app noemt sinds 0.1.48 2029 en heeft geen instelling meer voor € 1.000; dit hoofdstuk, en belasting bij verkoop in de vooruitblik, volgen na de stemming van 12 november ([#11](https://github.com/zenonymous/box3balans/issues/11)).
+**Stand op 17 november 2026:** de Tweede Kamer nam op 12 november 2026 het pakket Belastingplan 2027 aan (76 tegen 74) en ook de novelle (Kamerstuk 37 053), in iets gewijzigde vorm. De Eerste Kamer moet nog stemmen over de novelle; het wetsvoorstel zelf (36.748) wacht daar al sinds februari. De stemming over het pakket staat gepland op 15 december 2026, en de novelle moet vóór 31 december 2026 zijn aangenomen. Volgens Taxlive is er in de Eerste Kamer nog geen meerderheid.
 
-Stand op 8 oktober 2026:
+Hoe het zou gaan:
 
-- **Tweede Kamer:** nam het wetsvoorstel aan op 12 februari 2026.
-- **Eerste Kamer:** stelde de stemming uit tot ze een novelle (wijzigingswet) heeft behandeld.
-- **Novelle** (brief van het kabinet van 29 september 2026): in plaats van elk jaar de waardeverandering te belasten (vermogensaanwas), komt er per 2028 een **vermogenswinstbelasting**, belasting bij verkoop, voor alle financiële instrumenten zoals aandelen, obligaties en opties. Volgens het kabinet is dat circa 90% van het vermogen met waardeontwikkeling in box 3. In 2030 volgen de overige bezittingen. Het **heffingsvrij resultaat wordt € 1.000** (in het wetsvoorstel € 1.800). De novelle moet vóór 31 december 2026 door de Eerste Kamer zijn aangenomen. Banken kunnen in het eerste jaar nog geen gegevens aanleveren voor de vooraf ingevulde aangifte.
+- **2027 en 2028:** het huidige stelsel, met forfaitair rendement en de tegenbewijsregeling.
+- **Vanaf 1 januari 2029:** het nieuwe stelsel. **Financiële instrumenten** (aandelen, obligaties, fondsen, opties) en onroerende zaken worden belast op hun **vermogenswinst**, bij verkoop. Volgens het kabinet is dat bij de start circa 90% van het vermogen met waardeontwikkeling in box 3. De rest (banktegoeden, crypto die je zelf hebt, edelmetaal, vorderingen en schulden) valt in 2029 onder de **vermogensaanwas**: elk jaar de waardeverandering.
+- **Vanaf 2030:** ook de rest bij verkoop, met een aparte wet. Een aangenomen motie vraagt die uiterlijk met Prinsjesdag 2027 in te dienen en uiterlijk per 1 januari 2030 in te laten gaan.
 
-Regels van het wetsvoorstel zoals de Tweede Kamer het aannam (de standaardinstelling van de vooruitblik in de app):
+Regels van het wetsvoorstel met de novelle, zoals de Tweede Kamer ze aannam (de standaardinstelling van de vooruitblik in de app):
 
-- **Vermogensaanwasbelasting als hoofdregel:** elk jaar het directe rendement plus de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Onroerend goed en aandelen in startende ondernemingen worden belast bij verkoop (vermogenswinstbelasting).
-- **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je op 1 januari 2028 al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel (Meijburg & Co, mei 2025) noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
+- **Rendement per jaar:** het directe rendement plus, voor wat onder de vermogensaanwas valt, de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Bij financiële instrumenten en onroerende zaken telt de waardeverandering pas bij verkoop.
+- **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je bij de start al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel (Meijburg & Co, mei 2025) noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
 - **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
-- **Tarief:** 36%.
-- **Heffingsvrij resultaat:** € 1.800 per belastingplichtige.
-- **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel; de brief van 29 september zegt daar niets over.
+- **Tarief:** **35,5%** over de eerste **€ 60.000** belastbaar inkomen uit sparen en beleggen, **38,5%** daarboven (amendement 37 022, nr. 80, nieuw art. 2.13). In het wetsvoorstel van februari was het 36% over alles. De tabel geldt per belastingplichtige, zoals in box 1; fiscale partners verdelen hun inkomen uit sparen en beleggen zoals ze willen (art. 2.17).
+- **Heffingsvrij resultaat:** € 1.800 per belastingplichtige. De verlaging naar € 1.000 uit de brief van 29 september is op 3 november geschrapt.
+- **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel.
 - **Groene beleggingen** houden een heffingskorting.
+- **Kosten voor onroerende zaken in het huidige stelsel** (amendement 37 053, nr. 14): in de tegenbewijsregeling mogen kosten voor onroerende zaken af, vanaf een datum die bij koninklijk besluit wordt bepaald, niet eerder dan 2028. De app rekent hier nog niet mee.
 
-Vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. De vooruitblik in de app had naast het wetsvoorstel een instelling voor die brief (€ 1.000 heffingsvrij resultaat); sinds de aanpassing van 3 november, die de verlaging schrapte, rekent hij alleen met het wetsvoorstel. **Belasting bij verkoop van financiële instrumenten bootst de vooruitblik nog niet na** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)); voor beleggingen die je niet verkoopt, toont hij dus meer belasting dan de novelle zou heffen. Elke instelling is aan te passen.
+**Vermogenswinst op financiële instrumenten** (memorie van toelichting bij de novelle, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). De app rekent hier nog niet mee; de keuzes staan in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
+
+- **Waarde bij de start als verkrijgingsprijs:** voor wat je op 1 januari 2029 al had, is de verkrijgingsprijs de waarde in het economische verkeer op die dag. Waardeveranderingen van daarvoor blijven onbelast.
+- **Eén gemiddelde:** de verkrijgingsprijs is de gemiddelde prijs van alles wat je van dezelfde soort hebt, zoals in box 2 (art. 5.26), dus over al je rekeningen samen.
+- **Kosten in de winst:** aankoopkosten horen bij de verkrijgingsprijs en verkoopkosten gaan van de opbrengst af (art. 5.22 en 5.23).
+- **Reguliere voordelen** (dividend, rente) tellen elk jaar, bruto.
+- **Voorbeeld uit de toelichting:** Henk heeft op 1 januari 2029 één aandeel van € 1.000 en koopt er twee bij voor € 1.600 per stuk: gemiddeld € 1.400. Met € 50 dividend is er in 2029 € 50 belastbaar. In 2030 verkoopt hij er één voor € 1.700 en krijgt hij € 40 dividend: € 300 winst plus € 40, samen € 340.
+
+**Wat de vooruitblik in de app doet:** hij past de jaarregels hierboven toe op je afgelopen jaren, met de twee tarieven en € 60.000 per persoon als standaard. **Belasting bij verkoop van financiële instrumenten bootst hij nog niet na** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)): voor beleggingen die je niet verkoopt, toont hij dus meer belasting dan de novelle zou heffen. Elke instelling is aan te passen.
+
+Eerder in 2026: vóór de brief van 29 september onderzocht het kabinet opties als een tarief van 35%, een heffingsvrij resultaat van € 1.900 en één jaar verliesverrekening naar achteren. Die brief stelde een vermogenswinstbelasting per 2028 voor, met € 1.000 heffingsvrij resultaat; de vooruitblik had daar tot 0.1.48 een instelling voor.
 
 Niet beschreven in de bronnen, en aangenomen door de app:
 
-- De winst op een woning telt vanaf de WOZ-waarde van het jaar na het eerste dat je invulde. Voor wat je op 1 januari 2028 al had, neemt het wetsvoorstel de WOZ-waarde met waardepeildatum 1 januari 2028, en dat is de WOZ-waarde van 2029. Voor een woning die je in die jaren kocht, telt de aankoopprijs.
+- **Fiscale partners:** de app verdeelt het belastbare inkomen gelijk over beide partners, zodat ieder € 60.000 tegen het lage tarief heeft, samen € 120.000. Dat is de goedkoopste verdeling.
+- De winst op een woning telt vanaf de WOZ-waarde van het jaar na het eerste dat je invulde. Het wetsvoorstel van februari nam voor wat je bij de start op 1 januari 2028 al had de WOZ-waarde met waardepeildatum 1 januari 2028, en dat is de WOZ-waarde van 2029; hoe dat met een start in 2029 verschuift, staat niet in de tekst van de novelle. Voor een woning die je in die jaren kocht, telt de aankoopprijs.
 - Bij een woning vul je bij _Gekocht of verbeterd_ de aankoopprijs met de kosten van de aankoop in, en wat je aan verbeteringen uitgaf; bij _Verkocht voor_ de verkoopprijs min de kosten van de verkoop (art. 5.22 en 5.23). De woning is verkocht in het jaar waarna haar waarde op 1 januari 0 is.
 - Een woning die box 3 verlaat, bijvoorbeeld omdat ze je eigen woning wordt, telt als verkocht aan het eind van het jaar ervoor, tegen haar waarde op dat moment (art. 5.31): de WOZ-waarde met die waardepeildatum, dus die van het jaar daarna als je die invulde en die niet 0 is. Een verandering in het deel dat je van een woning hebt, telt niet als verkoop.
 - Een woning die verhuurd is met huurbescherming, is het hele jaar verhuurd. Andere huur telt alleen als die hoger is dan de vastgoedbijtelling, ook als de woning zonder huurbescherming het hele jaar verhuurd was.
@@ -111,6 +123,11 @@ Niet beschreven in de bronnen, en aangenomen door de app:
 Bronnen:
 
 - Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
+- Tweede Kamer, novelle (Kamerstuk 37 053), met de memorie van toelichting (nr. 3) en de stemming van 12 november 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053
+- Eerste Kamer, novelle 37.053: https://www.eerstekamer.nl/wetsvoorstel/37053_novelle_uitbreiding
+- Gewijzigd amendement Klaver en Dassen (Kamerstuk 37 022, nr. 80), twee tarieven in box 3: https://www.tweedekamer.nl/downloads/document?id=2026D57504
+- Taxlive, _Tweede Kamer toch akkoord met pakket Belastingplan 2027 en novelle box 3_ (12 november 2026): https://www.taxlive.nl/nl/documenten/vn-vandaag/tweede-kamer-toch-akkoord-met-pakket-belastingplan-2027-en-novelle-box-3
+- Meijburg & Co, _Pakket Belastingplan 2027 en Novelle aangenomen door de Tweede Kamer_ (13 november 2026): https://www.meijburg.nl/nieuws/pakket-belastingplan-2027-en-novelle-uitbreiding-vermogenswinstbelasting-box-3-aangenomen
 - Wetsvoorstel zoals de Tweede Kamer het aannam (Kamerstukken I 36.748, A), artikelen 5.15, 5.19, 5.20, 5.22, 5.23, 5.31, 5.38 en 10a.31: https://zoek.officielebekendmakingen.nl/kst-36748-A.html
 - Meijburg & Co, samenvatting van het wetsvoorstel (mei 2025): https://www.meijburg.nl/sites/default/files/2025-05/Definitieve%20wetsvoorstel%20Wet%20werkelijk%20rendement%20box%203%20gepubliceerd%20mei%202025_2.pdf
 - Kabinet, _Voorstellen op box 3, koopkracht werkenden en sociale zekerheid_ (29 september 2026): https://www.eerstekamer.nl/brief_in/20260930/voorstellen_op_box_3_koopkracht/f=/vn1fdr15xiz6.pdf
