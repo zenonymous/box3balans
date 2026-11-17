@@ -75,6 +75,16 @@ export interface FutureYearInput {
   partner: boolean;
   deemedTaxEur: number | null; // what the current (deemed-return) system charges
   property: PropertyYear[]; // homes and other real estate, inside actualReturnEur
+  // Financial instruments (the novelle): their part of actualReturnEur and of costsEur (the costs
+  // of buying and selling, which are inside the gain), and what's taxed of them instead.
+  instruments?: InstrumentsYear;
+}
+
+export interface InstrumentsYear {
+  returnEur: number; // change in value plus direct return, inside actualReturnEur
+  tradeCostsEur: number; // costs of buying and selling, inside costsEur
+  gainEur: number; // capital gain on what was sold (capitalGains)
+  regularBenefitsEur: number; // dividend, interest and other rewards, gross
 }
 
 export interface FutureYearRow {
@@ -88,6 +98,7 @@ export interface FutureYearRow {
   taxEur: number;
   lossBalanceEur: number; // losses still to carry forward after this year
   propertyGainPendingEur: number; // homes' gain since their first value, taxed when they're sold
+  capitalGainEur: number; // gain on financial instruments sold this year, inside resultEur
   deemedTaxEur: number | null;
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
@@ -132,7 +143,12 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       else gains.set(h.accountId, gain);
       homes = homes.plus(taxedOfHome(h, gain, p.propertyPct)).minus(h.returnEur);
     }
-    const result = round2(D(y.actualReturnEur).plus(homes).minus(y.costsEur));
+    // The same for financial instruments: their gain when sold and their regular benefits instead of
+    // their yearly return; the costs of buying and selling are inside the gain.
+    const i = y.instruments;
+    const instruments = i ? D(i.gainEur).plus(i.regularBenefitsEur).minus(i.returnEur) : ZERO;
+    const costs = D(y.costsEur).minus(i?.tradeCostsEur ?? 0);
+    const result = round2(D(y.actualReturnEur).plus(homes).plus(instruments).minus(costs));
     const allowance = perHousehold(p.allowanceEur, y.partner);
     let taxable = 0;
     let used = 0;
@@ -166,6 +182,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       taxEur: tax,
       lossBalanceEur: round2(balance),
       propertyGainPendingEur: round2([...gains.values()].reduce((a, b) => a.plus(b), ZERO)),
+      capitalGainEur: round2(i?.gainEur ?? 0),
       deemedTaxEur: y.deemedTaxEur,
       differenceEur: y.deemedTaxEur == null ? null : round2(tax - y.deemedTaxEur),
     });

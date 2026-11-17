@@ -103,7 +103,7 @@ Rules of the bill with the amendment, as the Tweede Kamer adopted them (the defa
 - **Regular benefits** (dividend, interest) count every year, gross.
 - **Example from the memorandum:** Henk has one share worth €1,000 on 1 January 2029 and buys two more at €1,600 each: €1,400 on average. With €50 dividend, €50 is taxable in 2029. In 2030 he sells one for €1,700 and gets €40 dividend: a gain of €300 plus €40, €340 together.
 
-**What the preview in the app does:** it applies the yearly rules above to your past years, with the two rates and €60,000 per person as the default. **It doesn't simulate tax on sale of financial instruments yet** ([issue #11](https://github.com/zenonymous/box3balans/issues/11)): for investments you don't sell, it therefore shows more tax than the amendment would levy. Every setting can be adjusted.
+**What the preview in the app does:** it applies the yearly rules above to your past years, with the two rates and €60,000 per person as the default. Financial instruments on accounts with transactions count when sold, with their regular benefits each year, as described above; the rest counts with its change in value each year. Since 1 January 2029 hasn't happened yet, the preview acts as if the new system started on 1 January of the first year shown ([ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md)). Every setting can be adjusted.
 
 Earlier in 2026: before the letter of 29 September, the cabinet looked into options such as a rate of 35%, a tax-free result of €1,900 and carrying losses back one year. That letter proposed a capital gains tax from 2028, with a €1,000 tax-free result; the preview had a setting for it until 0.1.48.
 

@@ -226,6 +226,10 @@ export const NL: Record<string, string> = {
   "Invalid username or password": "Onjuiste gebruikersnaam of wachtwoord",
   "Current password is incorrect": "Het huidige wachtwoord klopt niet",
   "That password isn't right": "Dat wachtwoord klopt niet",
+  "Some investments were sold or sent away before they were bought, so a purchase is probably missing. Only what was held is counted.":
+    "Sommige beleggingen zijn verkocht of weggestuurd voordat ze gekocht waren, dus er ontbreekt waarschijnlijk een aankoop. Alleen wat er was, telt mee.",
+  "No value on 1 January {year} for {asset}: it's left out of the tax on selling investments.":
+    "Geen waarde op 1 januari {year} voor {asset}: die blijft buiten de belasting bij verkoop van beleggingen.",
   "This backup comes from a newer version of the app; update the app first.":
     "Deze back-up komt uit een nieuwere versie van de app; werk de app eerst bij.",
   // routes/backups.ts

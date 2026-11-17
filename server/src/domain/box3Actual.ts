@@ -5,6 +5,7 @@ import { METAL_CODES } from "../db/seed.js";
 import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { fromLocal, localDay, localToday } from "../lib/time.js";
 import { type Box3Config, type Category, categoryOf } from "./box3.js";
+import { isFinancialInstrument } from "./box3Future.js";
 import { attribute, loadHousehold } from "./household.js";
 import { type HoldingOn, LedgerData, holdingsOn } from "./valuation.js";
 import {
@@ -66,6 +67,9 @@ export interface ActualReturn {
   debtInterestEur: number;
   totalEur: number; // the actual return; may be negative
   property: PropertyYear[]; // homes and other real estate, inside the total
+  // Financial instruments, for the preview from 2029 (the novelle taxes them when sold): their part
+  // of the total, and the costs of buying and selling them inside costsEur.
+  instruments: { returnEur: number; tradeCostsEur: number };
   // Accounts kept as values per year that miss a value the return needs.
   warnings: string[];
 }
@@ -156,6 +160,7 @@ export async function actualReturn(
     debtInterestEur: num(debtInterest),
     totalEur: num(total),
     property: perYear.property,
+    instruments: { returnEur: num(totals.instrumentsReturn), tradeCostsEur: num(totals.instrumentsTradeCosts) },
     warnings,
   };
 }
@@ -212,7 +217,8 @@ async function closingPrices(db: DB, assetIds: number[], period: Period) {
   };
 }
 
-type Holding = Counted & { accountId: number; assetId: number; physical: boolean };
+// tradeCosts: the costs of buying and selling, a part of costs.
+type Holding = Counted & { accountId: number; assetId: number; physical: boolean; tradeCosts: Decimal };
 
 /**
  * Each holding's value at the start and end of the year, what came in and went out during it, its
@@ -234,7 +240,7 @@ function ledgerHoldings(args: {
     const k = `${accountId}|${assetId}|${physical ? "p" : "l"}`;
     let h = holdings.get(k);
     if (!h) {
-      h = { ...emptyPart(), costs: ZERO, taxWithheld: ZERO, accountId, assetId, physical };
+      h = { ...emptyPart(), costs: ZERO, tradeCosts: ZERO, taxWithheld: ZERO, accountId, assetId, physical };
       holdings.set(k, h);
     }
     return h;
@@ -265,12 +271,14 @@ function ledgerHoldings(args: {
       case "buy":
         h.in = h.in.plus(gross);
         if (cash) cash.out = cash.out.plus(gross).plus(fee);
-        if (fee.gt(0)) h.costs = h.costs.plus(fee);
+        h.costs = h.costs.plus(fee);
+        h.tradeCosts = h.tradeCosts.plus(fee);
         break;
       case "sell":
         h.out = h.out.plus(gross);
         if (cash) cash.in = cash.in.plus(gross).minus(fee);
-        if (fee.gt(0)) h.costs = h.costs.plus(fee);
+        h.costs = h.costs.plus(fee);
+        h.tradeCosts = h.tradeCosts.plus(fee);
         break;
       case "deposit":
       case "transfer_in":
@@ -344,6 +352,8 @@ function addLedgerHoldings(args: {
       args.year,
     );
     args.totals.add(cat, a.assetClass, args.weight(h.accountId), h);
+    if (!outsideBox3(cat) && !h.physical && isFinancialInstrument({ accountKind: acc.kind, assetClass: a.assetClass }))
+      args.totals.addInstrument(args.weight(h.accountId), h);
   }
 }
 
@@ -370,6 +380,15 @@ class Totals {
   // Of what counts in box 3 only.
   inScopeCosts = ZERO;
   taxWithheld = ZERO;
+  // Financial instruments, also in the parts above.
+  instrumentsReturn = ZERO;
+  instrumentsTradeCosts = ZERO;
+
+  /** Notes a holding as a financial instrument too (it's in the parts through add()). */
+  addInstrument(w: Decimal, h: Holding) {
+    this.instrumentsReturn = this.instrumentsReturn.plus(valueChange(h).plus(h.direct).mul(w));
+    this.instrumentsTradeCosts = this.instrumentsTradeCosts.plus(h.tradeCosts.mul(w));
+  }
 
   /** Adds the household's share (`w`) of a holding or an account kept as values per year. */
   add(cat: Category, assetClass: string, w: Decimal, c: Counted) {

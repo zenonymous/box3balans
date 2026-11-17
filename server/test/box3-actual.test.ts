@@ -400,6 +400,24 @@ describe("preview of the planned system", () => {
     expect(rows[0]).toMatchObject({ taxableEur: 70_000, carriedBackEur: 30_000, taxEur: 25_150 });
   });
 
+  // The novelle taxes financial instruments on their gain when sold, plus their dividend and interest
+  // each year, instead of their yearly change in value. Worked by hand: an actual return of 11,000 of
+  // which 10,000 is the investments' (9,000 value change, 1,000 dividend); costs 200, of which 50 are
+  // buying and selling costs, already inside the gain. Gain on sales 2,000, regular benefits 1,000:
+  // 11,000 − 10,000 + 2,000 + 1,000 − (200 − 50) = 3,850. 3,850 − 1,800 = 2,050 at 35.5% = 727.75.
+  it("taxes investments on their gain when sold instead of their change in value", () => {
+    const rows = simulateFuture(
+      [
+        year(2025, 11_000, {
+          costsEur: 200,
+          instruments: { returnEur: 10_000, tradeCostsEur: 50, gainEur: 2_000, regularBenefitsEur: 1_000 },
+        }),
+      ],
+      FUTURE_PRESETS.bill!,
+    );
+    expect(rows[0]).toMatchObject({ resultEur: 3850, capitalGainEur: 2000, taxableEur: 2050, taxEur: 727.75 });
+  });
+
   it("serves the preview with overridable parameters", async () => {
     await scenario(90_000);
     // The setting for the letter of 29 September (€1,000 tax-free) is gone: the change of
@@ -419,8 +437,12 @@ describe("preview of the planned system", () => {
     expect(r.presets.map((p: any) => p.id)).toEqual(["bill"]);
     expect((await t.api("GET", "/api/box3/future?preset=letter")).statusCode).toBe(400);
     const y2024 = r.rows.find((x: any) => x.year === 2024);
-    // 5,500 actual − 63 deductible costs − 1,000 = 4,437: 4,000 at 35% = 1,400 and 437 at 40% = 174.80.
-    expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 4437, taxEur: 1574.8 });
+    // The fund at the broker is taxed on its gain when sold (the novelle), from 2023, the first year
+    // shown: 40 bought at 100 with 2 costs, 4,002. In 2024 10 sold at 115 with 3 costs: 1,147 −
+    // 1,000.50 = 146.50, plus its 30 dividend, instead of its yearly return of 380; its 3 selling
+    // costs are inside the gain. 5,500 − 380 + 146.50 + 30 − (63 − 3) = 5,236.50; − 1,000 = 4,236.50:
+    // 4,000 at 35% = 1,400 and 236.50 at 40% = 94.60.
+    expect(y2024).toMatchObject({ resultEur: 5236.5, capitalGainEur: 146.5, taxableEur: 4236.5, taxEur: 1494.6 });
     expect((await t.api("GET", "/api/box3/future?preset=nonsense")).statusCode).toBe(400);
   });
 });

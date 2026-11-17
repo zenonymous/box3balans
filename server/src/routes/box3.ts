@@ -1,3 +1,4 @@
+import { householdGains } from "../domain/futureGains.js";
 import type { FastifyInstance } from "fastify";
 import { asc } from "drizzle-orm";
 import { z } from "zod";
@@ -133,6 +134,10 @@ export async function box3Routes(app: FastifyInstance) {
     const inputs = [];
     // Every year replays the same transactions: loaded once.
     const data = new LedgerData(db);
+    // Financial instruments, taxed when sold under the novelle, from the first year shown.
+    const gains = years.length
+      ? await householdGains(db, config, { start: years[0]!, to: years.at(-1)! }, data)
+      : { years: new Map(), warnings: [] };
     for (const year of years) {
       const [actual, box3] = await Promise.all([
         actualReturn(db, year, config, data),
@@ -146,6 +151,10 @@ export async function box3Routes(app: FastifyInstance) {
         partner: config.years[String(year)]?.partner ?? false,
         deemedTaxEur: box3?.calculation ? Number(box3.calculation.netTaxEur) : null,
         property: actual.property,
+        instruments: {
+          ...actual.instruments,
+          ...(gains.years.get(year) ?? { gainEur: 0, regularBenefitsEur: 0 }),
+        },
       });
     }
     return {
@@ -154,6 +163,7 @@ export async function box3Routes(app: FastifyInstance) {
       params,
       today: localToday(),
       rows: simulateFuture(inputs, params).reverse(),
+      warnings: gains.warnings,
     };
   });
 
