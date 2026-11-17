@@ -206,7 +206,7 @@ export function WithholdingCard() {
       actions={
         <div className="flex items-center gap-2">
           <Select
-            aria-label={t("Year")}
+            aria-label={t("Year for tax withheld by country")}
             value={year}
             onChange={(e) => setSelected(e.target.value)}
             className="w-auto py-1 text-xs"

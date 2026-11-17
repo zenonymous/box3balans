@@ -23,11 +23,8 @@ async function payments() {
   return heading.closest("section")!;
 }
 
-/** The page's year, next to its title (the withheld-tax card has a year of its own). */
-const yearSelect = () =>
-  within(
-    screen.getByRole("heading", { level: 1, name: "Inkomsten" }).parentElement!.parentElement!,
-  ).getByRole<HTMLSelectElement>("combobox", { name: "Jaar" });
+/** The page's year; the withheld-tax card has its own, named for that card. */
+const yearSelect = () => screen.getByRole<HTMLSelectElement>("combobox", { name: "Jaar" });
 
 const rows = (card: HTMLElement) => within(card).getAllByRole("row").slice(1);
 
@@ -50,6 +47,8 @@ describe("Income page", () => {
     show();
     const card = await payments();
     expect(yearSelect().value).toBe("2025");
+    // Two year choices on one page, each with its own name for a screen reader.
+    expect(await screen.findByRole("combobox", { name: "Jaar voor ingehouden belasting per land" })).toBeTruthy();
     expect(rows(card)).toHaveLength(1);
     expect(rows(card)[0]!.textContent).toMatch(/ASML Holding/);
 

@@ -683,6 +683,7 @@ export const NL: Record<string, string> = {
     "Boven het verdragstarief van 15%: geef je broker een W-8BEN-formulier; het extra deel is lastig terug te krijgen.",
   "Foreign tax: offset in your tax return up to the treaty rate (often 15%); more must be reclaimed from that country.":
     "Buitenlandse belasting: te verrekenen in je aangifte tot het verdragstarief (vaak 15%); meer moet je bij dat land terugvragen.",
+  "Year for tax withheld by country": "Jaar voor ingehouden belasting per land",
   "Tax withheld by country": "Ingehouden belasting per land",
   Country: "Land",
   "Rate %": "Tarief %",
