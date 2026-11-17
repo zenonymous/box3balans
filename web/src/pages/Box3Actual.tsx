@@ -280,11 +280,23 @@ export function FuturePreviewCard() {
       }
       className="print:hidden"
     >
-      <p className="mb-3 text-sm text-ink-2">
-        {t(
-          "The bill taxes each year's actual result, including unrealised gains, after costs, with a tax-free result of €1,800 and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 12 November 2026 the Tweede Kamer also passed the novelle: the new system starts on 1 January 2029, shares, bonds, funds and options are taxed only when sold, everything else from 2030. It also split the rate: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote. Here those rules are applied to your past years, as if the new system had started on 1 January of the first year shown: what you held then counts at its value that day, as holdings will on 1 January 2029. Shares, bonds and funds count when sold, at one average acquisition price per person, with their dividend each year; crypto in a wallet or on an exchange, precious metal and bank balances count with their change in value each year.",
-        )}
-      </p>
+      <div className="mb-3 space-y-2 text-sm text-ink-2">
+        <p>
+          {t(
+            "The novelle, passed by the Tweede Kamer on 12 November 2026, taxes box 3 from 1 January 2029 on the actual return after costs, with a tax-free result of €1,800 per person and losses carried over: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote.",
+          )}
+        </p>
+        <p>
+          {t(
+            "Shares, bonds and funds count when sold, at one average acquisition price per person, with their dividend and interest each year. Homes and other real estate count when sold too; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. Bank balances, crypto in a wallet or on an exchange and precious metal count with their change in value each year; a later law is meant to tax those on their gain too, from 2030.",
+          )}
+        </p>
+        <p>
+          {t(
+            "Here those rules are applied to your past years, as if the new system had started on 1 January of the first year shown: what you held then counts at its value that day, as holdings will on 1 January 2029.",
+          )}
+        </p>
+      </div>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
         {field("ratePct", t("Rate (%)"))}
         {field("topRatePct", t("Top rate (%)"))}
@@ -321,7 +333,7 @@ export function FuturePreviewCard() {
               <thead>
                 <tr className="border-b border-line text-xs text-ink-2">
                   <th className="px-3 py-2 text-left font-medium">{t("Year")}</th>
-                  <th className="px-3 py-2 text-right font-medium" title={t("Actual return minus costs")}>
+                  <th className="px-3 py-2 text-right font-medium" title={t("Return after costs, by the rules above")}>
                     {t("Result")}
                   </th>
                   <th
@@ -406,7 +418,7 @@ export function FuturePreviewCard() {
           )}
           <p className="mt-2 text-xs text-muted">
             {t(
-              "Uses your actual return per year (box 3 accounts, minus debt interest) minus costs. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of its second year, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
+              "Uses your return per year (box 3 accounts, minus debt interest) minus costs, by the rules above. A home's gain counts from its WOZ value of the year after the first you entered, as the bill counts it from the WOZ value of its second year, and is taxed in the year its value on the next 1 January is 0 or it leaves box 3. The current system's tax follows the deemed-return rules for that year. The novelle's details aren't final; sources in docs/box3-sources.md. Not tax advice.",
             )}
           </p>
         </>
