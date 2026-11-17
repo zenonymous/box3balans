@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { accountKind, assetClass } from "../src/db/schema.js";
-import { capitalGains, isFinancialInstrument, ownerShare } from "../src/domain/box3Future.js";
+import { capitalGains, isFinancialInstrument, ownerShare } from "../src/domain/futureGains.js";
 import { ledgerTx as tx, noon as at } from "./helpers.js";
 
 const START = { start: 2029, to: 2030 };

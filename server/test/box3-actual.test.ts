@@ -410,7 +410,7 @@ describe("preview of the planned system", () => {
       [
         year(2025, 11_000, {
           costsEur: 200,
-          instruments: { returnEur: 10_000, tradeCostsEur: 50, gainEur: 2_000, regularBenefitsEur: 1_000 },
+          financialInstruments: { returnEur: 10_000, tradeCostsEur: 50, gainEur: 2_000, regularBenefitsEur: 1_000 },
         }),
       ],
       FUTURE_PRESETS.bill!,

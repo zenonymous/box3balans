@@ -89,33 +89,46 @@ describe("the preview from 2029 with tax on investments when sold", () => {
 //   You: 4 + 6 at 100 and 6 at 200: 16 for 2,200 (137.50 each). 6 sold: 1,080 − 825 = 255.
 //   Partner: 4 at 100 and 4 at 200: 8 for 1,200 (150 each). 4 sold: 720 − 600 = 120.
 // Together 375. One average for the household would give 24 units for 4,400 and a loss on the sale.
-// The fiscal partner is set for 2024 and 2025 only; the years after have no setting yet and follow 2025.
+// The fund is worth 200 at both year ends, so nothing else changes: the result is the gain.
+async function household(partnerIn2024: boolean, partnerIn2025: boolean) {
+  t = await createTestApp();
+  const db = t.database.db;
+  await t.api("POST", "/api/household", { name: "Me", role: "self" });
+  await t.api("POST", "/api/household", { name: "Sam", role: "partner" });
+  const own = json(await t.api("POST", "/api/accounts", { name: "Broker", kind: "broker" }));
+  const joint = json(
+    await t.api("POST", "/api/accounts", { name: "Joint", kind: "broker", owner: "joint", jointSelfPct: 60 }),
+  );
+  const [fund] = await db
+    .insert(assets)
+    .values({ assetClass: "etf", name: "Fund", symbol: "FUND", priceSource: "manual", priceRef: "manual:FUND" })
+    .returning();
+  await db.insert(priceHistory).values([
+    { assetId: fund!.id, day: "2024-06-03", close: "120", currency: "EUR", closeEur: "120" },
+    { assetId: fund!.id, day: "2024-12-31", close: "200", currency: "EUR", closeEur: "200" },
+    { assetId: fund!.id, day: "2025-12-31", close: "200", currency: "EUR", closeEur: "200" },
+  ]);
+  const { config } = json(await t.api("GET", "/api/box3"));
+  const situation = { debtsEur: "0", extraOtherEur: "0", extraBankEur: "0", debtInterestEur: "0", extraReturnEur: "0" };
+  config.years["2024"] = { ...situation, partner: partnerIn2024, allocationSelfPct: "50" };
+  config.years["2025"] = { ...situation, partner: partnerIn2025, allocationSelfPct: "50" };
+  expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(200);
+  const tx = (accountId: number, type: "buy" | "sell", day: string, quantity: string, price: string) => ({
+    accountId,
+    assetId: fund!.id,
+    type,
+    occurredAt: noon(day),
+    quantity,
+    price,
+  });
+  return { db, own, joint, fund: fund!, tx };
+}
+const preview = async () => json(await t!.api("GET", "/api/box3/future?preset=bill"));
+const rowOf = (r: { rows: { year: number }[] }, year: number) => r.rows.find((x) => x.year === year);
+
 describe("a joint account in the preview's tax on investments", () => {
   it("gives each partner their own average", async () => {
-    t = await createTestApp();
-    const db = t.database.db;
-    await t.api("POST", "/api/household", { name: "Me", role: "self" });
-    await t.api("POST", "/api/household", { name: "Sam", role: "partner" });
-    const own = json(await t.api("POST", "/api/accounts", { name: "Broker", kind: "broker" }));
-    const joint = json(
-      await t.api("POST", "/api/accounts", { name: "Joint", kind: "broker", owner: "joint", jointSelfPct: 60 }),
-    );
-    const [fund] = await db
-      .insert(assets)
-      .values({ assetClass: "etf", name: "Fund", symbol: "FUND", priceSource: "manual", priceRef: "manual:FUND" })
-      .returning();
-    await db.insert(priceHistory).values([
-      { assetId: fund!.id, day: "2024-12-31", close: "200", currency: "EUR", closeEur: "200" },
-      { assetId: fund!.id, day: "2025-12-31", close: "200", currency: "EUR", closeEur: "200" },
-    ]);
-    const tx = (accountId: number, type: "buy" | "sell", day: string, quantity: string, price: string) => ({
-      accountId,
-      assetId: fund!.id,
-      type,
-      occurredAt: noon(day),
-      quantity,
-      price,
-    });
+    const { db, own, joint, tx } = await household(true, true);
     await db
       .insert(transactions)
       .values([
@@ -124,18 +137,41 @@ describe("a joint account in the preview's tax on investments", () => {
         tx(joint.id, "buy", "2024-09-02", "10", "200"),
         tx(joint.id, "sell", "2025-06-02", "10", "180"),
       ]);
-    const { config } = json(await t.api("GET", "/api/box3"));
-    const situation = {
-      debtsEur: "0",
-      extraOtherEur: "0",
-      extraBankEur: "0",
-      debtInterestEur: "0",
-      extraReturnEur: "0",
-    };
-    config.years["2024"] = { ...situation, partner: true, allocationSelfPct: "50" };
-    config.years["2025"] = { ...situation, partner: true, allocationSelfPct: "50" };
-    expect((await t.api("PUT", "/api/box3/config", config)).statusCode).toBe(200);
-    const r = json(await t.api("GET", "/api/box3/future?preset=bill"));
-    expect(r.rows.find((x: { year: number }) => x.year === 2025)).toMatchObject({ capitalGainEur: 375 });
+    expect(rowOf(await preview(), 2025)).toMatchObject({ capitalGainEur: 375, resultEur: 375 });
+  });
+
+  // No fiscal partner in 2024, one in 2025. In 2024 only your 60% of the joint account counts, in the
+  // yearly return and in the gain alike. The joint account buys 10 at 100 and sells 5 at 150 in 2024:
+  // yours are 6 at 100 = 600, and 3 of them sold: 450 − 300 = 150. Your partner's 2 sold don't count.
+  it("counts only your share in a year without a fiscal partner", async () => {
+    const { db, joint, tx } = await household(false, true);
+    await db
+      .insert(transactions)
+      .values([tx(joint.id, "buy", "2024-03-01", "10", "100"), tx(joint.id, "sell", "2024-11-04", "5", "150")]);
+    expect(rowOf(await preview(), 2024)).toMatchObject({ capitalGainEur: 150, resultEur: 150 });
+  });
+
+  // You move 10 units from your own account into the joint one on 3 June 2024, when they're worth
+  // 120. Of those, 4 become your partner's: they leave your average (no gain) and come into theirs at
+  // their value that day. In 2025 the joint account sells all 10 at 150:
+  //   You: 10 at 100 = 1,000, 4 handed over leave 6 at 600; 6 sold: 900 − 600 = 300.
+  //   Partner: 4 at 120 = 480; 4 sold: 600 − 480 = 120. Together 420.
+  it("moves units between partners when they go into a joint account", async () => {
+    const { db, own, joint, fund, tx } = await household(true, true);
+    await db
+      .insert(priceHistory)
+      .values({ assetId: fund.id, day: "2025-06-02", close: "150", currency: "EUR", closeEur: "150" });
+    const leg = { assetId: fund.id, occurredAt: noon("2024-06-03"), quantity: "10", transferGroup: "move-1" };
+    await db
+      .insert(transactions)
+      .values([
+        tx(own.id, "buy", "2024-03-01", "10", "100"),
+        { ...leg, accountId: own.id, type: "transfer_out" as const },
+        { ...leg, accountId: joint.id, type: "transfer_in" as const },
+        tx(joint.id, "sell", "2025-06-02", "10", "150"),
+      ]);
+    const r = await preview();
+    expect(rowOf(r, 2025)).toMatchObject({ capitalGainEur: 420 });
+    expect(r.warnings).toEqual([]);
   });
 });

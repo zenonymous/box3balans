@@ -1,4 +1,3 @@
-import { householdGains } from "../domain/futureGains.js";
 import type { FastifyInstance } from "fastify";
 import { asc } from "drizzle-orm";
 import { z } from "zod";
@@ -18,7 +17,14 @@ import { peildatumChecklist } from "../domain/peildatum.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
 import { RULES } from "../rules/index.js";
 import { LedgerData } from "../domain/valuation.js";
-import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
+import {
+  FUTURE_PRESETS,
+  type FinancialInstrumentsYear,
+  compareWithDeemed,
+  simulateFuture,
+} from "../domain/box3Future.js";
+import { type HouseholdGainsYear, householdGains } from "../domain/futureGains.js";
+import { ZERO } from "../lib/decimal.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
@@ -135,9 +141,7 @@ export async function box3Routes(app: FastifyInstance) {
     // Every year replays the same transactions: loaded once.
     const data = new LedgerData(db);
     // Financial instruments, taxed when sold under the novelle, from the first year shown.
-    const gains = years.length
-      ? await householdGains(db, config, { start: years[0]!, to: years.at(-1)! }, data)
-      : { years: new Map(), warnings: [] };
+    const gains = years.length ? await householdGains(db, config, { start: years[0]!, to: years.at(-1)! }, data) : null;
     for (const year of years) {
       const [actual, box3] = await Promise.all([
         actualReturn(db, year, config, data),
@@ -151,10 +155,7 @@ export async function box3Routes(app: FastifyInstance) {
         partner: config.years[String(year)]?.partner ?? false,
         deemedTaxEur: box3?.calculation ? Number(box3.calculation.netTaxEur) : null,
         property: actual.property,
-        instruments: {
-          ...actual.instruments,
-          ...(gains.years.get(year) ?? { gainEur: 0, regularBenefitsEur: 0 }),
-        },
+        financialInstruments: financialInstrumentsYear(actual.financialInstruments, gains?.years.get(year)),
       });
     }
     return {
@@ -163,7 +164,7 @@ export async function box3Routes(app: FastifyInstance) {
       params,
       today: localToday(),
       rows: simulateFuture(inputs, params).reverse(),
-      warnings: gains.warnings,
+      warnings: gains?.warnings ?? [],
     };
   });
 
@@ -172,4 +173,24 @@ export async function box3Routes(app: FastifyInstance) {
     await saveConfig(db, config);
     return loadConfig(db);
   });
+}
+
+/**
+ * What the preview swaps for financial instruments in a year: their yearly return and trading costs
+ * out, their gain and regular benefits in. An asset without a value at the start stays on its
+ * yearly return.
+ */
+function financialInstrumentsYear(
+  holdings: ActualReturn["financialInstruments"],
+  gains: HouseholdGainsYear | undefined,
+): FinancialInstrumentsYear | undefined {
+  if (!gains) return undefined;
+  const left = new Set(gains.withoutStartValue);
+  const kept = holdings.filter((h) => !left.has(h.assetId));
+  return {
+    returnEur: kept.reduce((s, h) => s.plus(h.returnEur), ZERO).toNumber(),
+    tradeCostsEur: kept.reduce((s, h) => s.plus(h.tradeCostsEur), ZERO).toNumber(),
+    gainEur: gains.gainEur,
+    regularBenefitsEur: gains.regularBenefitsEur,
+  };
 }

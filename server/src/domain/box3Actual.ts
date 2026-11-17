@@ -5,7 +5,7 @@ import { METAL_CODES } from "../db/seed.js";
 import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { fromLocal, localDay, localToday } from "../lib/time.js";
 import { type Box3Config, type Category, categoryOf } from "./box3.js";
-import { isFinancialInstrument } from "./box3Future.js";
+import { taxedWhenSold } from "./futureGains.js";
 import { attribute, loadHousehold } from "./household.js";
 import { type HoldingOn, LedgerData, holdingsOn } from "./valuation.js";
 import {
@@ -67,9 +67,9 @@ export interface ActualReturn {
   debtInterestEur: number;
   totalEur: number; // the actual return; may be negative
   property: PropertyYear[]; // homes and other real estate, inside the total
-  // Financial instruments, for the preview from 2029 (the novelle taxes them when sold): their part
-  // of the total, and the costs of buying and selling them inside costsEur.
-  instruments: { returnEur: number; tradeCostsEur: number };
+  // Holdings taxed when sold in the preview from 2029 (taxedWhenSold): each one's part of the total
+  // and the costs of buying and selling it inside costsEur, as the household's share.
+  financialInstruments: { accountId: number; assetId: number; returnEur: number; tradeCostsEur: number }[];
   // Accounts kept as values per year that miss a value the return needs.
   warnings: string[];
 }
@@ -160,7 +160,12 @@ export async function actualReturn(
     debtInterestEur: num(debtInterest),
     totalEur: num(total),
     property: perYear.property,
-    instruments: { returnEur: num(totals.instrumentsReturn), tradeCostsEur: num(totals.instrumentsTradeCosts) },
+    financialInstruments: [...totals.financialInstruments.values()].map((f) => ({
+      accountId: f.accountId,
+      assetId: f.assetId,
+      returnEur: num(f.returnEur),
+      tradeCostsEur: num(f.tradeCostsEur),
+    })),
     warnings,
   };
 }
@@ -271,14 +276,18 @@ function ledgerHoldings(args: {
       case "buy":
         h.in = h.in.plus(gross);
         if (cash) cash.out = cash.out.plus(gross).plus(fee);
-        h.costs = h.costs.plus(fee);
-        h.tradeCosts = h.tradeCosts.plus(fee);
+        if (fee.gt(0)) {
+          h.costs = h.costs.plus(fee);
+          h.tradeCosts = h.tradeCosts.plus(fee);
+        }
         break;
       case "sell":
         h.out = h.out.plus(gross);
         if (cash) cash.in = cash.in.plus(gross).minus(fee);
-        h.costs = h.costs.plus(fee);
-        h.tradeCosts = h.tradeCosts.plus(fee);
+        if (fee.gt(0)) {
+          h.costs = h.costs.plus(fee);
+          h.tradeCosts = h.tradeCosts.plus(fee);
+        }
         break;
       case "deposit":
       case "transfer_in":
@@ -352,8 +361,8 @@ function addLedgerHoldings(args: {
       args.year,
     );
     args.totals.add(cat, a.assetClass, args.weight(h.accountId), h);
-    if (!outsideBox3(cat) && !h.physical && isFinancialInstrument({ accountKind: acc.kind, assetClass: a.assetClass }))
-      args.totals.addInstrument(args.weight(h.accountId), h);
+    if (!h.physical && taxedWhenSold(args.config, acc, a, args.year))
+      args.totals.addFinancialInstrument(args.weight(h.accountId), h);
   }
 }
 
@@ -380,14 +389,24 @@ class Totals {
   // Of what counts in box 3 only.
   inScopeCosts = ZERO;
   taxWithheld = ZERO;
-  // Financial instruments, also in the parts above.
-  instrumentsReturn = ZERO;
-  instrumentsTradeCosts = ZERO;
+  // Holdings taxed when sold in the preview, also in the parts above.
+  readonly financialInstruments = new Map<
+    string,
+    { accountId: number; assetId: number; returnEur: Decimal; tradeCostsEur: Decimal }
+  >();
 
-  /** Notes a holding as a financial instrument too (it's in the parts through add()). */
-  addInstrument(w: Decimal, h: Holding) {
-    this.instrumentsReturn = this.instrumentsReturn.plus(valueChange(h).plus(h.direct).mul(w));
-    this.instrumentsTradeCosts = this.instrumentsTradeCosts.plus(h.tradeCosts.mul(w));
+  /** Notes a holding as taxed when sold too (it's in the parts through add()). */
+  addFinancialInstrument(w: Decimal, h: Holding) {
+    const k = `${h.accountId}|${h.assetId}`;
+    const f = this.financialInstruments.get(k) ?? {
+      accountId: h.accountId,
+      assetId: h.assetId,
+      returnEur: ZERO,
+      tradeCostsEur: ZERO,
+    };
+    f.returnEur = f.returnEur.plus(valueChange(h).plus(h.direct).mul(w));
+    f.tradeCostsEur = f.tradeCostsEur.plus(h.tradeCosts.mul(w));
+    this.financialInstruments.set(k, f);
   }
 
   /** Adds the household's share (`w`) of a holding or an account kept as values per year. */

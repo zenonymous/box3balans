@@ -282,7 +282,7 @@ export function FuturePreviewCard() {
     >
       <p className="mb-3 text-sm text-ink-2">
         {t(
-          "The bill taxes each year's actual result, including unrealised gains, after costs, with a tax-free result of €1,800 and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 12 November 2026 the Tweede Kamer also passed the novelle: the new system starts on 1 January 2029, shares, bonds, funds and options are taxed only when sold, everything else from 2030. It also split the rate: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote. Here those rules are applied to your past years, as if the new system had started on 1 January of the first year shown: what you held then counts at its value that day, as holdings will on 1 January 2029. Shares, bonds and funds count when sold, at one average purchase price per person, with their dividend each year; crypto in a wallet or on an exchange, precious metal and savings count with their change in value each year.",
+          "The bill taxes each year's actual result, including unrealised gains, after costs, with a tax-free result of €1,800 and losses carried over. Homes and other real estate are taxed on their gain when sold; each year their rent counts, or a share of the WOZ value (the vastgoedbijtelling) if that's higher and they aren't let all year. On 12 November 2026 the Tweede Kamer also passed the novelle: the new system starts on 1 January 2029, shares, bonds, funds and options are taxed only when sold, everything else from 2030. It also split the rate: 35.5% on the first €60,000 of taxable income per person, 38.5% above. The Eerste Kamer still has to vote. Here those rules are applied to your past years, as if the new system had started on 1 January of the first year shown: what you held then counts at its value that day, as holdings will on 1 January 2029. Shares, bonds and funds count when sold, at one average acquisition price per person, with their dividend each year; crypto in a wallet or on an exchange, precious metal and bank balances count with their change in value each year.",
         )}
       </p>
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
@@ -328,7 +328,7 @@ export function FuturePreviewCard() {
                     className="px-3 py-2 text-right font-medium"
                     title={t("Gain on shares, bonds and funds sold that year, inside the result")}
                   >
-                    {t("Gain when sold")}
+                    {t("Capital gain")}
                   </th>
                   <th className="px-3 py-2 text-right font-medium">{t("Losses set off")}</th>
                   <th className="px-3 py-2 text-right font-medium">{t("Taxable")}</th>
