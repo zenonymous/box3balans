@@ -73,6 +73,21 @@ describe("Box 3 page", () => {
     expect(screen.queryByText(/29 september/)).toBeNull();
   });
 
+  // The two rates the Tweede Kamer adopted on 12 November 2026, each adjustable. Amounts are typed in
+  // the user's number format: "70.000" is seventy thousand, not seventy.
+  it("starts from the two rates and reads an amount the Dutch way", async () => {
+    const api = showPage("/box3?year=2025", "box3", <Box3Page />);
+    const top = await screen.findByLabelText("Toptarief (%)");
+    await waitFor(() => expect(top.getAttribute("placeholder")).toBe("38.5"));
+    expect(screen.getByLabelText("Tarief (%)").getAttribute("placeholder")).toBe("35.5");
+    const from = screen.getByLabelText("Toptarief vanaf (€)");
+    expect(from.getAttribute("placeholder")).toBe("60000");
+    fireEvent.change(from, { target: { value: "70.000" } });
+    await waitFor(() =>
+      expect(api.requests.some((r) => r.url === "/api/box3/future?preset=bill&topRateFromEur=70000")).toBe(true),
+    );
+  });
+
   it("says how much of the homes' gain waits for their sale, and takes another vastgoedbijtelling", async () => {
     // The demo's holiday home rose from 298,000 to 310,000 since its second year.
     const api = showPage("/box3?year=2025", "box3", <Box3Page />);

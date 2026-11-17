@@ -42,7 +42,9 @@ export function compareWithDeemed(
 }
 
 export interface FutureParams {
-  ratePct: number;
+  ratePct: number; // on taxable income up to topRateFromEur per taxpayer
+  topRatePct: number; // on the part above it
+  topRateFromEur: number; // per taxpayer
   allowanceEur: number; // heffingsvrij resultaat per taxpayer
   lossThresholdEur: number; // smaller losses don't carry over
   carryBackYears: 0 | 1;
@@ -52,8 +54,12 @@ export interface FutureParams {
 /** See docs/box3-sources.md. Not law yet, hence everything is editable. */
 export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = {
   bill: {
-    label: "Bill as passed by the Tweede Kamer (12 Feb 2026)",
-    ratePct: 36,
+    // The bill of 12 February 2026 with the novelle and the amendments the Tweede Kamer adopted on
+    // 12 November 2026: two rates instead of 36% (amendment 37022 nr. 80, art. 2.13).
+    label: "Bill with the novelle, as passed by the Tweede Kamer (12 Nov 2026)",
+    ratePct: 35.5,
+    topRatePct: 38.5,
+    topRateFromEur: 60_000,
     allowanceEur: 1800,
     lossThresholdEur: 500,
     carryBackYears: 0,
@@ -86,6 +92,21 @@ export interface FutureYearRow {
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
 
+/** An amount the law gives each taxpayer, for the household: twice it with a fiscal partner. */
+const perHousehold = (perTaxpayerEur: number, partner: boolean) => perTaxpayerEur * (partner ? 2 : 1);
+
+/**
+ * The tax on a year's taxable income: the rate up to the bracket, the top rate above it. The table
+ * is per taxpayer, and fiscal partners divide the income as they like (art. 2.17); an even split
+ * keeps the most below the bracket, so partners get a bracket each.
+ */
+export function taxOnIncome(taxableEur: number, partner: boolean, p: FutureParams): number {
+  const bracket = perHousehold(p.topRateFromEur, partner);
+  const low = Math.min(taxableEur, bracket);
+  const high = Math.max(0, taxableEur - bracket);
+  return round2(D(low).mul(p.ratePct).plus(D(high).mul(p.topRatePct)).div(100));
+}
+
 /**
  * The planned capital-accrual tax applied to past years in order: each year's actual return minus
  * costs; a loss of at least the threshold carries forward (and back one year, if enabled); earlier
@@ -100,6 +121,8 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
   let balance = 0;
   // Per home: its gain so far, until it's sold.
   const gains = new Map<number, Decimal>();
+  // Whether the year before had a fiscal partner: a loss carried back is taxed again on its terms.
+  let prevPartner = false;
   for (const y of [...years].sort((a, b) => a.year - b.year)) {
     // The homes' actual return makes way for what the bill taxes of them this year.
     let homes = ZERO;
@@ -110,7 +133,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       homes = homes.plus(taxedOfHome(h, gain, p.propertyPct)).minus(h.returnEur);
     }
     const result = round2(D(y.actualReturnEur).plus(homes).minus(y.costsEur));
-    const allowance = p.allowanceEur * (y.partner ? 2 : 1);
+    const allowance = perHousehold(p.allowanceEur, y.partner);
     let taxable = 0;
     let used = 0;
     if (result < 0) {
@@ -120,7 +143,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
         const back = Math.min(loss, prev.taxableEur);
         prev.taxableEur = round2(prev.taxableEur - back);
         prev.carriedBackEur = round2(prev.carriedBackEur + back);
-        prev.taxEur = round2((prev.taxableEur * p.ratePct) / 100);
+        prev.taxEur = taxOnIncome(prev.taxableEur, prevPartner, p);
         prev.differenceEur = prev.deemedTaxEur == null ? null : round2(prev.taxEur - prev.deemedTaxEur);
         loss -= back;
       }
@@ -131,7 +154,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       balance -= used;
       taxable = afterAllowance - used;
     }
-    const tax = round2((taxable * p.ratePct) / 100);
+    const tax = taxOnIncome(round2(taxable), y.partner, p);
     rows.push({
       year: y.year,
       complete: y.complete,
@@ -146,6 +169,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       deemedTaxEur: y.deemedTaxEur,
       differenceEur: y.deemedTaxEur == null ? null : round2(tax - y.deemedTaxEur),
     });
+    prevPartner = y.partner;
   }
   return rows;
 }

@@ -223,6 +223,9 @@ describe("interest booked early in January", () => {
 });
 
 describe("preview of the planned system", () => {
+  // The examples below were worked by hand at the bill's single rate of 36%; the two rates the
+  // Tweede Kamer added on 12 November 2026 have their own tests further down.
+  const AT_36 = { ...FUTURE_PRESETS.bill!, ratePct: 36, topRatePct: 36 };
   const year = (
     y: number,
     actualReturnEur: number,
@@ -263,7 +266,7 @@ describe("preview of the planned system", () => {
         // Sold for 230,000.
         year(2026, 16_000, { property: [home(1, { woz: 215_000, gain: 15_000, sold: true })] }),
       ],
-      FUTURE_PRESETS.bill!,
+      AT_36,
     );
     expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.propertyGainPendingEur])).toEqual([
       // 1,000 + 3.35% × 200,000 = 7,700; 5,900 above the allowance, at 36% 2,124. Gain 10,000 waits.
@@ -287,7 +290,7 @@ describe("preview of the planned system", () => {
           property: [home(2, { woz: 300_000, rent: 6_000, rented: true, costs: 1_500, gain: 10_000 })],
         }),
       ],
-      FUTURE_PRESETS.bill!,
+      AT_36,
     );
     // 1,000 + 3.35% × 200,000 = 7,700, the costs not deducted; then 6,000 rent − 1,500 = 4,500.
     expect(rows.map((r) => [r.year, r.resultEur])).toEqual([
@@ -299,7 +302,7 @@ describe("preview of the planned system", () => {
   it("counts the vastgoedbijtelling for the part of the running year passed", () => {
     const rows = simulateFuture(
       [year(2026, 4_000, { complete: false, property: [home(1, { woz: 300_000, share: 0.25, gain: 0 })] })],
-      FUTURE_PRESETS.bill!,
+      AT_36,
     );
     // 4,000 other return + 3.35% × 300,000 × ¼ = 2,512.50: 6,512.50.
     expect(rows[0]).toMatchObject({ resultEur: 6512.5, propertyGainPendingEur: 0 });
@@ -314,7 +317,7 @@ describe("preview of the planned system", () => {
           property: [home(2, { woz: 310_000, rent: 3_000, rented: true, gain: -30_000, sold: true })],
         }),
       ],
-      FUTURE_PRESETS.bill!,
+      AT_36,
     );
     expect(rows.map((r) => [r.year, r.resultEur, r.taxEur, r.lossBalanceEur, r.propertyGainPendingEur])).toEqual([
       // The rent, below 3.35% of the WOZ value, since the home is let all year; 4,200 at 36%.
@@ -324,8 +327,8 @@ describe("preview of the planned system", () => {
     ]);
   });
 
-  it("carries losses forward under the bill as passed", () => {
-    const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], FUTURE_PRESETS.bill!);
+  it("carries losses forward, at a single rate of 36%", () => {
+    const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], AT_36);
     expect(rows.map((r) => [r.year, r.taxableEur, r.taxEur, r.lossBalanceEur])).toEqual([
       [2024, 8200, 2952, 0],
       [2025, 0, 0, 3000],
@@ -336,7 +339,7 @@ describe("preview of the planned system", () => {
 
   it("carries a loss back one year when that's switched on", () => {
     const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], {
-      ...FUTURE_PRESETS.bill!,
+      ...AT_36,
       allowanceEur: 1900,
       carryBackYears: 1,
     });
@@ -350,7 +353,7 @@ describe("preview of the planned system", () => {
   it("ignores small losses, deducts costs, doubles the allowance for partners and compares", () => {
     const rows = simulateFuture(
       [year(2024, -400), year(2025, 5_000, { costsEur: 200, partner: true, deemedTaxEur: 1000 })],
-      FUTURE_PRESETS.bill!,
+      AT_36,
     );
     expect(rows[0]).toMatchObject({ resultEur: -400, lossBalanceEur: 0 });
     // 5,000 − 200 costs − 3,600 allowance = 1,200 → €432, €568 less than the deemed €1,000.
@@ -363,13 +366,51 @@ describe("preview of the planned system", () => {
     });
   });
 
+  // Amendment 37022 nr. 80, adopted by the Tweede Kamer on 12 November 2026: 35.5% on the first
+  // €60,000 of taxable income from saving and investing, 38.5% above (art. 2.13). Worked by hand.
+  it("starts from the two rates the Tweede Kamer adopted", () => {
+    expect(FUTURE_PRESETS.bill).toMatchObject({ ratePct: 35.5, topRatePct: 38.5, topRateFromEur: 60_000 });
+  });
+
+  it("taxes the part above €60,000 at the top rate", () => {
+    // 101,800 − 1,800 = 100,000 taxable: 60,000 × 35.5% = 21,300 plus 40,000 × 38.5% = 15,400.
+    // 50,000 taxable stays below the bracket: 17,750.
+    const rows = simulateFuture([year(2024, 101_800), year(2025, 51_800)], FUTURE_PRESETS.bill!);
+    expect(rows.map((r) => [r.year, r.taxableEur, r.taxEur])).toEqual([
+      [2024, 100_000, 36_700],
+      [2025, 50_000, 17_750],
+    ]);
+  });
+
+  // The table is per taxpayer, and fiscal partners divide the income between them as they like
+  // (art. 2.17): an even split keeps the most of it below €60,000 each, so €120,000 together.
+  it("gives fiscal partners a bracket each", () => {
+    // 133,600 − 3,600 = 130,000 taxable: 120,000 × 35.5% = 42,600 plus 10,000 × 38.5% = 3,850.
+    const rows = simulateFuture([year(2024, 133_600, { partner: true })], FUTURE_PRESETS.bill!);
+    expect(rows[0]).toMatchObject({ taxableEur: 130_000, taxEur: 46_450 });
+  });
+
+  it("works the top rate out again when a loss is carried back", () => {
+    // 2024: 101,800 − 1,800 = 100,000 taxable. 2025 loses 30,000, carried back: 70,000 left,
+    // 60,000 × 35.5% = 21,300 plus 10,000 × 38.5% = 3,850.
+    const rows = simulateFuture([year(2024, 101_800), year(2025, -30_000)], {
+      ...FUTURE_PRESETS.bill!,
+      carryBackYears: 1,
+    });
+    expect(rows[0]).toMatchObject({ taxableEur: 70_000, carriedBackEur: 30_000, taxEur: 25_150 });
+  });
+
   it("serves the preview with overridable parameters", async () => {
     await scenario(90_000);
     // The setting for the letter of 29 September (€1,000 tax-free) is gone: the change of
     // 3 November dropped that cut. The bill's own figures, with the rate and tax-free result set by hand.
-    const r = json(await t.api("GET", "/api/box3/future?preset=bill&ratePct=35&allowanceEur=1000"));
+    const r = json(
+      await t.api("GET", "/api/box3/future?preset=bill&ratePct=35&allowanceEur=1000&topRatePct=40&topRateFromEur=4000"),
+    );
     expect(r.params).toEqual({
       ratePct: 35,
+      topRatePct: 40,
+      topRateFromEur: 4000,
       allowanceEur: 1000,
       lossThresholdEur: 500,
       carryBackYears: 0,
@@ -378,8 +419,8 @@ describe("preview of the planned system", () => {
     expect(r.presets.map((p: any) => p.id)).toEqual(["bill"]);
     expect((await t.api("GET", "/api/box3/future?preset=letter")).statusCode).toBe(400);
     const y2024 = r.rows.find((x: any) => x.year === 2024);
-    // 5,500 actual − 63 deductible costs − 1,000 = 4,437 at 35%.
-    expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 4437, taxEur: 1552.95 });
+    // 5,500 actual − 63 deductible costs − 1,000 = 4,437: 4,000 at 35% = 1,400 and 437 at 40% = 174.80.
+    expect(y2024).toMatchObject({ resultEur: 5437, taxableEur: 4437, taxEur: 1574.8 });
     expect((await t.api("GET", "/api/box3/future?preset=nonsense")).statusCode).toBe(400);
   });
 });

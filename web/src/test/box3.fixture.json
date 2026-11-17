@@ -1128,8 +1128,10 @@
     "presets": [
       {
         "id": "bill",
-        "label": "Bill as passed by the Tweede Kamer (12 Feb 2026)",
-        "ratePct": 36,
+        "label": "Bill with the novelle, as passed by the Tweede Kamer (12 Nov 2026)",
+        "ratePct": 35.5,
+        "topRatePct": 38.5,
+        "topRateFromEur": 60000,
         "allowanceEur": 1800,
         "lossThresholdEur": 500,
         "carryBackYears": 0,
@@ -1138,7 +1140,9 @@
     ],
     "preset": "bill",
     "params": {
-      "ratePct": 36,
+      "ratePct": 35.5,
+      "topRatePct": 38.5,
+      "topRateFromEur": 60000,
       "allowanceEur": 1800,
       "lossThresholdEur": 500,
       "carryBackYears": 0,
