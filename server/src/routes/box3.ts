@@ -109,7 +109,7 @@ export async function box3Routes(app: FastifyInstance) {
         preset: z.enum(Object.keys(FUTURE_PRESETS) as [string, ...string[]]).default("bill"),
         ratePct: z.coerce.number().min(0).max(100).optional(),
         topRatePct: z.coerce.number().min(0).max(100).optional(),
-        bracketEur: z.coerce.number().min(0).max(100_000_000).optional(),
+        topRateFromEur: z.coerce.number().min(0).max(100_000_000).optional(),
         allowanceEur: z.coerce.number().min(0).max(1_000_000).optional(),
         lossThresholdEur: z.coerce.number().min(0).max(1_000_000).optional(),
         carryBackYears: z.coerce.number().int().min(0).max(1).optional(),
@@ -120,7 +120,7 @@ export async function box3Routes(app: FastifyInstance) {
     const params = {
       ratePct: q.ratePct ?? base.ratePct,
       topRatePct: q.topRatePct ?? base.topRatePct,
-      bracketEur: q.bracketEur ?? base.bracketEur,
+      topRateFromEur: q.topRateFromEur ?? base.topRateFromEur,
       allowanceEur: q.allowanceEur ?? base.allowanceEur,
       lossThresholdEur: q.lossThresholdEur ?? base.lossThresholdEur,
       carryBackYears: (q.carryBackYears ?? base.carryBackYears) as 0 | 1,

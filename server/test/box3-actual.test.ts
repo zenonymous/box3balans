@@ -327,7 +327,7 @@ describe("preview of the planned system", () => {
     ]);
   });
 
-  it("carries losses forward under the bill as passed", () => {
+  it("carries losses forward, at a single rate of 36%", () => {
     const rows = simulateFuture([year(2024, 10_000), year(2025, -3_000), year(2026, 5_000)], AT_36);
     expect(rows.map((r) => [r.year, r.taxableEur, r.taxEur, r.lossBalanceEur])).toEqual([
       [2024, 8200, 2952, 0],
@@ -369,7 +369,7 @@ describe("preview of the planned system", () => {
   // Amendment 37022 nr. 80, adopted by the Tweede Kamer on 12 November 2026: 35.5% on the first
   // €60,000 of taxable income from saving and investing, 38.5% above (art. 2.13). Worked by hand.
   it("starts from the two rates the Tweede Kamer adopted", () => {
-    expect(FUTURE_PRESETS.bill).toMatchObject({ ratePct: 35.5, topRatePct: 38.5, bracketEur: 60_000 });
+    expect(FUTURE_PRESETS.bill).toMatchObject({ ratePct: 35.5, topRatePct: 38.5, topRateFromEur: 60_000 });
   });
 
   it("taxes the part above €60,000 at the top rate", () => {
@@ -405,12 +405,12 @@ describe("preview of the planned system", () => {
     // The setting for the letter of 29 September (€1,000 tax-free) is gone: the change of
     // 3 November dropped that cut. The bill's own figures, with the rate and tax-free result set by hand.
     const r = json(
-      await t.api("GET", "/api/box3/future?preset=bill&ratePct=35&allowanceEur=1000&topRatePct=40&bracketEur=4000"),
+      await t.api("GET", "/api/box3/future?preset=bill&ratePct=35&allowanceEur=1000&topRatePct=40&topRateFromEur=4000"),
     );
     expect(r.params).toEqual({
       ratePct: 35,
       topRatePct: 40,
-      bracketEur: 4000,
+      topRateFromEur: 4000,
       allowanceEur: 1000,
       lossThresholdEur: 500,
       carryBackYears: 0,

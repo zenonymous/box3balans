@@ -1131,7 +1131,7 @@
         "label": "Bill with the novelle, as passed by the Tweede Kamer (12 Nov 2026)",
         "ratePct": 35.5,
         "topRatePct": 38.5,
-        "bracketEur": 60000,
+        "topRateFromEur": 60000,
         "allowanceEur": 1800,
         "lossThresholdEur": 500,
         "carryBackYears": 0,
@@ -1142,7 +1142,7 @@
     "params": {
       "ratePct": 35.5,
       "topRatePct": 38.5,
-      "bracketEur": 60000,
+      "topRateFromEur": 60000,
       "allowanceEur": 1800,
       "lossThresholdEur": 500,
       "carryBackYears": 0,

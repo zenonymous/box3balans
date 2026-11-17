@@ -39,9 +39,9 @@ export function compareWithDeemed(
 }
 
 export interface FutureParams {
-  ratePct: number; // on taxable income up to bracketEur per taxpayer
+  ratePct: number; // on taxable income up to topRateFromEur per taxpayer
   topRatePct: number; // on the part above it
-  bracketEur: number; // per taxpayer
+  topRateFromEur: number; // per taxpayer
   allowanceEur: number; // heffingsvrij resultaat per taxpayer
   lossThresholdEur: number; // smaller losses don't carry over
   carryBackYears: 0 | 1;
@@ -56,7 +56,7 @@ export const FUTURE_PRESETS: Record<string, FutureParams & { label: string }> = 
     label: "Bill with the novelle, as passed by the Tweede Kamer (12 Nov 2026)",
     ratePct: 35.5,
     topRatePct: 38.5,
-    bracketEur: 60_000,
+    topRateFromEur: 60_000,
     allowanceEur: 1800,
     lossThresholdEur: 500,
     carryBackYears: 0,
@@ -89,13 +89,16 @@ export interface FutureYearRow {
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
 
+/** An amount the law gives each taxpayer, for the household: twice it with a fiscal partner. */
+const perHousehold = (perTaxpayerEur: number, partner: boolean) => perTaxpayerEur * (partner ? 2 : 1);
+
 /**
  * The tax on a year's taxable income: the rate up to the bracket, the top rate above it. The table
  * is per taxpayer, and fiscal partners divide the income as they like (art. 2.17); an even split
  * keeps the most below the bracket, so partners get a bracket each.
  */
 export function taxOnIncome(taxableEur: number, partner: boolean, p: FutureParams): number {
-  const bracket = p.bracketEur * (partner ? 2 : 1);
+  const bracket = perHousehold(p.topRateFromEur, partner);
   const low = Math.min(taxableEur, bracket);
   const high = Math.max(0, taxableEur - bracket);
   return round2(D(low).mul(p.ratePct).plus(D(high).mul(p.topRatePct)).div(100));
@@ -127,7 +130,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       homes = homes.plus(taxedOfHome(h, gain, p.propertyPct)).minus(h.returnEur);
     }
     const result = round2(D(y.actualReturnEur).plus(homes).minus(y.costsEur));
-    const allowance = p.allowanceEur * (y.partner ? 2 : 1);
+    const allowance = perHousehold(p.allowanceEur, y.partner);
     let taxable = 0;
     let used = 0;
     if (result < 0) {

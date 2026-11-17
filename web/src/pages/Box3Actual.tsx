@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { get, type Box3Year } from "../api";
 import { Alert, Badge, Card, Field, Input, Select, Spinner, cx } from "../components/ui";
-import { date, eur } from "../format";
+import { date, eur, parseNumberInput } from "../format";
 import { getLang, t, tj, tn } from "../i18n";
 
 type Kind = "bank" | "investments" | "crypto" | "metals" | "cash" | "other";
@@ -223,7 +223,7 @@ interface FutureRow {
 interface FutureParams {
   ratePct: number;
   topRatePct: number;
-  bracketEur: number;
+  topRateFromEur: number;
   allowanceEur: number;
   lossThresholdEur: number;
   carryBackYears: number;
@@ -240,7 +240,11 @@ export function FuturePreviewCard() {
   const [over, setOver] = useState<Record<string, string>>({});
   // The figures start from the bill as the Tweede Kamer passed it (the server's only preset).
   const params = new URLSearchParams({ preset: "bill" });
-  for (const [k, v] of Object.entries(over)) if (v.trim() !== "") params.set(k, v.replace(",", "."));
+  // In the user's number format: "60.000" is sixty thousand in Dutch, not sixty. Not a number: left out.
+  for (const [k, v] of Object.entries(over)) {
+    const n = parseNumberInput(v).value;
+    if (n) params.set(k, n);
+  }
   const q = useQuery({
     queryKey: ["box3-future", params.toString()],
     queryFn: () => get<FutureResponse>(`/api/box3/future?${params}`),
@@ -282,7 +286,7 @@ export function FuturePreviewCard() {
       <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-7">
         {field("ratePct", t("Rate (%)"))}
         {field("topRatePct", t("Top rate (%)"))}
-        {field("bracketEur", t("Top rate from (€)"), t("taxable, per person"))}
+        {field("topRateFromEur", t("Top rate from (€)"), t("taxable, per person"))}
         {field("allowanceEur", t("Tax-free result (€)"), t("per person"))}
         {field("lossThresholdEur", t("Loss threshold (€)"), t("smaller losses don't carry over"))}
         <Field label={t("Carry losses back")}>

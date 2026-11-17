@@ -81,7 +81,7 @@ Sources:
 
 How it would go:
 
-- **2027 and 2028:** the current system, with the deemed return and the rebuttal scheme.
+- **2027 and 2028:** the current system, with the deemed return and the rebuttal scheme, and a rate of 36%. Costs for real estate become deductible in the rebuttal scheme from a date set by royal decree, not before 2028 (amendment 37 053, nr. 14). The app doesn't calculate with this yet.
 - **From 1 January 2029:** the new system. **Financial instruments** (shares, bonds, funds, options) and real estate are taxed on their **capital gain** (vermogenswinst), when sold. According to the cabinet that's about 90% of the assets with changes in value in box 3 at the start. The rest (bank balances, crypto you hold yourself, precious metal, receivables and debts) falls under **capital accrual** (vermogensaanwas) in 2029: the change in value every year.
 - **From 2030:** the rest on sale too, through a separate law. An adopted motion asks for it to be submitted by Prinsjesdag 2027 at the latest and to take effect by 1 January 2030 at the latest.
 
@@ -90,11 +90,10 @@ Rules of the bill with the amendment, as the Tweede Kamer adopted them (the defa
 - **Return per year:** the direct return plus, for what falls under capital accrual, the realised and unrealised changes in value, minus costs. For financial instruments and real estate, the change in value only counts when sold.
 - **Real estate:** the gain counts when it's sold, or when it leaves box 3 in another way. For what you already had at the start, the acquisition price is its value then, for a home the WOZ value (art. 10a.31). Each year the rent counts if it's let for all or nearly all of the year, or if the rent is higher than the **vastgoedbijtelling** (real estate addition); otherwise the vastgoedbijtelling counts: **3.35%** of the value, for a home the WOZ value, in proportion to the days you owned it (art. 5.15, 5.19 and 5.20). A summary of the bill (Meijburg & Co, May 2025) says 3.55%, but the text the Tweede Kamer passed says 3.35%.
 - **Costs are deductible**, including transaction costs, account costs and interest paid. Dividend tax isn't deductible.
-- **Rate:** **35.5%** on the first **€60,000** of taxable income from saving and investing, **38.5%** above it (amendment 37 022, nr. 80, new art. 2.13). In the bill of February it was 36% on everything. The table applies per taxpayer, as in box 1; fiscal partners divide their income from saving and investing as they like (art. 2.17).
+- **Rate:** **35.5%** on the first **€60,000** of taxable income from saving and investing, **38.5%** above it (amendment 37 022, nr. 80, new art. 2.13). In the bill of February it was 36% on everything. The amendment changes art. 2.13 from 1 January 2029 (article III of the Belastingplan 2027); in 2027 and 2028 it stays 36%. The table applies per taxpayer, as in box 1; fiscal partners divide their income from saving and investing as they like (art. 2.17).
 - **Tax-free result:** €1,800 per taxpayer. The cut to €1,000 from the letter of 29 September was dropped on 3 November.
 - **Losses** above €500 carry forward to later years. Carrying back to an earlier year isn't in the bill.
 - **Green investments** keep a tax credit.
-- **Costs for real estate in the current system** (amendment 37 053, nr. 14): in the rebuttal scheme, costs for real estate become deductible from a date set by royal decree, not before 2028. The app doesn't calculate with this yet.
 
 **Capital gain on financial instruments** (explanatory memorandum to the amendment, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). The app doesn't calculate with this yet; the choices are in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
 
@@ -125,6 +124,7 @@ Sources:
 - Eerste Kamer, bill 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
 - Tweede Kamer, amendment (Kamerstuk 37 053), with the explanatory memorandum (nr. 3) and the vote of 12 November 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053
 - Eerste Kamer, amendment 37.053: https://www.eerstekamer.nl/wetsvoorstel/37053_novelle_uitbreiding
+- Belastingplan 2027, bill (Kamerstuk 37 022, nr. 2), article III: the Wet IB 2001 changed from 1 January 2029: https://zoek.officielebekendmakingen.nl/kst-37022-2.html
 - Amended amendment by Klaver and Dassen (Kamerstuk 37 022, nr. 80), two rates in box 3: https://www.tweedekamer.nl/downloads/document?id=2026D57504
 - Taxlive, _Tweede Kamer toch akkoord met pakket Belastingplan 2027 en novelle box 3_ (12 November 2026): https://www.taxlive.nl/nl/documenten/vn-vandaag/tweede-kamer-toch-akkoord-met-pakket-belastingplan-2027-en-novelle-box-3
 - Meijburg & Co, _Pakket Belastingplan 2027 en Novelle aangenomen door de Tweede Kamer_ (13 November 2026): https://www.meijburg.nl/nieuws/pakket-belastingplan-2027-en-novelle-uitbreiding-vermogenswinstbelasting-box-3-aangenomen

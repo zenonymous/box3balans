@@ -81,7 +81,7 @@ Bronnen:
 
 Hoe het zou gaan:
 
-- **2027 en 2028:** het huidige stelsel, met forfaitair rendement en de tegenbewijsregeling.
+- **2027 en 2028:** het huidige stelsel, met forfaitair rendement en de tegenbewijsregeling, en een tarief van 36%. Kosten voor onroerende zaken mogen in de tegenbewijsregeling af vanaf een datum die bij koninklijk besluit wordt bepaald, niet eerder dan 2028 (amendement 37 053, nr. 14). De app rekent daar nog niet mee.
 - **Vanaf 1 januari 2029:** het nieuwe stelsel. **Financiële instrumenten** (aandelen, obligaties, fondsen, opties) en onroerende zaken worden belast op hun **vermogenswinst**, bij verkoop. Volgens het kabinet is dat bij de start circa 90% van het vermogen met waardeontwikkeling in box 3. De rest (banktegoeden, crypto die je zelf hebt, edelmetaal, vorderingen en schulden) valt in 2029 onder de **vermogensaanwas**: elk jaar de waardeverandering.
 - **Vanaf 2030:** ook de rest bij verkoop, met een aparte wet. Een aangenomen motie vraagt die uiterlijk met Prinsjesdag 2027 in te dienen en uiterlijk per 1 januari 2030 in te laten gaan.
 
@@ -90,11 +90,10 @@ Regels van het wetsvoorstel met de novelle, zoals de Tweede Kamer ze aannam (de 
 - **Rendement per jaar:** het directe rendement plus, voor wat onder de vermogensaanwas valt, de gerealiseerde en ongerealiseerde waardeveranderingen, min kosten. Bij financiële instrumenten en onroerende zaken telt de waardeverandering pas bij verkoop.
 - **Onroerende zaken:** de winst telt bij verkoop, of als de zaak box 3 op een andere manier verlaat. Voor wat je bij de start al had, is de verkrijgingsprijs de waarde op dat moment, bij een woning de WOZ-waarde (art. 10a.31). Elk jaar telt de huur als de zaak het hele of nagenoeg het hele jaar verhuurd is, of als de huur hoger is dan de **vastgoedbijtelling**; anders telt de vastgoedbijtelling: **3,35%** van de waarde, bij een woning de WOZ-waarde, naar rato van de dagen dat je de zaak had (art. 5.15, 5.19 en 5.20). Een samenvatting van het wetsvoorstel (Meijburg & Co, mei 2025) noemt 3,55%, maar de tekst die de Tweede Kamer aannam zegt 3,35%.
 - **Kosten zijn aftrekbaar**, inclusief transactiekosten, accountkosten en betaalde rente. Dividendbelasting is niet aftrekbaar.
-- **Tarief:** **35,5%** over de eerste **€ 60.000** belastbaar inkomen uit sparen en beleggen, **38,5%** daarboven (amendement 37 022, nr. 80, nieuw art. 2.13). In het wetsvoorstel van februari was het 36% over alles. De tabel geldt per belastingplichtige, zoals in box 1; fiscale partners verdelen hun inkomen uit sparen en beleggen zoals ze willen (art. 2.17).
+- **Tarief:** **35,5%** over de eerste **€ 60.000** belastbaar inkomen uit sparen en beleggen, **38,5%** daarboven (amendement 37 022, nr. 80, nieuw art. 2.13). In het wetsvoorstel van februari was het 36% over alles. Het amendement wijzigt art. 2.13 met ingang van 1 januari 2029 (artikel III van het Belastingplan 2027); in 2027 en 2028 blijft het 36%. De tabel geldt per belastingplichtige, zoals in box 1; fiscale partners verdelen hun inkomen uit sparen en beleggen zoals ze willen (art. 2.17).
 - **Heffingsvrij resultaat:** € 1.800 per belastingplichtige. De verlaging naar € 1.000 uit de brief van 29 september is op 3 november geschrapt.
 - **Verliezen** boven € 500 schuiven door naar latere jaren. Terugwenteling naar een eerder jaar staat niet in het wetsvoorstel.
 - **Groene beleggingen** houden een heffingskorting.
-- **Kosten voor onroerende zaken in het huidige stelsel** (amendement 37 053, nr. 14): in de tegenbewijsregeling mogen kosten voor onroerende zaken af, vanaf een datum die bij koninklijk besluit wordt bepaald, niet eerder dan 2028. De app rekent hier nog niet mee.
 
 **Vermogenswinst op financiële instrumenten** (memorie van toelichting bij de novelle, Kamerstuk 37 053, nr. 3: [dossier](https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053)). De app rekent hier nog niet mee; de keuzes staan in [ADR 0013](adr/0013-verkrijgingsprijs-in-de-vooruitblik.md).
 
@@ -125,6 +124,7 @@ Bronnen:
 - Eerste Kamer, wetsvoorstel 36.748: https://www.eerstekamer.nl/wetsvoorstel/36748_wet_werkelijk_rendement_box
 - Tweede Kamer, novelle (Kamerstuk 37 053), met de memorie van toelichting (nr. 3) en de stemming van 12 november 2026: https://www.tweedekamer.nl/kamerstukken/wetsvoorstellen/detail?cfg=wetsvoorsteldetails&qry=wetsvoorstel%3A37053
 - Eerste Kamer, novelle 37.053: https://www.eerstekamer.nl/wetsvoorstel/37053_novelle_uitbreiding
+- Belastingplan 2027, wetsvoorstel (Kamerstuk 37 022, nr. 2), artikel III: de Wet IB 2001 gewijzigd met ingang van 1 januari 2029: https://zoek.officielebekendmakingen.nl/kst-37022-2.html
 - Gewijzigd amendement Klaver en Dassen (Kamerstuk 37 022, nr. 80), twee tarieven in box 3: https://www.tweedekamer.nl/downloads/document?id=2026D57504
 - Taxlive, _Tweede Kamer toch akkoord met pakket Belastingplan 2027 en novelle box 3_ (12 november 2026): https://www.taxlive.nl/nl/documenten/vn-vandaag/tweede-kamer-toch-akkoord-met-pakket-belastingplan-2027-en-novelle-box-3
 - Meijburg & Co, _Pakket Belastingplan 2027 en Novelle aangenomen door de Tweede Kamer_ (13 november 2026): https://www.meijburg.nl/nieuws/pakket-belastingplan-2027-en-novelle-uitbreiding-vermogenswinstbelasting-box-3-aangenomen
