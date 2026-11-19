@@ -4,7 +4,7 @@ import { accounts, assets, metalItems, priceHistory, transactions } from "../db/
 import { METAL_CODES } from "../db/seed.js";
 import { D, Decimal, ZERO } from "../lib/decimal.js";
 import { fromLocal, localDay, localToday } from "../lib/time.js";
-import { type Box3Config, type Category, categoryOf } from "./box3.js";
+import { type Box3Config, type Category, categoryOf, outsideBox3 } from "./box3.js";
 import { taxedWhenSold } from "./futureGains.js";
 import { attribute, loadHousehold } from "./household.js";
 import { type HoldingOn, LedgerData, holdingsOn } from "./valuation.js";
@@ -84,7 +84,6 @@ type Counted = Part & { costs: Decimal; taxWithheld: Decimal };
 const valueChange = (p: { start: Decimal; end: Decimal; in: Decimal; out: Decimal }) =>
   p.end.minus(p.start).minus(p.in).plus(p.out);
 // Green investments (exempt) and accounts outside box 3: left out of the return.
-const outsideBox3 = (c: Category): c is "exempt" | "excluded" => c === "exempt" || c === "excluded";
 
 type Account = typeof accounts.$inferSelect;
 type Asset = typeof assets.$inferSelect;

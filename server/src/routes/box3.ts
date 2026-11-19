@@ -17,14 +17,8 @@ import { peildatumChecklist } from "../domain/peildatum.js";
 import { taxReturnOverview } from "../domain/taxReturn.js";
 import { RULES } from "../rules/index.js";
 import { LedgerData } from "../domain/valuation.js";
-import {
-  FUTURE_PRESETS,
-  type FinancialInstrumentsYear,
-  compareWithDeemed,
-  simulateFuture,
-} from "../domain/box3Future.js";
-import { type HouseholdGainsYear, householdGains } from "../domain/futureGains.js";
-import { ZERO } from "../lib/decimal.js";
+import { FUTURE_PRESETS, compareWithDeemed, simulateFuture } from "../domain/box3Future.js";
+import { financialInstrumentsYear, householdGains } from "../domain/futureGains.js";
 import { HttpError } from "../lib/errors.js";
 import { localToday } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
@@ -173,26 +167,4 @@ export async function box3Routes(app: FastifyInstance) {
     await saveConfig(db, config);
     return loadConfig(db);
   });
-}
-
-/**
- * What the preview swaps for financial instruments in a year: their yearly return and trading costs
- * out, their gain and regular benefits in. An asset without a value at the start stays on its
- * yearly return.
- */
-function financialInstrumentsYear(
-  holdings: ActualReturn["financialInstruments"],
-  gains: HouseholdGainsYear | undefined,
-): FinancialInstrumentsYear | undefined {
-  if (!gains) return undefined;
-  const left = new Set(gains.withoutStartValue);
-  const kept = holdings.filter((h) => !left.has(h.assetId));
-  // Nothing taxed when sold this year: no swap, and no capital gain to show.
-  if (!kept.length && !gains.gainEur && !gains.regularBenefitsEur) return undefined;
-  return {
-    returnEur: kept.reduce((s, h) => s.plus(h.returnEur), ZERO).toNumber(),
-    tradeCostsEur: kept.reduce((s, h) => s.plus(h.tradeCostsEur), ZERO).toNumber(),
-    gainEur: gains.gainEur,
-    regularBenefitsEur: gains.regularBenefitsEur,
-  };
 }

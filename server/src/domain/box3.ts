@@ -23,6 +23,9 @@ type Account = typeof accounts.$inferSelect;
 export const CATEGORIES = ["bank", "other", "exempt", "excluded"] as const;
 export type Category = (typeof CATEGORIES)[number];
 
+/** Green investments and what's left out of box 3 altogether. */
+export const outsideBox3 = (c: Category): c is "exempt" | "excluded" => c === "exempt" || c === "excluded";
+
 const decimalStr = z
   .union([z.string(), z.number()])
   .transform((v) => String(v).trim().replace(",", "."))

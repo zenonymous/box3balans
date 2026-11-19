@@ -318,8 +318,10 @@ export function FuturePreviewCard() {
         {field("propertyPct", t("Vastgoedbijtelling (% of WOZ)"), t("home not let all year"))}
       </div>
       {d && d.warnings.length > 0 && (
-        <div className="mb-3">
-          <Alert>{d.warnings.join(" ")}</Alert>
+        <div className="mb-3 flex flex-col gap-2">
+          {d.warnings.map((w) => (
+            <Alert key={w}>{w}</Alert>
+          ))}
         </div>
       )}
       {q.isLoading ? (

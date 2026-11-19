@@ -1,10 +1,12 @@
-import { and, asc, inArray } from "drizzle-orm";
+import { asc, inArray } from "drizzle-orm";
 import type { DB } from "../db/client.js";
 import { type accountKind, type accounts, type assetClass, type assets, priceHistory } from "../db/schema.js";
-import { D, Decimal, ZERO } from "../lib/decimal.js";
+import { D, type Decimal, ZERO, round2 } from "../lib/decimal.js";
 import { localDay } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
-import { type Box3Config, categoryOf } from "./box3.js";
+import { type Box3Config, categoryOf, outsideBox3 } from "./box3.js";
+import type { ActualReturn } from "./box3Actual.js";
+import type { FinancialInstrumentsYear } from "./box3Future.js";
 import { attribute, loadHousehold } from "./household.js";
 import { Ledger, sortTransactions, type LedgerTx, type TxType } from "./ledger.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
@@ -18,9 +20,6 @@ import { loadYearly, yearlyClass } from "./yearly.js";
 
 type Account = typeof accounts.$inferSelect;
 type Asset = typeof assets.$inferSelect;
-
-/** To cents, halves away from zero. */
-const round2 = (x: Decimal) => x.toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 
 /**
  * Whether a holding is a financial instrument, taxed on its capital gain in the preview from 2029
@@ -54,6 +53,8 @@ export interface CapitalGains {
   years: GainYearRow[];
   /** Held at the start without a value then: left out altogether, not counted as bought for €0. */
   missingStartValue: number[];
+  /** Sold or sent away beyond what was held: a purchase is probably missing. */
+  oversold: number[];
   warnings: string[];
 }
 
@@ -144,6 +145,7 @@ export function capitalGains(
   }
   const leftOut = new Set(missingStartValue);
   const warnings: string[] = [];
+  const oversold = new Set<number>();
 
   const years: GainYearRow[] = [];
   for (let year = opts.start; year <= opts.to; year++) {
@@ -154,6 +156,7 @@ export function capitalGains(
       if (TAKES.has(t.type) && D(t.quantity).gt(held)) {
         // More than is held: an earlier purchase is missing. Only what's held can be sold; a
         // negative holding would spoil the average for every year after.
+        oversold.add(t.assetId);
         warnings.push(
           `Transaction ${t.id}: ${t.type} of ${D(t.quantity).toFixed()} exceeds holding of ${held.toFixed()} (asset ${t.assetId}); only the part held is counted`,
         );
@@ -195,6 +198,7 @@ export function capitalGains(
   return {
     years,
     missingStartValue: missingStartValue.sort((a, b) => a - b),
+    oversold: [...oversold].sort((a, b) => a - b),
     warnings: [...warnings, ...ledger.warnings],
   };
 }
@@ -217,14 +221,17 @@ export function taxedWhenSold(
     { accountId: account.id, accountKind: account.kind, assetClass: asset.assetClass },
     year,
   );
-  return cat !== "exempt" && cat !== "excluded";
+  return !outsideBox3(cat);
 }
 
 export interface HouseholdGainsYear {
   gainEur: number;
   regularBenefitsEur: number;
-  /** Assets held at the start without a value then: they stay on their yearly change in value. */
-  withoutStartValue: number[];
+  /**
+   * Assets without a value when they came in (held at the start, or deposited later): they stay on
+   * their yearly change in value rather than count as bought for €0.
+   */
+  withoutValue: number[];
 }
 
 /**
@@ -250,7 +257,7 @@ export async function householdGains(
   ]);
   const assetById = new Map(assetRows.map((a) => [a.id, a]));
   const accountById = new Map(accountRows.map((a) => [a.id, a]));
-  const closeOn = await closingPrices(db, [
+  const closeOn = await closeOnOrBefore(db, [
     ...new Set(txRows.filter((t) => assetById.get(t.assetId)?.assetClass !== "cash").map((t) => t.assetId)),
   ]);
   const name = (assetId: number) => assetById.get(assetId)?.name ?? `#${assetId}`;
@@ -274,7 +281,10 @@ export async function householdGains(
     const startPrices = new Map(
       [...startValue].filter(([, v]) => v.qty.gt(0)).map(([id, v]) => [id, v.eur.div(v.qty).toFixed()] as const),
     );
-    const counted = txRows.filter((t) => counts(t.accountId, t.assetId));
+    // Up to the end of this year: a later deposit without a value mustn't change this year.
+    const counted = txRows.filter(
+      (t) => counts(t.accountId, t.assetId) && Number(localDay(t.occurredAt).slice(0, 4)) <= year,
+    );
 
     let gain = ZERO;
     let regular = ZERO;
@@ -284,14 +294,17 @@ export async function householdGains(
         const acc = accountById.get(accountId);
         return acc ? attribute(acc, household, year, fiscalPartner)[owner] : ZERO;
       };
-      const txs = ownerTransactions(counted, shareOf, closeOn, (assetId, day) =>
+      const noValue = new Set<number>();
+      const txs = ownerTransactions(counted, shareOf, closeOn, (assetId, day) => {
+        noValue.add(assetId);
         warnings.add(
-          tr("No value for {asset} on {day}, when it came in: it counts as bought for €0.", {
+          tr("No value for {asset} on {day}, when it came in: it counts with its yearly change in value instead.", {
             asset: name(assetId),
             day,
           }),
-        ),
-      );
+        );
+      }).filter((t) => !noValue.has(t.assetId));
+      for (const id of noValue) missing.add(id);
       if (!txs.length) continue;
       const result = capitalGains(txs, { start: range.start, from: year, to: year, startPrices });
       const row = result.years[0];
@@ -299,25 +312,27 @@ export async function householdGains(
         gain = gain.plus(row.gainEur);
         regular = regular.plus(row.regularBenefitsEur);
       }
-      for (const id of result.missingStartValue) missing.add(id);
-      if (result.warnings.length)
+      for (const id of result.missingStartValue) {
+        missing.add(id);
+        warnings.add(
+          tr("No value on 1 January {year} for {asset}: it counts with its yearly change in value instead.", {
+            year: range.start,
+            asset: name(id),
+          }),
+        );
+      }
+      for (const id of result.oversold)
         warnings.add(
           tr(
-            "Some investments were sold or sent away before they were bought, so a purchase is probably missing. Only what was held is counted.",
+            "More {asset} was sold or sent away than was held, so a purchase is probably missing. Only what was held is counted.",
+            { asset: name(id) },
           ),
         );
     }
-    for (const id of missing)
-      warnings.add(
-        tr("No value on 1 January {year} for {asset}: it counts with its yearly change in value instead.", {
-          year: range.start,
-          asset: name(id),
-        }),
-      );
     years.set(year, {
       gainEur: round2(gain),
       regularBenefitsEur: round2(regular),
-      withoutStartValue: [...missing].sort((a, b) => a - b),
+      withoutValue: [...missing].sort((a, b) => a - b),
     });
   }
   // An investment account kept as values per year has no sales to work out a gain from: it stays on
@@ -328,10 +343,9 @@ export async function householdGains(
     if (cls === "debt" || !isFinancialInstrument({ accountKind: acc.kind, assetClass: cls })) continue;
     const byYear = yearly.get(acc.id);
     const inRange = [...(byYear?.keys() ?? [])].filter((y) => y >= range.start && y <= range.to);
-    const counted = inRange.some((y) => {
-      const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, y);
-      return cat !== "exempt" && cat !== "excluded";
-    });
+    const counted = inRange.some(
+      (y) => !outsideBox3(categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, y)),
+    );
     if (counted)
       warnings.add(
         tr("{name} is kept as values per year, so its sales aren't known: it counts with its yearly change in value.", {
@@ -346,8 +360,9 @@ export async function householdGains(
  * One owner's part of the transactions (`shareOf` gives the owner's share of each account). A transfer
  * between two accounts moves units from one owner to the other when their shares differ, as into a
  * joint account: the part handed over leaves the giver's average without a gain, and comes into the
- * receiver's at its value that day. Units that come in from elsewhere without a price, such as one
- * leg of a transfer, are valued at that day's close too; `noValue` hears when there is none.
+ * receiver's at its value that day. Units that come in from elsewhere without a price (one leg of a
+ * transfer, a deposit, a reward) are valued at that day's close too; `noValue` hears when there is
+ * none.
  */
 function ownerTransactions(
   txs: LedgerTx[],
@@ -382,20 +397,9 @@ function ownerTransactions(
         continue;
       }
       const moved = D(pair.out.quantity).mul(sIn.minus(sOut));
-      const base = { ...pair.out, transferGroup: null, feeEur: "0", amount: "0", taxWithheld: "0" };
-      if (moved.lt(0)) out.push({ ...base, type: "withdrawal", quantity: moved.neg().toFixed() });
-      else
-        out.push(
-          valuedIn({
-            ...base,
-            ...pair.in,
-            transferGroup: null,
-            feeEur: "0",
-            type: "deposit",
-            quantity: moved.toFixed(),
-            price: "0",
-          }),
-        );
+      const handed = { transferGroup: null, feeEur: "0", amount: "0", taxWithheld: "0" };
+      if (moved.lt(0)) out.push({ ...pair.out, ...handed, type: "withdrawal", quantity: moved.neg().toFixed() });
+      else out.push(valuedIn({ ...pair.in, ...handed, type: "deposit", quantity: moved.toFixed(), price: "0" }));
       continue;
     }
     const share = shareOf(t.accountId);
@@ -403,22 +407,26 @@ function ownerTransactions(
     const mine = share.eq(1) ? t : ownerShare(t, share);
     // Without its other leg, the ledger would take a transfer in at the price on it (often 0).
     if (mine.type === "transfer_in") out.push(valuedIn({ ...mine, type: "deposit", transferGroup: null }));
-    else if (mine.type === "deposit") out.push(valuedIn(mine));
+    else if (mine.type === "deposit" || mine.type === "reward") out.push(valuedIn(mine));
     else out.push(mine);
   }
   return out;
 }
 
-/** Closing prices in euros per asset: the last one on or before a day. */
-async function closingPrices(db: DB, assetIds: number[]) {
+/** A lookup of the closing price in euros of an asset on a day, or the last one before it. */
+async function closeOnOrBefore(db: DB, assetIds: number[]) {
   const closes = new Map<number, { day: string; eur: Decimal }[]>();
   if (assetIds.length) {
     const rows = await db
       .select({ assetId: priceHistory.assetId, day: priceHistory.day, closeEur: priceHistory.closeEur })
       .from(priceHistory)
-      .where(and(inArray(priceHistory.assetId, assetIds)))
+      .where(inArray(priceHistory.assetId, assetIds))
       .orderBy(asc(priceHistory.day));
-    for (const r of rows) closes.set(r.assetId, [...(closes.get(r.assetId) ?? []), { day: r.day, eur: D(r.closeEur) }]);
+    for (const r of rows) {
+      const list = closes.get(r.assetId) ?? [];
+      list.push({ day: r.day, eur: D(r.closeEur) });
+      closes.set(r.assetId, list);
+    }
   }
   return (assetId: number, day: string): Decimal | null => {
     let found: Decimal | null = null;
@@ -427,5 +435,26 @@ async function closingPrices(db: DB, assetIds: number[]) {
       found = c.eur;
     }
     return found;
+  };
+}
+
+/**
+ * What the preview swaps for one year (ADR 0013): the yearly return and trading costs of the holdings
+ * taxed when sold make way for their capital gain and regular benefits. Holdings without a value when
+ * they came in keep their yearly return. Nothing when there's nothing taxed when sold that year.
+ */
+export function financialInstrumentsYear(
+  holdings: ActualReturn["financialInstruments"],
+  gains: HouseholdGainsYear | undefined,
+): FinancialInstrumentsYear | undefined {
+  if (!gains) return undefined;
+  const left = new Set(gains.withoutValue);
+  const kept = holdings.filter((h) => !left.has(h.assetId));
+  if (!kept.length && !gains.gainEur && !gains.regularBenefitsEur) return undefined;
+  return {
+    returnEur: round2(kept.reduce((s, h) => s.plus(h.returnEur), ZERO)),
+    tradeCostsEur: round2(kept.reduce((s, h) => s.plus(h.tradeCostsEur), ZERO)),
+    gainEur: gains.gainEur,
+    regularBenefitsEur: gains.regularBenefitsEur,
   };
 }

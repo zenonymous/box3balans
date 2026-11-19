@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { afterEach, describe, expect, it } from "vitest";
 import { accountYears, assets, priceHistory, transactions } from "../src/db/schema.js";
 import { createTestApp, noon, type TestApp } from "./helpers.js";
@@ -80,6 +81,75 @@ describe("the preview from 2029 with tax on investments when sold", () => {
     const row = (year: number) => r.rows.find((x: { year: number }) => x.year === year);
     expect(row(2024)).toMatchObject({ resultEur: 10_000, capitalGainEur: 0, taxEur: 2911 });
     expect(row(2025)).toMatchObject({ resultEur: 28_994, capitalGainEur: 15_994, taxEur: 9653.87 });
+  });
+});
+
+describe("units that come in without a price", () => {
+  // ADR 0013: units received as a reward come in at their value that day. 10 units of the fund on
+  // 1 July 2025, worth 130 each: 1,300 of regular benefits on top of 2025's 18,994 = 20,294.
+  it("values a reward at its close that day", async () => {
+    await fundAtBroker();
+    const db = t!.database.db;
+    const [fund] = await db.select().from(assets).where(eq(assets.symbol, "FUND"));
+    const [broker] = await db.select().from(transactions);
+    await db.insert(priceHistory).values({
+      assetId: fund!.id,
+      day: "2025-07-01",
+      close: "130",
+      currency: "EUR",
+      closeEur: "130",
+    });
+    await db.insert(transactions).values({
+      accountId: broker!.accountId,
+      assetId: fund!.id,
+      type: "reward",
+      occurredAt: noon("2025-07-01"),
+      quantity: "10",
+      price: "0",
+    });
+    const r = json(await t!.api("GET", "/api/box3/future?preset=bill"));
+    expect(rowOf(r, 2025)).toMatchObject({ resultEur: 20_294, capitalGainEur: 15_994 });
+  });
+
+  // Without a value when they came in, counting them as bought for €0 would tax their whole value as
+  // gain (ADR 0013 rejects that for holdings at the start too): they stay on their yearly change.
+  it("leaves units without a value when they came in on their yearly change", async () => {
+    await fundAtBroker();
+    const db = t!.database.db;
+    const [broker] = await db.select().from(transactions);
+    const [other] = await db
+      .insert(assets)
+      .values({ assetClass: "etf", name: "Other", symbol: "OTH", priceSource: "manual", priceRef: "manual:OTH" })
+      .returning();
+    const tx = { accountId: broker!.accountId, assetId: other!.id };
+    await db.insert(transactions).values([
+      { ...tx, type: "deposit", occurredAt: noon("2025-03-03"), quantity: "5", price: "0" },
+      { ...tx, type: "sell", occurredAt: noon("2025-09-01"), quantity: "5", price: "60" },
+    ]);
+    const r = json(await t!.api("GET", "/api/box3/future?preset=bill"));
+    expect(rowOf(r, 2025)).toMatchObject({ capitalGainEur: 15_994 });
+    expect(r.warnings).toContain(
+      "No value for Other on 2025-03-03, when it came in: it counts with its yearly change in value instead.",
+    );
+  });
+
+  it("names the investment sold beyond what was held", async () => {
+    await fundAtBroker();
+    const db = t!.database.db;
+    const [fund] = await db.select().from(assets).where(eq(assets.symbol, "FUND"));
+    const [broker] = await db.select().from(transactions);
+    await db.insert(transactions).values({
+      accountId: broker!.accountId,
+      assetId: fund!.id,
+      type: "sell",
+      occurredAt: noon("2025-09-01"),
+      quantity: "2000",
+      price: "140",
+    });
+    const r = json(await t!.api("GET", "/api/box3/future?preset=bill"));
+    expect(r.warnings).toContain(
+      "More Fund was sold or sent away than was held, so a purchase is probably missing. Only what was held is counted.",
+    );
   });
 });
 

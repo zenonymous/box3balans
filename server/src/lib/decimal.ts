@@ -8,6 +8,9 @@ export const D = (v: Decimal.Value | null | undefined): Decimal => new Decimal(v
 
 export const ZERO = new Decimal(0);
 
+/** Euros to cents, halves away from zero. */
+export const round2 = (x: Decimal.Value): number => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
+
 // Serialise for NUMERIC columns / JSON responses.
 export const str = (d: Decimal): string => d.toFixed();
 

@@ -37,6 +37,7 @@ describe("capital gain on financial instruments (preview from 2029)", () => {
         { year: 2030, gainEur: 300, regularBenefitsEur: 40, assets: [asset(1, 2, 2800, 300, 40)] },
       ],
       missingStartValue: [],
+      oversold: [],
       warnings: [],
     });
   });

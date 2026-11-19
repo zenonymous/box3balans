@@ -1,8 +1,5 @@
-import { D, Decimal, ZERO } from "../lib/decimal.js";
+import { D, Decimal, ZERO, round2 } from "../lib/decimal.js";
 import type { ActualReturn, PropertyYear } from "./box3Actual.js";
-
-/** To cents, halves away from zero, without float artefacts (Math.round(1.005 * 100) / 100 is 1). */
-const round2 = (x: number | Decimal) => D(x).toDecimalPlaces(2, Decimal.ROUND_HALF_UP).toNumber();
 
 /**
  * Tegenbewijsregeling: tax on the actual return (no tax-free allowance, no costs deducted, a negative
