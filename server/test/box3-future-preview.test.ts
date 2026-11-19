@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { assets, priceHistory, transactions } from "../src/db/schema.js";
+import { accountYears, assets, priceHistory, transactions } from "../src/db/schema.js";
 import { createTestApp, noon, type TestApp } from "./helpers.js";
 
 let t: TestApp | undefined;
@@ -80,6 +80,58 @@ describe("the preview from 2029 with tax on investments when sold", () => {
     const row = (year: number) => r.rows.find((x: { year: number }) => x.year === year);
     expect(row(2024)).toMatchObject({ resultEur: 10_000, capitalGainEur: 0, taxEur: 2911 });
     expect(row(2025)).toMatchObject({ resultEur: 28_994, capitalGainEur: 15_994, taxEur: 9653.87 });
+  });
+});
+
+describe("what the preview can't count when sold", () => {
+  // No shares, bonds or funds at all: there's nothing to sell, so the capital gain is left empty
+  // rather than shown as €0 (a year with a fund and no sale shows 0, above).
+  it("leaves the capital gain empty in a year with nothing that's taxed when sold", async () => {
+    t = await createTestApp();
+    const db = t.database.db;
+    const exchange = json(await t.api("POST", "/api/accounts", { name: "Exchange", kind: "exchange" }));
+    const [btc] = await db
+      .insert(assets)
+      .values({ assetClass: "crypto", name: "Bitcoin", symbol: "BTC", priceSource: "manual", priceRef: "manual:BTC" })
+      .returning();
+    await db.insert(priceHistory).values([
+      { assetId: btc!.id, day: "2024-03-01", close: "30000", currency: "EUR", closeEur: "30000" },
+      { assetId: btc!.id, day: "2024-12-31", close: "40000", currency: "EUR", closeEur: "40000" },
+    ]);
+    await db.insert(transactions).values({
+      accountId: exchange.id,
+      assetId: btc!.id,
+      type: "buy",
+      occurredAt: noon("2024-03-01"),
+      quantity: "1",
+      price: "30000",
+    });
+    const r = json(await t.api("GET", "/api/box3/future?preset=bill"));
+    expect(r.rows.find((x: { year: number }) => x.year === 2024)).toMatchObject({
+      resultEur: 10_000,
+      capitalGainEur: null,
+    });
+  });
+
+  // An investment account kept as values per year has no sales to work out a gain from: it stays
+  // on its yearly change in value, and the preview says so.
+  it("says an investment account kept as values per year stays on its yearly change", async () => {
+    await fundAtBroker();
+    const db = t!.database.db;
+    const pension = json(
+      await t!.api("POST", "/api/accounts", { name: "Lijfrente-beleggen", kind: "broker", tracking: "yearly" }),
+    );
+    await db.insert(accountYears).values([
+      { accountId: pension.id, year: 2025, valueEur: "10000" },
+      { accountId: pension.id, year: 2026, valueEur: "11000" },
+    ]);
+    // A bank account kept that way is no investment: no warning for it.
+    const bank = json(await t!.api("POST", "/api/accounts", { name: "Sparen", kind: "bank", tracking: "yearly" }));
+    await db.insert(accountYears).values({ accountId: bank.id, year: 2025, valueEur: "5000" });
+    const r = json(await t!.api("GET", "/api/box3/future?preset=bill"));
+    expect(r.warnings).toEqual([
+      "Lijfrente-beleggen is kept as values per year, so its sales aren't known: it counts with its yearly change in value.",
+    ]);
   });
 });
 

@@ -95,7 +95,8 @@ export interface FutureYearRow {
   taxEur: number;
   lossBalanceEur: number; // losses still to carry forward after this year
   propertyGainPendingEur: number; // homes' gain since their first value, taxed when they're sold
-  capitalGainEur: number; // gain on financial instruments sold this year, inside resultEur
+  /** Gain on financial instruments sold this year, inside resultEur; null when none were held. */
+  capitalGainEur: number | null;
   deemedTaxEur: number | null;
   differenceEur: number | null; // new − current; negative = the new system is cheaper
 }
@@ -179,7 +180,7 @@ export function simulateFuture(years: FutureYearInput[], p: FutureParams): Futur
       taxEur: tax,
       lossBalanceEur: round2(balance),
       propertyGainPendingEur: round2([...gains.values()].reduce((a, b) => a.plus(b), ZERO)),
-      capitalGainEur: round2(i?.gainEur ?? 0),
+      capitalGainEur: i ? round2(i.gainEur) : null,
       deemedTaxEur: y.deemedTaxEur,
       differenceEur: y.deemedTaxEur == null ? null : round2(tax - y.deemedTaxEur),
     });

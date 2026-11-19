@@ -8,6 +8,7 @@ import { type Box3Config, categoryOf } from "./box3.js";
 import { attribute, loadHousehold } from "./household.js";
 import { Ledger, sortTransactions, type LedgerTx, type TxType } from "./ledger.js";
 import { LedgerData, holdingsOn } from "./valuation.js";
+import { loadYearly, yearlyClass } from "./yearly.js";
 
 /**
  * Tax on the capital gain (vermogenswinst) of financial instruments, as the novelle proposes it from
@@ -241,10 +242,11 @@ export async function householdGains(
   range: { start: number; to: number },
   data = new LedgerData(db),
 ): Promise<{ years: Map<number, HouseholdGainsYear>; warnings: string[] }> {
-  const [{ txRows, assetRows, accountRows }, household, startHoldings] = await Promise.all([
+  const [{ txRows, assetRows, accountRows }, household, startHoldings, yearly] = await Promise.all([
     data.load(),
     loadHousehold(db),
     holdingsOn(db, `${range.start - 1}-12-31`, data),
+    loadYearly(db),
   ]);
   const assetById = new Map(assetRows.map((a) => [a.id, a]));
   const accountById = new Map(accountRows.map((a) => [a.id, a]));
@@ -317,6 +319,25 @@ export async function householdGains(
       regularBenefitsEur: round2(regular),
       withoutStartValue: [...missing].sort((a, b) => a - b),
     });
+  }
+  // An investment account kept as values per year has no sales to work out a gain from: it stays on
+  // its yearly change in value (box3Actual), which the preview says rather than leaving it unsaid.
+  for (const acc of accountRows) {
+    if (acc.tracking !== "yearly") continue;
+    const cls = yearlyClass(acc.kind);
+    if (cls === "debt" || !isFinancialInstrument({ accountKind: acc.kind, assetClass: cls })) continue;
+    const byYear = yearly.get(acc.id);
+    const inRange = [...(byYear?.keys() ?? [])].filter((y) => y >= range.start && y <= range.to);
+    const counted = inRange.some((y) => {
+      const cat = categoryOf(config, { accountId: acc.id, accountKind: acc.kind, assetClass: cls }, y);
+      return cat !== "exempt" && cat !== "excluded";
+    });
+    if (counted)
+      warnings.add(
+        tr("{name} is kept as values per year, so its sales aren't known: it counts with its yearly change in value.", {
+          name: acc.name,
+        }),
+      );
   }
   return { years, warnings: [...warnings] };
 }

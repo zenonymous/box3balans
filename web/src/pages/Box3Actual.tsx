@@ -216,7 +216,7 @@ interface FutureRow {
   taxEur: number;
   lossBalanceEur: number;
   propertyGainPendingEur: number;
-  capitalGainEur: number;
+  capitalGainEur: number | null;
   deemedTaxEur: number | null;
   differenceEur: number | null;
 }
@@ -338,7 +338,9 @@ export function FuturePreviewCard() {
                   </th>
                   <th
                     className="px-3 py-2 text-right font-medium"
-                    title={t("Gain on shares, bonds and funds sold that year, inside the result")}
+                    title={t(
+                      "Gain on shares, bonds and funds sold that year, inside the result; — in a year without any",
+                    )}
                   >
                     {t("Capital gain")}
                   </th>
@@ -358,7 +360,7 @@ export function FuturePreviewCard() {
                     </td>
                     <td className="px-3 py-2 text-right">{signed(r.resultEur)}</td>
                     <td className="px-3 py-2 text-right text-ink-2">
-                      {r.capitalGainEur ? signed(r.capitalGainEur) : "—"}
+                      {r.capitalGainEur == null ? "—" : signed(r.capitalGainEur)}
                     </td>
                     <td className="px-3 py-2 text-right text-ink-2">
                       {r.lossUsedEur ? eur(r.lossUsedEur, { decimals: 0 }) : ""}

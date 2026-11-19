@@ -228,6 +228,8 @@ export const NL: Record<string, string> = {
   "That password isn't right": "Dat wachtwoord klopt niet",
   "Some investments were sold or sent away before they were bought, so a purchase is probably missing. Only what was held is counted.":
     "Sommige beleggingen zijn verkocht of weggestuurd voordat ze gekocht waren, dus er ontbreekt waarschijnlijk een aankoop. Alleen wat er was, telt mee.",
+  "{name} is kept as values per year, so its sales aren't known: it counts with its yearly change in value.":
+    "{name} staat erin met waarden per jaar, dus de verkopen zijn niet bekend: de rekening telt met haar waardeverandering per jaar.",
   "No value on 1 January {year} for {asset}: it counts with its yearly change in value instead.":
     "Geen waarde op 1 januari {year} voor {asset}: die telt in plaats daarvan met de waardeverandering per jaar.",
   "No value for {asset} on {day}, when it came in: it counts as bought for €0.":

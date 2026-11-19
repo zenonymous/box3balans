@@ -557,8 +557,8 @@ export const NL: Record<string, string> = {
   "One year": "Eén jaar",
   "Return after costs, by the rules above": "Rendement na kosten, volgens de regels hierboven",
   "Capital gain": "Vermogenswinst",
-  "Gain on shares, bonds and funds sold that year, inside the result":
-    "Winst op aandelen, obligaties en fondsen die dat jaar zijn verkocht, binnen het resultaat",
+  "Gain on shares, bonds and funds sold that year, inside the result; — in a year without any":
+    "Winst op aandelen, obligaties en fondsen die dat jaar zijn verkocht, binnen het resultaat; — in een jaar zonder",
   "Losses set off": "Verrekend verlies",
   Taxable: "Belastbaar",
   "Tax (new)": "Belasting (nieuw)",

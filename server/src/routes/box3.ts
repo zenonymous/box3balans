@@ -187,6 +187,8 @@ function financialInstrumentsYear(
   if (!gains) return undefined;
   const left = new Set(gains.withoutStartValue);
   const kept = holdings.filter((h) => !left.has(h.assetId));
+  // Nothing taxed when sold this year: no swap, and no capital gain to show.
+  if (!kept.length && !gains.gainEur && !gains.regularBenefitsEur) return undefined;
   return {
     returnEur: kept.reduce((s, h) => s.plus(h.returnEur), ZERO).toNumber(),
     tradeCostsEur: kept.reduce((s, h) => s.plus(h.tradeCostsEur), ZERO).toNumber(),
