@@ -13,13 +13,14 @@ import { coinbase } from "./providers/coinbase.js";
 import { bitpanda } from "./providers/bitpanda.js";
 import { ibkr } from "./providers/ibkr.js";
 import { kraken } from "./providers/kraken.js";
+import { bitstamp } from "./providers/bitstamp.js";
 import { type Mismatch, reconcile } from "./reconcile.js";
 import { revalueUnpriced } from "./revalue.js";
 import { bookBitvavoSwaps } from "./swaps.js";
 import { matchTransfers } from "./transfers.js";
 import type { ExchangeProvider, ProviderContext } from "./types.js";
 
-export const PROVIDERS: Record<string, ExchangeProvider<any>> = { bitvavo, kraken, coinbase, ibkr, bitpanda };
+export const PROVIDERS: Record<string, ExchangeProvider<any>> = { bitvavo, kraken, coinbase, ibkr, bitpanda, bitstamp };
 
 export interface SyncResult {
   at: string;

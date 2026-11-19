@@ -80,6 +80,7 @@ export const DESTINATIONS: Destination[] = [
       "api.kraken.com",
       "api.coinbase.com",
       "api.public.bitpanda.com",
+      "www.bitstamp.net",
       "*.interactivebrokers.com",
     ],
   },

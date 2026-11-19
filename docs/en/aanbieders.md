@@ -495,6 +495,8 @@ General: the Belastingdienst lets you use the price on 1 January of the platform
 
 **Status (October 2026):** the recogniser for both CSV layouts has been built ([#53](https://github.com/zenonymous/box3balans/issues/53)), on the layouts in BittyTax and rotki, not yet tested with a real export. Everything against euros or dollars is booked, cash too, so the cash balance is right; a swap between two coins has no value in money and is skipped and counted.
 
+**Status (November 2026):** the connection has been built too, on the OpenAPI description in [Bitstamp API](https://www.bitstamp.net/api/) and the way rotki reads the answers ([rotki, bitstamp.py](https://github.com/rotki/rotki/blob/develop/rotkehlchen/exchanges/bitstamp.py), AGPL-3.0), not yet tested with a real key. `user_transactions` from the last id seen (`since_id`, ascending, 1000 at a time) and `account_balances` for the balance comparison. A trade's costs are apart from its amounts, in the quote currency; a withdrawal's network fee comes on top of the amount. A swap between two coins becomes a purchase paid with the coin given up. Staking within Bitstamp (types 25 and 26) doesn't count; derivatives and settlements are skipped and counted. Still open: whether staked coins count in `account_balances`.
+
 ### Crowdfunding and P2P
 
 General: loans via a platform are receivables, in the tax return _uitgeleend geld_ (money lent, other assets); interest credited less than yearly counts in the value on 1 January ([Belastingdienst, box 3 assets 2026](https://www.belastingdienst.nl/wps/wcm/connect/fisin/fisin2026/bezittingen_en_schulden_box_3_)). None of the platforms below was found to have an API or CSV for investors; they all send an annual statement.

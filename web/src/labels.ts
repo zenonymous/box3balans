@@ -9,6 +9,7 @@ const PROVIDER_NAME: Record<string, string> = {
   kraken: "Kraken",
   coinbase: "Coinbase",
   bitpanda: "Bitpanda",
+  bitstamp: "Bitstamp",
   goldrepublic: "Goldrepublic",
   binance: "Binance",
   coingecko: "CoinGecko",
@@ -42,7 +43,7 @@ export const kindLabel = (k: string): string =>
 export const kindHint = (k: AccountKind): string =>
   ({
     broker: t("DEGIRO, Trade Republic, Interactive Brokers"),
-    exchange: t("Bitvavo, Kraken, Coinbase, Bitpanda"),
+    exchange: t("Bitvavo, Kraken, Coinbase, Bitpanda, Bitstamp"),
     wallet: t("Hardware or software wallet"),
     vault: t("Goldrepublic, BullionVault"),
     physical: t("Home safe, safe deposit box"),

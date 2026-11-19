@@ -376,6 +376,17 @@ export const NL: Record<string, string> = {
   "Enable only: “Query Funds” and “Query Ledger Entries”. Leave every trading, deposit and withdrawal permission off.":
     "Zet alleen “Query Funds” en “Query Ledger Entries” aan. Laat alle rechten voor handelen, storten en opnemen uit.",
   "Copy the API key and the private key.": "Kopieer de API-sleutel en de privésleutel.",
+  // sync/providers/bitstamp.ts
+  "Log in to bitstamp.net → Settings → API access → New API key.":
+    "Log in op bitstamp.net → Settings → API access → New API key.",
+  "Tick only “Account balance” and “User transactions”. Leave every trading, deposit and withdrawal permission off.":
+    "Vink alleen “Account balance” en “User transactions” aan. Laat alle rechten voor handelen, storten en opnemen uit.",
+  "Copy the key and the secret, then activate the key with the link in the e-mail Bitstamp sends.":
+    "Kopieer de sleutel en het geheim, en activeer de sleutel met de link in de e-mail die Bitstamp stuurt.",
+  "{n} Bitstamp transaction of another kind (derivatives, settlements) was left out.":
+    "{n} Bitstamp-transactie van een andere soort (derivaten, afrekeningen) is overgeslagen.",
+  "{n} Bitstamp transactions of other kinds (derivatives, settlements) were left out.":
+    "{n} Bitstamp-transacties van andere soorten (derivaten, afrekeningen) zijn overgeslagen.",
   // wallets/ankr.ts
   "{chain} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.":
     "{chain} heeft een gratis Ankr API-sleutel nodig: zet ANKR_API_KEY (zie de README) en herstart.",

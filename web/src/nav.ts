@@ -35,7 +35,7 @@ export const PAGES = {
     to: "/connections",
     label: t("Connections"),
     icon: "⇅",
-    more: t("⇅ Connections — sync Bitvavo, Kraken, Coinbase, Bitpanda and IBKR"),
+    more: t("⇅ Connections — sync Bitvavo, Kraken, Coinbase, Bitpanda, Bitstamp and IBKR"),
   },
   wallets: {
     to: "/wallets",

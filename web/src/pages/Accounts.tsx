@@ -21,7 +21,17 @@ import { KIND_ORDER, YEARLY_ONLY_KINDS, kindHint, kindLabel, ownerLabel, provide
 import { useAccounts, useHousehold, useInvalidateAll, usePortfolio } from "../queries";
 import { YearsModal } from "./AccountYears";
 
-const PROVIDERS = ["degiro", "trade-republic", "ibkr", "bitvavo", "kraken", "coinbase", "bitpanda", "goldrepublic"];
+const PROVIDERS = [
+  "degiro",
+  "trade-republic",
+  "ibkr",
+  "bitvavo",
+  "kraken",
+  "coinbase",
+  "bitpanda",
+  "bitstamp",
+  "goldrepublic",
+];
 export function AccountsPage() {
   const accounts = useAccounts();
   const people = useHousehold();

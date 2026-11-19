@@ -360,7 +360,7 @@ export interface MetalsOverview {
   }[];
 }
 
-export type ProviderId = "bitvavo" | "kraken" | "coinbase" | "ibkr" | "bitpanda";
+export type ProviderId = "bitvavo" | "kraken" | "coinbase" | "ibkr" | "bitpanda" | "bitstamp";
 
 export interface ProviderInfo {
   id: ProviderId;
