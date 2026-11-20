@@ -101,14 +101,28 @@ const symbol = (code: string) => {
   return ALIASES[c] ?? c;
 };
 
-const TRADES = new Set(["2", "36", "53", "55"]); // market trade, simple buy, small balance conversions
-const DEPOSIT = "0";
-const WITHDRAWAL = "1";
-const REWARDS = new Set(["27", "32"]); // staking reward, referral reward
-// Moves between your own Bitstamp accounts: the coins leave or enter this one.
-const ACCOUNT_TRANSFERS = new Set(["14", "35"]);
-// Coins sent to staking and back: still yours, still at Bitstamp.
-const STAKING_MOVES = new Set(["25", "26"]);
+/**
+ * Bitstamp's transaction types (the OpenAPI description of user_transactions), by what they are
+ * here. Kinds not listed (derivatives settlements, insurance fund, collateral liquidation, the
+ * settlement transfer) aren't followed.
+ */
+type Kind = "trade" | "deposit" | "withdrawal" | "reward" | "account transfer" | "staking move";
+const TYPES: Record<string, { kind: Kind; note?: string }> = {
+  "0": { kind: "deposit" },
+  "1": { kind: "withdrawal" },
+  "2": { kind: "trade" },
+  "36": { kind: "trade", note: "Bitstamp simple buy" },
+  "53": { kind: "trade", note: "Bitstamp small balance conversion" },
+  "55": { kind: "trade", note: "Bitstamp small balance conversion" },
+  "27": { kind: "reward", note: "Bitstamp staking reward" },
+  "32": { kind: "reward", note: "Bitstamp referral reward" },
+  // Moves between your own Bitstamp accounts: the coins leave or enter this one.
+  "14": { kind: "account transfer", note: "Bitstamp transfer between accounts" },
+  "35": { kind: "account transfer", note: "Bitstamp transfer between accounts" },
+  // Coins sent to staking and back: still yours, still at Bitstamp.
+  "25": { kind: "staking move" },
+  "26": { kind: "staking move" },
+};
 
 /** "2022-03-01 10:54:53.849000", in UTC. */
 const parseTime = (s: string) => new Date(`${s.trim().replace(" ", "T").slice(0, 23)}Z`);
@@ -117,14 +131,14 @@ const parseTime = (s: string) => new Date(`${s.trim().replace(" ", "T").slice(0,
  * Turns user transactions into events. A trade's amounts are without its fee, which is charged in
  * the quote currency (as rotki reads them): a purchase costs the amount plus the fee, a sale brings
  * in the amount minus it; a withdrawal takes the amount plus the fee, and a deposit's amount is what
- * was credited, its fee already off (rotki matches it to amount + fee on chain). Derivatives, settlements and
- * kinds not listed are counted in `skipped`.
+ * was credited, its fee already off (rotki matches it to amount + fee on chain). Kinds not in TYPES,
+ * and rows that don't have the shape their kind needs, are counted in `skipped`.
  */
 export function mapBitstampTransactions(rows: BsTx[]): { events: SyncEvent[]; skipped: number } {
   const events: SyncEvent[] = [];
   let skipped = 0;
   for (const r of rows) {
-    const type = String(r.type);
+    const type = TYPES[String(r.type)];
     const id = `bitstamp:${r.id}`;
     const at = parseTime(r.datetime);
     const fee = D(typeof r.fee === "string" && r.fee ? r.fee : 0);
@@ -134,9 +148,9 @@ export function mapBitstampTransactions(rows: BsTx[]): { events: SyncEvent[]; sk
       const amount = D(v);
       if (!amount.isZero()) legs.push([k, amount]);
     }
-    if (STAKING_MOVES.has(type)) continue;
+    if (type?.kind === "staking move") continue;
 
-    if (TRADES.has(type) && legs.length === 2) {
+    if (type?.kind === "trade" && legs.length === 2) {
       const plus = legs.find(([, a]) => a.gt(0));
       const minus = legs.find(([, a]) => a.lt(0));
       if (!plus || !minus) {
@@ -163,34 +177,27 @@ export function mapBitstampTransactions(rows: BsTx[]): { events: SyncEvent[]; sk
         quantity: asset[1].abs().toFixed(),
         quote: { amount: quoteAmount.toFixed(), currency: symbol(quote[0]) },
         feeQuote: fee.isZero() ? undefined : fee.toFixed(),
-        note: type === "2" ? undefined : `Bitstamp ${type === "36" ? "simple buy" : "small balance conversion"}`,
+        note: type.note,
       });
       continue;
     }
 
-    if (legs.length !== 1) {
+    if (!type || legs.length !== 1) {
       skipped++;
       continue;
     }
     const [code, amount] = legs[0]!;
     const asset = assetRef(symbol(code));
-    if (type === DEPOSIT && amount.gt(0)) {
+    const { kind, note } = type;
+    if (kind === "deposit" && amount.gt(0)) {
       events.push({ kind: "deposit", id, at, asset, quantity: amount.toFixed() });
-    } else if (type === WITHDRAWAL && amount.lt(0)) {
+    } else if (kind === "withdrawal" && amount.lt(0)) {
       events.push({ kind: "withdrawal", id, at, asset, quantity: amount.abs().plus(fee).toFixed() });
-    } else if (REWARDS.has(type) && amount.gt(0)) {
-      const note = type === "27" ? "Bitstamp staking reward" : "Bitstamp referral reward";
+    } else if (kind === "reward" && amount.gt(0)) {
       events.push({ kind: "reward", id, at, asset, quantity: amount.toFixed(), note });
-    } else if (ACCOUNT_TRANSFERS.has(type)) {
-      const kind = amount.gt(0) ? "deposit" : "withdrawal";
-      events.push({
-        kind,
-        id,
-        at,
-        asset,
-        quantity: amount.abs().toFixed(),
-        note: "Bitstamp transfer between accounts",
-      });
+    } else if (kind === "account transfer") {
+      const dir = amount.gt(0) ? "deposit" : "withdrawal";
+      events.push({ kind: dir, id, at, asset, quantity: amount.abs().toFixed(), note });
     } else skipped++;
   }
   return { events, skipped };
@@ -236,7 +243,10 @@ export const bitstamp: ExchangeProvider<Creds> = {
       since = fresh.reduce((m, r) => Math.max(m, Number(r.id)), since) + 1;
       await ctx.sleep(500);
     }
-    const { events, skipped } = mapBitstampTransactions(rows);
+    const mapped = mapBitstampTransactions(rows);
+    const { events } = mapped;
+    // Counted over every sync: the cursor moves past them, the warning stays.
+    const skipped = (typeof ctx.cursor?.skipped === "number" ? ctx.cursor.skipped : 0) + mapped.skipped;
     const nextLast = rows.reduce((m, r) => Math.max(m, Number(r.id)), lastId);
 
     const bal = await privateCall<{ currency: string; total: string }[]>(c, ctx, "account_balances");
@@ -253,13 +263,13 @@ export const bitstamp: ExchangeProvider<Creds> = {
       events,
       balances,
       balanceScope: "all",
-      cursor: { lastId: nextLast },
+      cursor: { lastId: nextLast, skipped },
       warnings: skipped
         ? [
             trn(
               skipped,
-              "{n} Bitstamp transaction of another kind (derivatives, settlements) was left out.",
-              "{n} Bitstamp transactions of other kinds (derivatives, settlements) were left out.",
+              "{n} Bitstamp transaction of a kind Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) was left out. If a balance differs from Bitstamp's, it's the likely cause.",
+              "{n} Bitstamp transactions of kinds Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) were left out. If a balance differs from Bitstamp's, they're the likely cause.",
             ),
           ]
         : [],

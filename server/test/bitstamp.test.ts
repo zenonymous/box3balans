@@ -100,6 +100,35 @@ describe("Bitstamp", () => {
     expect(events.map(brief)).toEqual(["sell 0.5 ETH for 0.02498 BTC (fee 0.00001)"]);
   });
 
+  // Euros for dollars: cash in one currency for cash in another, as Kraken's conversions are booked.
+  it("books an exchange between two currencies as a trade in cash", () => {
+    const { events } = mapBitstampTransactions([
+      row(13, "2", { eur: "-100.00", usd: "108.00", eur_usd: 1.08, fee: "0.20" }),
+    ]);
+    expect(events.map(brief)).toEqual(["sell 100 EUR for 107.8 USD (fee 0.2)"]);
+  });
+
+  // What isn't followed stays in the warning at every sync, not only the one that met it: a balance
+  // that differs keeps its likely cause in view.
+  it("keeps saying what it left out, sync after sync", async () => {
+    const ctx = (cursor: Record<string, unknown> | null, rows: BsTx[]) => ({
+      fetchFn: (async (url: string) => Response.json(url.endsWith("/account_balances/") ? [] : rows)) as typeof fetch,
+      cursor,
+      isKnown: async () => new Set<string>(),
+      sleep: async () => {},
+    });
+    const creds = { apiKey: "abcdefghijklmnop", apiSecret: "qrstuvwxyz123456" };
+    const first = await bitstamp.fetch(
+      creds,
+      ctx(null, [row(1, "58", { eur: "-5.00" }), row(2, "61", { btc: "-0.001" }), row(3, "0", { eur: "10" })]),
+    );
+    const warning =
+      "2 Bitstamp transactions of kinds Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) were left out. If a balance differs from Bitstamp's, they're the likely cause.";
+    expect(first.warnings).toEqual([warning]);
+    const next = await bitstamp.fetch(creds, ctx(first.cursor, []));
+    expect(next.warnings).toEqual([warning]);
+  });
+
   it("reads new transactions after the last one seen, and the balances", async () => {
     const calls: { url: string; body: string; headers: Record<string, string> }[] = [];
     const ctx = (cursor: Record<string, unknown> | null) => ({
@@ -128,7 +157,7 @@ describe("Bitstamp", () => {
 
     const first = await bitstamp.fetch(creds, ctx(null));
     expect(first.events).toHaveLength(2);
-    expect(first.cursor).toEqual({ lastId: 42 });
+    expect(first.cursor).toEqual({ lastId: 42, skipped: 0 });
     expect(
       first.balances?.map((b) => `${b.quantity} ${"symbol" in b.asset ? b.asset.symbol : b.asset.currency}`),
     ).toEqual(["400 EUR", "0.01 BTC"]);
@@ -159,7 +188,7 @@ describe("Bitstamp", () => {
     };
     const result = await bitstamp.fetch({ apiKey: "abcdefghijklmnop", apiSecret: "qrstuvwxyz123456" }, ctx);
     expect(result.events).toHaveLength(total);
-    expect(result.cursor).toEqual({ lastId: total });
+    expect(result.cursor).toEqual({ lastId: total, skipped: 0 });
   });
 
   it("stops with Bitstamp's own reason when it refuses the key", async () => {

@@ -383,10 +383,10 @@ export const NL: Record<string, string> = {
     "Vink alleen “Account balance” en “User transactions” aan. Laat alle rechten voor handelen, storten en opnemen uit.",
   "Copy the key and the secret, then activate the key with the link in the e-mail Bitstamp sends.":
     "Kopieer de sleutel en het geheim, en activeer de sleutel met de link in de e-mail die Bitstamp stuurt.",
-  "{n} Bitstamp transaction of another kind (derivatives, settlements) was left out.":
-    "{n} Bitstamp-transactie van een andere soort (derivaten, afrekeningen) is overgeslagen.",
-  "{n} Bitstamp transactions of other kinds (derivatives, settlements) were left out.":
-    "{n} Bitstamp-transacties van andere soorten (derivaten, afrekeningen) zijn overgeslagen.",
+  "{n} Bitstamp transaction of a kind Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) was left out. If a balance differs from Bitstamp's, it's the likely cause.":
+    "{n} Bitstamp-transactie van een soort die Box3balans niet volgt (zoals derivaten, afrekeningen of een omzetting van meer dan twee valuta's) is overgeslagen. Wijkt een saldo af van dat bij Bitstamp, dan ligt het waarschijnlijk daaraan.",
+  "{n} Bitstamp transactions of kinds Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) were left out. If a balance differs from Bitstamp's, they're the likely cause.":
+    "{n} Bitstamp-transacties van soorten die Box3balans niet volgt (zoals derivaten, afrekeningen of een omzetting van meer dan twee valuta's) zijn overgeslagen. Wijkt een saldo af van dat bij Bitstamp, dan ligt het waarschijnlijk daaraan.",
   // wallets/ankr.ts
   "{chain} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.":
     "{chain} heeft een gratis Ankr API-sleutel nodig: zet ANKR_API_KEY (zie de README) en herstart.",
