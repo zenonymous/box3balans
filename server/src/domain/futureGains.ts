@@ -5,7 +5,7 @@ import { D, type Decimal, ZERO, round2 } from "../lib/decimal.js";
 import { localDay } from "../lib/time.js";
 import { tr } from "../i18n/index.js";
 import { type Box3Config, categoryOf, outsideBox3 } from "./box3.js";
-import type { ActualReturn } from "./box3Actual.js";
+import type { InstrumentReturn } from "./box3Actual.js";
 import type { FinancialInstrumentsYear } from "./box3Future.js";
 import { attribute, loadHousehold } from "./household.js";
 import { Ledger, sortTransactions, type LedgerTx, type TxType } from "./ledger.js";
@@ -58,6 +58,18 @@ export interface CapitalGains {
   warnings: string[];
 }
 
+/** The two legs of each transfer (by transferGroup), as far as they're among `txs`. */
+function transferPairs(txs: LedgerTx[]): Map<string, { out?: LedgerTx; in?: LedgerTx }> {
+  const pairs = new Map<string, { out?: LedgerTx; in?: LedgerTx }>();
+  for (const t of txs) {
+    if (!t.transferGroup || (t.type !== "transfer_in" && t.type !== "transfer_out")) continue;
+    const pair = pairs.get(t.transferGroup) ?? {};
+    pair[t.type === "transfer_in" ? "in" : "out"] = t;
+    pairs.set(t.transferGroup, pair);
+  }
+  return pairs;
+}
+
 /** The one "account" all of an owner's accounts are collapsed into: one average per asset. */
 const OWNER = 0;
 const TAKES: ReadonlySet<TxType> = new Set(["sell", "withdrawal", "fee", "transfer_out"]);
@@ -105,13 +117,11 @@ export function capitalGains(
   const yearOf = (tx: LedgerTx) => Number(localDay(tx.occurredAt).slice(0, 4));
   // A transfer with both legs here is between the owner's own accounts: nothing happens. Cash isn't
   // a financial instrument, so the cash side of a trade (settleAssetId) is left out.
-  const legs = new Map<string, Set<TxType>>();
-  for (const t of txs)
-    if (t.transferGroup) legs.set(t.transferGroup, (legs.get(t.transferGroup) ?? new Set()).add(t.type));
-  const ownTransfer = (t: LedgerTx) =>
-    !!t.transferGroup &&
-    legs.get(t.transferGroup)!.has("transfer_in") &&
-    legs.get(t.transferGroup)!.has("transfer_out");
+  const pairs = transferPairs(txs);
+  const ownTransfer = (t: LedgerTx) => {
+    const pair = t.transferGroup ? pairs.get(t.transferGroup) : undefined;
+    return !!pair?.in && !!pair.out;
+  };
   const own = sortTransactions(txs)
     .filter((t) => !ownTransfer(t))
     .map((t) => ({ ...t, accountId: OWNER, settleAssetId: null }));
@@ -241,7 +251,8 @@ export interface HouseholdGainsYear {
  * `start`: what's held then counts at its value that day, as holdings will on 1 January 2029.
  *
  * Each year is worked out with that year's shares and box 3 categories, the same ones its yearly
- * return is counted with (actualReturn), as if they had applied from the start.
+ * return is counted with (actualReturn), as if they had applied from the start. That's why every
+ * year replays the transactions from the start again: a year's averages depend on its own shares.
  */
 export async function householdGains(
   db: DB,
@@ -370,13 +381,7 @@ function ownerTransactions(
   closeOn: (assetId: number, day: string) => Decimal | null,
   noValue: (assetId: number, day: string) => void,
 ): LedgerTx[] {
-  const legs = new Map<string, { out?: LedgerTx; in?: LedgerTx }>();
-  for (const t of txs) {
-    if (!t.transferGroup || (t.type !== "transfer_in" && t.type !== "transfer_out")) continue;
-    const g = legs.get(t.transferGroup) ?? {};
-    g[t.type === "transfer_in" ? "in" : "out"] = t;
-    legs.set(t.transferGroup, g);
-  }
+  const legs = transferPairs(txs);
   const valuedIn = (t: LedgerTx): LedgerTx => {
     if (D(t.price).gt(0)) return t;
     const day = localDay(t.occurredAt);
@@ -444,7 +449,7 @@ async function closeOnOrBefore(db: DB, assetIds: number[]) {
  * they came in keep their yearly return. Nothing when there's nothing taxed when sold that year.
  */
 export function financialInstrumentsYear(
-  holdings: ActualReturn["financialInstruments"],
+  holdings: InstrumentReturn[],
   gains: HouseholdGainsYear | undefined,
 ): FinancialInstrumentsYear | undefined {
   if (!gains) return undefined;

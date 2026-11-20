@@ -50,6 +50,17 @@ export interface PropertyYear {
   sold: boolean; // worth nothing on the next 1 January, or out of box 3 from then
 }
 
+/**
+ * One holding taxed when sold in the preview (taxedWhenSold), on one account: its part of the year's
+ * actual return and the costs of buying and selling it, as the household's share.
+ */
+export interface InstrumentReturn<Money = number> {
+  accountId: number;
+  assetId: number;
+  returnEur: Money;
+  tradeCostsEur: Money;
+}
+
 export interface ActualReturn {
   year: number;
   // False for the running year: "so far", with today's values as the end.
@@ -69,7 +80,7 @@ export interface ActualReturn {
   property: PropertyYear[]; // homes and other real estate, inside the total
   // Holdings taxed when sold in the preview from 2029 (taxedWhenSold): each one's part of the total
   // and the costs of buying and selling it inside costsEur, as the household's share.
-  financialInstruments: { accountId: number; assetId: number; returnEur: number; tradeCostsEur: number }[];
+  financialInstruments: InstrumentReturn[];
   // Accounts kept as values per year that miss a value the return needs.
   warnings: string[];
 }
@@ -389,10 +400,7 @@ class Totals {
   inScopeCosts = ZERO;
   taxWithheld = ZERO;
   // Holdings taxed when sold in the preview, also in the parts above.
-  readonly financialInstruments = new Map<
-    string,
-    { accountId: number; assetId: number; returnEur: Decimal; tradeCostsEur: Decimal }
-  >();
+  readonly financialInstruments = new Map<string, InstrumentReturn<Decimal>>();
 
   /** Notes a holding as taxed when sold too (it's in the parts through add()). */
   addFinancialInstrument(w: Decimal, h: Holding) {
