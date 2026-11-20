@@ -116,7 +116,8 @@ const parseTime = (s: string) => new Date(`${s.trim().replace(" ", "T").slice(0,
 /**
  * Turns user transactions into events. A trade's amounts are without its fee, which is charged in
  * the quote currency (as rotki reads them): a purchase costs the amount plus the fee, a sale brings
- * in the amount minus it; a withdrawal takes the amount plus the fee. Derivatives, settlements and
+ * in the amount minus it; a withdrawal takes the amount plus the fee, and a deposit's amount is what
+ * was credited, its fee already off (rotki matches it to amount + fee on chain). Derivatives, settlements and
  * kinds not listed are counted in `skipped`.
  */
 export function mapBitstampTransactions(rows: BsTx[]): { events: SyncEvent[]; skipped: number } {
@@ -174,7 +175,7 @@ export function mapBitstampTransactions(rows: BsTx[]): { events: SyncEvent[]; sk
     const [code, amount] = legs[0]!;
     const asset = assetRef(symbol(code));
     if (type === DEPOSIT && amount.gt(0)) {
-      events.push({ kind: "deposit", id, at, asset, quantity: amount.minus(fee).toFixed() });
+      events.push({ kind: "deposit", id, at, asset, quantity: amount.toFixed() });
     } else if (type === WITHDRAWAL && amount.lt(0)) {
       events.push({ kind: "withdrawal", id, at, asset, quantity: amount.abs().plus(fee).toFixed() });
     } else if (REWARDS.has(type) && amount.gt(0)) {
@@ -231,11 +232,12 @@ export const bitstamp: ExchangeProvider<Creds> = {
       const fresh = (Array.isArray(page) ? page : []).filter((r) => Number(r.id) >= since);
       rows.push(...fresh);
       if (page.length < PAGE || fresh.length === 0) break;
-      since = Math.max(...fresh.map((r) => Number(r.id))) + 1;
+      // Not Math.max(...ids): spreading a long history overflows the stack.
+      since = fresh.reduce((m, r) => Math.max(m, Number(r.id)), since) + 1;
       await ctx.sleep(500);
     }
     const { events, skipped } = mapBitstampTransactions(rows);
-    const nextLast = Math.max(lastId, ...rows.map((r) => Number(r.id)));
+    const nextLast = rows.reduce((m, r) => Math.max(m, Number(r.id)), lastId);
 
     const bal = await privateCall<{ currency: string; total: string }[]>(c, ctx, "account_balances");
     const totals = new Map<string, Decimal>();

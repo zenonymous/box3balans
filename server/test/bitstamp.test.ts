@@ -84,6 +84,22 @@ describe("Bitstamp", () => {
     expect(skipped).toBe(1);
   });
 
+  // rotki matches a deposit to the coins that arrived on chain as amount + fee: the amount is what
+  // Bitstamp credited, after its fee.
+  it("books a deposit at the amount credited", () => {
+    const { events } = mapBitstampTransactions([row(11, "0", { btc: "0.01000000", fee: "0.0005" })]);
+    expect(events.map(brief)).toEqual(["deposit 0.01 BTC"]);
+  });
+
+  // The pair names the coin that's bought or sold ("eth_btc": ETH, paid in BTC), as rotki reads it:
+  // giving up ETH is a sale of ETH for BTC, the fee off what comes in.
+  it("books a swap by the pair's first coin, either way", () => {
+    const { events } = mapBitstampTransactions([
+      row(12, "2", { eth: "-0.50000000", btc: "0.02499000", eth_btc: 0.05, fee: "0.00001" }),
+    ]);
+    expect(events.map(brief)).toEqual(["sell 0.5 ETH for 0.02498 BTC (fee 0.00001)"]);
+  });
+
   it("reads new transactions after the last one seen, and the balances", async () => {
     const calls: { url: string; body: string; headers: Record<string, string> }[] = [];
     const ctx = (cursor: Record<string, unknown> | null) => ({
@@ -126,6 +142,24 @@ describe("Bitstamp", () => {
     const next = await bitstamp.fetch(creds, ctx({ lastId: 41 }));
     expect(new URLSearchParams(calls[0]!.body).get("since_id")).toBe("42");
     expect(next.events.map((e) => e.id)).toEqual(["bitstamp:42"]);
+  });
+
+  it("reads a long history page by page without running out of stack", async () => {
+    const total = 150_000;
+    const ctx = {
+      fetchFn: (async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/account_balances/")) return Response.json([]);
+        const since = Number(new URLSearchParams(typeof init?.body === "string" ? init.body : "").get("since_id"));
+        const ids = Array.from({ length: Math.max(0, Math.min(1000, total - since + 1)) }, (_, i) => since + i);
+        return Response.json(ids.map((id) => row(id, "27", { btc: "0.00000001" })));
+      }) as typeof fetch,
+      cursor: null,
+      isKnown: async () => new Set<string>(),
+      sleep: async () => {},
+    };
+    const result = await bitstamp.fetch({ apiKey: "abcdefghijklmnop", apiSecret: "qrstuvwxyz123456" }, ctx);
+    expect(result.events).toHaveLength(total);
+    expect(result.cursor).toEqual({ lastId: total });
   });
 
   it("stops with Bitstamp's own reason when it refuses the key", async () => {
