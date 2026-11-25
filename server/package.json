@@ -15,10 +15,10 @@
     "cli": "tsx --env-file=.env src/cli.ts"
   },
   "dependencies": {
-    "@electric-sql/pglite": "^0.5.15",
+    "@electric-sql/pglite": "^0.5.16",
     "@fastify/cookie": "^11.1.5",
     "@fastify/rate-limit": "^11.2.2",
-    "@fastify/static": "^10.1.9",
+    "@fastify/static": "^10.1.10",
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@node-rs/argon2": "^2.2.2",
