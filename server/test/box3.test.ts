@@ -166,6 +166,9 @@ describe("box 3 calculation (official steps)", () => {
       final: false,
     });
     expect(DEFAULT_RATES["2025"]).toMatchObject({ greenExemptEur: "26312" });
+    // Belastingplan 2026 (Stb. 2025, 444): art. 5.13 Wet IB 2001 lowers the exemption to €200 from
+    // 1 January 2027, and the exemption and its credit lapse on 1 January 2028.
+    expect(DEFAULT_RATES["2027"]).toMatchObject({ greenExemptEur: "200", greenCreditPct: "0.1" });
   });
 });
 

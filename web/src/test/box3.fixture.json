@@ -118,7 +118,7 @@
         "allowanceEur": "60280",
         "debtThresholdEur": "3800",
         "taxRatePct": "36",
-        "greenExemptEur": "26715",
+        "greenExemptEur": "200",
         "greenCreditPct": "0.1",
         "final": false
       }
@@ -759,6 +759,20 @@
           "sold": false
         }
       ],
+      "financialInstruments": [
+        {
+          "accountId": 1,
+          "assetId": 6,
+          "returnEur": 1044.8,
+          "tradeCostsEur": 1
+        },
+        {
+          "accountId": 1,
+          "assetId": 7,
+          "returnEur": 1245.4,
+          "tradeCostsEur": 0
+        }
+      ],
       "warnings": [],
       "comparison": {
         "deemedBenefitEur": 17170,
@@ -779,7 +793,7 @@
       "role": "self",
       "birthDate": null,
       "custody": "together",
-      "createdAt": "2026-10-29T09:38:39.854Z"
+      "createdAt": "2026-11-26T09:55:42.829Z"
     },
     {
       "id": 2,
@@ -787,7 +801,7 @@
       "role": "partner",
       "birthDate": null,
       "custody": "together",
-      "createdAt": "2026-10-29T09:38:39.869Z"
+      "createdAt": "2026-11-26T09:55:42.831Z"
     },
     {
       "id": 3,
@@ -795,7 +809,7 @@
       "role": "child",
       "birthDate": "2016-04-12",
       "custody": "together",
-      "createdAt": "2026-10-29T09:38:39.874Z"
+      "createdAt": "2026-11-26T09:55:42.832Z"
     }
   ],
   "/api/accounts": [
@@ -811,7 +825,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.049Z",
+      "createdAt": "2026-11-26T09:55:43.086Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -829,7 +843,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:40.925Z",
+      "createdAt": "2026-11-26T09:55:43.061Z",
       "txCount": 8,
       "itemCount": 0,
       "latestYear": null,
@@ -847,7 +861,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:40.833Z",
+      "createdAt": "2026-11-26T09:55:43.043Z",
       "txCount": 10,
       "itemCount": 0,
       "latestYear": null,
@@ -865,7 +879,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:40.976Z",
+      "createdAt": "2026-11-26T09:55:43.075Z",
       "txCount": 1,
       "itemCount": 0,
       "latestYear": null,
@@ -883,7 +897,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.023Z",
+      "createdAt": "2026-11-26T09:55:43.082Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -901,7 +915,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:40.983Z",
+      "createdAt": "2026-11-26T09:55:43.076Z",
       "txCount": 0,
       "itemCount": 3,
       "latestYear": null,
@@ -919,7 +933,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:40.928Z",
+      "createdAt": "2026-11-26T09:55:43.062Z",
       "txCount": 1,
       "itemCount": 0,
       "latestYear": null,
@@ -937,7 +951,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.156Z",
+      "createdAt": "2026-11-26T09:55:43.096Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -955,7 +969,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.092Z",
+      "createdAt": "2026-11-26T09:55:43.091Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -973,7 +987,7 @@
       "ownerChildId": 3,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.083Z",
+      "createdAt": "2026-11-26T09:55:43.088Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -991,7 +1005,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.167Z",
+      "createdAt": "2026-11-26T09:55:43.099Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -1009,7 +1023,7 @@
       "ownerChildId": null,
       "jointSelfPct": "50.00",
       "foreign": false,
-      "createdAt": "2026-10-29T09:38:41.111Z",
+      "createdAt": "2026-11-26T09:55:43.093Z",
       "txCount": 0,
       "itemCount": 0,
       "latestYear": 2026,
@@ -1031,7 +1045,7 @@
     "demo": true
   },
   "/api/version": {
-    "version": "0.1.43",
+    "version": "0.1.55",
     "source": "https://github.com/zenonymous/box3balans"
   },
   "/api/box3/2025/checklist": {

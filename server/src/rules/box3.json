@@ -57,7 +57,7 @@
       "allowanceEur": "60280",
       "debtThresholdEur": "3800",
       "taxRatePct": "36",
-      "greenExemptEur": "26715",
+      "greenExemptEur": "200",
       "greenCreditPct": "0.1",
       "final": false,
       "proposal": true,
