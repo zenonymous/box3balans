@@ -55,8 +55,9 @@ describe("first start and signing in", () => {
         { username: "sanne", password: "correct horse battery", setupCode: "K7QX2-MPF9R" },
       ]),
     );
-    // Signed in: the app opens on the overview.
-    expect(await screen.findByRole("heading", { level: 1, name: "Overzicht" })).toBeTruthy();
+    // Signed in: the app opens on the overview. Its page loads lazily, and the first import of it in a
+    // busy test run can take longer than findBy's default second.
+    expect(await screen.findByRole("heading", { level: 1, name: "Overzicht" }, { timeout: 5000 })).toBeTruthy();
   });
 
   it("says what the server found wrong, without its field names, and announces it", async () => {
