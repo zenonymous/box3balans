@@ -10,7 +10,7 @@ import { purgeSynced } from "../sync/purge.js";
 import { ProviderError } from "../sync/types.js";
 import { tr } from "../i18n/index.js";
 
-const PROVIDER_IDS = ["bitvavo", "kraken", "coinbase", "ibkr", "bitpanda", "bitstamp"] as const;
+const PROVIDER_IDS = ["bitvavo", "kraken", "coinbase", "ibkr", "bitpanda", "bitstamp", "bybit"] as const;
 
 const createBody = z.object({
   provider: z.enum(PROVIDER_IDS),

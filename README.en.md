@@ -22,7 +22,7 @@ Box3balans keeps track of your **box 3** (the Dutch tax on savings and investmen
 ## What it does
 
 - **Overview:** wealth over time, the split across asset classes, positions and accounts, and per position the cost price and the realised and unrealised result.
-- **Transactions** by hand, via a **CSV import** from almost any broker or exchange (exports from DEGIRO, Bitvavo, Crypto.com, eToro, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear and Scalable Capital, among others, are recognised by themselves), via **connections** with Bitvavo, Kraken, Coinbase, Bitpanda and Interactive Brokers, and for **wallets** by address: Bitcoin, Ethereum and L2s, BNB Chain, Solana, Cardano, Dogecoin, Litecoin, XRP and Tron.
+- **Transactions** by hand, via a **CSV import** from almost any broker or exchange (exports from DEGIRO, Bitvavo, Crypto.com, eToro, Rabobank Beleggen, Trade Republic, Trading 212, Lightyear and Scalable Capital, among others, are recognised by themselves), via **connections** with Bitvavo, Kraken, Coinbase, Bitpanda, Bitstamp, Bybit and Interactive Brokers, and for **wallets** by address: Bitcoin, Ethereum and L2s, BNB Chain, Solana, Cardano, Dogecoin, Litecoin, XRP and Tron.
 - **Precious metal:** coins and bars with weight, purity, photos and a printable inventory (for example for your home contents insurance).
 - **Returns:** time- and money-weighted return against a benchmark, a cost overview and expected dividends.
 - **Box 3 for your whole household:** you, your fiscal partner and minor children; savings accounts, investments, a second or let home, money lent to others and debts. Per account you track transactions, or only the value on 1 January, which you can also have taken from your bank's export. Per year the deemed-return system (with the Belastingdienst's rounding), your **actual return** for the rebuttal scheme (tegenbewijsregeling), an overview **for the tax return** in the order you fill it in, and a preview of the system proposed from 2029. A start wizard gets you going in four steps.
@@ -274,7 +274,7 @@ The list of recognised exports, which file to choose per provider and how the im
 
 ### Connections with exchanges and brokers
 
-Read-only **connections** fetch your history by themselves and compare the balances with what the exchange reports: **Bitvavo**, **Kraken**, **Coinbase**, **Bitpanda** and **Interactive Brokers** (also for LYNX). Keys are checked, stored encrypted and never sent back or logged. How a sync works, staking per exchange and known limitations: see [Bringing data in](docs/en/importeren.md#connections-with-exchanges-and-brokers).
+Read-only **connections** fetch your history by themselves and compare the balances with what the exchange reports: **Bitvavo**, **Kraken**, **Coinbase**, **Bitpanda**, **Bitstamp**, **Bybit** and **Interactive Brokers** (also for LYNX). Keys are checked, stored encrypted and never sent back or logged. How a sync works, staking per exchange and known limitations: see [Bringing data in](docs/en/importeren.md#connections-with-exchanges-and-brokers).
 
 ### Wallets (self-custody, by address)
 

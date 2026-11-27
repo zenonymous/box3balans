@@ -387,6 +387,39 @@ export const NL: Record<string, string> = {
     "{n} Bitstamp-transactie van een soort die Box3balans niet volgt (zoals derivaten, afrekeningen of een omzetting van meer dan twee valuta's) is overgeslagen. Wijkt een saldo af van dat bij Bitstamp, dan ligt het waarschijnlijk daaraan.",
   "{n} Bitstamp transactions of kinds Box3balans doesn't follow (such as derivatives, settlements or a conversion of more than two currencies) were left out. If a balance differs from Bitstamp's, they're the likely cause.":
     "{n} Bitstamp-transacties van soorten die Box3balans niet volgt (zoals derivaten, afrekeningen of een omzetting van meer dan twee valuta's) zijn overgeslagen. Wijkt een saldo af van dat bij Bitstamp, dan ligt het waarschijnlijk daaraan.",
+  // sync/providers/bybit.ts
+  "Log in to bybit.eu → your profile → API → Create New Key → System-generated API Keys.":
+    "Log in op bybit.eu → je profiel → API → Create New Key → System-generated API Keys.",
+  "Choose “Read-Only”. Leave trading, withdrawals and every other permission off.":
+    "Kies “Read-Only”. Laat handelen, opnemen en alle andere rechten uit.",
+  "A key without IP addresses expires after 90 days. Tie it to your server's public IP address to keep it, or extend it at bybit.eu before then; Box3balans warns two weeks ahead.":
+    "Een sleutel zonder IP-adressen verloopt na 90 dagen. Koppel hem aan het openbare IP-adres van je server om hem te houden, of verleng hem op tijd op bybit.eu; Box3balans waarschuwt twee weken van tevoren.",
+  "Copy the key and the secret: Bybit shows the secret only once.":
+    "Kopieer de sleutel en het geheim: Bybit laat het geheim maar één keer zien.",
+  "Bybit doesn't know this API key. Check that you made it at bybit.eu (not bybit.com) and copied all of it.":
+    "Bybit kent deze API-sleutel niet. Controleer dat je hem op bybit.eu hebt gemaakt (niet bybit.com) en helemaal hebt gekopieerd.",
+  "Bybit says the signature is wrong. Check that the API secret is copied in full.":
+    "Bybit zegt dat de ondertekening niet klopt. Controleer dat het API-geheim helemaal is gekopieerd.",
+  "This Bybit key may not read this. Give it the read-only permissions the steps list.":
+    "Deze Bybit-sleutel mag dit niet lezen. Geef hem de leesrechten uit de stappen.",
+  "This Bybit key is tied to other IP addresses than the one Box3balans connects from.":
+    "Deze Bybit-sleutel is gekoppeld aan andere IP-adressen dan het adres waarvandaan Box3balans verbindt.",
+  "This Bybit API key has expired. Extend it, or make a new one, under API management at bybit.eu.":
+    "Deze Bybit API-sleutel is verlopen. Verleng hem, of maak een nieuwe, onder API management op bybit.eu.",
+  "Bybit refused the connection (HTTP 403): too many requests, or a country it doesn't serve.":
+    "Bybit weigerde de verbinding (HTTP 403): te veel verzoeken, of een land dat Bybit niet bedient.",
+  "This Bybit key can do more than read. Make a new key with “Read-Only”: Box3balans only reads, and a key that can do more is worth more to anyone who gets hold of it.":
+    "Deze Bybit-sleutel kan meer dan lezen. Maak een nieuwe sleutel met “Read-Only”: Box3balans leest alleen, en een sleutel die meer kan, is meer waard voor wie hem in handen krijgt.",
+  "This Bybit API key expires on {date}. Extend it under API management at bybit.eu, or tie it to your server's IP address so it doesn't expire.":
+    "Deze Bybit API-sleutel verloopt op {date}. Verleng hem onder API management op bybit.eu, of koppel hem aan het IP-adres van je server, dan verloopt hij niet.",
+  "Bybit gives spot trades for the last two years only. Trades between {from} and {to} couldn't be read; import them from Bybit's Data Export (CSV).":
+    "Bybit geeft spothandel alleen over de laatste twee jaar. Handel tussen {from} en {to} kon niet worden gelezen; importeer die uit de Data Export van Bybit (CSV).",
+  "{n} Bybit spot trade on a market Box3balans doesn't know was left out. If a balance differs from Bybit's, it's the likely cause.":
+    "{n} spottransactie bij Bybit op een markt die Box3balans niet kent, is overgeslagen. Wijkt een saldo af van dat bij Bybit, dan ligt het waarschijnlijk daaraan.",
+  "{n} Bybit spot trades on markets Box3balans doesn't know were left out. If a balance differs from Bybit's, they're the likely cause.":
+    "{n} spottransacties bij Bybit op markten die Box3balans niet kent, zijn overgeslagen. Wijkt een saldo af van dat bij Bybit, dan ligt het waarschijnlijk daaraan.",
+  "{coins} at Bybit is borrowed (spot margin) and isn't counted as yours. Enter the loan as a debt if it was still open on 1 January.":
+    "{coins} bij Bybit is geleend (spot margin) en telt niet als van jou. Voer de lening in als schuld als hij op 1 januari nog openstond.",
   // wallets/ankr.ts
   "{chain} needs a free Ankr API key: set ANKR_API_KEY (see the README) and restart.":
     "{chain} heeft een gratis Ankr API-sleutel nodig: zet ANKR_API_KEY (zie de README) en herstart.",

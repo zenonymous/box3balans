@@ -30,6 +30,7 @@ const PROVIDERS = [
   "coinbase",
   "bitpanda",
   "bitstamp",
+  "bybit",
   "goldrepublic",
 ];
 export function AccountsPage() {

@@ -74,6 +74,7 @@ export const integrationProvider = pgEnum("integration_provider", [
   "ibkr",
   "bitpanda",
   "bitstamp",
+  "bybit",
 ]);
 
 export const metal = pgEnum("metal", ["gold", "silver", "platinum", "palladium"]);

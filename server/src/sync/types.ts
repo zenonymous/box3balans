@@ -111,7 +111,7 @@ export interface CredentialField {
 }
 
 export interface ExchangeProvider<C = Record<string, string>> {
-  id: "bitvavo" | "kraken" | "coinbase" | "ibkr" | "bitpanda" | "bitstamp";
+  id: "bitvavo" | "kraken" | "coinbase" | "ibkr" | "bitpanda" | "bitstamp" | "bybit";
   label: string;
   accountKind: "exchange" | "broker";
   fields: CredentialField[];
