@@ -13,8 +13,10 @@ const DAY = 86_400_000;
 const EARLIEST = Date.parse("2025-01-01T00:00:00Z");
 // Spot fills go back two years; an hour's margin keeps the first window inside that.
 const FILLS_BACK = 2 * 365 * DAY - 3_600_000;
-// Each sync starts two days before the last one stopped, for what was booked late.
+// Each sync starts before the last one stopped, for what was booked late: two days for trades,
+// thirty for transfers, which Bybit files by when they started and can be pending for days.
 const OVERLAP = 2 * DAY;
+const TRANSFER_OVERLAP = 30 * DAY;
 
 const creds = z.object({
   apiKey: z.string().trim().min(10),
@@ -39,7 +41,6 @@ export function bybitSignature(
 export interface BybitExecution {
   symbol: string;
   execId: string;
-  orderId: string;
   side: string; // "Buy" or "Sell"
   execQty: string;
   execValue: string;
@@ -54,17 +55,18 @@ export type Pairs = Map<string, { base: string; quote: string }>;
 /**
  * Turns spot fills into trades. A fee in the coin bought comes off what arrives, in the coin sold
  * on top of what leaves; a fee in the money comes on top of a purchase and off a sale. A fee in a
- * third coin is a line of its own. Fills that aren't trades, or of a market not in `pairs`, are
- * counted in `skipped`.
+ * third coin is a line of its own, a rebate there a reward. Fills that aren't trades are passed
+ * over; the ids of trades on a market not in `pairs` are in `skipped`.
  */
-export function mapBybitExecutions(rows: BybitExecution[], pairs: Pairs): { events: SyncEvent[]; skipped: number } {
+export function mapBybitExecutions(rows: BybitExecution[], pairs: Pairs): { events: SyncEvent[]; skipped: string[] } {
   const events: SyncEvent[] = [];
-  let skipped = 0;
+  const skipped: string[] = [];
   for (const r of rows) {
-    const pair = pairs.get(r.symbol);
     const side = r.side === "Buy" ? "buy" : r.side === "Sell" ? "sell" : null;
-    if (r.execType !== "Trade" || !pair || !side) {
-      skipped++;
+    if (r.execType !== "Trade" || !side) continue;
+    const pair = pairs.get(r.symbol);
+    if (!pair) {
+      skipped.push(r.execId);
       continue;
     }
     const id = `bybit:exec:${r.execId}`;
@@ -87,14 +89,14 @@ export function mapBybitExecutions(rows: BybitExecution[], pairs: Pairs): { even
       quote: { amount: quoteAmount.toFixed(), currency: pair.quote },
       feeQuote: inQuote ? fee.toFixed() : undefined,
     });
-    if (!fee.isZero() && !inBase && !inQuote && fee.gt(0) && feeIn)
+    if (!fee.isZero() && !inBase && !inQuote && feeIn)
       events.push({
-        kind: "fee",
+        kind: fee.gt(0) ? "fee" : "reward",
         id: `${id}:fee`,
         at,
         asset: assetRef(feeIn),
-        quantity: fee.toFixed(),
-        note: "Bybit fee",
+        quantity: fee.abs().toFixed(),
+        note: fee.gt(0) ? "Bybit fee" : "Bybit fee rebate",
       });
   }
   return { events, skipped };
@@ -103,7 +105,6 @@ export function mapBybitExecutions(rows: BybitExecution[], pairs: Pairs): { even
 /** A conversion from /v5/asset/exchange/query-convert-history (Convert, also on the web or app). */
 export interface BybitConvert {
   exchangeTxId: string;
-  accountType: string;
   fromCoin: string;
   toCoin: string;
   fromAmount: string;
@@ -155,7 +156,6 @@ export interface BybitDeposit {
   txID: string;
   status: number;
   successAt: string;
-  depositFee: string;
 }
 
 /** A withdrawal from /v5/asset/withdraw/query-record; the fee is apart from the amount. */
@@ -182,8 +182,9 @@ export interface BybitFunding {
 /**
  * Deposits and withdrawals. Coins come from their own records: a deposit at the amount credited,
  * a withdrawal at the amount plus Bybit's fee (as rotki reads them). Money only shows in the Funding
- * account's history, so euro deposits and withdrawals are taken from there; its other lines are
- * already read elsewhere (Convert) or are moves within Bybit.
+ * account's history, so euro deposits and withdrawals are taken from there, by the way the money
+ * went (a refunded withdrawal comes back in); its other lines are already read elsewhere (Convert)
+ * or are moves within Bybit.
  */
 export function mapBybitTransfers(src: {
   deposits: BybitDeposit[];
@@ -217,13 +218,8 @@ export function mapBybitTransfers(src: {
   for (const f of src.funding) {
     const currency = f.currency.toUpperCase();
     if (!isFiat(currency)) continue;
-    const what = `${f.showBusiTypeEn} ${f.descriptionEn}`.toLowerCase();
-    const kind =
-      f.ioDirection === "I" && /deposit/.test(what) && !/cancel|refund/.test(what)
-        ? "deposit"
-        : f.ioDirection === "O" && /withdraw/.test(what)
-          ? "withdrawal"
-          : null;
+    if (!/deposit|withdraw/i.test(`${f.showBusiTypeEn} ${f.descriptionEn}`)) continue;
+    const kind = f.ioDirection === "I" ? "deposit" : f.ioDirection === "O" ? "withdrawal" : null;
     if (!kind) continue;
     events.push({
       kind,
@@ -247,6 +243,9 @@ class BybitRefused extends ProviderError {
   }
 }
 
+const expired = () =>
+  tr("This Bybit API key has expired. Extend it, or make a new one, under API management at bybit.eu.");
+
 // Codes Bybit gives for a key that's wrong, expired or not allowed.
 const KEY_TROUBLE: Record<number, () => string> = {
   10003: () =>
@@ -254,8 +253,8 @@ const KEY_TROUBLE: Record<number, () => string> = {
   10004: () => tr("Bybit says the signature is wrong. Check that the API secret is copied in full."),
   10005: () => tr("This Bybit key may not read this. Give it the read-only permissions the steps list."),
   10010: () => tr("This Bybit key is tied to other IP addresses than the one Box3balans connects from."),
-  33004: () => tr("This Bybit API key has expired. Extend it, or make a new one, under API management at bybit.eu."),
-  [-2015]: () => tr("This Bybit API key has expired. Extend it, or make a new one, under API management at bybit.eu."),
+  33004: expired,
+  [-2015]: expired,
 };
 
 /**
@@ -295,16 +294,10 @@ async function call<T>(
     if (res.ok && code === 0 && data?.result !== undefined) return data.result;
     // 10006 and 10018: over a rate limit. 10002: the clock drifted (a retry has a new timestamp).
     // 10000 and 10016: Bybit's own trouble.
-    const retryable =
-      res.status === 429 ||
-      res.status >= 500 ||
-      code === 10006 ||
-      code === 10018 ||
-      code === 10002 ||
-      code === 10000 ||
-      code === 10016;
+    const limited = res.status === 429 || code === 10006 || code === 10018;
+    const retryable = limited || res.status >= 500 || code === 10002 || code === 10000 || code === 10016;
     if (retryable && attempt < 5) {
-      await ctx.sleep(code === 10006 || code === 10018 || res.status === 429 ? 5_000 : 2_000);
+      await ctx.sleep(limited ? 5_000 : 2_000);
       continue;
     }
     if (res.status === 403 && code === null)
@@ -329,9 +322,9 @@ function* windows(from: number, to: number, size: number, step = 1): Generator<[
   }
 }
 
-/** Every page of a window, following nextPageCursor. */
+/** Every page of a window, following nextPageCursor; without creds, a public list. */
 async function pages<T>(
-  c: Creds,
+  c: Creds | null,
   ctx: ProviderContext,
   path: string,
   key: "list" | "rows",
@@ -351,20 +344,14 @@ async function pages<T>(
 
 /** Spot markets and their two coins, from Bybit's public list. */
 async function spotPairs(ctx: ProviderContext): Promise<Pairs> {
-  const pairs: Pairs = new Map();
-  let cursor: string | undefined;
-  for (;;) {
-    const r = await call<{ list?: { symbol: string; baseCoin: string; quoteCoin: string }[]; nextPageCursor?: string }>(
-      null,
-      ctx,
-      "market/instruments-info",
-      { category: "spot", limit: 1000, cursor },
-    );
-    for (const i of r.list ?? [])
-      pairs.set(i.symbol, { base: i.baseCoin.toUpperCase(), quote: i.quoteCoin.toUpperCase() });
-    if (!r.nextPageCursor || r.nextPageCursor === cursor || !r.list?.length) return pairs;
-    cursor = r.nextPageCursor;
-  }
+  const list = await pages<{ symbol: string; baseCoin: string; quoteCoin: string }>(
+    null,
+    ctx,
+    "market/instruments-info",
+    "list",
+    { category: "spot", limit: 1000 },
+  );
+  return new Map(list.map((i) => [i.symbol, { base: i.baseCoin.toUpperCase(), quote: i.quoteCoin.toUpperCase() }]));
 }
 
 /** What Bybit says about the key (user/query-api); null when it doesn't answer. */
@@ -421,12 +408,20 @@ export const bybit: ExchangeProvider<Creds> = {
     const now = Date.now();
     const nowS = Math.floor(now / 1000) * 1000;
     const synced = typeof ctx.cursor?.syncedTo === "number" ? ctx.cursor.syncedTo : null;
-    const from = synced === null ? EARLIEST : Math.max(EARLIEST, synced - OVERLAP);
+    const since = (overlap: number) => (synced === null ? EARLIEST : Math.max(EARLIEST, synced - overlap));
+    const from = since(OVERLAP);
+    const transfersFrom = since(TRANSFER_OVERLAP);
     const warnings: string[] = [];
     const key = await keyInfo(c, ctx);
     // A key made before this check, or changed since: said at every sync.
     if (key?.readOnly === false) warnings.push(notReadOnly());
-    if (key?.expires && key.expires.getTime() - now < 14 * DAY)
+    if (key?.expires && key.expires.getTime() <= now)
+      warnings.push(
+        tr("This Bybit API key expired on {date}. Extend it, or make a new one, under API management at bybit.eu.", {
+          date: longDate(key.expires),
+        }),
+      );
+    else if (key?.expires && key.expires.getTime() - now < 14 * DAY)
       warnings.push(
         tr(
           "This Bybit API key expires on {date}. Extend it under API management at bybit.eu, or tie it to your server's IP address so it doesn't expire.",
@@ -480,7 +475,7 @@ export const bybit: ExchangeProvider<Creds> = {
 
     const deposits: BybitDeposit[] = [];
     const withdrawals: BybitWithdrawal[] = [];
-    for (const [a, b] of windows(from, now, 30 * DAY)) {
+    for (const [a, b] of windows(transfersFrom, now, 30 * DAY)) {
       deposits.push(
         ...(await pages<BybitDeposit>(c, ctx, "asset/deposit/query-record", "rows", {
           startTime: a,
@@ -499,7 +494,7 @@ export const bybit: ExchangeProvider<Creds> = {
       await ctx.sleep(120);
     }
     const funding: BybitFunding[] = [];
-    for (const [a, b] of windows(Math.floor(from / 1000) * 1000, nowS, 7 * DAY, 1000)) {
+    for (const [a, b] of windows(Math.floor(transfersFrom / 1000) * 1000, nowS, 7 * DAY, 1000)) {
       funding.push(
         ...(await pages<BybitFunding>(c, ctx, "asset/fundinghistory", "list", {
           createTimeFrom: a / 1000,
@@ -547,12 +542,14 @@ export const bybit: ExchangeProvider<Creds> = {
       .filter(([, q]) => !q.isZero())
       .map(([sym, q]) => ({ asset: assetRef(sym), quantity: q.toFixed() }));
 
-    // Counted over every sync: the cursor moves past them, the warning stays.
-    const skipped = (typeof ctx.cursor?.skipped === "number" ? ctx.cursor.skipped : 0) + trades.skipped;
-    if (skipped)
+    // Kept over every sync: the cursor moves past them, the warning stays. By id, as the overlap
+    // reads some fills twice.
+    const before = Array.isArray(ctx.cursor?.skipped) ? ctx.cursor.skipped.filter((x) => typeof x === "string") : [];
+    const skipped = [...new Set([...before, ...trades.skipped])];
+    if (skipped.length)
       warnings.push(
         trn(
-          skipped,
+          skipped.length,
           "{n} Bybit spot trade on a market Box3balans doesn't know was left out. If a balance differs from Bybit's, it's the likely cause.",
           "{n} Bybit spot trades on markets Box3balans doesn't know were left out. If a balance differs from Bybit's, they're the likely cause.",
         ),

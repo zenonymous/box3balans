@@ -25,7 +25,6 @@ const brief = (e: SyncEvent) => {
 const fill = (execId: string, fields: Partial<BybitExecution>): BybitExecution => ({
   symbol: "BTCEUR",
   execId,
-  orderId: "1",
   side: "Buy",
   execQty: "0",
   execValue: "0",
@@ -67,9 +66,11 @@ describe("Bybit", () => {
         fill("c", { side: "Buy", execQty: "0.01", execValue: "600", execFee: "0.6", feeCurrency: "EUR" }),
         fill("d", { side: "Sell", execQty: "0.002", execValue: "120", execFee: "0.000002", feeCurrency: "BTC" }),
         fill("e", { symbol: "ETHBTC", execQty: "0.5", execValue: "0.025", execFee: "0.0005", feeCurrency: "ETH" }),
-        // Charged in a third coin: the trade as is, and the fee as its own line.
+        // Charged in a third coin: the trade as is, and the fee as its own line; a rebate there
+        // (a negative fee) comes in as a reward.
         fill("f", { execQty: "0.01", execValue: "600", execFee: "1.2", feeCurrency: "MNT" }),
-        // Not a trade, and a market this list doesn't know.
+        fill("i", { execQty: "0.01", execValue: "600", execFee: "-0.5", feeCurrency: "MNT" }),
+        // Not a trade (spot has none, but it isn't one to book), and a market this list doesn't know.
         fill("g", { execType: "Funding", execQty: "1", execValue: "1" }),
         fill("h", { symbol: "XYZABC", execQty: "1", execValue: "1" }),
       ],
@@ -83,6 +84,8 @@ describe("Bybit", () => {
       "buy 0.4995 ETH for 0.025 BTC",
       "buy 0.01 BTC for 600 EUR",
       "fee 1.2 MNT",
+      "buy 0.01 BTC for 600 EUR",
+      "reward 0.5 MNT",
     ]);
     expect(events.map((e) => e.id)).toEqual([
       "bybit:exec:a",
@@ -92,9 +95,11 @@ describe("Bybit", () => {
       "bybit:exec:e",
       "bybit:exec:f",
       "bybit:exec:f:fee",
+      "bybit:exec:i",
+      "bybit:exec:i:fee",
     ]);
     expect(events[0]!.at.toISOString()).toBe("2024-03-01T10:00:00.000Z");
-    expect(skipped).toBe(2);
+    expect(skipped).toEqual(["h"]);
   });
 
   // Convert has no pair: against money the coin is bought or sold, between two coins the one given
@@ -102,7 +107,6 @@ describe("Bybit", () => {
   it("turns conversions into trades", () => {
     const convert = (exchangeTxId: string, fields: Partial<BybitConvert>): BybitConvert => ({
       exchangeTxId,
-      accountType: "funding",
       fromCoin: "EUR",
       toCoin: "BTC",
       fromAmount: "100",
@@ -136,7 +140,6 @@ describe("Bybit", () => {
       txID: `tx${id}`,
       status: 3,
       successAt: "1709287200000",
-      depositFee: "",
       ...fields,
     });
     const withdrawal = (withdrawId: string, fields: Partial<BybitWithdrawal>): BybitWithdrawal => ({
@@ -172,6 +175,14 @@ describe("Bybit", () => {
         // Converts are read from Convert's own history, coins from the records above.
         funding("f3", { ioDirection: "O", txnAmt: "100", showBusiTypeEn: "Convert", descriptionEn: "Convert" }),
         funding("f4", { currency: "BTC", txnAmt: "0.05", showBusiTypeEn: "Deposit", descriptionEn: "Deposit" }),
+        // Money that comes back: a withdrawal refunded, a deposit sent back to the bank.
+        funding("f5", { txnAmt: "200", showBusiTypeEn: "Fiat Withdrawal", descriptionEn: "Withdraw refund" }),
+        funding("f6", {
+          ioDirection: "O",
+          txnAmt: "500",
+          showBusiTypeEn: "Fiat Deposit",
+          descriptionEn: "Deposit refund",
+        }),
       ],
     });
     expect(events.map(brief)).toEqual([
@@ -179,14 +190,18 @@ describe("Bybit", () => {
       "withdrawal 0.0202 BTC",
       "deposit 500 EUR",
       "withdrawal 200 EUR",
+      "deposit 200 EUR",
+      "withdrawal 500 EUR",
     ]);
     expect(events.map((e) => e.id)).toEqual([
       "bybit:deposit:1",
       "bybit:withdrawal:7",
       "bybit:fund:f1",
       "bybit:fund:f2",
+      "bybit:fund:f5",
+      "bybit:fund:f6",
     ]);
-    expect(events.map((e) => e.at.toISOString())).toEqual(Array(4).fill("2024-03-01T10:00:00.000Z"));
+    expect(events.map((e) => e.at.toISOString())).toEqual(Array(6).fill("2024-03-01T10:00:00.000Z"));
   });
 
   describe("syncing", () => {
@@ -299,7 +314,6 @@ describe("Bybit", () => {
         converts: [
           {
             exchangeTxId: "c1",
-            accountType: "funding",
             fromCoin: "EUR",
             toCoin: "BTC",
             fromAmount: "100",
@@ -316,7 +330,6 @@ describe("Bybit", () => {
             txID: "x",
             status: 3,
             successAt: at("2025-03-01T10:00:00Z"),
-            depositFee: "",
           },
         ],
         funding: [
@@ -336,6 +349,8 @@ describe("Bybit", () => {
         ["bybit:convert:c1", "bybit:deposit:d1", "bybit:exec:a", "bybit:exec:b", "bybit:fund:f1"].sort(),
       );
       expect(first.cursor).toMatchObject({ syncedTo: NOW });
+      // Worked by hand: BTC 0.015 in the Unified account less 0.005 borrowed = 0.01; EUR 100 there
+      // plus 50 in the Funding account = 150; USDT 0 is left out.
       expect(
         first.balances?.map((b) => `${b.quantity} ${"symbol" in b.asset ? b.asset.symbol : b.asset.currency}`),
       ).toEqual(["0.01 BTC", "150 EUR"]);
@@ -370,12 +385,18 @@ describe("Bybit", () => {
         );
       }
 
-      // The next sync goes back two days from where this one stopped, for what came in late.
-      vi.setSystemTime(NOW + 10 * DAY);
+      // The next sync goes back from where this one stopped, for what came in late: two days for
+      // trades, thirty for transfers (Bybit files those by when they started, and one can be
+      // pending for days).
+      vi.setSystemTime(NOW + 40 * DAY);
       const again = fake({});
       await bybit.fetch(creds, ctx(again.fetchFn, first.cursor));
       expect(spans(again.calls, "/v5/execution/list")[0]![0]).toBe(NOW - 2 * DAY);
-      expect(spans(again.calls, "/v5/asset/deposit/query-record")[0]![0]).toBe(NOW - 2 * DAY);
+      for (const path of ["/v5/asset/deposit/query-record", "/v5/asset/withdraw/query-record"])
+        expect(spans(again.calls, path)[0]![0], path).toBe(NOW - 30 * DAY);
+      expect(spans(again.calls, "/v5/asset/fundinghistory", "createTimeFrom", "createTimeTo", 1000)[0]![0]).toBe(
+        NOW - 30 * DAY,
+      );
     });
 
     // Bybit says what a key may do (user/query-api): one that can also trade or withdraw is worth
@@ -392,6 +413,10 @@ describe("Bybit", () => {
       expect((await bybit.fetch(creds, ctx(soon.fetchFn))).warnings).toEqual([
         "This Bybit API key expires on 5 December 2026. Extend it under API management at bybit.eu, or tie it to your server's IP address so it doesn't expire.",
       ]);
+      const past = fake({ key: { expiredAt: "2026-11-26T08:00:00Z" } });
+      expect((await bybit.fetch(creds, ctx(past.fetchFn))).warnings).toEqual([
+        "This Bybit API key expired on 26 November 2026. Extend it, or make a new one, under API management at bybit.eu.",
+      ]);
     });
 
     it("says what to do when Bybit refuses the key", async () => {
@@ -406,22 +431,22 @@ describe("Bybit", () => {
     // Like Bitstamp's: what isn't followed stays in view at every sync, so a balance that differs
     // keeps its likely cause next to it.
     it("keeps saying which fills it left out, and that borrowed coins aren't counted", async () => {
-      const at = String(Date.parse("2026-11-20T10:00:00Z"));
-      const { fetchFn } = fake({
-        borrowed: "0.005",
-        fills: [
-          fill("x", { symbol: "XYZABC", execTime: at }),
-          fill("y", { execQty: "0.01", execValue: "600", execTime: at }),
-        ],
-      });
-      const first = await bybit.fetch(creds, ctx(fetchFn));
+      // Inside the two days the next sync reads again: still one fill, not two.
+      const at = String(NOW - DAY);
+      const fills = [
+        fill("x", { symbol: "XYZABC", execTime: at }),
+        fill("y", { execQty: "0.01", execValue: "600", execTime: at }),
+      ];
+      const first = await bybit.fetch(creds, ctx(fake({ borrowed: "0.005", fills }).fetchFn));
       const left =
         "1 Bybit spot trade on a market Box3balans doesn't know was left out. If a balance differs from Bybit's, it's the likely cause.";
       const borrowed =
         "0.005 BTC at Bybit is borrowed (spot margin) and isn't counted as yours. Enter the loan as a debt if it was still open on 1 January.";
       expect(first.warnings).toEqual([left, borrowed]);
-      const next = await bybit.fetch(creds, ctx(fake({ borrowed: "0.005" }).fetchFn, first.cursor));
+      const next = await bybit.fetch(creds, ctx(fake({ borrowed: "0.005", fills }).fetchFn, first.cursor));
       expect(next.warnings).toEqual([left, borrowed]);
+      const later = await bybit.fetch(creds, ctx(fake({}).fetchFn, next.cursor));
+      expect(later.warnings).toEqual([left]);
     });
 
     // Bybit keeps spot fills for two years: a connection not synced for longer misses the ones
@@ -443,7 +468,6 @@ describe("Bybit", () => {
       const page = (n: number) =>
         Array.from({ length: 100 }, (_, i) => ({
           exchangeTxId: `p${n}-${i}`,
-          accountType: "funding",
           fromCoin: "EUR",
           toCoin: "BTC",
           fromAmount: "1",

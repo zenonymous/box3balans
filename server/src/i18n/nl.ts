@@ -412,6 +412,8 @@ export const NL: Record<string, string> = {
     "Deze Bybit-sleutel kan meer dan lezen. Maak een nieuwe sleutel met “Read-Only”: Box3balans leest alleen, en een sleutel die meer kan, is meer waard voor wie hem in handen krijgt.",
   "This Bybit API key expires on {date}. Extend it under API management at bybit.eu, or tie it to your server's IP address so it doesn't expire.":
     "Deze Bybit API-sleutel verloopt op {date}. Verleng hem onder API management op bybit.eu, of koppel hem aan het IP-adres van je server, dan verloopt hij niet.",
+  "This Bybit API key expired on {date}. Extend it, or make a new one, under API management at bybit.eu.":
+    "Deze Bybit API-sleutel is verlopen op {date}. Verleng hem, of maak een nieuwe, onder API management op bybit.eu.",
   "Bybit gives spot trades for the last two years only. Trades between {from} and {to} couldn't be read; import them from Bybit's Data Export (CSV).":
     "Bybit geeft spothandel alleen over de laatste twee jaar. Handel tussen {from} en {to} kon niet worden gelezen; importeer die uit de Data Export van Bybit (CSV).",
   "{n} Bybit spot trade on a market Box3balans doesn't know was left out. If a balance differs from Bybit's, it's the likely cause.":
